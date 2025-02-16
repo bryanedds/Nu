@@ -85,14 +85,13 @@ type GameplayDispatcher () =
             // process scoring
             let world =
                 Seq.fold (fun world section ->
-                    let dieEventsAddress = Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard
-                    let (deaths, world) = World.doSubscription ("Die" + string section) dieEventsAddress world
+                    let (deaths, world) = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
                     gameplay.Score.Map (fun score -> score + deaths.Length * 100) world)
                     world [0 .. dec Constants.Gameplay.SectionCount]
 
             // process player death
             let world =
-                let (deaths, world) = World.doSubscription "Die" player.DieEvent world
+                let (deaths, world) = World.doSubscription "Deaths" player.DeathEvent world
                 if gameplay.GetGameplayState world = Playing && FQueue.notEmpty deaths then
                     let world = gameplay.SetGameplayState Quit world
                     World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world

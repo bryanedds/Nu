@@ -10,4 +10,4 @@ module Events =
     let AttackEvent = stoa<Entity> "Attack/Event"
 
     // this event is called when the player or an enemy dies during gameplay.
-    let DieEvent = stoa<Entity> "Die/Event"
+    let DeathEvent = stoa<Entity> "Death/Event"

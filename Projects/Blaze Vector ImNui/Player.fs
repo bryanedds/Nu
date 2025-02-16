@@ -90,7 +90,7 @@ type PlayerDispatcher () =
         // process death
         let world =
             if fallen
-            then World.publish entity entity.DieEvent entity world
+            then World.publish entity entity.DeathEvent entity world
             else world
 
         // fin

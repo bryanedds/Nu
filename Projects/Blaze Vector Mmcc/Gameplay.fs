@@ -67,7 +67,7 @@ type GameplayDispatcher () =
          Screen.DeselectingEvent => FinishQuitting
          Screen.PostUpdateEvent => UpdateEye
          for i in 0 .. dec SectionCount do
-            Events.DieEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
+            Events.DeathEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
 
     // here we handle the above messages
     override this.Message (gameplay, message, _, _) =
@@ -145,7 +145,7 @@ type GameplayDispatcher () =
                 [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                     [Entity.Position == v3 -390.0f -50.0f 0.0f
                      Entity.Elevation == 1.0f
-                     Entity.DieEvent => StartQuitting]]
+                     Entity.DeathEvent => StartQuitting]]
             
          // the gui group
          Content.group Simulants.GameplayGui.Name []

@@ -23,7 +23,7 @@ module EnemyExtensions =
         member this.GetEnemy world : Enemy = this.GetModelGeneric<Enemy> world
         member this.SetEnemy enemy world = this.SetModelGeneric<Enemy> enemy world
         member this.Enemy = this.ModelGeneric<Enemy> ()
-        member this.DieEvent = Events.DieEvent --> this
+        member this.DeathEvent = Events.DeathEvent --> this
 
 type EnemyDispatcher () =
     inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, false, false, { Health = 7 })
@@ -70,7 +70,7 @@ type EnemyDispatcher () =
                 else world
             let world =
                 if enemy.Health <= 0 then
-                    let world = World.publish entity entity.DieEvent entity world
+                    let world = World.publish entity entity.DeathEvent entity world
                     let world = World.destroyEntity entity world
                     World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
                     world

@@ -11,7 +11,7 @@ module EnemyExtensions =
         member this.GetHealth world : int = this.Get (nameof this.Health) world
         member this.SetHealth (value : int) world = this.Set (nameof this.Health) value world
         member this.Health = lens (nameof this.Health) this this.GetHealth this.SetHealth
-        member this.DieEvent = Events.DieEvent --> this
+        member this.DeathEvent = Events.DeathEvent --> this
 
 type EnemyDispatcher () =
     inherit Entity2dDispatcherImNui (true, false, false)
@@ -48,7 +48,7 @@ type EnemyDispatcher () =
             else world
 
         // process hits
-        let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
+        let (penetrations, world) = World.doSubscription "Penetrations" entity.BodyPenetrationEvent world
         let hits =
             Seq.filter (fun penetration ->
                 match penetration.BodyShapePenetratee.BodyId.BodySource with
@@ -65,7 +65,7 @@ type EnemyDispatcher () =
         // process death
         let world =
             if entity.GetHealth world <= 0 then
-                let world = World.publish entity entity.DieEvent entity world
+                let world = World.publish entity entity.DeathEvent entity world
                 let world = World.destroyEntity entity world
                 World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
                 world

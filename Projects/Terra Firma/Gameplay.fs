@@ -55,7 +55,7 @@ type GameplayDispatcher () =
                     world
 
             // process attacks
-            let (attacks, world) = World.doSubscription "Attack" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world
+            let (attacks, world) = World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world
             let world =
                 FQueue.fold (fun world (attacked : Entity) ->
                     let world = attacked.HitPoints.Map (dec >> max 0) world
@@ -76,12 +76,12 @@ type GameplayDispatcher () =
                     world attacks
 
             // process enemy deaths
-            let (deaths, world) = World.doSubscription "Die" (Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard) world
+            let (deaths, world) = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world
             let enemyDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) deaths
             let world = FQueue.fold (fun world death -> World.destroyEntity death world) world enemyDeaths
             let world = gameplay.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
         
-            // process player death
+            // process player deaths
             let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
             let world = if FQueue.notEmpty playerDeaths then gameplay.SetGameplayState Quit world else world
 
