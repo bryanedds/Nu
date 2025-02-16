@@ -44,7 +44,7 @@ type GameplayDispatcher () =
                     world
                 else world
 
-            // declare scene group
+            // begin scene declaration
             let world = World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
 
             // declare player
@@ -57,19 +57,19 @@ type GameplayDispatcher () =
             // process attacks
             let (attacks, world) = World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world
             let world =
-                FQueue.fold (fun world (attacked : Entity) ->
-                    let world = attacked.HitPoints.Map (dec >> max 0) world
-                    if attacked.GetHitPoints world > 0 then
-                        if not (attacked.GetActionState world).IsInjuryState then
-                            let world = attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                            let world = attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                FQueue.fold (fun world (attack : Entity) ->
+                    let world = attack.HitPoints.Map (dec >> max 0) world
+                    if attack.GetHitPoints world > 0 then
+                        if not (attack.GetActionState world).IsInjuryState then
+                            let world = attack.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            let world = attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                             world
                         else world
                     else
-                        if not (attacked.GetActionState world).IsWoundState then
-                            let world = attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                            let world = attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                        if not (attack.GetActionState world).IsWoundState then
+                            let world = attack.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            let world = attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                             world
                         else world)
