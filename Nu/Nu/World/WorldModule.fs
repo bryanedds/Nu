@@ -182,7 +182,7 @@ module WorldModule =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing world =
-            World.frame (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing world =
@@ -413,7 +413,7 @@ module WorldModule =
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
-        static member frame operation (simulant : Simulant) (world : World) =
+        static member defer operation (simulant : Simulant) (world : World) =
             let time = if TaskletProcessingStarted && world.Advancing then UpdateTime 1L else UpdateTime 0L
             World.schedule time operation simulant world
 

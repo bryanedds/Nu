@@ -2426,7 +2426,7 @@ module WorldModuleEntity =
 
         /// Rename an entity.
         static member renameEntity source destination world =
-            World.frame (World.renameEntityImmediate source destination) Game.Handle world
+            World.defer (World.renameEntityImmediate source destination) Game.Handle world
 
         /// Change the dispatcher of the given entity.
         static member changeEntityDispatcher dispatcherName entity world =

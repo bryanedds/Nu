@@ -226,7 +226,7 @@ module WorldGroupModule =
 
         /// Destroy multiple groups from the world at the end of the current update.
         static member destroyGroups groups world =
-            World.frame (World.destroyGroupsImmediate groups) Game.Handle world
+            World.defer (World.destroyGroupsImmediate groups) Game.Handle world
 
         /// Rename a group. Note that since this destroys the renamed group immediately, you should not call this
         /// inside an event handler that involves the reassigned group itself. Note this also renames all of its
@@ -253,7 +253,7 @@ module WorldGroupModule =
 
         /// Rename a group.
         static member renameGroup source destination world =
-            World.frame (World.renameGroupImmediate source destination) Game.Handle world
+            World.defer (World.renameGroupImmediate source destination) Game.Handle world
 
         /// Write a group to a group descriptor.
         static member writeGroup (groupDescriptor : GroupDescriptor) group world =

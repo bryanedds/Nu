@@ -279,7 +279,7 @@ module FreezerFacetModule =
 
         override this.Register (entity, world) =
             let world = entity.SetOffset v3Zero world
-            let world = World.frame (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
+            let world = World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
             let world = World.monitor handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity world
             world
 

@@ -629,7 +629,7 @@ module WorldEntityModule =
 
         /// Destroy multiple entities in the world at the end of the current update.
         static member destroyEntities entities world =
-            World.frame (World.destroyEntitiesImmediate entities) Game.Handle world
+            World.defer (World.destroyEntitiesImmediate entities) Game.Handle world
 
         /// Sort the given entities by 2d sorting priority.
         /// If there are a lot of entities, this may allocate in the LOH.
