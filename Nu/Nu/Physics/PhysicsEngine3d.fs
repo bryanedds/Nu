@@ -424,7 +424,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         // create either a character or a non-character body
         use scShapeSettings = new StaticCompoundShapeSettings ()
         let masses = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
-        let mass = List.sum masses
+        let mass = List.sum masses        
+        let layer =
+            if bodyProperties.Enabled then
+                if bodyProperties.BodyType.IsStatic
+                then Constants.Physics.ObjectLayerNonMoving
+                else Constants.Physics.ObjectLayerMoving
+            else Constants.Physics.ObjectLayerDisabled
         let (motionType, isCharacter) =
             match bodyProperties.BodyType with
             | Static -> (MotionType.Static, false)
@@ -439,7 +445,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
             characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
-            characterSettings.InnerBodyLayer <- Constants.Physics.ObjectLayerMoving
+            characterSettings.InnerBodyLayer <- layer
             characterSettings.Mass <- mass
             characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
             characterSettings.Shape <- scShapeSettings.Create ()
@@ -539,7 +545,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
 
             // configure and create non-character body
-            let layer = if bodyProperties.BodyType.IsStatic then Constants.Physics.ObjectLayerNonMoving else Constants.Physics.ObjectLayerMoving
             let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
             bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
             bodyCreationSettings.Friction <- bodyProperties.Friction
@@ -738,9 +743,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match PhysicsEngine3d.tryGetBodyID setBodyEnabledMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
-            if setBodyEnabledMessage.Enabled
-            then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID
-            else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &bodyID
+            let mutable layer =
+                if setBodyEnabledMessage.Enabled then
+                    if physicsEngine.PhysicsContext.BodyInterface.GetMotionType &bodyID = MotionType.Static
+                    then Constants.Physics.ObjectLayerNonMoving
+                    else Constants.Physics.ObjectLayerMoving
+                else Constants.Physics.ObjectLayerDisabled
+            physicsEngine.PhysicsContext.BodyInterface.SetObjectLayer (&bodyID, &layer)
         | ValueNone -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
@@ -962,15 +971,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             Log.fail "Could not initialize Jolt Physics."
 
         // setup multiphase physics pipeline.
-        // we use only 2 layers: one for non-moving objects and one for moving objects.
+        // we use 3 layers: one for non-moving objects, one for moving objects, and one for disabled objects.
         // we use a 1-to-1 mapping between object layers and broadphase layers.
-        let objectLayerPairFilter = new ObjectLayerPairFilterTable (2u)
+        let layerCount = 3u
+        let objectLayerPairFilter = new ObjectLayerPairFilterTable (layerCount)
         objectLayerPairFilter.EnableCollision (Constants.Physics.ObjectLayerNonMoving, Constants.Physics.ObjectLayerMoving)
         objectLayerPairFilter.EnableCollision (Constants.Physics.ObjectLayerMoving, Constants.Physics.ObjectLayerMoving)
-        let broadPhaseLayerInterface = new BroadPhaseLayerInterfaceTable (2u, 2u)
+        let broadPhaseLayerInterface = new BroadPhaseLayerInterfaceTable (layerCount, layerCount)
         broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (Constants.Physics.ObjectLayerNonMoving, Constants.Physics.BroadPhaseLayerNonMoving)
         broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (Constants.Physics.ObjectLayerMoving, Constants.Physics.BroadPhaseLayerMoving)
-        let objectVsBroadPhaseLayerFilter = new ObjectVsBroadPhaseLayerFilterTable (broadPhaseLayerInterface, 2u, objectLayerPairFilter, 2u)
+        let objectVsBroadPhaseLayerFilter = new ObjectVsBroadPhaseLayerFilterTable (broadPhaseLayerInterface, layerCount, objectLayerPairFilter, layerCount)
 
         // configure and create the Jolt physics system
         let mutable physicsSystemSettings = PhysicsSystemSettings ()

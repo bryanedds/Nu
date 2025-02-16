@@ -224,6 +224,7 @@ module Physics =
     let [<Uniform>] BroadPhaseLayerMoving = byte 1 // NOTE: do not use this outside of the engine code.
     let [<Uniform>] ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0us // NOTE: do not use this outside of the engine code.
     let [<Uniform>] ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] ObjectLayerDisabled = JoltPhysicsSharp.ObjectLayer 2us // NOTE: do not use this outside of the engine code.
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
 
 [<RequireQualifiedAccess>]
