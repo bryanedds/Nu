@@ -512,7 +512,7 @@ module WorldImGui =
                 let mutable ssrSlopeCutoffMargin = lighting3dConfig.SsrSlopeCutoffMargin
                 let mutable ssrEdgeHorizontalMargin = lighting3dConfig.SsrEdgeHorizontalMargin
                 let mutable ssrEdgeVerticalMargin = lighting3dConfig.SsrEdgeVerticalMargin
-                let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
+                let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.V4
                 let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Light Shadow Samples", &lightShadowSamples, 0, 5) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
