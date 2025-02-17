@@ -200,6 +200,7 @@ module WorldScreenModule =
                 let groups = World.getGroups screen world
                 let world = World.unregisterScreen screen world
                 let world = World.removeTasklets screen world
+                let world = World.setSimulantImNuis (SUMap.remove screen.ScreenAddress world.SimulantImNuis) world
                 let world = World.destroyGroupsImmediate groups world
                 World.removeScreenState screen world
             else world
