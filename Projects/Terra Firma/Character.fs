@@ -173,32 +173,36 @@ type CharacterDispatcher () =
             | _ -> world
 
         // navigation
-        let (navSpeedsOpt) =
-            match entity.GetActionState world with
-            | NormalState ->
-                let walkSpeed = Enemy.WalkSpeed
-                let turnSpeed = Enemy.TurnSpeed
-                Some (walkSpeed, turnSpeed)
-            | _ -> None
-        match navSpeedsOpt with
-        | Some (walkSpeed, turnSpeed) ->
-            let position = entity.GetPosition world
-            let rotation = entity.GetRotation world
-            let sphere =
-                if position.Y - playerPosition.Y >= 0.25f
-                then Sphere (playerPosition, 0.1f) // when above player
-                else Sphere (playerPosition, 0.7f) // when at or below player
-            let nearest = sphere.Nearest position
-            let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) walkSpeed turnSpeed position rotation nearest Simulants.Gameplay world    
-            let world = entity.SetLinearVelocity (followOutput.NavLinearVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
-            let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
-            let world = entity.SetRotation followOutput.NavRotation world
-            world
-        | None -> world
+        let world =
+            let (navSpeedsOpt) =
+                match entity.GetActionState world with
+                | NormalState ->
+                    let walkSpeed = Enemy.WalkSpeed
+                    let turnSpeed = Enemy.TurnSpeed
+                    Some (walkSpeed, turnSpeed)
+                | _ -> None
+            match navSpeedsOpt with
+            | Some (walkSpeed, turnSpeed) ->
+                let position = entity.GetPosition world
+                let rotation = entity.GetRotation world
+                let sphere =
+                    if position.Y - playerPosition.Y >= 0.25f
+                    then Sphere (playerPosition, 0.1f) // when above player
+                    else Sphere (playerPosition, 0.7f) // when at or below player
+                let nearest = sphere.Nearest position
+                let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) walkSpeed turnSpeed position rotation nearest Simulants.Gameplay world    
+                let world = entity.SetLinearVelocity (followOutput.NavLinearVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
+                let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
+                let world = entity.SetRotation followOutput.NavRotation world
+                world
+            | None -> world
+
+        // fin
+        world
 
     static let processPlayerInput (entity : Entity) world =
 
-        // action
+        // process action state
         let world =
 
             // jumping
@@ -225,41 +229,47 @@ type CharacterDispatcher () =
                     else world
                 | InjuryState _ | WoundState _ -> world
 
-            // do nothing
+            // no action
             else world
 
-        // movement
-        let bodyId = entity.GetBodyId world
-        let grounded = World.getBodyGrounded bodyId world
-        let actionState = entity.GetActionState world
-        if actionState.IsNormalState || not grounded then
+        // process movement
+        let world =
 
-            // compute new position
-            let rotation = entity.GetRotation world
-            let forward = rotation.Forward
-            let right = rotation.Right
-            let walkSpeed = Player.WalkSpeed * if grounded then 1.0f else 0.75f
-            let walkVelocity =
-                (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
-                (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
-                (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
-                (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
+            // can move only when in normal state or in air
+            let bodyId = entity.GetBodyId world
+            let grounded = World.getBodyGrounded bodyId world
+            let actionState = entity.GetActionState world
+            if actionState.IsNormalState || not grounded then
 
-            // compute new rotation
-            let turnSpeed = Player.TurnSpeed * if grounded then 1.0f else 0.75f
-            let turnVelocity =
-                (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
-                (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
+                // compute new position
+                let rotation = entity.GetRotation world
+                let forward = rotation.Forward
+                let right = rotation.Right
+                let walkSpeed = Player.WalkSpeed * if grounded then 1.0f else 0.75f
+                let walkVelocity =
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
 
-            // apply changes
-            let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
-            let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
-            let world = entity.SetRotation rotation world
-            world
+                // compute new rotation
+                let turnSpeed = Player.TurnSpeed * if grounded then 1.0f else 0.75f
+                let turnVelocity =
+                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
+                let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
 
-        // no movement
-        else world
+                // apply changes
+                let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
+                let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
+                let world = entity.SetRotation rotation world
+                world
+
+            // no movement
+            else world
+
+        // fin
+        world
 
     static member Facets =
         [typeof<RigidBodyFacet>]
