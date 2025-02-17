@@ -30,7 +30,7 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (screenResults, gameplay, world) =
+    override this.Process (screenResults, screen, world) =
 
         // process initialization
         let initializing = FQueue.contains Select screenResults
@@ -69,7 +69,7 @@ type GameplayDispatcher () =
             else world
 
         // process gameplay when selected
-        if gameplay.GetSelected world then
+        if screen.GetSelected world then
 
             // declare scene group
             let world = World.beginGroup Simulants.Gameplay.Name [] world
@@ -86,14 +86,14 @@ type GameplayDispatcher () =
             let world =
                 Seq.fold (fun world section ->
                     let (deaths, world) = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
-                    gameplay.Score.Map (fun score -> score + deaths.Length * 100) world)
+                    screen.Score.Map (fun score -> score + deaths.Length * 100) world)
                     world [0 .. dec Constants.Gameplay.SectionCount]
 
             // process player death
             let world =
                 let (deaths, world) = World.doSubscription "Deaths" player.DeathEvent world
-                if gameplay.GetGameplayState world = Playing && FQueue.notEmpty deaths then
-                    let world = gameplay.SetGameplayState Quit world
+                if screen.GetGameplayState world = Playing && FQueue.notEmpty deaths then
+                    let world = screen.SetGameplayState Quit world
                     World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                     world
                 else world
@@ -114,9 +114,9 @@ type GameplayDispatcher () =
 
             // declare gui group
             let world = World.beginGroup "Gui" [] world
-            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (gameplay.GetScore world)] world
+            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
             let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
-            let world = if clicked then gameplay.SetGameplayState Quit world else world
+            let world = if clicked then screen.SetGameplayState Quit world else world
             let world = World.endGroup world
             world
 

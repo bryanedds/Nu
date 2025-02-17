@@ -30,10 +30,10 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (screenResults, gameplay, world) =
+    override this.Process (screenResults, screen, world) =
 
         // only process when selected
-        if gameplay.GetSelected world then
+        if screen.GetSelected world then
 
             // process scene initialization
             let initializing = FQueue.contains Select screenResults
@@ -79,11 +79,11 @@ type GameplayDispatcher () =
             let (deaths, world) = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world
             let enemyDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) deaths
             let world = FQueue.fold (fun world death -> World.destroyEntity death world) world enemyDeaths
-            let world = gameplay.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
+            let world = screen.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
         
             // process player deaths
             let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
-            let world = if FQueue.notEmpty playerDeaths then gameplay.SetGameplayState Quit world else world
+            let world = if FQueue.notEmpty playerDeaths then screen.SetGameplayState Quit world else world
 
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
@@ -115,16 +115,16 @@ type GameplayDispatcher () =
                 else world
 
             // process nav sync
-            let world = if initializing then World.synchronizeNav3d gameplay world else world
+            let world = if initializing then World.synchronizeNav3d screen world else world
 
             // end scene declaration
             let world = World.endGroup world
 
             // declare gui group
             let world = World.beginGroup "Gui" [] world
-            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (gameplay.GetScore world)] world
+            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
             let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
-            let world = if clicked then gameplay.SetGameplayState Quit world else world
+            let world = if clicked then screen.SetGameplayState Quit world else world
             let world = World.endGroup world
             world
 
