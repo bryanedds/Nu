@@ -2223,7 +2223,7 @@ module WorldModuleEntity =
                 let world = World.removeTasklets entity world
 
                 // remove from simulant imnui tracking
-                let world = World.setSimulantImNuis (SUMap.remove entity.EntityAddress world.SimulantImNuis) world
+                let world = World.removeSimulantImNui entity world
 
                 // mutate respective entity tree if entity is selected
                 if WorldModule.getSelected entity world then

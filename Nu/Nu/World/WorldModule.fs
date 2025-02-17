@@ -319,6 +319,9 @@ module WorldModule =
             let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
             World.setSimulantImNuis simulantImNuis world
 
+        static member internal removeSimulantImNui (simulant : Simulant) (world : World) =
+            World.setSimulantImNuis (SUMap.remove simulant.SimulantAddress world.SimulantImNuis) world
+
         static member internal tryMapSimulantImNui mapper simulant (world : World) =
             match world.SimulantImNuis.TryGetValue simulant with
             | (true, simulantImNui) ->

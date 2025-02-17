@@ -208,7 +208,7 @@ module WorldGroupModule =
                 let entities = World.getEntitiesSovereign group world
                 let world = World.unregisterGroup group world
                 let world = World.removeTasklets group world
-                let world = World.setSimulantImNuis (SUMap.remove group.GroupAddress world.SimulantImNuis) world
+                let world = World.removeSimulantImNui group world
                 let world = World.destroyEntitiesImmediate entities world
                 World.removeGroupState group world
             else world
