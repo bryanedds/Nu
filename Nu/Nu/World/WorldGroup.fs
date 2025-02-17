@@ -151,7 +151,7 @@ module WorldGroupModule =
             | (false, _) -> Seq.empty
 
         /// Create a group and add it to the world.
-        static member createGroup4 dispatcherName nameOpt (screen : Screen) world =
+        static member createGroup5 skipProcessing dispatcherName nameOpt (screen : Screen) world =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -168,7 +168,7 @@ module WorldGroupModule =
                 else world
             let world = World.addGroup false groupState group world
             let world =
-                if WorldModule.UpdatingSimulants && group.GetSelected world
+                if not skipProcessing && WorldModule.UpdatingSimulants && group.GetSelected world
                 then WorldModule.tryProcessGroup group world
                 else world
             (group, world)
@@ -181,7 +181,7 @@ module WorldGroupModule =
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Group cannot have multiple names."
-                World.createGroup4 descriptor.SimulantDispatcherName groupNameOpt screen world
+                World.createGroup5 false descriptor.SimulantDispatcherName groupNameOpt screen world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setGroupProperty propertyName property group world |> snd')
@@ -197,7 +197,7 @@ module WorldGroupModule =
 
         /// Create a group and add it to the world.
         static member createGroup<'d when 'd :> GroupDispatcher> nameOpt screen world =
-            World.createGroup4 typeof<'d>.Name nameOpt screen world
+            World.createGroup5 false typeof<'d>.Name nameOpt screen world
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// group's existence. Consider using World.destroyGroup instead.

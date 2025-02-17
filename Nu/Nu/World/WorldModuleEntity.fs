@@ -2264,7 +2264,7 @@ module WorldModuleEntity =
             World.destroyEntityImmediateInternal true entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity5 dispatcherName overlayDescriptor surnames (group : Group) world =
+        static member createEntity6 skipProcessing dispatcherName overlayDescriptor surnames (group : Group) world =
 
             // find the entity's dispatcher
             let dispatcherMap = World.getEntityDispatchers world
@@ -2347,7 +2347,7 @@ module WorldModuleEntity =
 
             // process entity first time if in the middle of simulant update phase
             let world =
-                if WorldModule.UpdatingSimulants && World.getEntitySelected entity world
+                if not skipProcessing && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
                 then WorldModule.tryProcessEntity entity world
                 else world
 
@@ -2375,7 +2375,7 @@ module WorldModuleEntity =
         /// Create an entity from a simulant descriptor.
         static member createEntity4 overlayDescriptor descriptor group world =
             let (entity, world) =
-                World.createEntity5 descriptor.SimulantDispatcherName overlayDescriptor descriptor.SimulantSurnamesOpt group world
+                World.createEntity6 false descriptor.SimulantDispatcherName overlayDescriptor descriptor.SimulantSurnamesOpt group world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setEntityProperty propertyName property entity world |> snd')
@@ -2388,7 +2388,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         static member createEntity<'d when 'd :> EntityDispatcher> overlayDescriptor surnamesOpt group world =
-            World.createEntity5 typeof<'d>.Name overlayDescriptor surnamesOpt group world
+            World.createEntity6 false typeof<'d>.Name overlayDescriptor surnamesOpt group world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
         /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its

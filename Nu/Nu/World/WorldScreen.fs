@@ -210,7 +210,7 @@ module WorldScreenModule =
             World.addSimulantToDestruction screen world
 
         /// Create a screen and add it to the world.
-        static member createScreen3 dispatcherName nameOpt world =
+        static member createScreen4 skipProcessing dispatcherName nameOpt world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -227,7 +227,7 @@ module WorldScreenModule =
                 else world
             let world = World.addScreen false screenState screen world
             let world =
-                if WorldModule.UpdatingSimulants && screen.GetSelected world
+                if not skipProcessing && WorldModule.UpdatingSimulants && screen.GetSelected world
                 then WorldModule.tryProcessScreen true screen world
                 else world
             (screen, world)
@@ -240,7 +240,7 @@ module WorldScreenModule =
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Screen cannot have multiple names."
-                World.createScreen3 descriptor.SimulantDispatcherName screenNameOpt world
+                World.createScreen4 false descriptor.SimulantDispatcherName screenNameOpt world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setScreenProperty propertyName property screen world |> snd')
@@ -253,11 +253,11 @@ module WorldScreenModule =
 
         /// Create a screen and add it to the world.
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
-            World.createScreen3 typeof<'d>.Name nameOpt world
+            World.createScreen4 false typeof<'d>.Name nameOpt world
 
         /// Create a screen with a dissolving transition, and add it to the world.
         static member createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world =
-            let (screen, world) = World.createScreen3 dispatcherName nameOpt world
+            let (screen, world) = World.createScreen4 false dispatcherName nameOpt world
             let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
             (screen, world)
         

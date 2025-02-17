@@ -170,16 +170,17 @@ module WorldImNui =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
+            let groupCreation = not (group.GetExists world)
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group.GroupAddress with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
                     let world =
-                        if not (group.GetExists world) then
+                        if groupCreation then
                             let world =
                                 match groupFilePathOpt with
                                 | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                                | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
+                                | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> snd
                             World.setGroupProtected true group world |> snd'
                         else world
                     let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
@@ -195,6 +196,10 @@ module WorldImNui =
                         then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
+            let world =
+                if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world
+                then WorldModule.tryProcessGroup group world
+                else world
             let result = match (World.getSimulantImNui group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group.GroupAddress world
             (result, world)
@@ -263,13 +268,14 @@ module WorldImNui =
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
+            let entityCreation = not (entity.GetExists world)
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue entity.EntityAddress with
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
                 | (false, _) ->
                     let world =
-                        if not (entity.GetExists world) then
-                            let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                        if entityCreation then
+                            let world = World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             World.setEntityProtected true entity world |> snd'
                         else world
                     let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
@@ -290,6 +296,10 @@ module WorldImNui =
             let world =
                 if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1
                 then entity.SetMountOpt (Some (Relation.makeParent ())) world
+                else world
+            let world =
+                if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
+                then WorldModule.tryProcessEntity entity world
                 else world
             let result = match (World.getSimulantImNui entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) entity.EntityAddress world

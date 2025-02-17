@@ -395,9 +395,10 @@ module WorldModule2 =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
+            let screenCreation = not (screen.GetExists world)
             let world =
-                if not (screen.GetExists world) then
-                    let world = World.createScreen<'d> (Some name) world |> snd
+                if screenCreation then
+                    let world = World.createScreen4 true typeof<'d>.Name (Some name) world |> snd
                     let world = World.setScreenProtected true screen world |> snd'
                     match groupFilePathOpt with
                     | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
@@ -444,6 +445,10 @@ module WorldModule2 =
                         let world = World.selectScreen (IdlingState transitionTime) screen world
                         World.updateScreenIdling transitionTime screen world
                     else transitionScreen screen world
+                else world
+            let world =
+                if screenCreation && screen.GetExists world && WorldModule.UpdatingSimulants && World.getScreenSelected screen world
+                then WorldModule.tryProcessScreen select screen world
                 else world
             let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> ScreenResult FQueue * 'r
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen.ScreenAddress world
