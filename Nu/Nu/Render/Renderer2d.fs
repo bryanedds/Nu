@@ -692,17 +692,27 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // add texture (stage pixels)
-                            let vkg = renderer.VulkanGlobal
-                            let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                            renderer.TextTexture.AddBgra Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST textTextureMetadata textSurface.pixels vkg
-
                             // load texture
-                            renderer.TextTexture.LoadTexture vkg.TextureCommandBuffer vkg.GraphicsQueue vkg.InFlightFence vkg.Device
+                            let vkg = renderer.VulkanGlobal
+                            renderer.TextTexture.LoadBgra
+                                vkg.TextureCommandBuffer
+                                vkg.GraphicsQueue
+                                Vulkan.VK_FILTER_NEAREST
+                                Vulkan.VK_FILTER_NEAREST
+                                (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
+                                textSurface.pixels
+                                vkg.InFlightFence
+                                vkg
                             
                             // init render
-                            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-                            Hl.beginRenderBlock vkg.RenderCommandBuffer vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] VkFence.Null vkg.Device
+                            Hl.beginRenderBlock
+                                vkg.RenderCommandBuffer
+                                vkg.RenderPass
+                                vkg.SwapchainFramebuffer
+                                (VkRect2D (VkOffset2D.Zero, vkg.SwapExtent))
+                                [||]
+                                VkFence.Null
+                                vkg.Device
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.

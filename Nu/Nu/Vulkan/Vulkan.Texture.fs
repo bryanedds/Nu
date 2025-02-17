@@ -375,26 +375,37 @@ module Texture =
             // destroy expired VulkanTexture
             VulkanTexture.destroy this.VulkanTexture vkg
 
-        /// Add a new bgra VulkanTexture. Can only be called once per render block.
-        member this.AddBgra minFilter magFilter metadata pixels vkg =
+        /// Add a new bgra VulkanTexture.
+        member private this.AddBgra minFilter magFilter metadata pixels vkg =
             this.NewCycle metadata pixels vkg
             this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createBgra minFilter magFilter metadata None vkg
 
-        /// Add a new rgba VulkanTexture. Can only be called once per render block.
-        member this.AddRgba minFilter magFilter metadata pixels vkg =
+        /// Add a new rgba VulkanTexture.
+        member private this.AddRgba minFilter magFilter metadata pixels vkg =
             this.NewCycle metadata pixels vkg
             this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter metadata None vkg
         
         /// Transfer pixels to texture.
-        /// TODO: DJL: check the spec on this approach just to be sure.
-        member this.LoadTexture cb commandQueue fence device =
+        member private this.LoadTexture cb commandQueue fence device =
             Hl.beginCommandBlock cb fence device
             VulkanTexture.recordBufferToImageCopy cb this.Extent this.CurrentStagingBuffer.Buffer this.VulkanTexture.Image.Image
             Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
-        
+
+        /// Instantly stage a bgra image, then submit texture load once fence is ready.
+        /// A Pipeline barrier ensures the load is complete before use. TODO: DJL: confirm this!
+        member this.LoadBgra cb commandQueue minFilter magFilter metadata pixels fence vkg =
+            this.AddBgra minFilter magFilter metadata pixels vkg
+            this.LoadTexture cb commandQueue fence vkg.Device
+
+        /// Instantly stage an rgba image, then submit texture load once fence is ready.
+        /// A Pipeline barrier ensures the load is complete before use. TODO: DJL: confirm this!
+        member this.LoadRgba cb commandQueue minFilter magFilter metadata pixels fence vkg =
+            this.AddRgba minFilter magFilter metadata pixels vkg
+            this.LoadTexture cb commandQueue fence vkg.Device
+
         /// Create DynamicTexture.
         static member create vkg =
-            
+
             // create the resources
             let extent = VkExtent3D (32, 32, 1)
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
