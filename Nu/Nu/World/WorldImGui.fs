@@ -224,9 +224,9 @@ module WorldImGui =
             World.imGuiEditPropertyRecordPlus (fun _ _ -> None) headered name ty value context world
 
         /// Select a case name from an F# union via ImGui.
-        static member imGuiSelectCase name ty value context =
+        static member imGuiSelectCase name ty (value : 'a) context =
             let (promoted, value) =
-                let value' = objToObj ty value
+                let value' = objToObj ty value :?> 'a
                 (refNeq value' value, value')
             let cases = FSharpType.GetUnionCases ty
             let tag = getCaseTag value
