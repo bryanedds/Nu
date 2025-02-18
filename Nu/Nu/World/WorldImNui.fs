@@ -214,13 +214,14 @@ module WorldImNui =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
+            let groupCreation = not (group.GetExists world)
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group.GroupAddress with
                 | (true, groupImNui) ->
                     (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
                     let world =
-                        if not (group.GetExists world) then
+                        if groupCreation then
                             let groupDescriptorStr = File.ReadAllText groupFilePath
                             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
                             let world = World.readGroup groupDescriptor None group.Screen world |> snd
@@ -229,12 +230,18 @@ module WorldImNui =
                     let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     (true, world)
             let initializing = initializing || Reinitializing
-            Seq.fold
-                (fun world arg ->
-                    if (initializing || not arg.ArgStatic) && group.GetExists world
-                    then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if (initializing || not arg.ArgStatic) && group.GetExists world
+                        then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let world =
+                if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world
+                then WorldModule.tryProcessGroup group world
+                else world
+            world
 
         /// Begin the ImNui declaration of a group with the given arguments.
         static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name args world =
