@@ -221,13 +221,13 @@ module Physics =
     let [<Uniform>] mutable Collision3dThreads = match ConfigurationManager.AppSettings.["Collision3dThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | value -> scvalue value
     let [<Uniform>] mutable Collision3dBarriersMax = match ConfigurationManager.AppSettings.["Collision3dBarriersMax"] with null -> max 1 (Environment.ProcessorCount - 2) | value -> scvalue value
     let [<Uniform>] mutable Collision3dJobsMax = match ConfigurationManager.AppSettings.["Collision3dJobsMax"] with null -> 128 | value -> scvalue value
-    let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
-    let [<Uniform>] BroadPhaseLayerNonMoving = byte 0 // NOTE: do not use this outside of the engine code.
-    let [<Uniform>] BroadPhaseLayerMoving = byte 1 // NOTE: do not use this outside of the engine code.
-    let [<Uniform>] ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0us // NOTE: do not use this outside of the engine code.
-    let [<Uniform>] ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us // NOTE: do not use this outside of the engine code.
-    let [<Uniform>] ObjectLayerDisabled = JoltPhysicsSharp.ObjectLayer 2us // NOTE: do not use this outside of the engine code.
-    let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] mutable GroundAngleMax = match ConfigurationManager.AppSettings.["GroundAngleMax"] with null -> single (Math.PI * 0.25) | value -> scvalue value
+    let [<Uniform>] internal BroadPhaseLayerNonMoving = byte 0
+    let [<Uniform>] internal BroadPhaseLayerMoving = byte 1
+    let [<Uniform>] internal ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0us
+    let [<Uniform>] internal ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us
+    let [<Uniform>] internal ObjectLayerDisabled = JoltPhysicsSharp.ObjectLayer 2us
+    let [<Literal>] internal InternalIndex = -1
 
 [<RequireQualifiedAccess>]
 module Lens =

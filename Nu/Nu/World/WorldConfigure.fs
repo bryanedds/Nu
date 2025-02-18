@@ -52,6 +52,7 @@ module Configure =
                 | nameof Constants.Physics.Collision3dThreads -> Constants.Physics.Collision3dThreads <- scvalue value
                 | nameof Constants.Physics.Collision3dBarriersMax -> Constants.Physics.Collision3dBarriersMax <- scvalue value
                 | nameof Constants.Physics.Collision3dJobsMax -> Constants.Physics.Collision3dJobsMax <- scvalue value
+                | nameof Constants.Physics.GroundAngleMax -> Constants.Physics.GroundAngleMax <- scvalue value
                 | nameof Constants.Gui.SliceMarginDefault -> Constants.Gui.SliceMarginDefault <- scvalue value
                 | nameof Globals.Render.DisplayScalar -> Globals.Render.DisplayScalar <- scvalue value
                 | nameof Globals.Render.ShadowScalar -> Globals.Render.ShadowScalar <- scvalue value
