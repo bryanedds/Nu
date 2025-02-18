@@ -87,7 +87,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterID, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
-          mutable BodyCreationCount : int
+          mutable BodyUnoptimizedCreationCount : int
           BodyContactLock : obj
           BodyContactEvents : BodyContactEvent HashSet
           BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
@@ -582,10 +582,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.Bodies.Add (bodyId, body.ID)
 
         // HACK: optimize broad phase if we've taken in a lot of bodies. INEFFICIENT!
-        physicsEngine.BodyCreationCount <- inc physicsEngine.BodyCreationCount
-        if physicsEngine.BodyCreationCount = 128 * 3 then
+        physicsEngine.BodyUnoptimizedCreationCount <- inc physicsEngine.BodyUnoptimizedCreationCount
+        if physicsEngine.BodyUnoptimizedCreationCount = 128 * 3 then
             physicsEngine.PhysicsContext.OptimizeBroadPhase ()
-            physicsEngine.BodyCreationCount <- 0
+            physicsEngine.BodyUnoptimizedCreationCount <- 0
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -1051,7 +1051,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
-          BodyCreationCount = 0
+          BodyUnoptimizedCreationCount = 0
           BodyContactLock = bodyContactLock
           BodyContactEvents = bodyContactEvents
           BodyCollisionsGround = dictPlus HashIdentity.Structural []
