@@ -303,7 +303,8 @@ module Quadtree =
             tree.Ubiquitous.Remove element |> ignore
             tree.Ubiquitous.Add element |> ignore
         else
-            if not (Quadnode.isIntersectingBounds bounds tree.Node) then
+            if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
+                bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
                 tree.Ubiquitous.Remove element |> ignore
                 tree.Ubiquitous.Add element |> ignore
             else
@@ -314,15 +315,24 @@ module Quadtree =
         if presence.IsImposter || presence.IsOmnipresent then 
             tree.Ubiquitous.Remove element |> ignore
         else
-            if not (Quadnode.isIntersectingBounds bounds tree.Node) then
+            if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
+                bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
                 tree.Ubiquitous.Remove element |> ignore
             else
                 Quadnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
-        let wasInNode = not presenceOld.IsImposter && not presenceOld.IsOmnipresent && Quadnode.isIntersectingBounds boundsOld tree.Node
-        let isInNode = not presenceNew.IsImposter && not presenceNew.IsOmnipresent && Quadnode.isIntersectingBounds boundsNew tree.Node
+        let wasInNode =
+            not presenceOld.IsImposter &&
+            not presenceOld.IsOmnipresent &&
+            Quadnode.isIntersectingBounds boundsOld tree.Node &&
+            boundsOld.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
+        let isInNode =
+            not presenceNew.IsImposter &&
+            not presenceNew.IsOmnipresent &&
+            Quadnode.isIntersectingBounds boundsNew tree.Node &&
+            boundsNew.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with

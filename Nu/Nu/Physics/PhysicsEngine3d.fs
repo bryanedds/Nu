@@ -424,7 +424,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         // create either a character or a non-character body
         use scShapeSettings = new StaticCompoundShapeSettings ()
         let masses = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
-        let mass = List.sum masses        
+        let mass = List.sum masses
         let layer =
             if bodyProperties.Enabled then
                 if bodyProperties.BodyType.IsStatic

@@ -875,123 +875,95 @@ module PhysicallyBased =
         // fin
         (properties, material)
 
-    /// Attempt to create physically-based static mesh from an assimp mesh.
-    let TryCreatePhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
+    /// Create physically-based static mesh from an assimp mesh.
+    let CreatePhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
 
-        // ensure required data is available
-        if  mesh.HasVertices &&
-            mesh.HasNormals &&
-            mesh.HasTextureCoords 0 then
+        // populate vertex data and bounds
+        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+        let mutable positionMin = v3Zero
+        let mutable positionMax = v3Zero
+        for i in 0 .. dec mesh.Vertices.Count do
+            let v = i * 8
+            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData.[v] <- position.X
+            vertexData.[v+1] <- position.Y
+            vertexData.[v+2] <- position.Z
+            vertexData.[v+3] <- texCoords.X
+            vertexData.[v+4] <- 1.0f - texCoords.Y
+            vertexData.[v+5] <- normal.X
+            vertexData.[v+6] <- normal.Y
+            vertexData.[v+7] <- normal.Z
+            positionMin.X <- min positionMin.X position.X
+            positionMin.Y <- min positionMin.Y position.Y
+            positionMin.Z <- min positionMin.Z position.Z
+            positionMax.X <- max positionMax.X position.X
+            positionMax.Y <- max positionMax.Y position.Y
+            positionMax.Z <- max positionMax.Z position.Z
+        let bounds = box3 positionMin (positionMax - positionMin)
 
-            // attempt to populate geometry data
-            if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
+        // fin
+        (vertexData, indexData, bounds)
 
-                // populate vertex data and bounds
-                let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
-                let mutable positionMin = v3Zero
-                let mutable positionMax = v3Zero
-                for i in 0 .. dec mesh.Vertices.Count do
-                    let v = i * 8
-                    let position = mesh.Vertices.[i]
-                    let texCoords = mesh.TextureCoordinateChannels.[0].[i]
-                    let normal = mesh.Normals.[i]
-                    vertexData.[v] <- position.X
-                    vertexData.[v+1] <- position.Y
-                    vertexData.[v+2] <- position.Z
-                    vertexData.[v+3] <- texCoords.X
-                    vertexData.[v+4] <- 1.0f - texCoords.Y
-                    vertexData.[v+5] <- normal.X
-                    vertexData.[v+6] <- normal.Y
-                    vertexData.[v+7] <- normal.Z
-                    positionMin.X <- min positionMin.X position.X
-                    positionMin.Y <- min positionMin.Y position.Y
-                    positionMin.Z <- min positionMin.Z position.Z
-                    positionMax.X <- max positionMax.X position.X
-                    positionMax.Y <- max positionMax.Y position.Y
-                    positionMax.Z <- max positionMax.Z position.Z
-                let bounds = box3 positionMin (positionMax - positionMin)
+    /// Create physically-based animated mesh from an assimp mesh.
+    let CreatePhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
 
-                // fin
-                Right (vertexData, indexData, bounds)
+        // populate vertex data (except bone) and bounds
+        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
+        let mutable positionMin = v3Zero
+        let mutable positionMax = v3Zero
+        for i in 0 .. dec mesh.Vertices.Count do
+            let v = i * 16
+            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData.[v] <- position.X
+            vertexData.[v+1] <- position.Y
+            vertexData.[v+2] <- position.Z
+            vertexData.[v+3] <- texCoords.X
+            vertexData.[v+4] <- 1.0f - texCoords.Y
+            vertexData.[v+5] <- normal.X
+            vertexData.[v+6] <- normal.Y
+            vertexData.[v+7] <- normal.Z
+            vertexData.[v+8] <- -1.0f
+            vertexData.[v+9] <- -1.0f
+            vertexData.[v+10] <- -1.0f
+            vertexData.[v+11] <- -1.0f
+            vertexData.[v+12] <- 0.0f
+            vertexData.[v+13] <- 0.0f
+            vertexData.[v+14] <- 0.0f
+            vertexData.[v+15] <- 0.0f
+            positionMin.X <- min positionMin.X position.X
+            positionMin.Y <- min positionMin.Y position.Y
+            positionMin.Z <- min positionMin.Z position.Z
+            positionMax.X <- max positionMax.X position.X
+            positionMax.Y <- max positionMax.Y position.Y
+            positionMax.Z <- max positionMax.Z position.Z
+        let bounds = box3 positionMin (positionMax - positionMin)
 
-            // error
-            else Left "Vertex / normal / tex coords count mismatch."
+        // populate vertex bone data
+        for boneIndex in 0 .. dec mesh.Bones.Count do
+            let weights = mesh.Bones.[boneIndex].VertexWeights
+            let weightsCount = mesh.Bones.[boneIndex].VertexWeights.Count
+            for weightIndex in 0 .. dec weightsCount do
+                let vertexId = weights.[weightIndex].VertexID
+                let weight = weights.[weightIndex].Weight
+                if weight > 0.0f then
+                    let mutable found = false
+                    let mutable i = 0
+                    while not found && i < Constants.Render.BonesInfluenceMax do
+                        let v = vertexId * 16
+                        if vertexData.[v+8+i] = single boneIndex then // already found
+                            found <- true
+                        elif vertexData.[v+8+i] < 0.0f then // found free slot
+                            vertexData.[v+8+i] <- single boneIndex
+                            vertexData.[v+12+i] <- weight
+                            found <- true
+                        else i <- inc i
 
-        // error
-        else Left "Mesh is missing vertices, normals, or texCoords."
-
-    /// Attempt to create physically-based animated mesh from an assimp mesh.
-    let TryCreatePhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
-
-        // ensure required data is available
-        if  mesh.HasVertices &&
-            mesh.HasNormals &&
-            mesh.HasTextureCoords 0 then
-
-            // attempt to populate geometry data
-            if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
-
-                // populate vertex data (except bone) and bounds
-                let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
-                let mutable positionMin = v3Zero
-                let mutable positionMax = v3Zero
-                for i in 0 .. dec mesh.Vertices.Count do
-                    let v = i * 16
-                    let position = mesh.Vertices.[i]
-                    let texCoords = mesh.TextureCoordinateChannels.[0].[i]
-                    let normal = mesh.Normals.[i]
-                    vertexData.[v] <- position.X
-                    vertexData.[v+1] <- position.Y
-                    vertexData.[v+2] <- position.Z
-                    vertexData.[v+3] <- texCoords.X
-                    vertexData.[v+4] <- 1.0f - texCoords.Y
-                    vertexData.[v+5] <- normal.X
-                    vertexData.[v+6] <- normal.Y
-                    vertexData.[v+7] <- normal.Z
-                    vertexData.[v+8] <- -1.0f
-                    vertexData.[v+9] <- -1.0f
-                    vertexData.[v+10] <- -1.0f
-                    vertexData.[v+11] <- -1.0f
-                    vertexData.[v+12] <- 0.0f
-                    vertexData.[v+13] <- 0.0f
-                    vertexData.[v+14] <- 0.0f
-                    vertexData.[v+15] <- 0.0f
-                    positionMin.X <- min positionMin.X position.X
-                    positionMin.Y <- min positionMin.Y position.Y
-                    positionMin.Z <- min positionMin.Z position.Z
-                    positionMax.X <- max positionMax.X position.X
-                    positionMax.Y <- max positionMax.Y position.Y
-                    positionMax.Z <- max positionMax.Z position.Z
-                let bounds = box3 positionMin (positionMax - positionMin)
-
-                // populate vertex bone data
-                for boneIndex in 0 .. dec mesh.Bones.Count do
-                    let weights = mesh.Bones.[boneIndex].VertexWeights
-                    let weightsCount = mesh.Bones.[boneIndex].VertexWeights.Count
-                    for weightIndex in 0 .. dec weightsCount do
-                        let vertexId = weights.[weightIndex].VertexID
-                        let weight = weights.[weightIndex].Weight
-                        if weight > 0.0f then
-                            let mutable found = false
-                            let mutable i = 0
-                            while not found && i < Constants.Render.BonesInfluenceMax do
-                                let v = vertexId * 16
-                                if vertexData.[v+8+i] = single boneIndex then // already found
-                                    found <- true
-                                elif vertexData.[v+8+i] < 0.0f then // found free slot
-                                    vertexData.[v+8+i] <- single boneIndex
-                                    vertexData.[v+12+i] <- weight
-                                    found <- true
-                                else i <- inc i
-
-                // fin
-                Right (vertexData, indexData, bounds)
-                    
-            // error
-            else Left ("Vertex / normal / tex coords count mismatch.")
-
-        // error
-        else Left "Mesh is missing vertices, normals, or texCoords."
+        // fin
+        (vertexData, indexData, bounds)
 
     /// Create a mesh for a physically-based quad.
     let CreatePhysicallyBasedQuadMesh () =
@@ -1245,11 +1217,10 @@ module PhysicallyBased =
         // fin
         geometry
 
-    /// Attempt to create physically-based static geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedStaticGeometry (renderable, indexData, mesh : Assimp.Mesh) =
-        match TryCreatePhysicallyBasedStaticMesh (indexData, mesh) with
-        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
-        | Left error -> Left error
+    /// Create physically-based static geometry from an assimp mesh.
+    let CreatePhysicallyBasedStaticGeometryFromMesh (renderable, indexData, mesh : Assimp.Mesh) =
+        match CreatePhysicallyBasedStaticMesh (indexData, mesh) with
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based animated geometry from a mesh.
     let CreatePhysicallyBasedAnimatedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
@@ -1371,11 +1342,10 @@ module PhysicallyBased =
         // fin
         geometry
 
-    /// Attempt to create physically-based animated geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedAnimatedGeometry (renderable, indexData, mesh : Assimp.Mesh) =
-        match TryCreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
-        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedAnimatedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
-        | Left error -> Left error
+    /// Create physically-based animated geometry from an assimp mesh.
+    let CreatePhysicallyBasedAnimatedGeometryFromMesh (renderable, indexData, mesh : Assimp.Mesh) =
+        match CreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedAnimatedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based terrain geometry from a mesh.
     let CreatePhysicallyBasedTerrainGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
@@ -1532,58 +1502,47 @@ module PhysicallyBased =
         | Some error -> Left error
         | None -> Right propertiesAndMaterials
 
-    /// Attempt to create physically-based static geometries from an assimp scene.
+    /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and de-duplicated here, which does have some run-time cost.
-    let TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene : Assimp.Scene) =
+    let CreatePhysicallyBasedStaticGeometries (renderable, scene : Assimp.Scene) =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
-        let mutable errorOpt = None
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes.[i]
-            if Option.isNone errorOpt then
-                let mutable found = false
-                let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
+            let mutable found = false
+            let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
+            match meshAndGeometryListOpt with
+            | Some (meshAndGeometry : (Assimp.Mesh * PhysicallyBasedGeometry) List) ->
+                let mutable enr = meshAndGeometry.GetEnumerator ()
+                while not found && enr.MoveNext () do
+                    let (meshCached, geometryCached) = enr.Current
+                    if  Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
+                        Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
+                        Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
+                        geometries.Add geometryCached
+                        found <- true
+            | None -> ()
+            if not found then
+                let geometry = CreatePhysicallyBasedStaticGeometryFromMesh (renderable, indexData, mesh)
                 match meshAndGeometryListOpt with
-                | Some (meshAndGeometry : (Assimp.Mesh * PhysicallyBasedGeometry) List) ->
-                    let mutable enr = meshAndGeometry.GetEnumerator ()
-                    while not found && enr.MoveNext () do
-                        let (meshCached, geometryCached) = enr.Current
-                        if  Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
-                            Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
-                            Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
-                            geometries.Add geometryCached
-                            found <- true
-                | None -> ()
-                if not found then
-                    match TryCreatePhysicallyBasedStaticGeometry (renderable, indexData, mesh) with
-                    | Right geometry ->
-                        match meshAndGeometryListOpt with
-                        | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
-                        | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
-                        geometries.Add geometry
-                    | Left error -> errorOpt <- Some ("Could not load static geometries for mesh in file name '" + filePath + "' due to: " + error)
-        match errorOpt with
-        | Some error -> Left error
-        | None -> Right geometries
+                | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
+                | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
+                geometries.Add geometry
+        geometries
 
-    /// Attempt to create physically-based animated geometries from an assimp scene.
-    /// TODO: consider deduplicating geometry like in TryCreatePhysicallyBasedStaticGeometries?
-    let TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene : Assimp.Scene) =
-        let mutable errorOpt = None
+    /// Create physically-based animated geometries from an assimp scene.
+    /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
+    let CreatePhysicallyBasedAnimatedGeometries (renderable, scene : Assimp.Scene) =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes.[i]
-            if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedAnimatedGeometry (renderable, indexData, mesh) with
-                | Right geometry -> geometries.Add geometry
-                | Left error -> errorOpt <- Some ("Could not load animated geometries for mesh in file name '" + filePath + "' due to: " + error)
-        match errorOpt with
-        | Some error -> Left error
-        | None -> Right geometries
+            let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (renderable, indexData, mesh)
+            geometries.Add geometry
+        geometries
 
     /// Create a physically-based shader.
     let CreatePhysicallyBasedShader (shaderFilePath : string) =
@@ -3439,98 +3398,95 @@ module PhysicallyBased =
                 match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureClient, scene) with
                 | Right materials ->
                     let animated = scene.Animations.Count <> 0
-                    let geometriesEir =
+                    let geometries =
                         if animated
-                        then TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene)
-                        else TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene)
-                    match geometriesEir with
-                    | Right geometries ->
+                        then CreatePhysicallyBasedAnimatedGeometries (renderable, scene)
+                        else CreatePhysicallyBasedStaticGeometries (renderable, scene)
 
-                        // collect light nodes
-                        let lightNodes =
-                            [|for i in 0 .. dec scene.LightCount do
-                                let light = scene.Lights.[i]
-                                let node = scene.RootNode.FindNode light.Name
-                                yield (light, node)|]
+                    // collect light nodes
+                    let lightNodes =
+                        [|for i in 0 .. dec scene.LightCount do
+                            let light = scene.Lights.[i]
+                            let node = scene.RootNode.FindNode light.Name
+                            yield (light, node)|]
 
-                        // construct bounds and hierarchy
-                        // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
-                        let lightProbes = SList.make ()
-                        let lights = SList.make ()
-                        let surfaces = SList.make ()
-                        let mutable bounds = box3Zero
-                        let hierarchy =
-                            scene.RootNode.Map ([||], m4Identity, fun node names transform ->
-                                [|// collect node
-                                  yield PhysicallyBasedNode names
+                    // construct bounds and hierarchy
+                    // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                    let lightProbes = SList.make ()
+                    let lights = SList.make ()
+                    let surfaces = SList.make ()
+                    let mutable bounds = box3Zero
+                    let hierarchy =
+                        scene.RootNode.Map ([||], m4Identity, fun node names transform ->
+                            [|// collect node
+                              yield PhysicallyBasedNode names
 
-                                  // attempt to collect light probe
-                                  let lastNameLower = Array.last(names).ToLowerInvariant()
-                                  if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
-                                    let names = Array.append names [|"LightProbe"|]
-                                    let lightProbeOrigin = transform.Translation
-                                    let lightProbeBounds =
-                                        box3
-                                            (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
-                                            (v3Dup Constants.Render.LightProbeSizeDefault)
-                                    let lightProbe =
-                                        { LightProbeNames = names
-                                          LightProbeMatrixIsIdentity = transform.IsIdentity
-                                          LightProbeMatrix = transform
-                                          LightProbeBounds = lightProbeBounds }
-                                    lightProbes.Add lightProbe
-                                    yield PhysicallyBasedLightProbe lightProbe
+                              // attempt to collect light probe
+                              let lastNameLower = Array.last(names).ToLowerInvariant()
+                              if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
+                                let names = Array.append names [|"LightProbe"|]
+                                let lightProbeOrigin = transform.Translation
+                                let lightProbeBounds =
+                                    box3
+                                        (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
+                                        (v3Dup Constants.Render.LightProbeSizeDefault)
+                                let lightProbe =
+                                    { LightProbeNames = names
+                                      LightProbeMatrixIsIdentity = transform.IsIdentity
+                                      LightProbeMatrix = transform
+                                      LightProbeBounds = lightProbeBounds }
+                                lightProbes.Add lightProbe
+                                yield PhysicallyBasedLightProbe lightProbe
 
-                                  // collect light
-                                  // NOTE: this is an n^2 algorithm to deal with nodes having no light information
-                                  for i in 0 .. dec lightNodes.Length do
-                                    let (light, lightNode) = lightNodes.[i]
-                                    if lightNode = node then
-                                        let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                        let lightMatrix = Assimp.ExportMatrix node.TransformWorld
-                                        let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
-                                        let lightType =
-                                            match light.LightType with
-                                            | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
-                                            | _ -> PointLight // default to point light
-                                        let physicallyBasedLight =
-                                            { LightNames = names
-                                              LightMatrixIsIdentity = lightMatrix.IsIdentity
-                                              LightMatrix = lightMatrix
-                                              LightColor = color
-                                              LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
-                                              LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
-                                              LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
-                                              LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
-                                              LightType = lightType
-                                              LightDesireShadows = false }
-                                        lights.Add physicallyBasedLight
-                                        yield PhysicallyBasedLight physicallyBasedLight
+                              // collect light
+                              // NOTE: this is an n^2 algorithm to deal with nodes having no light information
+                              for i in 0 .. dec lightNodes.Length do
+                                let (light, lightNode) = lightNodes.[i]
+                                if lightNode = node then
+                                    let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                    let lightMatrix = Assimp.ExportMatrix node.TransformWorld
+                                    let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
+                                    let lightType =
+                                        match light.LightType with
+                                        | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
+                                        | _ -> PointLight // default to point light
+                                    let physicallyBasedLight =
+                                        { LightNames = names
+                                          LightMatrixIsIdentity = lightMatrix.IsIdentity
+                                          LightMatrix = lightMatrix
+                                          LightColor = color
+                                          LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
+                                          LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
+                                          LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                          LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
+                                          LightType = lightType
+                                          LightDesireShadows = false }
+                                    lights.Add physicallyBasedLight
+                                    yield PhysicallyBasedLight physicallyBasedLight
 
-                                  // collect surfaces
-                                  for i in 0 .. dec node.MeshIndices.Count do
-                                    let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
-                                    let meshIndex = node.MeshIndices.[i]
-                                    let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                    let (properties, material) = materials.[materialIndex]
-                                    let geometry = geometries.[meshIndex]
-                                    let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
-                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
-                                    surfaces.Add surface
-                                    yield PhysicallyBasedSurface surface|] |>
-                                TreeNode)
+                              // collect surfaces
+                              for i in 0 .. dec node.MeshIndices.Count do
+                                let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
+                                let meshIndex = node.MeshIndices.[i]
+                                let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                                let (properties, material) = materials.[materialIndex]
+                                let geometry = geometries.[meshIndex]
+                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
+                                bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                surfaces.Add surface
+                                yield PhysicallyBasedSurface surface|] |>
+                            TreeNode)
 
-                        // fin
-                        Right
-                            { Animated = animated
-                              Bounds = bounds
-                              LightProbes = Array.ofSeq lightProbes
-                              Lights = Array.ofSeq lights
-                              Surfaces = Array.ofSeq surfaces
-                              SceneOpt = Some scene
-                              PhysicallyBasedHierarchy = hierarchy }
+                    // fin
+                    Right
+                        { Animated = animated
+                          Bounds = bounds
+                          LightProbes = Array.ofSeq lightProbes
+                          Lights = Array.ofSeq lights
+                          Surfaces = Array.ofSeq surfaces
+                          SceneOpt = Some scene
+                          PhysicallyBasedHierarchy = hierarchy }
 
-                    // error
-                    | Left error -> Left error
+                // error
                 | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
             | Left error -> Left error
