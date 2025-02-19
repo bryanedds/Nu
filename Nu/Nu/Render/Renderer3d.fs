@@ -3072,7 +3072,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     shadowView.Translation <- lightOrigin
                                     shadowView <- shadowView.Inverted
                                     let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
-                                    let shadowCutoff = max lightCutoff 0.1f
+                                    let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                     let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                     (lightOrigin, shadowView, shadowProjection)
                                 | DirectionalLight ->

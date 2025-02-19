@@ -1848,16 +1848,16 @@ module WorldModule2 =
                                 match lightType with
                                 | PointLight ->
                                     let shadowView = Matrix4x4.CreateTranslation (-light.GetPosition world)
-                                    let shadowCutoff = max (light.GetLightCutoff world) 0.1f
+                                    let shadowCutoff = max (light.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                     let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                     (shadowView, shadowProjection)
-                                | SpotLight (_, coneOuter)->
+                                | SpotLight (_, coneOuter) ->
                                     let shadowRotation = light.GetRotation world
                                     let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                     shadowView.Translation <- light.GetPosition world
                                     shadowView <- shadowView.Inverted
                                     let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
-                                    let shadowCutoff = max (light.GetLightCutoff world) 0.1f
+                                    let shadowCutoff = max (light.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                     let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                     (shadowView, shadowProjection)
                                 | DirectionalLight ->
