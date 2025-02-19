@@ -2181,236 +2181,238 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
         let world =
             if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
+                if not CaptureMode then
 
-                // user-defined viewport manipulation
-                let rasterViewport = world.RasterViewport
-                let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
-                let projection = projectionMatrix.ToArray ()
-                let operation =
-                    ViewportOverlay
-                        { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-                          ViewportProjection = projectionMatrix
-                          ViewportBounds = box2 v2Zero io.DisplaySize
-                          EditContext = makeContext None None }
-                let world = World.editGame operation Game world
-                let world = World.editScreen operation SelectedScreen world
-                let world = World.editGroup operation SelectedGroup world
-                let world =
-                    match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.GetIs3d world ->
-                        let operation =
-                            ViewportOverlay
-                                { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-                                  ViewportProjection = projectionMatrix
-                                  ViewportBounds = box2 v2Zero io.DisplaySize
-                                  EditContext = makeContext None None }
-                        World.editEntity operation entity world
-                    | Some _ | None -> world
+                    // user-defined viewport manipulation
+                    let rasterViewport = world.RasterViewport
+                    let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
+                    let projection = projectionMatrix.ToArray ()
+                    let operation =
+                        ViewportOverlay
+                            { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+                              ViewportProjection = projectionMatrix
+                              ViewportBounds = box2 v2Zero io.DisplaySize
+                              EditContext = makeContext None None }
+                    let world = World.editGame operation Game world
+                    let world = World.editScreen operation SelectedScreen world
+                    let world = World.editGroup operation SelectedGroup world
+                    let world =
+                        match SelectedEntityOpt with
+                        | Some entity when entity.GetExists world && entity.GetIs3d world ->
+                            let operation =
+                                ViewportOverlay
+                                    { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+                                      ViewportProjection = projectionMatrix
+                                      ViewportBounds = box2 v2Zero io.DisplaySize
+                                      EditContext = makeContext None None }
+                            World.editEntity operation entity world
+                        | Some _ | None -> world
 
-                // light probe bounds manipulation
-                let world =
-                    match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->
-                        let mutable lightProbeBounds = entity.GetProbeBounds world
-                        let manipulationResult =
-                            ImGuizmo.ManipulateBox3
-                                (world.Eye3dCenter,
-                                 world.Eye3dRotation,
-                                 world.Eye3dFieldOfView,
-                                 rasterViewport,
-                                 (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
-                                 &lightProbeBounds)
-                        match manipulationResult with
-                        | ImGuiEditActive started ->
-                            let world = if started then snapshot (ChangeProperty (None, nameof Entity.ProbeBounds)) world else world
-                            entity.SetProbeBounds lightProbeBounds world
-                        | ImGuiEditInactive -> world
-                    | Some _ | None -> world
+                    // light probe bounds manipulation
+                    let world =
+                        match SelectedEntityOpt with
+                        | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->
+                            let mutable lightProbeBounds = entity.GetProbeBounds world
+                            let manipulationResult =
+                                ImGuizmo.ManipulateBox3
+                                    (world.Eye3dCenter,
+                                     world.Eye3dRotation,
+                                     world.Eye3dFieldOfView,
+                                     rasterViewport,
+                                     (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
+                                     &lightProbeBounds)
+                            match manipulationResult with
+                            | ImGuiEditActive started ->
+                                let world = if started then snapshot (ChangeProperty (None, nameof Entity.ProbeBounds)) world else world
+                                entity.SetProbeBounds lightProbeBounds world
+                            | ImGuiEditInactive -> world
+                        | Some _ | None -> world
 
-                // setup guizmo manipulations
-                ImGuizmo.SetOrthographic false
-                ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
-                ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
+                    // setup guizmo manipulations
+                    ImGuizmo.SetOrthographic false
+                    ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                    ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
 
-                // transform manipulation
-                let world =
-                    match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
-                        let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-                        let view = viewMatrix.ToArray ()
-                        let affineMatrix = entity.GetAffineMatrix world
-                        let affine = affineMatrix.ToArray ()
-                        let (p, r, s) =
-                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                            then Snaps3d
-                            else (0.0f, 0.0f, 0.0f)
-                        let mutable copying = false
-                        if not ManipulationActive then
-                            if ImGui.IsCtrlDown () && not (entity.GetProtected world) then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
-                            elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
-                            elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
-                            elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
-                            elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
-                            elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
-                            else ManipulationOperation <- OPERATION.TRANSLATE
-                        let mutable snap =
-                            match ManipulationOperation with
-                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
-                            | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
-                        let delta = m4Identity.ToArray ()
-                        let manipulationResult =
-                            if snap = 0.0f
-                            then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
-                            else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
-                        let world =
-                            if manipulationResult then
-                                let (manipulationAwaken, world) =
-                                    if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
-                                        ManipulationActive <- true
-                                        (true, world)
-                                    else (false, world)
-                                let affine' = Matrix4x4.CreateFromArray affine
-                                let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
-                                if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
-                                    let delta = Matrix4x4.CreateFromArray delta
-                                    let translation = delta.Translation
-                                    let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
-                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
-                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
-                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
-                                    rotation <- rotation.Normalized // try to avoid weird angle combinations
-                                    let rollPitchYaw = rotation.RollPitchYaw
-                                    degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
-                                    degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
-                                    degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
-                                    degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
-                                    degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
-                                    degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
-                                    let scaling = delta.Scale
-                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
-                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
-                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
-                                    if scale.X < 0.01f then scale.X <- 0.01f
-                                    if scale.Y < 0.01f then scale.Y <- 0.01f
-                                    if scale.Z < 0.01f then scale.Z <- 0.01f
-                                let (entity, world) =
-                                    if copying then
-                                        let world = if manipulationAwaken then snapshot DuplicateEntity world else world
-                                        let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
-                                        let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
-                                        let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
-                                        let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
-                                        let world =
-                                            if ImGui.IsShiftDown () then
-                                                duplicate.SetPropagationSourceOpt None world
-                                            elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
-                                                duplicate.SetPropagationSourceOpt (Some entity) world
-                                            else world
-                                        let rec getDescendantPairs source entity world =
-                                            [for child in World.getEntityChildren entity world do
-                                                let childSource = source / child.Name
-                                                yield (childSource, child)
-                                                yield! getDescendantPairs childSource child world]
-                                        let world =
-                                            List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
-                                                if descendantDuplicate.GetExists world then
-                                                    let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                    if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
-                                                    then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
-                                                    else world
-                                                else world)
-                                                world (getDescendantPairs entity duplicate world)
-                                        selectEntityOpt (Some duplicate) world
-                                        ImGui.SetWindowFocus "Viewport"
-                                        ShowSelectedEntity <- true
-                                        (duplicate, world)
-                                    else
-                                        if manipulationAwaken then
-                                            let snapshotType =
-                                                match ManipulationOperation with
-                                                | OPERATION.TRANSLATE -> TranslateEntity
-                                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> RotateEntity
-                                                | _ -> ScaleEntity
-                                            let world = snapshot snapshotType world
-                                            (entity, world)
-                                        else (entity, world)
-                                let world =
-                                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                                    | Some mount ->
-                                        let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
-                                        let positionLocal = position.Transform mountAffineMatrixInverse
-                                        let mountRotationInverse = (mount.GetRotation world).Inverted
-                                        let rotationLocal = mountRotationInverse * rotation
-                                        let rollPitchYawLocal = rotationLocal.RollPitchYaw
-                                        let mutable degreesLocal = v3Zero
-                                        degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
-                                        degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
-                                        degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
-                                        degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
-                                        degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
-                                        degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
-                                        let mountScaleInverse = v3One / mount.GetScale world
-                                        let scaleLocal = mountScaleInverse * scale
-                                        match ManipulationOperation with
-                                        | OPERATION.TRANSLATE -> entity.SetPositionLocal positionLocal world
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegreesLocal degreesLocal world
-                                        | OPERATION.SCALE -> entity.SetScaleLocal scaleLocal world
-                                        | _ -> world // nothing to do
-                                    | None ->
-                                        match ManipulationOperation with
-                                        | OPERATION.TRANSLATE -> entity.SetPosition position world
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
-                                        | OPERATION.SCALE -> entity.SetScale scale world
-                                        | _ -> world // nothing to do
-                                if world.Advancing then
+                    // transform manipulation
+                    let world =
+                        match SelectedEntityOpt with
+                        | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
+                            let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+                            let view = viewMatrix.ToArray ()
+                            let affineMatrix = entity.GetAffineMatrix world
+                            let affine = affineMatrix.ToArray ()
+                            let (p, r, s) =
+                                if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                                then Snaps3d
+                                else (0.0f, 0.0f, 0.0f)
+                            let mutable copying = false
+                            if not ManipulationActive then
+                                if ImGui.IsCtrlDown () && not (entity.GetProtected world) then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
+                                elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
+                                elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
+                                elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
+                                elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
+                                elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
+                                else ManipulationOperation <- OPERATION.TRANSLATE
+                            let mutable snap =
+                                match ManipulationOperation with
+                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
+                                | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
+                            let delta = m4Identity.ToArray ()
+                            let manipulationResult =
+                                if snap = 0.0f
+                                then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
+                                else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
+                            let world =
+                                if manipulationResult then
+                                    let (manipulationAwaken, world) =
+                                        if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
+                                            ManipulationActive <- true
+                                            (true, world)
+                                        else (false, world)
+                                    let affine' = Matrix4x4.CreateFromArray affine
+                                    let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
+                                    if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
+                                        let delta = Matrix4x4.CreateFromArray delta
+                                        let translation = delta.Translation
+                                        let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
+                                        if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
+                                        if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
+                                        if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+                                        rotation <- rotation.Normalized // try to avoid weird angle combinations
+                                        let rollPitchYaw = rotation.RollPitchYaw
+                                        degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
+                                        degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
+                                        degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
+                                        degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
+                                        degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
+                                        degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
+                                        let scaling = delta.Scale
+                                        if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
+                                        if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
+                                        if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
+                                        if scale.X < 0.01f then scale.X <- 0.01f
+                                        if scale.Y < 0.01f then scale.Y <- 0.01f
+                                        if scale.Z < 0.01f then scale.Z <- 0.01f
+                                    let (entity, world) =
+                                        if copying then
+                                            let world = if manipulationAwaken then snapshot DuplicateEntity world else world
+                                            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
+                                            let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
+                                            let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
+                                            let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
+                                            let world =
+                                                if ImGui.IsShiftDown () then
+                                                    duplicate.SetPropagationSourceOpt None world
+                                                elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                                    duplicate.SetPropagationSourceOpt (Some entity) world
+                                                else world
+                                            let rec getDescendantPairs source entity world =
+                                                [for child in World.getEntityChildren entity world do
+                                                    let childSource = source / child.Name
+                                                    yield (childSource, child)
+                                                    yield! getDescendantPairs childSource child world]
+                                            let world =
+                                                List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
+                                                    if descendantDuplicate.GetExists world then
+                                                        let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                                        if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
+                                                        then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                                        else world
+                                                    else world)
+                                                    world (getDescendantPairs entity duplicate world)
+                                            selectEntityOpt (Some duplicate) world
+                                            ImGui.SetWindowFocus "Viewport"
+                                            ShowSelectedEntity <- true
+                                            (duplicate, world)
+                                        else
+                                            if manipulationAwaken then
+                                                let snapshotType =
+                                                    match ManipulationOperation with
+                                                    | OPERATION.TRANSLATE -> TranslateEntity
+                                                    | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> RotateEntity
+                                                    | _ -> ScaleEntity
+                                                let world = snapshot snapshotType world
+                                                (entity, world)
+                                            else (entity, world)
                                     let world =
-                                        match entity.TryGetProperty (nameof entity.LinearVelocity) world with
-                                        | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
-                                        | Some _ | None -> world
+                                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                                        | Some mount ->
+                                            let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
+                                            let positionLocal = position.Transform mountAffineMatrixInverse
+                                            let mountRotationInverse = (mount.GetRotation world).Inverted
+                                            let rotationLocal = mountRotationInverse * rotation
+                                            let rollPitchYawLocal = rotationLocal.RollPitchYaw
+                                            let mutable degreesLocal = v3Zero
+                                            degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
+                                            degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
+                                            degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
+                                            degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
+                                            degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
+                                            degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
+                                            let mountScaleInverse = v3One / mount.GetScale world
+                                            let scaleLocal = mountScaleInverse * scale
+                                            match ManipulationOperation with
+                                            | OPERATION.TRANSLATE -> entity.SetPositionLocal positionLocal world
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegreesLocal degreesLocal world
+                                            | OPERATION.SCALE -> entity.SetScaleLocal scaleLocal world
+                                            | _ -> world // nothing to do
+                                        | None ->
+                                            match ManipulationOperation with
+                                            | OPERATION.TRANSLATE -> entity.SetPosition position world
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
+                                            | OPERATION.SCALE -> entity.SetScale scale world
+                                            | _ -> world // nothing to do
+                                    if world.Advancing then
+                                        let world =
+                                            match entity.TryGetProperty (nameof entity.LinearVelocity) world with
+                                            | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
+                                            | Some _ | None -> world
+                                        let world =
+                                            match entity.TryGetProperty (nameof entity.AngularVelocity) world with
+                                            | Some property when property.PropertyType = typeof<Vector3> -> entity.SetAngularVelocity v3Zero world
+                                            | Some _ | None -> world
+                                        world
+                                    else world
+                                else world
+                            if ImGui.IsMouseReleased ImGuiMouseButton.Left then
+                                if ManipulationActive then
+                                    do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
                                     let world =
-                                        match entity.TryGetProperty (nameof entity.AngularVelocity) world with
-                                        | Some property when property.PropertyType = typeof<Vector3> -> entity.SetAngularVelocity v3Zero world
-                                        | Some _ | None -> world
+                                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                                        | Some _ ->
+                                            match ManipulationOperation with
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
+                                                let degreesLocal = Math.SnapDegree3d (r, entity.GetDegreesLocal world)
+                                                entity.SetDegreesLocal degreesLocal world
+                                            | _ -> world
+                                        | None ->
+                                            match ManipulationOperation with
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
+                                                let degrees = Math.SnapDegree3d (r, entity.GetDegrees world)
+                                                entity.SetDegrees degrees world
+                                            | _ -> world
+                                    ManipulationOperation <- OPERATION.TRANSLATE
+                                    ManipulationActive <- false
                                     world
                                 else world
                             else world
-                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then
-                            if ManipulationActive then
-                                do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
-                                let world =
-                                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                                    | Some _ ->
-                                        match ManipulationOperation with
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                            let degreesLocal = Math.SnapDegree3d (r, entity.GetDegreesLocal world)
-                                            entity.SetDegreesLocal degreesLocal world
-                                        | _ -> world
-                                    | None ->
-                                        match ManipulationOperation with
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                            let degrees = Math.SnapDegree3d (r, entity.GetDegrees world)
-                                            entity.SetDegrees degrees world
-                                        | _ -> world
-                                ManipulationOperation <- OPERATION.TRANSLATE
-                                ManipulationActive <- false
-                                world
-                            else world
-                        else world
-                    | Some _ | None -> world
+                        | Some _ | None -> world
 
-                // view manipulation
-                if not CaptureMode && not ManipulationActive && DragEntityState = DragEntityInactive then
-                    let eyeRotationOld = world.Eye3dRotation
-                    let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
-                    let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
-                    let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
-                    let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
-                    if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f && eyeUpright then DesiredEye3dRotation <- eyeRotation
-                    if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
+                    // view manipulation
+                    if not ManipulationActive && DragEntityState = DragEntityInactive then
+                        let eyeRotationOld = world.Eye3dRotation
+                        let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
+                        ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                        let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
+                        let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
+                        let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
+                        if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f && eyeUpright then DesiredEye3dRotation <- eyeRotation
+                        if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
 
-                // fin
-                world
+                    // fin
+                    world
+                else world
             else world
         ImGui.End ()
         world
@@ -4239,90 +4241,94 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiRender world =
 
-        // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
-        // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
-        if EntityPropertiesFocusRequested then
-            ImGui.SetWindowFocus "Entity Properties"
-            EntityPropertiesFocusRequested <- false
+        // augmentative rendering while not in capture mode
+        if not CaptureMode then
 
-        // render light probes of the selected group in light box and view frustum
-        let lightBox = World.getLight3dBox world
-        let viewFrustum = World.getEye3dFrustumView world
-        let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
-        let lightProbeModels =
-            entities |>
-            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-            SList.ofSeq
-        if SList.notEmpty lightProbeModels then
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { StaticModels = lightProbeModels
-                      StaticModel = Assets.Default.LightProbeModel
-                      RenderType = DeferredRenderType
-                      RenderPass = NormalPass })
-                world
+            // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
+            // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
+            if EntityPropertiesFocusRequested then
+                ImGui.SetWindowFocus "Entity Properties"
+                EntityPropertiesFocusRequested <- false
 
-        // render lights of the selected group in play
-        let entities = World.getLights3dInBox lightBox (HashSet ()) world
-        let lightModels =
-            entities |>
-            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-            SList.ofSeq
-        if SList.notEmpty lightModels then
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { StaticModels = lightModels
-                      StaticModel = Assets.Default.LightbulbModel
-                      RenderType = DeferredRenderType
-                      RenderPass = NormalPass })
-                world
-
-        // render selection highlights
-        match SelectedEntityOpt with
-        | Some entity when entity.GetExists world ->
-            if entity.GetIs2d world then
-                let absolute = entity.GetAbsolute world
-                let bounds = entity.GetBounds world
-                let elevation = Single.MaxValue
-                let transform = Transform.makePerimeter absolute bounds v3Zero elevation
-                let image = Assets.Default.HighlightSprite
-                World.enqueueRenderMessage2d
-                    (LayeredOperation2d
-                        { Elevation = elevation
-                          Horizon = bounds.Bottom.Y
-                          AssetTag = image
-                          RenderOperation2d =
-                            RenderSprite
-                                { Transform = transform
-                                  InsetOpt = ValueNone
-                                  ClipOpt = ValueNone
-                                  Image = image
-                                  Color = Color.One
-                                  Blend = Transparent
-                                  Emission = Color.Zero
-                                  Flip = FlipNone }})
-                    world
-            else
-                let bounds = entity.GetBounds world
-                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                boundsMatrix.Translation <- bounds.Center
+            // render light probes of the selected group in light box and view frustum
+            let lightBox = World.getLight3dBox world
+            let viewFrustum = World.getEye3dFrustumView world
+            let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
+            let lightProbeModels =
+                entities |>
+                Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
+                Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+                SList.ofSeq
+            if SList.notEmpty lightProbeModels then
                 World.enqueueRenderMessage3d
-                    (RenderStaticModel
-                        { ModelMatrix = boundsMatrix
-                          CastShadow = false
-                          Presence = Omnipresent
-                          InsetOpt = None
-                          MaterialProperties = MaterialProperties.defaultProperties
-                          StaticModel = Assets.Default.HighlightModel
-                          RenderType = ForwardRenderType (0.0f, Single.MaxValue)
+                    (RenderStaticModels
+                        { StaticModels = lightProbeModels
+                          StaticModel = Assets.Default.LightProbeModel
+                          RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
-        | Some _ | None -> ()
 
-        // fin
-        world
+            // render lights of the selected group in play
+            let entities = World.getLights3dInBox lightBox (HashSet ()) world
+            let lightModels =
+                entities |>
+                Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
+                Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+                SList.ofSeq
+            if SList.notEmpty lightModels then
+                World.enqueueRenderMessage3d
+                    (RenderStaticModels
+                        { StaticModels = lightModels
+                          StaticModel = Assets.Default.LightbulbModel
+                          RenderType = DeferredRenderType
+                          RenderPass = NormalPass })
+                    world
+
+            // render selection highlights
+            match SelectedEntityOpt with
+            | Some entity when entity.GetExists world ->
+                if entity.GetIs2d world then
+                    let absolute = entity.GetAbsolute world
+                    let bounds = entity.GetBounds world
+                    let elevation = Single.MaxValue
+                    let transform = Transform.makePerimeter absolute bounds v3Zero elevation
+                    let image = Assets.Default.HighlightSprite
+                    World.enqueueRenderMessage2d
+                        (LayeredOperation2d
+                            { Elevation = elevation
+                              Horizon = bounds.Bottom.Y
+                              AssetTag = image
+                              RenderOperation2d =
+                                RenderSprite
+                                    { Transform = transform
+                                      InsetOpt = ValueNone
+                                      ClipOpt = ValueNone
+                                      Image = image
+                                      Color = Color.One
+                                      Blend = Transparent
+                                      Emission = Color.Zero
+                                      Flip = FlipNone }})
+                        world
+                else
+                    let bounds = entity.GetBounds world
+                    let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                    boundsMatrix.Translation <- bounds.Center
+                    World.enqueueRenderMessage3d
+                        (RenderStaticModel
+                            { ModelMatrix = boundsMatrix
+                              CastShadow = false
+                              Presence = Omnipresent
+                              InsetOpt = None
+                              MaterialProperties = MaterialProperties.defaultProperties
+                              StaticModel = Assets.Default.HighlightModel
+                              RenderType = ForwardRenderType (0.0f, Single.MaxValue)
+                              RenderPass = NormalPass })
+                        world
+            | Some _ | None -> ()
+
+            // fin
+            world
+        else world
 
     let private imGuiPostProcess (wtemp : World) =
 
