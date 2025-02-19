@@ -396,18 +396,12 @@ module WorldModule2 =
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
             let screenCreation = not (screen.GetExists world)
-            let world =
-                if screenCreation then
-                    let world = World.createScreen4 true typeof<'d>.Name (Some name) world |> snd
-                    let world = World.setScreenProtected true screen world |> snd'
-                    match groupFilePathOpt with
-                    | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                    | None -> world
-                else world
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue screen.ScreenAddress with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen.ScreenAddress screenImNui world)
                 | (false, _) ->
+
+                    // init subscriptions _before_ potentially creating screen
                     let world = World.addSimulantImNui screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<ScreenResult>, zero) } world
                     let mapFstResult (mapper : ScreenResult FQueue -> ScreenResult FQueue) world =
                         let mapScreenImNui screenImNui =
@@ -425,7 +419,20 @@ module WorldModule2 =
                             let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
                             { screenImNui with Result = (screenResult, mapper userResult) }
                         World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
-                    (true, init mapSndResult screen world)
+                    let world = init mapSndResult screen world
+
+                    // create screen only when needed
+                    let world =
+                        if screenCreation then
+                            let world = World.createScreen4 true typeof<'d>.Name (Some name) world |> snd
+                            let world = World.setScreenProtected true screen world |> snd'
+                            match groupFilePathOpt with
+                            | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                            | None -> world
+                        else world
+
+                    // fin
+                    (true, world)
             let initializing = initializing || Reinitializing
             let world =
                 Seq.fold

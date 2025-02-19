@@ -175,6 +175,15 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue group.GroupAddress with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
+
+                    // init subscriptions _before_ potentially creating group
+                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    let mapResult (mapper : 'r -> 'r) world =
+                        let mapGroupImNui groupImNui = { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }
+                        World.tryMapSimulantImNui mapGroupImNui group.GroupAddress world
+                    let world = init mapResult group world
+
+                    // create group only when needed
                     let world =
                         if groupCreation then
                             let world =
@@ -183,11 +192,9 @@ module WorldImNui =
                                 | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> snd
                             World.setGroupProtected true group world |> snd'
                         else world
-                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
-                    let mapResult (mapper : 'r -> 'r) world =
-                        let mapGroupImNui groupImNui = { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }
-                        World.tryMapSimulantImNui mapGroupImNui group.GroupAddress world
-                    (true, init mapResult group world)
+
+                    // fin
+                    (true, world)
             let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
@@ -280,16 +287,24 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue entity.EntityAddress with
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
                 | (false, _) ->
+
+                    // init subscriptions _before_ potentially creating entity
+                    let world =
+                        let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
+                        let mapResult (mapper : 'r -> 'r) world =
+                            let mapEntityImNui entityImNui = { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }
+                            World.tryMapSimulantImNui mapEntityImNui entity.EntityAddress world
+                        init mapResult entity world
+
+                    // create entity only when needed
                     let world =
                         if entityCreation then
                             let world = World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             World.setEntityProtected true entity world |> snd'
                         else world
-                    let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
-                    let mapResult (mapper : 'r -> 'r) world =
-                        let mapEntityImNui entityImNui = { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }
-                        World.tryMapSimulantImNui mapEntityImNui entity.EntityAddress world
-                    (true, init mapResult entity world)
+
+                    // fin
+                    (true, world)
             let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
             let world =
