@@ -27,6 +27,9 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
+![image](https://github.com/user-attachments/assets/e6f034a4-8561-4c44-8151-daeb4668001f)
+Our new soft-shadow, screen-space reflection, and volumetric fog systems.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
@@ -35,9 +38,6 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 
 ![image](https://github.com/user-attachments/assets/b9f9a7a5-e159-45e4-b220-984f24137b62)
 Rendering made efficient with instancing-by-default.
-
-![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
-Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
