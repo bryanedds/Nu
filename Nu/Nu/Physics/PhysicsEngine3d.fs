@@ -581,9 +581,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, body.ID)
 
-        // HACK: optimize broad phase if we've taken in a lot of bodies. INEFFICIENT!
+        // HACK: optimize broad phase if we've taken in a lot of bodies.
+        // NOTE: Might cause some intemittent run-time pauses when adding bodies.
         physicsEngine.BodyUnoptimizedCreationCount <- inc physicsEngine.BodyUnoptimizedCreationCount
-        if physicsEngine.BodyUnoptimizedCreationCount = 128 * 3 then
+        if physicsEngine.BodyUnoptimizedCreationCount = Constants.Physics.Collision3dBodyUnoptimizedCreationMax then
             physicsEngine.PhysicsContext.OptimizeBroadPhase ()
             physicsEngine.BodyUnoptimizedCreationCount <- 0
 
