@@ -27,7 +27,7 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/48281d87-5a39-4741-a03a-6218ab6e7a29)
+![image](https://github.com/user-attachments/assets/d731db92-2396-4ce3-ac4f-aae506e93c28)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
