@@ -805,31 +805,33 @@ type [<ReferenceEquality>] private RenderTasks =
 
         renderTasks.ShadowBufferIndexOpt <- None
 
-    static member shadowUpToDate renderTasks renderTasksCached =
-        let deferredStaticCached =
-            renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
-            (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic) ||>
-            Seq.forall2 (fun static_ staticCached ->
-                OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
-                (static_.Value, staticCached.Value) ||>
-                Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
-        let deferredAnimatedCached =
-            renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
-            (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated) ||>
-            Seq.forall2 (fun animated animatedCached ->
-                AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
-                (animated.Value, animatedCached.Value) ||>
-                Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
-        let deferredTerrainsCached =
-            renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
-            (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains) ||>
-            Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
-                box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
-                terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
-                terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
-        deferredStaticCached &&
-        deferredAnimatedCached &&
-        deferredTerrainsCached
+    static member shadowUpToDate lightingConfigChanged renderTasks renderTasksCached =
+        if not lightingConfigChanged then
+            let deferredStaticCached =
+                renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
+                (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic) ||>
+                Seq.forall2 (fun static_ staticCached ->
+                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
+                    (static_.Value, staticCached.Value) ||>
+                    Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+            let deferredAnimatedCached =
+                renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
+                (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated) ||>
+                Seq.forall2 (fun animated animatedCached ->
+                    AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
+                    (animated.Value, animatedCached.Value) ||>
+                    Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+            let deferredTerrainsCached =
+                renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
+                (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains) ||>
+                Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
+                    box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
+                    terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
+                    terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
+            deferredStaticCached &&
+            deferredAnimatedCached &&
+            deferredTerrainsCached
+        else false
 
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 type Renderer3d =
@@ -907,6 +909,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable PhysicallyBasedBuffers : OpenGL.PhysicallyBased.PhysicallyBasedBuffers
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable LightingConfig : Lighting3dConfig
+          mutable LightingConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
@@ -2944,6 +2947,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
             | ConfigureLighting3d l3c ->
+                renderer.LightingConfigChanged <- renderer.LightingConfig <> l3c
                 renderer.LightingConfig <- l3c
             | ConfigureRenderer3d r3c ->
                 renderer.RendererConfig <- r3c
@@ -3087,7 +3091,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                             // draw shadow texture when not cached
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
-                                | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some shadowTextureBufferIndex -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
+                                | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some shadowTextureBufferIndex ->
+                                    not (RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached)
                                 | (_, _) -> true
                             if shouldDraw then
 
@@ -3147,7 +3152,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // draw shadow texture when not cached
                                 let shouldDraw =
                                     match renderer.RenderPasses2.TryGetValue renderPass with
-                                    | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
+                                    | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) ->
+                                        not (RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached)
                                     | (_, _) -> true
                                 if shouldDraw then
                                     let shadowResolution = renderer.GeometryViewport.ShadowResolution
@@ -3204,6 +3210,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.handleReloadRenderAssets renderer
             OpenGL.Hl.Assert ()
             renderer.ReloadAssetsRequested <- false
+
+        // clear lighting config dirty flag
+        renderer.LightingConfigChanged <- false
 
     /// Make a GlRenderer3d.
     static member make glContext window geometryViewport rasterViewport =
@@ -3482,6 +3491,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedBuffers = physicallyBasedBuffers
               LightMaps = dictPlus HashIdentity.Structural []
               LightingConfig = Lighting3dConfig.defaultConfig
+              LightingConfigChanged = false
               RendererConfig = Renderer3dConfig.defaultConfig
               InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]
