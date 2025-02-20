@@ -2348,7 +2348,7 @@ module WorldModuleEntity =
             // process entity first time if in the middle of simulant update phase
             let world =
                 if not skipProcessing && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
-                then WorldModule.tryProcessEntity entity world
+                then WorldModule.tryProcessEntity true entity world
                 else world
 
             // propagate properties
@@ -2411,7 +2411,7 @@ module WorldModuleEntity =
                         world children
                 let world =
                     if WorldModule.UpdatingSimulants && World.getEntitySelected destination world
-                    then WorldModule.tryProcessEntity destination world
+                    then WorldModule.tryProcessEntity true destination world
                     else world
                 let world =
                     Seq.fold (fun world target ->
@@ -2611,7 +2611,7 @@ module WorldModuleEntity =
             // process entity first time if in the middle of simulant update phase
             let world =
                 if WorldModule.UpdatingSimulants && World.getEntitySelected entity world
-                then WorldModule.tryProcessEntity entity world
+                then WorldModule.tryProcessEntity true entity world
                 else world
 
             // insert a propagated descriptor if needed

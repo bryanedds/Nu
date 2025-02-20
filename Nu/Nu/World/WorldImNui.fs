@@ -52,21 +52,49 @@ module WorldImNui =
 
     type World with
 
-        static member internal tryProcessGame (game : Game) (world : World) =
+        static member internal tryProcessGame zeroDelta (game : Game) (world : World) =
             let dispatcher = game.GetDispatcher world
-            dispatcher.TryProcess (game, world)
+            if zeroDelta then
+                let clockDelta = world.ClockDelta
+                let tickDelta = world.TickDelta
+                let dateDelta = world.DateDelta
+                let world = World.mapAmbientState AmbientState.clearGameDelta world
+                let world = dispatcher.TryProcess (game, world)
+                World.mapAmbientState (AmbientState.restoreGameDelta clockDelta tickDelta dateDelta) world
+            else dispatcher.TryProcess (game, world)
 
-        static member internal tryProcessScreen firstFrame (screen : Screen) (world : World) =
-            let dispatcher = World.getScreenDispatcher screen world
-            dispatcher.TryProcess (firstFrame, screen, world)
+        static member internal tryProcessScreen firstFrame zeroDelta (screen : Screen) (world : World) =
+            let dispatcher = screen.GetDispatcher world
+            if zeroDelta then
+                let clockDelta = world.ClockDelta
+                let tickDelta = world.TickDelta
+                let dateDelta = world.DateDelta
+                let world = World.mapAmbientState AmbientState.clearGameDelta world
+                let world = dispatcher.TryProcess (firstFrame, screen, world)
+                World.mapAmbientState (AmbientState.restoreGameDelta clockDelta tickDelta dateDelta) world
+            else dispatcher.TryProcess (firstFrame, screen, world)
 
-        static member internal tryProcessGroup (group : Group) (world : World) =
+        static member internal tryProcessGroup zeroDelta (group : Group) (world : World) =
             let dispatcher = group.GetDispatcher world
-            dispatcher.TryProcess (group, world)
+            if zeroDelta then
+                let clockDelta = world.ClockDelta
+                let tickDelta = world.TickDelta
+                let dateDelta = world.DateDelta
+                let world = World.mapAmbientState AmbientState.clearGameDelta world
+                let world = dispatcher.TryProcess (group, world)
+                World.mapAmbientState (AmbientState.restoreGameDelta clockDelta tickDelta dateDelta) world
+            else dispatcher.TryProcess (group, world)
 
-        static member internal tryProcessEntity (entity : Entity) (world : World) =
+        static member internal tryProcessEntity zeroDelta (entity : Entity) (world : World) =
             let dispatcher = entity.GetDispatcher world
-            dispatcher.TryProcess (entity, world)
+            if zeroDelta then
+                let clockDelta = world.ClockDelta
+                let tickDelta = world.TickDelta
+                let dateDelta = world.DateDelta
+                let world = World.mapAmbientState AmbientState.clearGameDelta world
+                let world = dispatcher.TryProcess (entity, world)
+                World.mapAmbientState (AmbientState.restoreGameDelta clockDelta tickDelta dateDelta) world
+            else dispatcher.TryProcess (entity, world)
 
         /// Whether ImNui is reinitializing this frame (such as on a code reload).
         member this.ReinitializingImNui =
@@ -205,7 +233,7 @@ module WorldImNui =
                     world args
             let world =
                 if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world
-                then WorldModule.tryProcessGroup group world
+                then WorldModule.tryProcessGroup true group world
                 else world
             let result = match (World.getSimulantImNui group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group.GroupAddress world
@@ -246,7 +274,7 @@ module WorldImNui =
                     world args
             let world =
                 if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world
-                then WorldModule.tryProcessGroup group world
+                then WorldModule.tryProcessGroup true group world
                 else world
             world
 
@@ -321,7 +349,7 @@ module WorldImNui =
                 else world
             let world =
                 if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
-                then WorldModule.tryProcessEntity entity world
+                then WorldModule.tryProcessEntity true entity world
                 else world
             let result = match (World.getSimulantImNui entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) entity.EntityAddress world

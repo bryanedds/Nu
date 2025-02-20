@@ -169,7 +169,7 @@ module WorldGroupModule =
             let world = World.addGroup false groupState group world
             let world =
                 if not skipProcessing && WorldModule.UpdatingSimulants && group.GetSelected world
-                then WorldModule.tryProcessGroup group world
+                then WorldModule.tryProcessGroup true group world
                 else world
             (group, world)
 
@@ -247,7 +247,7 @@ module WorldGroupModule =
                 let world = World.destroyGroupImmediate source world
                 let world =
                     if WorldModule.UpdatingSimulants && source.GetSelected world
-                    then WorldModule.tryProcessGroup destination world
+                    then WorldModule.tryProcessGroup true destination world
                     else world
                 world
             | None -> world
@@ -318,7 +318,7 @@ module WorldGroupModule =
             // try to process ImNui group first time if in the middle of simulant update phase
             let world =
                 if WorldModule.UpdatingSimulants && group.GetSelected world
-                then WorldModule.tryProcessGroup group world
+                then WorldModule.tryProcessGroup true group world
                 else world
             (group, world)
 

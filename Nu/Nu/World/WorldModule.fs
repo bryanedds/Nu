@@ -75,16 +75,16 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGame : Game -> World -> World =
+    let mutable internal tryProcessGame : bool -> Game -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessScreen : bool -> Screen -> World -> World =
+    let mutable internal tryProcessScreen : bool -> bool -> Screen -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGroup : Group -> World -> World =
+    let mutable internal tryProcessGroup : bool -> Group -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessEntity : Entity -> World -> World =
+    let mutable internal tryProcessEntity : bool -> Entity -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal signal : obj -> Simulant -> World -> World =

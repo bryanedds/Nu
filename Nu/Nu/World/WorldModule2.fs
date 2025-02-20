@@ -455,7 +455,7 @@ module WorldModule2 =
                 else world
             let world =
                 if screenCreation && screen.GetExists world && WorldModule.UpdatingSimulants && World.getScreenSelected screen world
-                then WorldModule.tryProcessScreen select screen world
+                then WorldModule.tryProcessScreen select true screen world
                 else world
             let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> ScreenResult FQueue * 'r
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen.ScreenAddress world
@@ -1471,7 +1471,7 @@ module WorldModule2 =
         /// Process ImNui for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
         /// meaningful time. Do NOT call this in the course of normal operations!
-        static member tryProcessSimulants firstFrame (world : World) =
+        static member tryProcessSimulants firstFrame zeroDelta (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1487,23 +1487,23 @@ module WorldModule2 =
 
                 // attempt to process game
                 world.Timers.UpdateGameTimer.Restart ()
-                let world = World.tryProcessGame game world
+                let world = World.tryProcessGame zeroDelta game world
                 world.Timers.UpdateGameTimer.Stop ()
 
                 // attempt to process screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen firstFrame screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen firstFrame zeroDelta screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // attempt to process groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryProcessGroup group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryProcessGroup zeroDelta group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // attempt to process entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
-                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryProcessEntity element.Entry world else world) world HashSet3dNormalCached
-                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryProcessEntity element.Entry world else world) world HashSet2dNormalCached
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
                 // fin
@@ -1605,7 +1605,7 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
-                let world = World.tryProcessGame game world
+                let world = World.tryProcessGame false game world
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
@@ -1613,7 +1613,7 @@ module WorldModule2 =
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
                     Seq.fold (fun world (screen : Screen) ->
-                        let world = if screen.GetExists world then World.tryProcessScreen firstFrame screen world else world
+                        let world = if screen.GetExists world then World.tryProcessScreen firstFrame false screen world else world
                         let world = if advancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world else world
                         world)
                         world screens
@@ -1623,7 +1623,7 @@ module WorldModule2 =
                 world.Timers.UpdateGroupsTimer.Restart ()
                 let world =
                     Seq.fold (fun world (group : Group) ->
-                        let world = if group.GetExists world then World.tryProcessGroup group world else world
+                        let world = if group.GetExists world then World.tryProcessGroup false group world else world
                         let world = if advancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world else world
                         world)
                         world groups
@@ -1635,7 +1635,7 @@ module WorldModule2 =
                     Seq.fold (fun world (element : Entity Octelement) ->
                         let world =
                             if element.Entry.GetExists world
-                            then World.tryProcessEntity element.Entry world
+                            then World.tryProcessEntity false element.Entry world
                             else world
                         let world =
                             if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
@@ -1647,7 +1647,7 @@ module WorldModule2 =
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         let world =
                             if element.Entry.GetExists world
-                            then World.tryProcessEntity element.Entry world
+                            then World.tryProcessEntity false element.Entry world
                             else world
                         let world =
                             if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)

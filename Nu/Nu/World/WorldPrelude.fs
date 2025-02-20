@@ -488,8 +488,20 @@ module AmbientState =
         { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
 
     /// Get the collection config value.
-    let getConfig (state : 'w AmbientState) =
+    let getConfig (state : _ AmbientState) =
         if state.Imperative then TConfig.Imperative else TConfig.Functional
+
+    let internal clearGameDelta (state : _ AmbientState) =
+        { state with
+            ClockDelta = 0.0f
+            TickDelta = 0L
+            DateDelta = TimeSpan.Zero }
+
+    let internal restoreGameDelta clockDelta tickDelta dateDelta (state : _ AmbientState) =
+        { state with
+            ClockDelta = clockDelta
+            TickDelta = tickDelta
+            DateDelta = dateDelta }
 
     /// Get the update time.
     let getUpdateTime state =
