@@ -145,7 +145,9 @@ module WorldEntityHierarchy =
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
                     if entity.GetFreezable world then // NOTE: shouldn't matter in practice, but there are O(n^2) calls to GetFreezable implicated here.
-                        if entity.Has<StaticModelSurfaceFacet> world then
+                        if entity.Is<Entity3dDispatcher> world then
+                            world <- entity.SetVisibleLocal false world
+                        elif entity.Has<StaticModelSurfaceFacet> world then
                             let mutable transform = entity.GetTransform world
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
