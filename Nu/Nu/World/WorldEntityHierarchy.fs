@@ -141,11 +141,14 @@ module WorldEntityHierarchy =
         /// into a manually renderable array.
         static member freezeEntityHierarchy surfaceMaterialsPopulated (parent : Entity) wtemp =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
+            let frozenEntities = List ()
             let frozenSurfaces = List ()
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
                     if entity.GetFreezable world then // NOTE: shouldn't matter in practice, but there are O(n^2) calls to GetFreezable implicated here.
-                        if entity.Has<StaticModelSurfaceFacet> world then
+                        if getType (entity.GetDispatcher world) = typeof<Entity3dDispatcher> then
+                            frozenEntities.Add entity
+                        elif entity.Has<StaticModelSurfaceFacet> world then
                             let mutable transform = entity.GetTransform world
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
@@ -160,7 +163,7 @@ module WorldEntityHierarchy =
                             let surface = { CastShadow = castShadow; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
                             let frozenSurface = StructPair.make entityBounds surface
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
-                            world <- entity.SetVisibleLocal false world
+                            frozenEntities.Add entity
                             frozenSurfaces.Add frozenSurface
                         elif
                             entity.Has<StaticModelFacet> world &&
@@ -198,13 +201,14 @@ module WorldEntityHierarchy =
                                 let surface = { CastShadow = castShadow; ModelMatrix = surfaceMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
                                 let frozenSurface = StructPair.make surfaceBounds surface                                
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
-                                world <- entity.SetVisibleLocal false world
                                 frozenSurfaces.Add frozenSurface
                                 surfaceIndex <- inc surfaceIndex
-                            world <- entity.SetVisibleLocal false world
+                            frozenEntities.Add entity
                 for child in entity.GetChildren world do
                     getFrozenArtifacts child
             getFrozenArtifacts parent
+            for entity in frozenEntities do
+                world <- entity.SetVisibleLocal false world
             world <- parent.SetPresence Omnipresent world
             world <- parent.SetPickable false world
             match boundsOpt with
