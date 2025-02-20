@@ -103,7 +103,7 @@ type GameplayDispatcher () =
                     (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
             let position = positionSnapped.Transform shadowViewInverse
             let world = sun.SetPosition position world
-        
+
             // update eye to look at player while game is advancing
             let world =
                 if world.Advancing then

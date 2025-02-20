@@ -1887,6 +1887,10 @@ and [<ReferenceEquality>] World =
     member this.FramePacing =
         this.AmbientState.FramePacing
 
+    /// Get the number of updates that have transpired between this and the previous frame.
+    member this.UpdateDelta =
+        AmbientState.getUpdateDelta this.AmbientState
+
     /// Get the number of updates that have transpired.
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState

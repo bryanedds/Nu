@@ -448,23 +448,25 @@ module AmbientState =
             { // cache line 1 (assuming 16 byte header)
               Flags : uint
               Liveness : Liveness
+              UpdateDelta : int64
               UpdateTime : int64
               ClockDelta : single
               ClockTime : single
-              TickDelta : int64
               // cache line 2
+              TickDelta : int64
               KeyValueStore : SUMap<string, obj>
               TickTime : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
-              TickDeltaPrevious : int64
               // cache line 3
+              TickDeltaPrevious : int64
               DateTime : DateTimeOffset
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               Overlayer : Overlayer
               Timers : Timers
+              // cache line 4
               LightMapRenderRequested : bool }
 
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
@@ -491,17 +493,25 @@ module AmbientState =
     let getConfig (state : _ AmbientState) =
         if state.Imperative then TConfig.Imperative else TConfig.Functional
 
-    let internal clearGameDelta (state : _ AmbientState) =
+    let internal clearAdvancement (state : _ AmbientState) =
         { state with
+            Flags = state.Flags &&& ~~~AdvancingMask
+            UpdateDelta = 0L
             ClockDelta = 0.0f
             TickDelta = 0L
             DateDelta = TimeSpan.Zero }
 
-    let internal restoreGameDelta clockDelta tickDelta dateDelta (state : _ AmbientState) =
+    let internal restoreAdvancement advancing updateDelta clockDelta tickDelta dateDelta (state : _ AmbientState) =
         { state with
+            Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask
+            UpdateDelta = updateDelta
             ClockDelta = clockDelta
             TickDelta = tickDelta
             DateDelta = dateDelta }
+
+    /// Get the update delta.
+    let getUpdateDelta state =
+        state.UpdateDelta
 
     /// Get the update time.
     let getUpdateTime state =
@@ -558,6 +568,7 @@ module AmbientState =
         let tickTime = state.TickTime + tickDelta
         let dateTime = DateTimeOffset.Now
         { state with
+            UpdateDelta = updateDelta
             UpdateTime = state.UpdateTime + updateDelta
             ClockDelta = single tickDelta / single Stopwatch.Frequency
             ClockTime = single tickTime / single Stopwatch.Frequency
@@ -730,6 +741,7 @@ module AmbientState =
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Flags = flags
           Liveness = Live
+          UpdateDelta = 0L
           UpdateTime = 0L
           ClockDelta = 0.0f
           ClockTime = 0.0f

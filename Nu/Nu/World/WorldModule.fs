@@ -215,6 +215,10 @@ module WorldModule =
         static member internal updateTime world =
             World.mapAmbientState AmbientState.updateTime world
 
+        /// Get the world's update delta time.
+        static member getUpdateDelta world =
+            World.getAmbientStateBy AmbientState.getUpdateDelta world
+
         /// Get the world's update time.
         static member getUpdateTime world =
             World.getAmbientStateBy AmbientState.getUpdateTime world
