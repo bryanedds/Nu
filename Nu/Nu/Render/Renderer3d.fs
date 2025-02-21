@@ -1838,8 +1838,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // forward render animated surface when needed
                     let sortsOpt =
                         match renderType with
-                        | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort, sort)
-                        | _ -> if dualRendering then ValueSome struct (0.0f, 0.0f) else ValueNone
+                        | ForwardRenderType (subsort, sort) -> ValueSome struct ((if dualRendering then min Single.MaxValue (inc subsort) else subsort), sort)
+                        | _ -> if dualRendering then ValueSome struct (1.0f, 0.0f) else ValueNone
                     match sortsOpt with
                     | ValueSome struct (subsort, sort) ->
                         renderTasks.Forward.Add struct (subsort, sort, model, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface)
