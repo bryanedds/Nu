@@ -287,6 +287,7 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
       mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
+      mutable CachedAnimatedModelSubsortOffsets : Map<int, single>
       mutable CachedAnimatedModelDualRenderedSurfaceIndices : int Set
       mutable CachedAnimatedModelRenderType : RenderType
       mutable CachedAnimatedModelRenderPass : RenderPass }        
@@ -418,6 +419,7 @@ type RenderAnimatedModel =
       MaterialProperties : MaterialProperties
       BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
+      SubsortOffsets : Map<int, single>
       DualRenderedSurfaceIndices : int Set
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -426,6 +428,7 @@ type RenderAnimatedModels =
     { BoneTransforms : Matrix4x4 array
       AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
+      SubsortOffsets : Map<int, single>
       DualRenderedSurfaceIndices : int Set
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -1795,6 +1798,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          properties : MaterialProperties inref,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
+         subsortOffsets : Map<int, single>,
          drsIndices : int Set,
          renderType : RenderType,
          renderPass : RenderPass,
@@ -1836,10 +1840,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                     // forward render animated surface when needed
+                    let subsortOffset =
+                        match subsortOffsets.TryGetValue i with
+                        | (true, subsortOffset) -> subsortOffset
+                        | (false, _) -> 0.0f
                     let sortsOpt =
                         match renderType with
-                        | ForwardRenderType (subsort, sort) -> ValueSome struct ((if dualRendering then min Single.MaxValue (inc subsort) else subsort), sort)
-                        | _ -> if dualRendering then ValueSome struct (1.0f, 0.0f) else ValueNone
+                        | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
+                        | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
                     match sortsOpt with
                     | ValueSome struct (subsort, sort) ->
                         renderTasks.Forward.Add struct (subsort, sort, model, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface)
@@ -1853,6 +1861,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         (animatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
+         subsortOffsets : Map<int, single>,
+         drsIndices : int Set,
+         renderType : RenderType,
          renderPass : RenderPass,
          renderer) =
 
@@ -1864,9 +1875,10 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // render animated surfaces
                 let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
-                for surface in modelAsset.Surfaces do
+                for i in 0 .. dec modelAsset.Surfaces.Length do
 
                     // render animated surfaces
+                    let surface = modelAsset.Surfaces.[i]
                     for (model, castShadow, presence, insetOpt, properties) in animatedModels do // TODO: see if these should a struct tuples.
 
                         // compute tex coords offset
@@ -1883,11 +1895,29 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 Box2 (px, py, sx, sy)
                             | None -> box2 v2Zero v2Zero
 
-                        // render animated surface
-                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                        match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                        | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                        // check if dual rendering needed
+                        let dualRendering = drsIndices.Contains i
+
+                        // deferred render animated surface when needed
+                        if renderType = DeferredRenderType || dualRendering then
+                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
+                            match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
+                            | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                            | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+
+                        // forward render animated surface when needed
+                        let subsortOffset =
+                            match subsortOffsets.TryGetValue i with
+                            | (true, subsortOffset) -> subsortOffset
+                            | (false, _) -> 0.0f
+                        let sortsOpt =
+                            match renderType with
+                            | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
+                            | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                        match sortsOpt with
+                        | ValueSome struct (subsort, sort) ->
+                            renderTasks.Forward.Add struct (subsort, sort, model, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface)
+                        | ValueNone -> ()
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
@@ -2993,11 +3023,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.DualRenderedSurfaceIndices, rsm.RenderType, rsm.RenderPass, renderer)
+                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.RenderType, rsm.RenderPass, renderer)
             | RenderAnimatedModels rams ->
-                GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.RenderPass, renderer)
+                GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.RenderType, rams.RenderPass, renderer)
             | RenderCachedAnimatedModel camm ->
-                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelRenderType, camm.CachedAnimatedModelRenderPass, renderer)
+                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelRenderType, camm.CachedAnimatedModelRenderPass, renderer)
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
             | ConfigureLighting3d l3c ->
