@@ -3280,6 +3280,95 @@ type TerrainFacet () =
         | None -> AttributesInferred.important (v3 512.0f 128.0f 512.0f) v3Zero
 
 [<AutoOpen>]
+module TraversalInterpolatedFacetExtensions =
+    type Entity with
+        member this.GetPositionHistory world : Vector3 FQueue = this.Get (nameof this.PositionHistory) world
+        member this.SetPositionHistory (value : Vector3 FQueue) world = this.Set (nameof this.PositionHistory) value world
+        member this.PositionHistory = lens (nameof this.PositionHistory) this this.GetPositionHistory this.SetPositionHistory
+        member this.GetRotationHistory world : Quaternion FQueue = this.Get (nameof this.RotationHistory) world
+        member this.SetRotationHistory (value : Quaternion FQueue) world = this.Set (nameof this.RotationHistory) value world
+        member this.RotationHistory = lens (nameof this.RotationHistory) this this.GetRotationHistory this.SetRotationHistory
+        member this.GetLinearVelocityHistory world : Vector3 FQueue = this.Get (nameof this.LinearVelocityHistory) world
+        member this.SetLinearVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.LinearVelocityHistory) value world
+        member this.LinearVelocityHistory = lens (nameof this.LinearVelocityHistory) this this.GetLinearVelocityHistory this.SetLinearVelocityHistory
+        member this.GetAngularVelocityHistory world : Vector3 FQueue = this.Get (nameof this.AngularVelocityHistory) world
+        member this.SetAngularVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.AngularVelocityHistory) value world
+        member this.AngularVelocityHistory = lens (nameof this.AngularVelocityHistory) this this.GetAngularVelocityHistory this.SetAngularVelocityHistory
+        member this.GetPositionHistoryResetThreshold world : single = this.Get (nameof this.PositionHistoryResetThreshold) world
+        member this.SetPositionHistoryResetThreshold (value : single) world = this.Set (nameof this.PositionHistoryResetThreshold) value world
+        member this.PositionHistoryResetThreshold = lens (nameof this.PositionHistoryResetThreshold) this this.GetPositionHistoryResetThreshold this.SetPositionHistoryResetThreshold
+        member this.GetTraversalHistoryMax world : int = this.Get (nameof this.TraversalHistoryMax) world
+        member this.SetTraversalHistoryMax (value : int) world = this.Set (nameof this.TraversalHistoryMax) value world
+        member this.TraversalHistoryMax = lens (nameof this.TraversalHistoryMax) this this.GetTraversalHistoryMax this.SetTraversalHistoryMax
+
+        member this.GetPositionInterpolated world =
+            let position = this.GetPosition world
+            let positionHistory = this.GetPositionHistory world
+            if FQueue.notEmpty positionHistory then
+                let positions = FQueue.conj position positionHistory
+                Seq.sum positions / single positions.Length
+            else position
+
+        member this.GetRotationInterpolated world =
+            let rotation = this.GetRotation world
+            let rotationHistory = this.GetRotationHistory world
+            if FQueue.notEmpty rotationHistory then
+                let rotations = FQueue.conj rotation rotationHistory
+                if rotations.Length > 1 then
+                    let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f)
+                    unnormalized.Normalized
+                else rotation
+            else rotation
+
+        member this.GetLinearVelocityInterpolated world =
+            let linearVelocity = this.GetLinearVelocity world
+            let linearVelocityHistory = this.GetLinearVelocityHistory world
+            if FQueue.notEmpty linearVelocityHistory then
+                let linearVelocities = FQueue.conj linearVelocity linearVelocityHistory
+                Seq.sum linearVelocities / single linearVelocities.Length
+            else linearVelocity
+
+        member this.GetAngularVelocityInterpolated world =
+            let angularVelocity = this.GetAngularVelocity world
+            let angularVelocityHistory = this.GetAngularVelocityHistory world
+            if FQueue.notEmpty angularVelocityHistory then
+                let angularVelocities = FQueue.conj angularVelocity angularVelocityHistory
+                Seq.sum angularVelocities / single angularVelocities.Length
+            else angularVelocity
+
+type TraversalInterpoledFacet () =
+    inherit Facet (false, false, false)
+
+    static member Properties =
+        [nonPersistent Entity.PositionHistory FQueue.empty
+         nonPersistent Entity.RotationHistory FQueue.empty
+         nonPersistent Entity.LinearVelocityHistory FQueue.empty
+         nonPersistent Entity.AngularVelocityHistory FQueue.empty
+         define Entity.PositionHistoryResetThreshold 1.0f
+         define Entity.TraversalHistoryMax 4]
+
+    override this.Update (entity, world) =
+
+        // process history for the frame
+        let historyMax = entity.GetTraversalHistoryMax world
+        let world = entity.PositionHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetPosition world)) world
+        let world = entity.RotationHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
+        let world = entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
+        let world = entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
+
+        // ensure position history isn't stale (such as when an entity is moved in the editor)
+        let world =
+            let position = entity.GetPosition world
+            let positionInterp = entity.GetPositionInterpolated world
+            if Vector3.Distance (positionInterp, position) >= entity.GetPositionHistoryResetThreshold world then
+                let positionHistory = List.init historyMax (fun _ -> position) |> FQueue.ofList
+                entity.SetPositionHistory positionHistory world
+            else world
+
+        // fin
+        world
+
+[<AutoOpen>]
 module NavBodyFacetExtensions =
     type Entity with
         member this.GetNavShape world : NavShape = this.Get (nameof this.NavShape) world
