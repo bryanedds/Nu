@@ -4311,19 +4311,34 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         world
                 else
                     let bounds = entity.GetBounds world
-                    let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                    boundsMatrix.Translation <- bounds.Center
-                    World.enqueueRenderMessage3d
-                        (RenderStaticModel
-                            { ModelMatrix = boundsMatrix
-                              CastShadow = false
-                              Presence = Omnipresent
-                              InsetOpt = None
-                              MaterialProperties = MaterialProperties.defaultProperties
-                              StaticModel = Assets.Default.HighlightModel
-                              RenderType = ForwardRenderType (0.0f, Single.MaxValue)
-                              RenderPass = NormalPass })
-                        world
+                    let bounds = box3 (bounds.Min - v3Dup 0.005f) (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                    for i in 0 .. dec 6 do
+                        let (translation, rotation, scale) =
+                            match i with
+                            | 0 -> (v3Forward * bounds.Depth * 0.5f, quatIdentity, v3 bounds.Width bounds.Height 0.01f) // back face
+                            | 1 -> (v3Back * bounds.Depth * 0.5f, Quaternion.CreateFromAxisAngle (v3Up, MathF.PI), v3 bounds.Width bounds.Height 0.01f) // front face
+                            | 2 -> (v3Left * bounds.Width * 0.5f, Quaternion.CreateFromAxisAngle (v3Up, MathF.PI_OVER_2), v3 bounds.Depth bounds.Height 0.01f) // left face
+                            | 3 -> (v3Right * bounds.Width * 0.5f, Quaternion.CreateFromAxisAngle (v3Up, -MathF.PI_OVER_2), v3 bounds.Depth bounds.Height 0.01f) // right face
+                            | 5 -> (v3Down * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // bottom face
+                            | 4 -> (v3Up * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // top face
+                            | _ -> failwithumf ()
+                        let position = bounds.Center + translation
+                        let sort =
+                            let faceDistance = world.Eye3dCenter.Distance position
+                            let centerDistance = world.Eye3dCenter.Distance bounds.Center
+                            if faceDistance < centerDistance then Single.MaxValue else Single.MinValue
+                        let mutable boundsMatrix = Matrix4x4.CreateAffine (position, rotation, scale)
+                        World.enqueueRenderMessage3d
+                            (RenderStaticModel
+                                { ModelMatrix = boundsMatrix
+                                  CastShadow = false
+                                  Presence = Omnipresent
+                                  InsetOpt = None
+                                  MaterialProperties = MaterialProperties.defaultProperties
+                                  StaticModel = Assets.Default.HighlightModel
+                                  RenderType = ForwardRenderType (0.0f, sort)
+                                  RenderPass = NormalPass })
+                            world
             | Some _ | None -> ()
 
             // fin
