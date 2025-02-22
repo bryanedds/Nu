@@ -29,7 +29,7 @@ module Hl =
     let mutable private ImageIndex = 0u
 
     /// The current frame within MaxFramesInFlight.
-    let mutable CurrentFrame = 0
+    let mutable internal CurrentFrame = 0
 
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
