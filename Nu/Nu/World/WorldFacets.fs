@@ -2518,6 +2518,65 @@ type StaticBillboardFacet () =
         if intersectionOpt.HasValue then [|intersectionOpt.Value|]
         else [||]
 
+/// Augments an entity with an animated billboard.
+type AnimatedBillboardFacet () =
+    inherit Facet (false, false, false)
+
+    static let getSpriteInsetOpt (entity : Entity) world =
+        let startTime = entity.GetStartTime world
+        let celCount = entity.GetCelCount world
+        let celRun = entity.GetCelRun world
+        if celCount <> 0 && celRun <> 0 then
+            let localTime = world.GameTime - startTime
+            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let celSize = entity.GetCelSize world
+            let celI = cel % celRun
+            let celJ = cel / celRun
+            let celX = single celI * celSize.X
+            let celY = single celJ * celSize.Y
+            let inset = box2 (v2 celX celY) celSize
+            Some inset
+        else None
+
+    static member Properties =
+        [define Entity.StartTime GameTime.zero
+         define Entity.CelSize (Vector2 (32.0f, 32.0f))
+         define Entity.CelCount 16
+         define Entity.CelRun 4
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationStride 1
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
+         define Entity.Material Material.defaultMaterial
+         define Entity.RenderStyle Deferred
+         define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
+
+    override this.Render (renderPass, entity, world) =
+        let mutable transform = entity.GetTransform world
+        let castShadow = transform.CastShadow
+        if not renderPass.IsShadowPass || castShadow then
+            let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
+            let insetOpt = getSpriteInsetOpt entity world
+            let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
+            let shadowOffset = entity.GetShadowOffset world
+            let renderType =
+                match entity.GetRenderStyle world with
+                | Deferred -> DeferredRenderType
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+            World.enqueueRenderMessage3d
+                (RenderBillboard
+                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
+                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
+                world
+
+    override this.RayCast (ray, entity, world) =
+        // TODO: P1: intersect against oriented quad rather than bounds.
+        let bounds = entity.GetBounds world
+        let intersectionOpt = ray.Intersects bounds
+        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+        else [||]
+
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetExtensions =
     type Entity with
@@ -3335,7 +3394,7 @@ module TraversalInterpolatedFacetExtensions =
                 let angularVelocities = FQueue.conj angularVelocity angularVelocityHistory
                 Seq.sum angularVelocities / single angularVelocities.Length
             else angularVelocity
-
+            
 /// Tracks interpolated values typically used for traversal.
 /// TODO: P1: make this GameTime-based rather than frame-based!
 type TraversalInterpoledFacet () =

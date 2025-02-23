@@ -499,6 +499,9 @@ module Content =
     /// Describe a static billboard with the given definitions.
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
 
+    /// Describe an animated billboard with the given definitions.
+    let animatedBillboard entityName definitions = entity<AnimatedBillboardDispatcher> entityName definitions
+
     /// Describe a static model with the given definitions.
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
 

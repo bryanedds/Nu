@@ -427,6 +427,13 @@ type StaticBillboardDispatcher () =
     static member Facets =
         [typeof<StaticBillboardFacet>]
 
+/// Gives an entity the base behavior of an animated billboard.
+type AnimatedBillboardDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<AnimatedBillboardFacet>]
+
 /// Gives an entity the base behavior of a static model.
 type StaticModelDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
