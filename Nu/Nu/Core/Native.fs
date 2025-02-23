@@ -57,11 +57,20 @@ module NativePtr =
         NativePtr.ofNativeInt<byte> nativeint
 
     /// Convert a fixed-size buffer to a string.
-    let fixedBufferToString<'a> (fixedBuffer : 'a) =
+    let fixedBufferToString fixedBuffer =
         let mutable fixedBuffer = fixedBuffer
-        let voidPtr = Unsafe.AsPointer<'a> &fixedBuffer
+        let voidPtr = Unsafe.AsPointer &fixedBuffer
         let ptr = NativePtr.ofVoidPtr<byte> voidPtr
         unmanagedToString ptr
+
+    /// Convert a fixed-size buffer to an array of given length.
+    let fixedBufferToArray<'a when 'a : unmanaged> length fixedBuffer =
+        let mutable fixedBuffer = fixedBuffer
+        let voidPtr = Unsafe.AsPointer &fixedBuffer
+        let ptr = NativePtr.ofVoidPtr<'a> voidPtr
+        let array = Array.zeroCreate<'a> length
+        for i in 0 .. dec length do array.[i] <- NativePtr.get ptr i
+        array
 
     /// Convert a ReadOnlySpan<byte> to a string.
     let spanToString (span : ReadOnlySpan<byte>) =
