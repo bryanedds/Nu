@@ -921,6 +921,54 @@ module Hl =
             // failure
             | None -> None
 
+    /// A manually allocated buffer for diagnostic purposes.
+    type ManualAllocatedBuffer =
+        { Buffer : VkBuffer 
+          Memory : VkDeviceMemory
+          Mapping : voidptr }
+
+        static member private findMemoryType typeFilter properties physicalDevice =
+            
+            // get physical device memory properties
+            let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
+            Vulkan.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
+
+            // try find suitable memory type
+            let mutable memoryTypeOpt = None
+            for i in 0 .. dec (int memProperties.memoryTypeCount) do
+                match memoryTypeOpt with
+                | None -> if typeFilter &&& (1 <<< i) <> 0 then memoryTypeOpt <- Some (uint i)
+                | Some _ -> ()
+
+            // fin
+            match memoryTypeOpt with
+            | Some memoryType -> memoryType
+            | None -> Log.fail "Failed to find suitable memory type!"
+        
+        static member private createInternal uploadEnabled bufferInfo physicalDevice device =
+
+            // create buffer
+            let mutable buffer = Unchecked.defaultof<VkBuffer>
+            Vulkan.vkCreateBuffer (device, &bufferInfo, nullPtr, asPointer &buffer) |> check
+
+            // get buffer memory requirements
+            let mutable memRequirements = Unchecked.defaultof<VkMemoryRequirements>
+            Vulkan.vkGetBufferMemoryRequirements (device, buffer, &memRequirements)
+            
+            
+            // make ManualAllocatedBuffer
+            let manualAllocatedBuffer = 
+                { Buffer = buffer
+                  Memory = Unchecked.defaultof<VkDeviceMemory>
+                  Mapping = Unchecked.defaultof<voidptr> }
+
+            // fin
+            manualAllocatedBuffer
+
+        /// Destroy a ManualAllocatedBuffer.
+        static member destroy buffer device =
+            Vulkan.vkDestroyBuffer (device, buffer.Buffer, nullPtr)
+    
     /// Abstraction for vma allocated buffer.
     type AllocatedBuffer =
         { Buffer : VkBuffer
