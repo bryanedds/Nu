@@ -518,7 +518,7 @@ module WorldScreenModule =
                 | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
                 | (None, Some _) | (Some _, None) -> Log.warn "Unexpected 3d navigation state; navigation rebuild declined."; false
                 | (None, None) -> true // never built or didn't completed building
-            if tryRebuild then
+            if rebuild then
                 let bodies = nav3d.Nav3dBodies.Values
                 let nav3d =
                     match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
