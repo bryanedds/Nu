@@ -666,7 +666,7 @@ type Nav3dConfigDispatcher () =
         match op with
         | ViewportOverlay _ ->
             let nav3d = World.getScreenNav3d entity.Screen world
-            match nav3d.Nav3dMeshOpt with
+            match nav3d.Nav3dDynamicMeshOpt with
             | Some (nbrData, _, _) ->
 
                 // edge color compute lambda

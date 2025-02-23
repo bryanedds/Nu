@@ -10,6 +10,7 @@ open System.Numerics
 open System.Reflection
 open DotRecast.Core
 open DotRecast.Detour
+open DotRecast.Detour.Dynamic
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -416,7 +417,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
       Nav3dBodiesOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
       Nav3dConfig : Nav3dConfig
       Nav3dConfigOldOpt : Nav3dConfig option
-      Nav3dMeshOpt : (NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }
+      Nav3dDynamicMeshOpt : (NavBuilderResultData * DtDynamicNavMesh * DtNavMeshQuery) option }
 
     // Make an empty 3d navigation service.
     static member makeEmpty () =
@@ -425,7 +426,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
           Nav3dBodiesOldOpt = None
           Nav3dConfig = Nav3dConfig.defaultConfig
           Nav3dConfigOldOpt = None
-          Nav3dMeshOpt = None }
+          Nav3dDynamicMeshOpt = None }
 
 /// Generalized interface tag for late-bound objects.
 and LateBindings = interface end

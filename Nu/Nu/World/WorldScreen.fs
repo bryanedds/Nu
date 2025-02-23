@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Threading.Tasks
 open DotRecast.Core.Numerics
 open DotRecast.Detour
 open DotRecast.Recast
@@ -13,6 +14,8 @@ open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open DotRecast.Recast.Toolset.Tools
 open Prime
+open DotRecast.Detour.Dynamic.Io
+open DotRecast.Detour.Dynamic
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -457,29 +460,37 @@ module WorldScreenModule =
             | Some geomProvider ->
                 let rcConfig =
                     RcConfig
-                        (config.PartitionType,
+                        (true, 32, 32, 1,
+                         config.PartitionType,
                          config.CellSize, config.CellHeight,
                          config.AgentSlopeMax, config.AgentHeight, config.AgentRadius, config.AgentClimbMax,
-                         config.RegionSizeMin, config.RegionSizeMerge,
+                         single config.RegionSizeMin, single config.RegionSizeMerge,
                          config.EdgeLengthMax, config.EdgeErrorMax,
                          config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleErrorMax,
                          config.FilterLowHangingObstacles, config.FilterLedgeSpans, config.FilterWalkableLowHeightSpans,
                          SampleAreaModifications.SAMPLE_AREAMOD_WALKABLE, true)
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
-                let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
+                let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, true) // NOTE: keeping intermediate results now! TODO: P0: try to get rid of any unnecessary intermediate results data!
                 if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but null here seems to be an indication of nav mesh build failure.
                     let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
-                    let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
-                    match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
-                    | null -> None // some sort of argument issue
-                    | dtMeshData ->
-                        DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
-                        let dtNavMesh = DtNavMesh ()
-                        if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
-                            let dtQuery = DtNavMeshQuery dtNavMesh
-                            Some (navBuilderResultData, dtNavMesh, dtQuery)
-                        else None
+                    let voxelFile = DtVoxelFile.From (rcConfig, List [rcBuilderResult])
+                    let dtNavMesh = DtDynamicNavMesh voxelFile
+                    dtNavMesh.Build Task.Factory |> ignore<bool>
+                    let dtQuery = DtNavMeshQuery (dtNavMesh.NavMesh ())
+                    Some (navBuilderResultData, dtNavMesh, dtQuery)
+
+                    //let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
+                    //match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
+                    //| null -> None // some sort of argument issue
+                    //| dtMeshData ->
+                    //    DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
+                    //    let dtNavMesh = DtNavMesh ()
+                    //    if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
+                    //        let dtQuery = DtNavMeshQuery dtNavMesh
+                    //        Some (navBuilderResultData, dtNavMesh, dtQuery)
+                    //    else None
+
                 else None
 
             // geometry not found
@@ -513,7 +524,7 @@ module WorldScreenModule =
         /// Attempt to synchronize the given screen's 3d navigation information.
         static member synchronizeNav3d screen world =
             let nav3d = World.getScreenNav3d screen world
-            let rebuild =
+            let tryRebuild =
                 match (nav3d.Nav3dBodiesOldOpt, nav3d.Nav3dConfigOldOpt) with
                 | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
                 | (None, Some _) | (Some _, None) -> Log.warn "Unexpected 3d navigation state; navigation rebuild declined."; false
@@ -526,7 +537,7 @@ module WorldScreenModule =
                         { nav3d with
                             Nav3dBodiesOldOpt = Some nav3d.Nav3dBodies
                             Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
-                            Nav3dMeshOpt = Some navMesh }
+                            Nav3dDynamicMeshOpt = Some navMesh }
                     | None -> nav3d
                 World.setScreenNav3d nav3d screen world |> snd'
             else world
@@ -534,12 +545,12 @@ module WorldScreenModule =
         /// Query the given screen's 3d navigation information if it exists.
         static member tryQueryNav3d query screen world =
             let nav3d = World.getScreenNav3d screen world
-            match nav3d.Nav3dMeshOpt with
+            match nav3d.Nav3dDynamicMeshOpt with
             | Some (_, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
             | None -> None
 
         /// A nav3d query that attempts to compute navigation information that results in following the given destination.
-        static member tryNav3dFollowQuery moveSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
+        static member tryNav3dFollowQuery moveSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtDynamicNavMesh) (query : DtNavMeshQuery) =
 
             // attempt to compute start position information
             let mutable startRef = 0L
@@ -565,7 +576,7 @@ module WorldScreenModule =
                 let mutable path = List ()
                 let mutable pathStatus = DtStatus.DT_IN_PROGRESS
                 while pathStatus = DtStatus.DT_IN_PROGRESS do
-                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, polys.Count, &path)
+                    pathStatus <- navMeshTool.FindFollowPath (navMesh.NavMesh (), query, startRef, endRef, startPosition, endPosition, filter, true, &polys, polys.Count, &path)
                 if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
                     let mutable pathIndex = 0
                     let mutable travel = 0.0f
