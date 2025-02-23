@@ -517,8 +517,8 @@ module WorldScreenModule =
                 match (nav3d.Nav3dBodiesOldOpt, nav3d.Nav3dConfigOldOpt) with
                 | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
                 | (None, Some _) | (Some _, None) -> Log.warn "Unexpected 3d navigation state; navigation rebuild declined."; false
-                | (None, None) -> nav3d.Nav3dBodies.Count <> 0
-            if rebuild then
+                | (None, None) -> true // never built or didn't completed building
+            if tryRebuild then
                 let bodies = nav3d.Nav3dBodies.Values
                 let nav3d =
                     match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
@@ -527,7 +527,7 @@ module WorldScreenModule =
                             Nav3dBodiesOldOpt = Some nav3d.Nav3dBodies
                             Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
                             Nav3dMeshOpt = Some navMesh }
-                    | None -> Nav3d.makeEmpty ()
+                    | None -> nav3d
                 World.setScreenNav3d nav3d screen world |> snd'
             else world
 
