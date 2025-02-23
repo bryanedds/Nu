@@ -1631,6 +1631,12 @@ module WorldModuleEntity =
         static member private tryRemoveFacet facetName (entityState : EntityState) entityOpt world =
             match Array.tryFind (fun facet -> getTypeName facet = facetName) entityState.Facets with
             | Some facet ->
+                let visibleOld = entityState.VisibleSpatial
+                let staticOld = entityState.StaticSpatial
+                let lightProbeOld = entityState.LightProbe
+                let lightOld = entityState.Light
+                let presenceOld = entityState.Presence
+                let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     match entityOpt with
                     | Some entity ->
@@ -1654,13 +1660,6 @@ module WorldModuleEntity =
                     entityState
                 match entityOpt with
                 | Some entity ->
-                    let entityStateOld = entityState
-                    let visibleOld = entityState.VisibleSpatial
-                    let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
-                    let lightProbeOld = entityStateOld.LightProbe
-                    let lightOld = entityStateOld.Light
-                    let presenceOld = entityStateOld.Presence
-                    let boundsOld = entityState.Bounds
                     let world = World.setEntityState entityState entity world
                     let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                     Right (World.getEntityState entity world, world)
@@ -1672,6 +1671,12 @@ module WorldModuleEntity =
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
                 if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
+                    let visibleOld = entityState.VisibleSpatial
+                    let staticOld = entityState.StaticSpatial
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
+                    let boundsOld = entityState.Bounds
                     let entityState =
                         let facetNames = Set.add facetName entityState.FacetNames
                         let facets = Array.add facet entityState.Facets
@@ -1682,13 +1687,6 @@ module WorldModuleEntity =
                     let entityState = Reflection.attachProperties EntityState.diverge facet entityState world
                     match entityOpt with
                     | Some entity ->
-                        let entityStateOld = entityState
-                        let visibleOld = entityState.VisibleSpatial
-                        let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
-                        let lightProbeOld = entityStateOld.LightProbe
-                        let lightOld = entityStateOld.Light
-                        let presenceOld = entityStateOld.Presence
-                        let boundsOld = entityState.Bounds
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                         let world = facet.Register (entity, world)
@@ -1756,17 +1754,16 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             match entityState.OverlayNameOpt with
             | Some overlayName ->
+                let visibleOld = entityState.VisibleSpatial
+                let staticOld = entityState.StaticSpatial
+                let lightProbeOld = entityState.LightProbe
+                let lightOld = entityState.Light
+                let presenceOld = entityState.Presence
+                let boundsOld = entityState.Bounds
                 let facetNamesOld = entityState.FacetNames
                 let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayName overlayName entityState overlayerOld overlayer
                 match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
                 | Right (entityState, world) ->
-                    let entityStateOld = entityState
-                    let visibleOld = entityState.VisibleSpatial
-                    let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
-                    let lightProbeOld = entityStateOld.LightProbe
-                    let lightOld = entityStateOld.Light
-                    let presenceOld = entityStateOld.Presence
-                    let boundsOld = entityState.Bounds
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState overlayerOld overlayer
                     let world = World.setEntityState entityState entity world
@@ -2647,13 +2644,20 @@ module WorldModuleEntity =
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
-            let entityStateOld = World.getEntityState entity world
-            let overlayerNameOldOpt = entityStateOld.OverlayNameOpt
+            let entityState = World.getEntityState entity world
+            let visibleOld = entityState.VisibleSpatial
+            let staticOld = entityState.StaticSpatial
+            let lightProbeOld = entityState.LightProbe
+            let lightOld = entityState.Light
+            let presenceOld = entityState.Presence
+            let boundsOld = entityState.Bounds
+            let entityState = World.getEntityState entity world
+            let overlayerNameOldOpt = entityState.OverlayNameOpt
             let entityState =
-                if entityStateOld.Imperative then
-                    entityStateOld.OverlayNameOpt <- overlayNameOpt
-                    entityStateOld
-                else { entityStateOld with OverlayNameOpt = overlayNameOpt }
+                if entityState.Imperative then
+                    entityState.OverlayNameOpt <- overlayNameOpt
+                    entityState
+                else { entityState with OverlayNameOpt = overlayNameOpt }
             match (overlayerNameOldOpt, overlayNameOpt) with
             | (Some overlayerNameOld, Some overlayName) ->
                 let overlayer = World.getOverlayer world
@@ -2665,13 +2669,6 @@ module WorldModuleEntity =
                     | Left error -> Log.error error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy overlayerNameOld overlayName facetNames entityState overlayer
-                let entityStateOld = entityState
-                let visibleOld = entityState.VisibleSpatial
-                let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
-                let lightProbeOld = entityStateOld.LightProbe
-                let lightOld = entityStateOld.Light
-                let presenceOld = entityStateOld.Presence
-                let boundsOld = entityState.Bounds
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChanges entity world
@@ -2688,12 +2685,11 @@ module WorldModuleEntity =
             if facetNames <> facetNamesOld then
                 match World.trySetFacetNames facetNames entityState (Some entity) world with
                 | Right (entityState, world) ->
-                    let entityStateOld = entityState
                     let visibleOld = entityState.VisibleSpatial
-                    let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
-                    let lightProbeOld = entityStateOld.LightProbe
-                    let lightOld = entityStateOld.Light
-                    let presenceOld = entityStateOld.Presence
+                    let staticOld = entityState.StaticSpatial
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
                     let boundsOld = entityState.Bounds
                     let world = World.setEntityState entityState entity world
                     let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
