@@ -796,6 +796,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             (Cascade, world)
         | None -> (Cascade, world) // just keep current group selection and screen if no screen selected
 
+    let private handleNuExitRequest _ world =
+        ShowConfirmExitDialog <- true
+        (Cascade, world)
+
     (* Editor Command Functions *)
 
     let private createRestorePoint world =
@@ -4483,6 +4487,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
                 let world = World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
+                let world = World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world
 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world
