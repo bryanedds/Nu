@@ -904,7 +904,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try World.writeEntityToFile false false filePath entity world
                 try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                     if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
+                        if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
                         File.Copy (filePath, deploymentPath, true)
+                        File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
                 with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
                 EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
                 true
@@ -1106,7 +1108,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         try World.writeGroupToFile filePath SelectedGroup world
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
+                    if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
                     File.Copy (filePath, deploymentPath, true)
+                    File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
             with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
             GroupFilePaths <- Map.add SelectedGroup.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
             true

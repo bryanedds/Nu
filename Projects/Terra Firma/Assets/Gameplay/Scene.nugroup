@@ -5146,10 +5146,7 @@
       [StaticModel [Gameplay TireWall]]]
      []]]]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.030118924] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5162,6 +5159,7 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0001]
     [Position [6.6572905 3.2127838 -14.430612]]
+    [Presence Omnipresent]
     [PropagatedDescriptorOpt
      [Some
       [EnemyDispatcher
@@ -5215,10 +5213,7 @@
     [Rotation [0 0.9965349 0 0.08317573]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.040099848] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5231,14 +5226,12 @@
     [LinearVelocity [-0.036413193 2.3841858E-07 -0.016795158]]
     [Name Enemy-0002]
     [Position [3.11 4.68 -6.06]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.5390578 0 0.84226876]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkRight] [Playback Loop] [Rate 1] [Weight 0.029702183] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5251,14 +5244,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0003]
     [Position [-10.8 1.6400002 6.8]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 -0.70710665 0 0.7071069]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5271,13 +5262,11 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0004]
     [Position [6.9 1.2999998 17]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5290,14 +5279,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0005]
     [Position [-16.1 1.3000001 16.1]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 1 0 -4.371139E-08]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5310,14 +5297,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0006]
     [Position [-12.4 4.2177653 19.9]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 1 0 -4.371139E-08]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5330,14 +5315,11 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0007]
     [Position [9.7 4.2999997 36.8]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.024533175] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5350,15 +5332,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0008]
     [Position [24.4 2.1 33.6]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.024533177] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5371,15 +5350,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0009]
     [Position [29.1 2.1 15.3]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.92387956 0 0.3826834]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.024533175] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5392,14 +5368,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0010]
     [Position [25.4 2.1 -6.9]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5412,14 +5386,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0011]
     [Position [33 2.1 -5.1]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.70710665 0 0.7071069]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5432,15 +5404,12 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0012]
     [Position [28.7 2.1 -12.9]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.70710665 0 0.7071069]]]
    []]
   [EnemyDispatcher
-   [[Animations
-     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.024533175] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
-      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
-    [CharacterProperties
+   [[CharacterProperties
      [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
@@ -5453,6 +5422,7 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Name Enemy-0013]
     [Position [28.8 5.1 29.4]]
+    [Presence Omnipresent]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]]
    []]]]

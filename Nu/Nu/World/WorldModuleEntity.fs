@@ -246,6 +246,9 @@ module WorldModuleEntity =
             | Some selectedScreen when entity.Screen.Name = selectedScreen.Name -> true
             | _ -> false
 
+        static member internal getEntityAlwaysOmnipresent (entity : Entity) world =
+            (World.getEntityState entity world).AlwaysOmnipresent
+
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
 
@@ -863,24 +866,26 @@ module WorldModuleEntity =
         static member internal setEntityPresence (value : Presence) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
-            if presenceNeq value previous && (value.IsOmnipresent || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
-                let visibleOld = entityState.VisibleSpatial
-                let staticOld = entityState.StaticSpatial
-                let lightProbeOld = entityState.LightProbe
-                let lightOld = entityState.Light
-                let presenceOld = entityState.PresenceSpatial
-                let boundsOld = entityState.Bounds
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.Presence <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = EntityState.diverge entityState
-                        entityState.Presence <- value
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
-                let world = World.publishEntityChange (nameof entityState.Presence) previous value entityState.PublishChangeEvents entity world
-                struct (true, world)
+            if presenceNeq value previous then
+                if value.IsOmnipresent || not entityState.AlwaysOmnipresent then
+                    let visibleOld = entityState.VisibleSpatial
+                    let staticOld = entityState.StaticSpatial
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.PresenceSpatial
+                    let boundsOld = entityState.Bounds
+                    let struct (entityState, world) =
+                        if entityState.Imperative then
+                            entityState.Presence <- value
+                            struct (entityState, world)
+                        else
+                            let entityState = EntityState.diverge entityState
+                            entityState.Presence <- value
+                            struct (entityState, World.setEntityState entityState entity world)
+                    let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
+                    let world = World.publishEntityChange (nameof entityState.Presence) previous value entityState.PublishChangeEvents entity world
+                    struct (true, world)
+                else struct (false, world)
             else struct (false, world)
 
         static member internal setEntityTransformByRefWithoutEvent (value : Transform inref, entityState : EntityState, entity : Entity, world) =
@@ -2797,6 +2802,7 @@ module WorldModuleEntity =
                  ("Pickable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPickable entity world })
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
+                 ("AlwaysOmnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysOmnipresent entity world })
                  ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
                  ("Protected", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world })
                  ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })

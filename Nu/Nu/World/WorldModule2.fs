@@ -938,7 +938,9 @@ module WorldModule2 =
             // attempt to reload overlay file
             let inputOverlayerFilePath = inputDirectory + "/" + Assets.Global.OverlayerFilePath
             let outputOverlayerFilePath = outputDirectory + "/" + Assets.Global.OverlayerFilePath
-            try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
+            try if File.Exists outputOverlayerFilePath then File.SetAttributes (outputOverlayerFilePath, FileAttributes.None)
+                File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
+                File.SetAttributes (outputOverlayerFilePath, FileAttributes.ReadOnly)
 
                 // cache old overlayer and make new one
                 let overlayerOld = World.getOverlayer world
@@ -974,13 +976,14 @@ module WorldModule2 =
         static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
 
             // attempt to reload asset graph file
-            try File.Copy
-                    (inputDirectory + "/" + Assets.Global.AssetGraphFilePath,
-                     outputDirectory + "/" + Assets.Global.AssetGraphFilePath,
-                     true)
+            let inputAssetGraphFilePath = inputDirectory + "/" + Assets.Global.AssetGraphFilePath
+            let outputAssetGraphFilePath = outputDirectory + "/" + Assets.Global.AssetGraphFilePath
+            try if File.Exists outputAssetGraphFilePath then File.SetAttributes (outputAssetGraphFilePath, FileAttributes.None)
+                File.Copy (inputAssetGraphFilePath, outputAssetGraphFilePath, true)
+                File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.Global.AssetGraphFilePath) with
+                match AssetGraph.tryMakeFromFile outputAssetGraphFilePath with
                 | Right assetGraph ->
 
                     // rebuild and reload assets
@@ -2206,8 +2209,8 @@ module EntityDispatcherModule2 =
     type [<AbstractClass>] EntityDispatcherImNui (is2d, physical, lightProbe, light) =
         inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
-        static member Properties =
-            [define Entity.Presence Omnipresent]
+        override this.AlwaysOmnipresent =
+            true // by default, we presume Process may produce child entities that may be referred to unconditionally
 
         override this.TryProcess (entity, world) =
             let context = world.ContextImNui
@@ -2242,7 +2245,6 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
-             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2442,7 +2444,6 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
-             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero

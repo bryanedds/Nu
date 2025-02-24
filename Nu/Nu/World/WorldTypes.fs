@@ -647,6 +647,10 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? Persistent true
          Define? PropagatedDescriptorOpt Option<EntityDescriptor>.None]
 
+    /// Whether the presence property is always overridden with Omnipresent.
+    abstract AlwaysOmnipresent : bool
+    default this.AlwaysOmnipresent = false
+
     /// Register an entity when adding it to a group.
     abstract Register : Entity * World -> World
     default this.Register (_, world) = world
@@ -1190,6 +1194,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
+    member this.AlwaysOmnipresent = this.Dispatcher.AlwaysOmnipresent
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
     member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
@@ -1203,7 +1208,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Optimized with get () = this.Transform.Optimized
     member internal this.VisibleSpatial with get () = this.Visible || this.AlwaysRender
     member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate
-    member internal this.PresenceSpatial with get () = if this.Absolute then Omnipresent else this.Presence
+    member internal this.PresenceSpatial with get () = if this.Absolute || this.AlwaysOmnipresent then Omnipresent else this.Presence
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.

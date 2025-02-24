@@ -26,7 +26,6 @@ type GuiDispatcher () =
          define Entity.Size Constants.Engine.EntityGuiSizeDefault
          define Entity.Elevation 1.0f
          define Entity.ElevationLocal 1.0f
-         define Entity.Presence Omnipresent
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault]
 
 /// A 3d entity dispatcher.
@@ -377,6 +376,9 @@ type SpineSkeletonDispatcher () =
 type SkyBoxDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
+    override this.AlwaysOmnipresent =
+        true
+
     static member Facets =
         [typeof<SkyBoxFacet>]
 
@@ -391,9 +393,12 @@ type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
     static member Properties =
-        [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig
-         define Entity.Presence Omnipresent
-         define Entity.AlwaysUpdate true]
+        [define Entity.Presence Omnipresent
+         define Entity.AlwaysUpdate true
+         define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig]
+
+    override this.AlwaysOmnipresent =
+        true
 
     override this.Update (entity, world) =
         let config = entity.GetLighting3dConfig world
@@ -406,6 +411,9 @@ type LightProbe3dDispatcher () =
 
     static member Facets =
         [typeof<LightProbe3dFacet>]
+
+    override this.AlwaysOmnipresent =
+        true
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -647,6 +655,9 @@ type TerrainDispatcher () =
 
     static member Facets =
         [typeof<TerrainFacet>]
+
+    override this.AlwaysOmnipresent =
+        true
 
 [<AutoOpen>]
 module Nav3dConfigDispatcherExtensions =

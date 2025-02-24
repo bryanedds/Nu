@@ -72,6 +72,7 @@ module Reflection =
              ("Perimeter", true)
              ("Bounds", true)
              ("Imperative", true)
+             ("AlwaysOmnipresent", true)
              ("PublishChangeEvents", true)
              ("PublishPreUpdates", true)
              ("PublishUpdates", true)
