@@ -1645,7 +1645,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2One // TODO: P1: see if we should still be using borders in this case.
+            | None ->
+                let px = 0.0f
+                let py = 1.0f
+                let sx = 1.0f
+                let sy = -1.0f
+                Box2 (px, py, sx, sy)
         let lookRotation =
             match renderPass with
             | ShadowPass (_, _, shadowRotation, _) -> shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
