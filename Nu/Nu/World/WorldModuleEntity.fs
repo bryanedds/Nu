@@ -773,7 +773,7 @@ module WorldModuleEntity =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setEntityAbsolute value entity world =
+        static member internal setEntityAbsolute value (entity : Entity) world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Absolute
             if value <> previous then
@@ -888,7 +888,7 @@ module WorldModuleEntity =
                     let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                     let world = World.publishEntityChange (nameof entityState.Presence) previous value entityState.PublishChangeEvents entity world
                     struct (true, world)
-                else struct (false, world)
+                else Log.warnOnce "Setting Presence with value that conflicts with PresenceOverride; ignored."; struct (false, world)
             else struct (false, world)
 
         static member internal setEntityTransformByRefWithoutEvent (value : Transform inref, entityState : EntityState, entity : Entity, world) =
