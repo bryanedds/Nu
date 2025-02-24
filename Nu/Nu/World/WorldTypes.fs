@@ -1184,7 +1184,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
     member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
     member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
-    member this.PresenceOverride = this.Dispatcher.PresenceOverride
+    member this.PresenceOverride = if this.Absolute then ValueSome Omnipresent else match this.Dispatcher.PresenceOverride with ValueSome _ as override_ -> override_ | _ -> ValueNone
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
@@ -1214,7 +1214,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member internal this.StaticSpatial = this.Static && not this.AlwaysUpdate
     /// NOTE: there is a minor semantic hole here where an entity's facets may have higher PresenceOverrides, but for
     /// basic efficiency reasons, this often invoked property doesn't take those into consideration.
-    member internal this.PresenceSpatial = if this.Absolute then Omnipresent else ValueOption.defaultValue this.Presence this.PresenceOverride
+    member internal this.PresenceSpatial = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.

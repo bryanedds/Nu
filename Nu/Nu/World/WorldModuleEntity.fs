@@ -249,7 +249,7 @@ module WorldModuleEntity =
         static member internal getEntityPresenceOverride (entity : Entity) world =
             let entityState = World.getEntityState entity world
             let facetOverrides = Array.map (fun (facet : Facet) -> facet.PresenceOverride) entityState.Facets
-            Presence.highestOverride2 (ValueSome entityState.PresenceSpatial) facetOverrides
+            Presence.highestOverride2 entityState.PresenceOverride facetOverrides
 
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
