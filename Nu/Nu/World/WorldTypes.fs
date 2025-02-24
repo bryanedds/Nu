@@ -728,6 +728,10 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
 /// Dynamically augments an entity's behavior in a composable way.
 and Facet (physical, lightProbe, light) =
 
+    /// Whether the presence property is always overridden with Omnipresent.
+    abstract AlwaysOmnipresent : bool
+    default this.AlwaysOmnipresent = false
+
     /// Register a facet when adding it to an entity.
     abstract Register : Entity * World -> World
     default this.Register (_, world) = world
@@ -1159,11 +1163,11 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.PerimeterBottomLeft with get () = this.Transform.PerimeterBottomLeft and set value = this.Transform.PerimeterBottomLeft <- value
     member this.PerimeterMin with get () = this.Transform.PerimeterMin and set value = this.Transform.PerimeterMin <- value
     member this.PerimeterMax with get () = this.Transform.PerimeterMax and set value = this.Transform.PerimeterMax <- value
-    member this.PerimeterCenterLocal with get () = this.PositionLocal + (this.Transform.PerimeterCenter - this.Transform.Position)
-    member this.PerimeterBottomLocal with get () = this.PositionLocal + (this.Transform.PerimeterBottom - this.Transform.Position)
-    member this.PerimeterBottomLeftLocal with get () = this.PositionLocal + (this.Transform.PerimeterBottomLeft - this.Transform.Position)
-    member this.PerimeterMinLocal with get () = this.PositionLocal + (this.Transform.PerimeterMin - this.Transform.Position)
-    member this.PerimeterMaxLocal with get () = this.PositionLocal + (this.Transform.PerimeterMax - this.Transform.Position)
+    member this.PerimeterCenterLocal = this.PositionLocal + (this.Transform.PerimeterCenter - this.Transform.Position)
+    member this.PerimeterBottomLocal = this.PositionLocal + (this.Transform.PerimeterBottom - this.Transform.Position)
+    member this.PerimeterBottomLeftLocal = this.PositionLocal + (this.Transform.PerimeterBottomLeft - this.Transform.Position)
+    member this.PerimeterMinLocal = this.PositionLocal + (this.Transform.PerimeterMin - this.Transform.Position)
+    member this.PerimeterMaxLocal = this.PositionLocal + (this.Transform.PerimeterMax - this.Transform.Position)
     member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
     member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
     member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
@@ -1172,13 +1176,13 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Degrees with get () = this.Transform.Degrees and set value = this.Transform.Degrees <- value
     member this.DegreesLocal with get () = Math.RadiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.DegreesToRadians3d value
     member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
-    member this.RotationMatrix with get () = this.Transform.RotationMatrix
+    member this.RotationMatrix = this.Transform.RotationMatrix
     member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
     member this.Overflow with get () = this.Transform.Overflow and set value = this.Transform.Overflow <- value
-    member this.AffineMatrix with get () = this.Transform.AffineMatrix
+    member this.AffineMatrix = this.Transform.AffineMatrix
     member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
-    member this.Bounds with get () = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
+    member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
     member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
@@ -1199,16 +1203,18 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
-    member this.Is2d with get () = this.Dispatcher.Is2d
-    member this.Is3d with get () = this.Dispatcher.Is3d
-    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets
-    member this.LightProbe with get () = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
-    member this.Light with get () = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
+    member this.Is2d = this.Dispatcher.Is2d
+    member this.Is3d = this.Dispatcher.Is3d
+    member this.Physical = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets
+    member this.LightProbe = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
+    member this.Light = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-    member this.Optimized with get () = this.Transform.Optimized
-    member internal this.VisibleSpatial with get () = this.Visible || this.AlwaysRender
-    member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate
-    member internal this.PresenceSpatial with get () = if this.Absolute || this.AlwaysOmnipresent then Omnipresent else this.Presence
+    member this.Optimized = this.Transform.Optimized
+    member internal this.VisibleSpatial = this.Visible || this.AlwaysRender
+    member internal this.StaticSpatial = this.Static && not this.AlwaysUpdate
+    /// NOTE: there is a minor semantic hole here where an entity's facets may have AlwaysOmnipresent as true but for
+    /// basic efficiency reasons, this often invoked property doesn't take that into consideration.
+    member internal this.PresenceSpatial = if this.Absolute || this.AlwaysOmnipresent then Omnipresent else this.Presence
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.

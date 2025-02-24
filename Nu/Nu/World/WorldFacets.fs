@@ -2269,6 +2269,9 @@ type SkyBoxFacet () =
          define Entity.Brightness 1.0f
          define Entity.CubeMap Assets.Default.SkyBoxMap]
 
+    override this.AlwaysOmnipresent =
+        true
+
     override this.Render (renderPass, entity, world) =
         World.enqueueRenderMessage3d
             (RenderSkyBox
@@ -2334,6 +2337,9 @@ type LightProbe3dFacet () =
          define Entity.AmbientBrightness 0.5f
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
+
+    override this.AlwaysOmnipresent =
+        true
 
     override this.Register (entity, world) =
         let world = World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
@@ -3273,6 +3279,9 @@ type TerrainFacet () =
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
+
+    override this.AlwaysOmnipresent =
+        true
 
     override this.Register (entity, world) =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world

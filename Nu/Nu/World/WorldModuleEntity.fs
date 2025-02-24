@@ -247,7 +247,9 @@ module WorldModuleEntity =
             | _ -> false
 
         static member internal getEntityAlwaysOmnipresent (entity : Entity) world =
-            (World.getEntityState entity world).AlwaysOmnipresent
+            let entityState = World.getEntityState entity world
+            entityState.AlwaysOmnipresent ||
+            Array.exists (fun (facet : Facet) -> facet.AlwaysOmnipresent) entityState.Facets
 
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
@@ -863,11 +865,12 @@ module WorldModuleEntity =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setEntityPresence (value : Presence) entity world =
+        static member internal setEntityPresence (value : Presence) (entity : Entity) world =
+            let alwaysOmnipresent = World.getEntityAlwaysOmnipresent entity world
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
             if presenceNeq value previous then
-                if value.IsOmnipresent || not entityState.AlwaysOmnipresent then
+                if value.IsOmnipresent || not alwaysOmnipresent then
                     let visibleOld = entityState.VisibleSpatial
                     let staticOld = entityState.StaticSpatial
                     let lightProbeOld = entityState.LightProbe
