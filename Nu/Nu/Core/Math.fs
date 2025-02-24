@@ -1517,7 +1517,8 @@ module Math =
     let SnapDegree3d (offset, v3 : Vector3) =
         Vector3 (SnapDegree (offset, v3.X), SnapDegree (offset, v3.Y), SnapDegree (offset, v3.Z))
 
-    /// Find the the union of a line segment and a frustum if one exists.
+    /// Find the union of a line segment and a frustum if one exists.
+    /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
     let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
@@ -1538,5 +1539,21 @@ module Math =
                     then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some (start', stop')
+            Some struct (start', stop')
         else None
+
+    /// Find the the union of a line segment and a frustum if one exists.
+    /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
+    let TryUnionSegmentAndFrustum' (start : Vector3, stop : Vector3, frustum : Frustum) : struct (Vector3 * Vector3) array =
+        let extent = stop - start
+        let extentMagnitude = extent.Magnitude
+        let partMagnitude = 1.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
+        if extentMagnitude > partMagnitude then
+            let partCount = int (ceil (extentMagnitude / partMagnitude))
+            let partExtent = extent / single partCount
+            [|for i in 0 .. dec partCount do
+                let start' = start + partExtent * single i
+                let stop' = start' + partExtent
+                TryUnionSegmentAndFrustum (start', stop', frustum)|] |>
+            Array.definitize
+        else Array.definitize [|TryUnionSegmentAndFrustum (start, stop, frustum)|]

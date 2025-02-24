@@ -40,12 +40,10 @@ module ImGuizmo =
               (corners.[2], corners.[4])
               (corners.[3], corners.[7])|]
         for (a, b) in segments do
-            match Math.TryUnionSegmentAndFrustum (a, b, eyeFrustum) with
-            | Some (a', b') ->
+            for (a', b') in Math.TryUnionSegmentAndFrustum' (a, b, eyeFrustum) do
                 let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
                 let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
                 drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
-            | None -> ()
 
         // manipulate centers
         let centers = box.FaceCenters

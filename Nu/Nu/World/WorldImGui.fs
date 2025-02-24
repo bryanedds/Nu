@@ -91,13 +91,11 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             for segment in segments do
-                match Math.TryUnionSegmentAndFrustum (segment.A, segment.B, world.Eye3dFrustumView) with
-                | Some (start, stop) ->
+                for (start, stop) in Math.TryUnionSegmentAndFrustum' (segment.A, segment.B, world.Eye3dFrustumView) do
                     let color = computeColor segment
                     let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)
                     let stopWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, stop)
                     drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
-                | None -> ()
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
