@@ -394,6 +394,7 @@ module Hl =
     type [<ReferenceEquality>] VulkanGlobal =
         { Instance : VkInstance
           Surface : VkSurfaceKHR
+          PhysicalDevice : VkPhysicalDevice
           Device : VkDevice
           VmaAllocator : VmaAllocator
           Swapchain : VkSwapchainKHR
@@ -565,7 +566,7 @@ module Hl =
             device
 
         /// Create the VMA allocator.
-        static member private createVmaAllocator physicalDeviceData device instance =
+        static member private createVmaAllocator (physicalDeviceData : PhysicalDeviceData) device instance =
             let mutable info = VmaAllocatorCreateInfo ()
             info.physicalDevice <- physicalDeviceData.PhysicalDevice
             info.device <- device
@@ -895,6 +896,7 @@ module Hl =
                 let vulkanGlobal =
                     { Instance = instance
                       Surface = surface
+                      PhysicalDevice = physicalDeviceData.PhysicalDevice
                       Device = device
                       VmaAllocator = allocator
                       Swapchain = swapchain
@@ -925,19 +927,20 @@ module Hl =
     type ManualAllocatedBuffer =
         { Buffer : VkBuffer 
           Memory : VkDeviceMemory
-          Mapping : voidptr }
+          Mapping : nativeptr<voidptr> }
 
         static member private findMemoryType typeFilter properties physicalDevice =
             
-            // get physical device memory properties
+            // get memory types
             let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
             Vulkan.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
+            let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
 
             // try find suitable memory type
             let mutable memoryTypeOpt = None
-            for i in 0 .. dec (int memProperties.memoryTypeCount) do
+            for i in 0 .. dec memoryTypes.Length do
                 match memoryTypeOpt with
-                | None -> if typeFilter &&& (1 <<< i) <> 0 then memoryTypeOpt <- Some (uint i)
+                | None -> if typeFilter &&& (1u <<< i) <> 0u && memoryTypes.[i].propertyFlags &&& properties = properties then memoryTypeOpt <- Some (uint i)
                 | Some _ -> ()
 
             // fin
@@ -945,29 +948,49 @@ module Hl =
             | Some memoryType -> memoryType
             | None -> Log.fail "Failed to find suitable memory type!"
         
-        static member private createInternal uploadEnabled bufferInfo physicalDevice device =
+        static member private createInternal uploadEnabled bufferInfo vkg =
 
             // create buffer
             let mutable buffer = Unchecked.defaultof<VkBuffer>
-            Vulkan.vkCreateBuffer (device, &bufferInfo, nullPtr, asPointer &buffer) |> check
+            Vulkan.vkCreateBuffer (vkg.Device, &bufferInfo, nullPtr, asPointer &buffer) |> check
 
             // get buffer memory requirements
             let mutable memRequirements = Unchecked.defaultof<VkMemoryRequirements>
-            Vulkan.vkGetBufferMemoryRequirements (device, buffer, &memRequirements)
-            
+            Vulkan.vkGetBufferMemoryRequirements (vkg.Device, buffer, &memRequirements)
+
+            // choose appropriate memory properties
+            let properties =
+                if uploadEnabled then Vulkan.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ||| Vulkan.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+                else Vulkan.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+
+            // allocate memory
+            let mutable info = VkMemoryAllocateInfo ()
+            info.allocationSize <- memRequirements.size
+            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice
+            let mutable memory = Unchecked.defaultof<VkDeviceMemory>
+            Vulkan.vkAllocateMemory (vkg.Device, asPointer &info, nullPtr, &memory) |> check
+
+            // bind buffer to memory
+            Vulkan.vkBindBufferMemory (vkg.Device, buffer, memory, 0UL) |> check
+
+            // map memory if upload enabled
+            let mutable mapping = nullPtr
+            if uploadEnabled then Vulkan.vkMapMemory (vkg.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mapping) |> check
             
             // make ManualAllocatedBuffer
             let manualAllocatedBuffer = 
                 { Buffer = buffer
-                  Memory = Unchecked.defaultof<VkDeviceMemory>
-                  Mapping = Unchecked.defaultof<voidptr> }
+                  Memory = memory
+                  Mapping = mapping }
 
             // fin
             manualAllocatedBuffer
 
         /// Destroy a ManualAllocatedBuffer.
         static member destroy buffer device =
+            Vulkan.vkUnmapMemory (device, buffer.Memory)
             Vulkan.vkDestroyBuffer (device, buffer.Buffer, nullPtr)
+            Vulkan.vkFreeMemory (device, buffer.Memory, nullPtr)
     
     /// Abstraction for vma allocated buffer.
     type AllocatedBuffer =
