@@ -52,6 +52,7 @@ and SnapshotType =
     | RotateEntity
     | ScaleEntity
     | AutoBoundsEntity
+    | MoveEntityToOrigin
     | PropagateEntity
     | ReorderEntities
     | SetEntityFrozen of bool
