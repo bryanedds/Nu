@@ -230,7 +230,7 @@ module internal Quadnode =
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
-                    getElementsInView bounds set node
+                    getElementsInPlay bounds set node
         | ElementChildren elements ->
             for element in elements do
                 if not element.Static then

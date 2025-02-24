@@ -91,6 +91,7 @@ and SnapshotType =
         | RotateEntity -> (scstringMemo this).Spaced
         | ScaleEntity -> (scstringMemo this).Spaced
         | AutoBoundsEntity -> (scstringMemo this).Spaced
+        | MoveEntityToOrigin -> (scstringMemo this).Spaced
         | PropagateEntity -> (scstringMemo this).Spaced
         | ReorderEntities -> (scstringMemo this).Spaced
         | SetEntityFrozen frozen -> if frozen then "Freeze Entity" else "Thaw Entity"
