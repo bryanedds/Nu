@@ -774,6 +774,14 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityAbsolute value (entity : Entity) world =
+
+            // specially set to Omnipresent when becoming Absolute
+            let world =
+                if value && value <> World.getEntityAbsolute entity world
+                then World.setEntityPresence Omnipresent entity world |> snd'
+                else world
+
+            // normal property setter stuff
             let entityState = World.getEntityState entity world
             let previous = entityState.Absolute
             if value <> previous then
