@@ -578,6 +578,9 @@ module WorldImNui =
         /// ImNui declare a static billboard with the given arguments.
         static member doStaticBillboard name args world = World.doEntity<StaticBillboardDispatcher> name args world
 
+        /// ImNui declare an animated billboard with the given arguments.
+        static member doAnimatedBillboard name args world = World.doEntity<AnimatedBillboardDispatcher> name args world
+
         /// ImNui declare a static model with the given arguments.
         static member doStaticModel name args world = World.doEntity<StaticModelDispatcher> name args world
 

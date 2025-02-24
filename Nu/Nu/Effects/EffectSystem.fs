@@ -540,6 +540,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           ShadowOffset = effectSystem.EffectShadowOffset
+                          DepthTest = LessThanOrEqualTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken billboardToken effectSystem
             else effectSystem
@@ -578,6 +579,7 @@ module EffectSystem =
                           InsetOpt = insetOpt
                           MaterialProperties = properties
                           StaticModel = staticModel
+                          DepthTest = LessThanOrEqualTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem
             else effectSystem

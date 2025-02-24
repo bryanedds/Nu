@@ -1308,6 +1308,7 @@ type EffectFacet () =
                               Material = descriptor.Material
                               ShadowOffset = descriptor.ShadowOffset
                               Particles = descriptor.Particles
+                              DepthTest =  LessThanOrEqualTest
                               RenderType = descriptor.RenderType
                               RenderPass = renderPass }
                     World.enqueueRenderMessage3d message world
@@ -2473,6 +2474,9 @@ module StaticBillboardFacetExtensions =
         member this.GetMaterial world : Material = this.Get (nameof this.Material) world
         member this.SetMaterial (value : Material) world = this.Set (nameof this.Material) value world
         member this.Material = lens (nameof this.Material) this this.GetMaterial this.SetMaterial
+        member this.GetDepthTest world : DepthTest = this.Get (nameof this.DepthTest) world
+        member this.SetDepthTest (value : DepthTest) world = this.Set (nameof this.DepthTest) value world
+        member this.DepthTest = lens (nameof this.DepthTest) this this.GetDepthTest this.SetDepthTest
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
@@ -2488,6 +2492,7 @@ type StaticBillboardFacet () =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
+         define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
 
@@ -2501,6 +2506,7 @@ type StaticBillboardFacet () =
             let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
             let shadowOffset = entity.GetShadowOffset world
+            let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -2508,7 +2514,7 @@ type StaticBillboardFacet () =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
-                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
+                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
                 world
 
     override this.RayCast (ray, entity, world) =
@@ -2547,6 +2553,7 @@ type AnimatedBillboardFacet () =
          define Entity.AnimationStride 1
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
+         define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
 
@@ -2560,6 +2567,7 @@ type AnimatedBillboardFacet () =
             let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
             let shadowOffset = entity.GetShadowOffset world
+            let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -2567,7 +2575,7 @@ type AnimatedBillboardFacet () =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
-                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
+                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
                 world
 
     override this.RayCast (ray, entity, world) =
@@ -2837,6 +2845,7 @@ type BasicStaticBillboardEmitterFacet () =
                                   Material = material
                                   ShadowOffset = descriptor.ShadowOffset
                                   Particles = descriptor.Particles
+                                  DepthTest =  LessThanOrEqualTest
                                   RenderType = descriptor.RenderType
                                   RenderPass = renderPass })
                     | _ -> None) |>
@@ -2862,6 +2871,7 @@ type StaticModelFacet () =
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
+         define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -2874,11 +2884,12 @@ type StaticModelFacet () =
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
+            let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -2927,6 +2938,7 @@ type StaticModelSurfaceFacet () =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.empty
+         define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel
          define Entity.SurfaceIndex 0]
@@ -2942,11 +2954,12 @@ type StaticModelSurfaceFacet () =
             let material = entity.GetMaterial world
             let staticModel = entity.GetStaticModel world
             let surfaceIndex = entity.GetSurfaceIndex world
+            let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
+            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -3064,6 +3077,7 @@ type AnimatedModelFacet () =
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
          define Entity.DualRenderedSurfaceIndices Set.empty
+         define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          nonPersistent Entity.BoneIdsOpt None
          nonPersistent Entity.BoneOffsetsOpt None
@@ -3120,12 +3134,13 @@ type AnimatedModelFacet () =
             let animatedModel = entity.GetAnimatedModel world
             let subsortOffsets = entity.GetSubsortOffsets world
             let drsIndices = entity.GetDualRenderedSurfaceIndices world
+            let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             match entity.GetBoneTransformsOpt world with
-            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, boneTransforms, animatedModel, subsortOffsets, drsIndices, renderType, renderPass, world)
+            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world)
             | None -> ()
 
     override this.GetAttributesInferred (entity, world) =

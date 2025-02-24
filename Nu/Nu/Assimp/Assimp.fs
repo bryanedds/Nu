@@ -45,6 +45,16 @@ type [<SymbolicExpansion; DefaultValue "[[StartTime 0] [LifeTimeOpt None] [Name 
     static member bounce startTime lifeTimeOpt name =
         Animation.make startTime lifeTimeOpt name Bounce 1.0f 1.0f None
 
+/// Specifies the type of desired fragment depth testing.
+type DepthTest =
+    | LessThanTest
+    | LessThanOrEqualTest
+    | EqualTest
+    | GreaterThanOrEqualTest
+    | GreaterThanTest
+    | NeverPassTest
+    | AlwaysPassTest
+
 /// The type of rendering used on a surface (for use by the higher-level engine API).
 type RenderStyle =
     | Deferred

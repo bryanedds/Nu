@@ -663,6 +663,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world) |>
         Seq.fold (fun world lightProbe -> lightProbe.SetProbeStale true world) world
 
+    let private tryMoveSelectedEntityToOrigin world =
+        match SelectedEntityOpt with
+        | Some selectedEntity ->
+            let world =
+                match Option.bind (tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
+                | Some _ -> selectedEntity.SetPositionLocal v3Zero world
+                | None -> selectedEntity.SetPosition v3Zero world
+            (true, world)
+        | None -> (false, world)
+
     let private getSnaps () =
         if Snaps2dSelected
         then Snaps2d
@@ -1646,6 +1656,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
+            elif ImGui.IsKeyPressed ImGuiKey._0 && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin world |> snd
             elif not (ImGui.GetIO ()).WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo world |> snd
@@ -1731,6 +1742,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         NewEntityParentOpt <- SelectedEntityOpt
                         ShowEntityContextMenu <- false
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
+                let world = if ImGui.MenuItem ("Move to [0 0 0]", "Ctrl+Zero") then tryMoveSelectedEntityToOrigin world |> snd else world
                 let world = if ImGui.MenuItem ("Propagate Entity") then tryPropagateSelectedEntityStructure world |> snd else world
                 let world = if ImGui.MenuItem ("Wipe Propagated Descriptor") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                 let world =
@@ -2553,6 +2565,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         NewEntityParentOpt <- SelectedEntityOpt
                                         ShowEntityContextMenu <- false
                                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
+                                let world = if ImGui.MenuItem ("Move to [0 0 0]", "Ctrl+Zero") then tryMoveSelectedEntityToOrigin world |> snd else world
                                 let world = if ImGui.MenuItem ("Propagate Entity") then tryPropagateSelectedEntityStructure world |> snd else world
                                 let world = if ImGui.MenuItem ("Wipe Propagation Targets") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                                 ImGui.EndMenu ()
@@ -4268,6 +4281,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     (RenderStaticModels
                         { StaticModels = lightProbeModels
                           StaticModel = Assets.Default.LightProbeModel
+                          DepthTest = LessThanOrEqualTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4284,6 +4298,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     (RenderStaticModels
                         { StaticModels = lightModels
                           StaticModel = Assets.Default.LightbulbModel
+                          DepthTest = LessThanOrEqualTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4340,6 +4355,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                   InsetOpt = None
                                   MaterialProperties = MaterialProperties.defaultProperties
                                   StaticModel = Assets.Default.HighlightModel
+                                  DepthTest = LessThanOrEqualTest
                                   RenderType = ForwardRenderType (0.0f, sort)
                                   RenderPass = NormalPass })
                             world

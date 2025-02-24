@@ -159,8 +159,9 @@ module WorldEntityHierarchy =
                             let material = entity.GetMaterial world
                             let staticModel = entity.GetStaticModel world
                             let surfaceIndex = entity.GetSurfaceIndex world
+                            let depthTest = entity.GetDepthTest world
                             let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                            let surface = { CastShadow = castShadow; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
+                            let surface = { CastShadow = castShadow; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; DepthTest = depthTest; RenderType = renderType }
                             let frozenSurface = StructPair.make entityBounds surface
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                             frozenEntities.Add entity
@@ -176,6 +177,7 @@ module WorldEntityHierarchy =
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                             let properties = entity.GetMaterialProperties world
                             let staticModel = entity.GetStaticModel world
+                            let depthTest = entity.GetDepthTest world
                             let metadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
                             let mutable surfaceIndex = 0
                             while surfaceIndex < metadata.Surfaces.Length do
@@ -198,7 +200,7 @@ module WorldEntityHierarchy =
                                           HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty
-                                let surface = { CastShadow = castShadow; ModelMatrix = surfaceMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
+                                let surface = { CastShadow = castShadow; ModelMatrix = surfaceMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; DepthTest = depthTest; RenderType = renderType }
                                 let frozenSurface = StructPair.make surfaceBounds surface                                
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 frozenSurfaces.Add frozenSurface
@@ -312,7 +314,7 @@ module FreezerFacetModule =
                     let bounds = &boundsAndSurface.Fst
                     let surface = &boundsAndSurface.Snd
                     if (not renderPass.IsShadowPass || surface.CastShadow) && intersects false false surface.Presence bounds then
-                        World.renderStaticModelSurfaceFast (&surface.ModelMatrix, surface.CastShadow, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
+                        World.renderStaticModelSurfaceFast (&surface.ModelMatrix, surface.CastShadow, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.DepthTest, surface.RenderType, renderPass, world)
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =

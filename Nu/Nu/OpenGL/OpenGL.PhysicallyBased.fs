@@ -2480,8 +2480,7 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
-        (blending : bool,
-         view : single array,
+        (view : single array,
          projection : single array,
          bones : single array array,
          surfacesCount : int,
@@ -2527,14 +2526,34 @@ module PhysicallyBased =
          shadowMatrices : single array array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
+         depthTest : DepthTest,
+         blending : bool,
          shader : PhysicallyBasedShader) =
 
         // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
         if surfacesCount > 0 then
 
             // setup state
-            Gl.DepthFunc DepthFunction.Lequal
-            Gl.Enable EnableCap.DepthTest
+            match depthTest with
+            | LessThanTest ->
+                Gl.DepthFunc DepthFunction.Less
+                Gl.Enable EnableCap.DepthTest
+            | LessThanOrEqualTest ->
+                Gl.DepthFunc DepthFunction.Lequal
+                Gl.Enable EnableCap.DepthTest
+            | EqualTest ->
+                Gl.DepthFunc DepthFunction.Equal
+                Gl.Enable EnableCap.DepthTest
+            | GreaterThanOrEqualTest ->
+                Gl.DepthFunc DepthFunction.Gequal
+                Gl.Enable EnableCap.DepthTest
+            | GreaterThanTest ->
+                Gl.DepthFunc DepthFunction.Greater
+                Gl.Enable EnableCap.DepthTest
+            | NeverPassTest ->
+                Gl.DepthFunc DepthFunction.Never
+                Gl.Enable EnableCap.DepthTest
+            | AlwaysPassTest -> ()
             if blending then
                 Gl.BlendEquation BlendEquationMode.FuncAdd
                 Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
@@ -2700,8 +2719,9 @@ module PhysicallyBased =
             Hl.Assert ()
 
             // teardown state
-            Gl.DepthFunc DepthFunction.Less
-            Gl.Disable EnableCap.DepthTest
+            if not depthTest.IsAlwaysPassTest then
+                Gl.DepthFunc DepthFunction.Less
+                Gl.Disable EnableCap.DepthTest
             if blending then
                 Gl.Disable EnableCap.Blend
                 Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
