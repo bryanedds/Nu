@@ -1645,20 +1645,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2One // shouldn't we still be using borders?
+            | None -> box2 v2Zero v2One // TODO: P1: see if we should still be using borders in this case.
         let lookRotation =
             match renderPass with
             | ShadowPass (_, _, shadowRotation, _) -> shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
             | _ -> eyeRotation
         let billboardRotation =
             match renderPass with
-            | ShadowPass (_, _, _, _) -> Matrix4x4.CreateFromQuaternion -lookRotation
+            | ShadowPass (_, _, _, _) -> Matrix4x4.CreateFromQuaternion lookRotation
             | _ ->
-                if orientUp then
-                    let lookForward = (v3Forward.Transform lookRotation).WithY 0.0f
-                    let billboardAngle = if lookForward.Dot v3Right >= 0.0f then -lookForward.AngleBetween v3Forward else lookForward.AngleBetween v3Forward
-                    Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
-                else Matrix4x4.CreateFromQuaternion -lookRotation
+                if orientUp
+                then Quaternion.CreateFromAxisAngle (lookRotation.Right, lookRotation.Up.AngleBetween v3Up) * lookRotation |> Matrix4x4.CreateFromQuaternion
+                else Matrix4x4.CreateFromQuaternion lookRotation
         let mutable affineRotation = model
         affineRotation.Translation <- v3Zero
         let mutable billboardMatrix = model * billboardRotation
