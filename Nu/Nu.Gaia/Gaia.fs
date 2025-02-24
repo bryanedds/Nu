@@ -1716,6 +1716,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
                 selectEntityOpt (Some entity) world
                 let world = if ImGui.MenuItem "Create Entity" then createEntity false true world else world
+                let world =
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Create Entity at Local Origin" then
+                        let world = createEntity false true world
+                        let world = tryMoveSelectedEntityToOrigin world |> snd
+                        world
+                    else world
                 let world = if ImGui.MenuItem "Delete Entity" then tryDeleteSelectedEntity world |> snd else world
                 ImGui.Separator ()
                 let world = if ImGui.MenuItem "Cut Entity" then tryCutSelectedEntity world |> snd else world
@@ -3977,8 +3983,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let world =
                                     if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
                                         NewEntityDispatcherName <- dispatcherName
-                                        let world = createEntity true false world
-                                        ShowEntityContextMenu <- false
                                         world
                                     else world
                                 if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
@@ -3986,6 +3990,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 world)
                                 world dispatcherNames
                         ImGui.EndCombo ()
+                        world
+                    else world
+                let world =
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Create as Child at Local Origin" then
+                        let world = createEntity false true world
+                        let world = tryMoveSelectedEntityToOrigin world |> snd
+                        ShowEntityContextMenu <- false
                         world
                     else world
                 let world =

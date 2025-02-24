@@ -46,7 +46,7 @@ type [<SymbolicExpansion; DefaultValue "[[StartTime 0] [LifeTimeOpt None] [Name 
         Animation.make startTime lifeTimeOpt name Bounce 1.0f 1.0f None
 
 /// Specifies the type of desired fragment depth testing.
-type DepthTest =
+type [<Struct>] DepthTest =
     | LessThanTest
     | LessThanOrEqualTest
     | EqualTest
