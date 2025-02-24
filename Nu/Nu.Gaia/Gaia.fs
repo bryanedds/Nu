@@ -4050,6 +4050,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         world
                     else world
                 let world =
+                    if ImGui.Button "Move to Origin" then
+                        let world = tryMoveSelectedEntityToOrigin world |> snd
+                        ShowEntityContextMenu <- false
+                        world
+                    else world
+                let world =
                     if ImGui.Button "Propagate Entity" then
                         let world = tryPropagateSelectedEntityStructure world |> snd
                         ShowEntityContextMenu <- false
