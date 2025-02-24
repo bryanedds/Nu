@@ -738,7 +738,8 @@ module WorldModule2 =
                         not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
                         Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
                         linkLastOpt <> Some Current // propagation target is not self
-                    if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
+                    // NOTE: dummying this out because it causes false negatives.
+                    //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
                     targets |>
                 Array.ofSeq // copy references to avoid enumerator invalidation
@@ -770,7 +771,8 @@ module WorldModule2 =
                             not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
                             Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
                             linkLastOpt <> Some Current // propagation target is not self
-                        if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
+                        // NOTE: dummying this out because it causes false negatives.
+                        //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
                         targets
                 for target in targetsValid do
