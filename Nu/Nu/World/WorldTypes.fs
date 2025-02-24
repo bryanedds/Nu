@@ -647,9 +647,9 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? Persistent true
          Define? PropagatedDescriptorOpt Option<EntityDescriptor>.None]
 
-    /// Whether the presence property is always overridden with Omnipresent.
-    abstract AlwaysOmnipresent : bool
-    default this.AlwaysOmnipresent = false
+    /// The presence override, if any.
+    abstract PresenceOverride : Presence voption
+    default this.PresenceOverride = ValueNone
 
     /// Register an entity when adding it to a group.
     abstract Register : Entity * World -> World
@@ -728,9 +728,9 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
 /// Dynamically augments an entity's behavior in a composable way.
 and Facet (physical, lightProbe, light) =
 
-    /// Whether the presence property is always overridden with Omnipresent.
-    abstract AlwaysOmnipresent : bool
-    default this.AlwaysOmnipresent = false
+    /// The presence override, if any.-
+    abstract PresenceOverride : Presence voption
+    default this.PresenceOverride = ValueNone
 
     /// Register a facet when adding it to an entity.
     abstract Register : Entity * World -> World
@@ -1184,6 +1184,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
     member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
     member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
+    member this.PresenceOverride = this.Dispatcher.PresenceOverride
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
@@ -1198,7 +1199,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
-    member this.AlwaysOmnipresent = this.Dispatcher.AlwaysOmnipresent
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
     member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
@@ -1212,9 +1212,9 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Optimized = this.Transform.Optimized
     member internal this.VisibleSpatial = this.Visible || this.AlwaysRender
     member internal this.StaticSpatial = this.Static && not this.AlwaysUpdate
-    /// NOTE: there is a minor semantic hole here where an entity's facets may have AlwaysOmnipresent as true but for
-    /// basic efficiency reasons, this often invoked property doesn't take that into consideration.
-    member internal this.PresenceSpatial = if this.Absolute || this.AlwaysOmnipresent then Omnipresent else this.Presence
+    /// NOTE: there is a minor semantic hole here where an entity's facets may have higher PresenceOverrides, but for
+    /// basic efficiency reasons, this often invoked property doesn't take those into consideration.
+    member internal this.PresenceSpatial = if this.Absolute then Omnipresent else ValueOption.defaultValue this.Presence this.PresenceOverride
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.

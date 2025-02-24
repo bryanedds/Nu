@@ -246,10 +246,10 @@ module WorldModuleEntity =
             | Some selectedScreen when entity.Screen.Name = selectedScreen.Name -> true
             | _ -> false
 
-        static member internal getEntityAlwaysOmnipresent (entity : Entity) world =
+        static member internal getEntityPresenceOverride (entity : Entity) world =
             let entityState = World.getEntityState entity world
-            entityState.AlwaysOmnipresent ||
-            Array.exists (fun (facet : Facet) -> facet.AlwaysOmnipresent) entityState.Facets
+            let facetOverrides = Array.map (fun (facet : Facet) -> facet.PresenceOverride) entityState.Facets
+            Presence.highestOverride2 (ValueSome entityState.PresenceSpatial) facetOverrides
 
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
@@ -866,11 +866,11 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityPresence (value : Presence) (entity : Entity) world =
-            let alwaysOmnipresent = World.getEntityAlwaysOmnipresent entity world
+            let presenceOverride = World.getEntityPresenceOverride entity world
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
             if presenceNeq value previous then
-                if value.IsOmnipresent || not alwaysOmnipresent then
+                if presenceOverride.IsNone || ValueOption.contains value presenceOverride then
                     let visibleOld = entityState.VisibleSpatial
                     let staticOld = entityState.StaticSpatial
                     let lightProbeOld = entityState.LightProbe
@@ -2350,6 +2350,12 @@ module WorldModuleEntity =
             // update publish update flag
             let world = World.updateEntityPublishUpdateFlag entity world |> snd'
 
+            // update presence property from override
+            let world =
+                match World.getEntityPresenceOverride entity world with
+                | ValueSome presence -> World.setEntityPresence presence entity world |> snd'
+                | ValueNone -> world
+
             // process entity first time if in the middle of simulant update phase
             let world =
                 if not skipProcessing && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
@@ -2606,6 +2612,12 @@ module WorldModuleEntity =
             // update publish update flag
             let world = World.updateEntityPublishUpdateFlag entity world |> snd'
 
+            // update presence property from override
+            let world =
+                match World.getEntityPresenceOverride entity world with
+                | ValueSome presence -> World.setEntityPresence presence entity world |> snd'
+                | ValueNone -> world
+
             // update mount hierarchy
             let mountOpt = World.getEntityMountOpt entity world
             let world = World.addEntityToMounts mountOpt entity world
@@ -2791,6 +2803,7 @@ module WorldModuleEntity =
                  ("Perimeter", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeter entity world })
                  ("Bounds", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world })
                  ("Presence", fun entity world -> { PropertyType = typeof<Presence>; PropertyValue = World.getEntityPresence entity world })
+                 ("PresenceOverride", fun entity world -> { PropertyType = typeof<Presence voption>; PropertyValue = World.getEntityPresenceOverride entity world })
                  ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
                  ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
                  ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
@@ -2805,7 +2818,6 @@ module WorldModuleEntity =
                  ("Pickable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPickable entity world })
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
-                 ("AlwaysOmnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysOmnipresent entity world })
                  ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
                  ("Protected", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world })
                  ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })

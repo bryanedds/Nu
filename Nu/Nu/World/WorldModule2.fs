@@ -2211,11 +2211,8 @@ module EntityDispatcherModule2 =
     type [<AbstractClass>] EntityDispatcherImNui (is2d, physical, lightProbe, light) =
         inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
-        static member Properties =
-            [define Entity.Presence Omnipresent]
-
-        override this.AlwaysOmnipresent =
-            true // by default, we presume Process may produce child entities that may be referred to unconditionally
+        override this.PresenceOverride =
+            ValueSome Omnipresent // by default, we presume Process may produce child entities that may be referred to unconditionally
 
         override this.TryProcess (entity, world) =
             let context = world.ContextImNui

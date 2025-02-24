@@ -317,9 +317,9 @@ module WorldEntityModule =
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
-        /// Whether the entity is always required to be omnipresent.
-        member this.GetAlwaysOmnipresent world =
-            World.getEntityAlwaysOmnipresent this world
+        /// Get the optional presence override.
+        member this.GetPresenceOverride world =
+            World.getEntityPresenceOverride this world
 
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform byref, world) =
