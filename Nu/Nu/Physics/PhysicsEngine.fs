@@ -173,7 +173,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
         | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map
 
 /// Identifies a body that can be found in a physics engine.
-/// TODO: see if removing CustomEquality here doesn't increase GC pressure or causes other perf overhead.
+/// TODO: see if removing CustomEquality here doesn't increase GC pressure or cause other perf overhead.
 type [<CustomEquality; NoComparison>] BodyId =
     { BodySource : Simulant
       BodyIndex : int }
