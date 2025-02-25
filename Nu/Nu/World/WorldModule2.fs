@@ -3297,19 +3297,23 @@ module WorldModule2' =
                 | :? Facet as facet ->
                     match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
                     | Some index ->
-                        if entityState.Imperative
-                        then entityState.Facets.[index] <- facet; world
-                        else
-                            let facets = entityState.Facets.Clone () :?> Facet array
-                            facets.[index] <- facet
-                            let entityState = { entityState with Facets = facets }
-                            World.setEntityState entityState entity world
+                        let world =
+                            if entityState.Imperative
+                            then entityState.Facets.[index] <- facet; world
+                            else
+                                let facets = entityState.Facets.Clone () :?> Facet array
+                                facets.[index] <- facet
+                                let entityState = { entityState with Facets = facets }
+                                World.setEntityState entityState entity world
+                        World.updateEntityPresenceFromOverride entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
-                        if entityState.Imperative
-                        then entityState.Dispatcher <- entityDispatcher; world
-                        else World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                        let world =
+                            if entityState.Imperative
+                            then entityState.Dispatcher <- entityDispatcher; world
+                            else World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                        World.updateEntityPresenceFromOverride entity world
                     else world
                 | _ -> world
             | :? Group as group ->

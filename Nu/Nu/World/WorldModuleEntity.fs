@@ -659,6 +659,23 @@ module WorldModuleEntity =
         static member internal propagateEntityAffineMatrix entity world =
             World.traverseEntityMounters World.propagateEntityAffineMatrix3 entity world
 
+        static member internal updateEntityPresenceFromOverride entity world =
+            match World.getEntityPresenceOverride entity world with
+            | ValueSome presence -> World.setEntityPresence presence entity world |> snd'
+            | ValueNone -> world
+
+        static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
+            let publishEvent =
+                match UMap.tryFind eventAddress (World.getSubscriptions world) with
+                | Some subscriptions ->
+                    if OMap.isEmpty subscriptions
+                    then failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
+                    else true
+                | None -> false
+            if World.getEntityExists entity world
+            then setFlag publishEvent entity world
+            else struct (false, world)
+
         /// Check that entity has entities to propagate its structure to.
         static member hasPropagationTargets entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue entity with
@@ -774,14 +791,6 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityAbsolute value (entity : Entity) world =
-
-            // specially set to Omnipresent when becoming Absolute
-            let world =
-                if value && value <> World.getEntityAbsolute entity world
-                then World.setEntityPresence Omnipresent entity world |> snd'
-                else world
-
-            // normal property setter stuff
             let entityState = World.getEntityState entity world
             let previous = entityState.Absolute
             if value <> previous then
@@ -801,6 +810,7 @@ module WorldModuleEntity =
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.Absolute) previous value entityState.PublishChangeEvents entity world
+                let world = World.updateEntityPresenceFromOverride entity world // soecial need to update presence via change in absolue
                 struct (true, world)
             else struct (false, world)
 
@@ -1704,6 +1714,7 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         let world = World.setEntityState entityState entity world
+                        let world = World.updateEntityPresenceFromOverride entity world
                         let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                         let world = facet.Register (entity, world)
                         let world =
@@ -1732,18 +1743,6 @@ module WorldModuleEntity =
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToAdd
-
-        static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
-            let publishEvent =
-                match UMap.tryFind eventAddress (World.getSubscriptions world) with
-                | Some subscriptions ->
-                    if OMap.isEmpty subscriptions
-                    then failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
-                    else true
-                | None -> false
-            if World.getEntityExists entity world
-            then setFlag publishEvent entity world
-            else struct (false, world)
 
         static member internal trySetFacetNames facetNames entityState entityOpt world =
             let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
