@@ -77,9 +77,6 @@ module CharacterExtensions =
         member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
         member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
-        member this.GetCharacterCollisions world : Entity Set = this.Get (nameof this.CharacterCollisions) world
-        member this.SetCharacterCollisions (value : Entity Set) world = this.Set (nameof this.CharacterCollisions) value world
-        member this.CharacterCollisions = lens (nameof this.CharacterCollisions) this this.GetCharacterCollisions this.SetCharacterCollisions
         member this.GetWeaponCollisions world : Entity Set = this.Get (nameof this.WeaponCollisions) world
         member this.SetWeaponCollisions (value : Entity Set) world = this.Set (nameof this.WeaponCollisions) value world
         member this.WeaponCollisions = lens (nameof this.WeaponCollisions) this this.GetWeaponCollisions this.SetWeaponCollisions
@@ -290,7 +287,6 @@ type CharacterDispatcher () =
          define Entity.HitPoints characterType.HitPointsMax
          define Entity.LastTimeGrounded 0L
          define Entity.LastTimeJump 0L
-         define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
 
@@ -303,39 +299,8 @@ type CharacterDispatcher () =
             then entity.SetLastTimeGrounded world.UpdateTime world
             else world
 
-        // process penetrations
-        let (penetrations, world) = World.doSubscription "Penetrations" entity.BodyPenetrationEvent world
-        let characterType = entity.GetCharacterType world
-        let world =
-            FQueue.fold (fun world penetration ->
-                match penetration.BodyShapePenetratee.BodyId.BodySource with
-                | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world ->
-                    match (characterType, penetratee.GetCharacterType world) with
-                    | (Enemy, Enemy) -> entity.CharacterCollisions.Map (Set.add penetratee) world
-                    | (_, _) -> world
-                | _ -> world)
-                world penetrations
-
-        // process separations (explicit)
-        let (separationsExplicit, world) = World.doSubscription "SeparationsExplicit" entity.BodySeparationExplicitEvent world
-        let world =
-            FQueue.fold (fun world separation ->
-                match separation.BodyShapeSeparatee.BodyId.BodySource with
-                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                    entity.CharacterCollisions.Map (Set.remove separatee) world
-                | _ -> world)
-                world separationsExplicit
-
-        // process separations (implicit)
-        let (separationsImplicit, world) = World.doSubscription "SeparationsImplicit" entity.BodySeparationImplicitEvent world
-        let world =
-            FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
-                match separation.BodyId.BodySource with
-                | :? Entity as separatee -> entity.CharacterCollisions.Map (Set.remove separatee) world
-                | _ -> world)
-                world separationsImplicit
-
         // process input
+        let characterType = entity.GetCharacterType world
         let world =
             if world.Advancing then
                 match characterType with
