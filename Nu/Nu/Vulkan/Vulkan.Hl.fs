@@ -5,6 +5,7 @@ namespace Vortice.Vulkan
 open System
 open System.Collections.Generic
 open System.IO
+open FSharp.NativeInterop // TODO: DJL: see what can be done about this.
 open SDL2
 open Vortice.ShaderCompiler
 open Prime
@@ -986,6 +987,27 @@ module Hl =
             // fin
             manualAllocatedBuffer
 
+        /// Upload data to buffer if upload is enabled.
+        static member upload offset size ptr buffer =
+            if buffer.Mapping <> nullPtr
+            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) (NativePtr.toVoidPtr buffer.Mapping)
+            else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+
+        /// Upload an array to buffer if upload is enabled.
+        static member uploadArray offset (array : 'a array) buffer =
+            let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
+            ManualAllocatedBuffer.upload offset size arrayPin.NativeInt buffer
+        
+        /// Create a manually allocated uniform buffer.
+        static member createUniform size vkg =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = ManualAllocatedBuffer.createInternal true info vkg
+            allocatedBuffer
+        
         /// Destroy a ManualAllocatedBuffer.
         static member destroy buffer device =
             Vulkan.vkUnmapMemory (device, buffer.Memory)
