@@ -3309,10 +3309,16 @@ module WorldModule2' =
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                        let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
+                        let extrinsicFacetNamesOld = entityState.FacetNames
                         let world =
                             if entityState.Imperative
                             then entityState.Dispatcher <- entityDispatcher; world
                             else World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                        let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
+                        let intrinsicFacetNamesRemoved = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
+                        let extrinsicFacetNamesNew = Set.difference extrinsicFacetNamesOld intrinsicFacetNamesRemoved
+                        let world = World.trySetEntityFacetNames extrinsicFacetNamesNew entity world |> snd
                         World.updateEntityPresenceFromOverride entity world
                     else world
                 | _ -> world
