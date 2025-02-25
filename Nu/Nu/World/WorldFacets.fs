@@ -135,6 +135,13 @@ type AnimatedSpriteFacet () =
          define Entity.Emission Color.Zero
          define Entity.Flip FlipNone]
 
+    override this.Update (entity, world) =
+
+        // pause animation when disabled
+        if not (entity.GetEnabled world)
+        then entity.StartTime.Map ((+) world.GameDelta) world
+        else world
+
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
@@ -1914,7 +1921,15 @@ type SpineSkeletonFacet () =
         entity.SetStartTime world.GameTime world
 
     override this.Update (entity, world) =
-        let deltaTime = world.GameDelta
+
+        // pause skeleton animation when disabled
+        let (deltaTime, world) =
+            if not (entity.GetEnabled world) then
+                let world = entity.StartTime.Map ((+) world.GameDelta) world
+                (GameTime.zero, world)
+            else (world.GameDelta, world)
+
+        // update spine skeleton animation
         let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
         match spineSkeletonStateOpt with
         | Some spineSkeletonState ->
@@ -2561,6 +2576,13 @@ type AnimatedBillboardFacet () =
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
 
+    override this.Update (entity, world) =
+
+        // pause animation when disabled
+        if not (entity.GetEnabled world)
+        then entity.StartTime.Map ((+) world.GameDelta) world
+        else world
+
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
         let castShadow = transform.CastShadow
@@ -3074,8 +3096,7 @@ type AnimatedModelFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.StartTime GameTime.zero
-         define Entity.InsetOpt None
+        [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
@@ -3109,6 +3130,18 @@ type AnimatedModelFacet () =
         world
 
     override this.Update (entity, world) =
+
+        // pause animations when disabled
+        let world =
+            if not (entity.GetEnabled world) then
+                let animations =
+                    Array.map (fun (animation : Animation) ->
+                        { animation with StartTime = animation.StartTime + world.GameDelta })
+                        (entity.GetAnimations world)
+                entity.SetAnimations animations world
+            else world
+
+        // update animations
         let time = world.GameTime
         let animations = entity.GetAnimations world
         let animatedModel = entity.GetAnimatedModel world

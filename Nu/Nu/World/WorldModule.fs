@@ -188,6 +188,10 @@ module WorldModule =
         static member setFramePacing clockPacing world =
             World.mapAmbientState (AmbientState.setFramePacing clockPacing) world
 
+        /// Set whether the world's physics are being integrated.
+        static member setPhysicsEnabled enabled world =
+            World.mapAmbientState (AmbientState.setPhysicsEnabled enabled) world
+
         /// Check that the world is executing with imperative semantics where applicable.
         static member getImperative (world : World) =
             world.Imperative
