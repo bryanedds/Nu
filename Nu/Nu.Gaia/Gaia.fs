@@ -453,24 +453,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     (* Prelude Functions *)
 
-    let private setFullScreen fullScreen =
-        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
-        FullScreen <- fullScreen
-        if not FullScreen then CaptureMode <- false
-
-    let private setCaptureMode captureMode =
-        CaptureMode <- captureMode
-        if CaptureMode
-        then setFullScreen true
-        else setFullScreen false
-
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
-        not io.WantCaptureMouseGlobal && (world.Halted || EditWhileAdvancing)
+        not CaptureMode &&
+        not io.WantCaptureMouseGlobal &&
+        (world.Halted || EditWhileAdvancing)
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
-        not io.WantCaptureKeyboardGlobal && (world.Halted || EditWhileAdvancing)
+        not io.WantCaptureKeyboardGlobal &&
+        (world.Halted || EditWhileAdvancing)
 
     let private snapshot snapshotType world =
         Pasts <- (snapshotType, world) :: Pasts
@@ -552,6 +544,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     and private selectEntityOpt entityOpt world =
 
+        // adjust editing state as needed
         if entityOpt <> SelectedEntityOpt then
 
             // try to focus on same entity property
@@ -566,15 +559,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some _ -> focusPropertyOpt None world
             | None -> ()
 
-            // make sure entity properties are showing
-            if entityOpt.IsSome then EntityPropertiesFocusRequested <- true
+            // adjust focus and manipulation / drag state accordingly
+            match entityOpt with
+            | Some _ -> EntityPropertiesFocusRequested <- true
+            | None -> DragEntityState <- DragEntityInactive
 
-        // actually set the selection
-        SelectedEntityOpt <- entityOpt
+            // actually set the selection
+            SelectedEntityOpt <- entityOpt
 
-    let private deselectEntity world =
-        focusPropertyOpt None world
-        selectEntityOpt None world
+    let private setFullScreen fullScreen world =
+        ignore<World> world // not yet used for anything here
+        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
+        FullScreen <- fullScreen
+        if not FullScreen then CaptureMode <- false
+
+    let private setCaptureMode captureMode world =
+        CaptureMode <- captureMode
+        if CaptureMode then
+            selectEntityOpt None world
+            setFullScreen true world
+        else setFullScreen false world
 
     let private tryUndo (world : World) =
         match
@@ -1642,8 +1646,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode); world
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen); world
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world; world
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen) world; world
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -1673,9 +1677,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false world
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
-                    if not (String.IsNullOrWhiteSpace EntityHierarchySearchStr)
-                    then EntityHierarchySearchStr <- ""
-                    else deselectEntity world
+                    if String.IsNullOrWhiteSpace EntityHierarchySearchStr then
+                        focusPropertyOpt None world
+                        selectEntityOpt None world
+                    else EntityHierarchySearchStr <- ""
                     world
                 else world
             else world
@@ -2444,19 +2449,24 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                     // fin
                     world
-                else world
+
+                // clear editing states that this code otherwise affects
+                else
+                    ManipulationOperation <- OPERATION.TRANSLATE
+                    ManipulationActive <- false
+                    world
             else world
         ImGui.End ()
         world
 
-    let private imGuiFullScreenWindow () =
+    let private imGuiFullScreenWindow world =
         if not CaptureMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
                 ImGui.Text "Capture Mode (F10)"
                 ImGui.SameLine ()
                 let mutable captureMode = CaptureMode
                 if ImGui.Checkbox ("##captureMode", &captureMode) then
-                    setCaptureMode captureMode
+                    setCaptureMode captureMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode (F10 to toggle)."
                     ImGui.EndTooltip ()
@@ -2464,7 +2474,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                setFullScreen fullScreen
+                setFullScreen fullScreen world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
@@ -2713,7 +2723,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 let mutable captureMode = CaptureMode
                 ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
+                setCaptureMode captureMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode view (F10 to toggle)."
                     ImGui.EndTooltip ()
@@ -2722,7 +2732,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                setFullScreen fullScreen
+                setFullScreen fullScreen world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
@@ -4219,7 +4229,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // windows
                 let (entityHierarchyFocused, world) =
                     if FullScreen then
-                        imGuiFullScreenWindow ()
+                        imGuiFullScreenWindow world
                         (false, world)
                     else
                         let world = imGuiMainMenuWindow world
