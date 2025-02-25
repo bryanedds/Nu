@@ -100,24 +100,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyConstraints : Dictionary<BodyJointId, Constraint>
           IntegrationMessages : IntegrationMessage List }
 
-    static member sanitizeHeight (height : single) =
-        let height' = max height 0.05f // prevent having near zero or negative height
-        if height' <> height then Log.infoOnce ("3D physics engine received height too near or less than zero. Using " + scstring height' + " instead.")
-        height'
-
-    static member sanitizeRadius (radius : single) =
-        let radius' = max radius 0.05f // prevent having near zero or negative radius
-        if radius' <> radius then Log.infoOnce ("3D physics engine received radius too near or less than zero. Using " + scstring radius' + " instead.")
-        radius'
-
-    static member sanitizeExtent extent =
-        let extent' = Vector3.Max (extent, v3Dup 0.05f) // prevent having near zero or negative extent
-        if extent' <> extent then Log.infoOnce ("3D physics engine received extent too near or less than zero. Using " + scstring extent' + " instead.")
-        extent'
-
     static member sanitizeScale scale =
-        let scale' = Vector3.Max (scale, v3Dup 0.05f) // prevent having near zero or negative scale
-        if scale' <> scale then Log.infoOnce ("3D physics engine received scale too near or less than zero. Using " + scstring scale' + " instead.")
+        let scale' = Vector3.Max (scale, v3Dup 0.001f) // prevent having near zero or negative size
+        if scale' <> scale then Log.warnOnce ("3D physics engine received scale too near or less than zero. Using " + scstring scale' + " instead.")
         scale'
 
     static member private handleBodyPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
@@ -181,8 +166,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
-        let halfExtent = extent * 0.5f |> PhysicsEngine3d.sanitizeExtent
+        let halfExtent = boxShape.Size * 0.5f
         let shapeSettings = new BoxShapeSettings (&halfExtent)
         let struct (center, rotation) =
             match boxShape.TransformOpt with
@@ -202,14 +186,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let mass =
             match bodyProperties.Substance with
             | Density density ->
-                let volume = extent.X * extent.Y * extent.Z
+                let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
                 volume * density
             | Mass mass -> mass
         mass :: masses
 
     static member private attachSphereShape (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let radius = sphereShape.Radius |> PhysicsEngine3d.sanitizeRadius
-        let shapeSettings = new SphereShapeSettings (radius)
+        let shapeSettings = new SphereShapeSettings (sphereShape.Radius)
         let struct (center, rotation) =
             match sphereShape.TransformOpt with
             | Some transform -> struct (transform.Translation, transform.Rotation)
@@ -228,16 +211,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let mass =
             match bodyProperties.Substance with
             | Density density ->
-                let volume = 4.0f / 3.0f * MathF.PI * pown radius 3
+                let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
                 volume * density
             | Mass mass -> mass
         mass :: masses
 
     static member private attachCapsuleShape (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
-        let halfHeight = height * 0.5f
-        let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
-        let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
+        let shapeSettings = new CapsuleShapeSettings (capsuleShape.Height * 0.5f, capsuleShape.Radius)
         let struct (center, rotation) =
             match capsuleShape.TransformOpt with
             | Some transform -> struct (transform.Translation, transform.Rotation)
@@ -256,7 +236,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let mass =
             match bodyProperties.Substance with
             | Density density ->
-                let volume = MathF.PI * pown radius 2 * (4.0f / 3.0f * radius * height)
+                let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
                 volume * density
             | Mass mass -> mass
         mass :: masses
