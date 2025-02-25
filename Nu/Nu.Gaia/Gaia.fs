@@ -460,7 +460,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private setCaptureMode captureMode =
         CaptureMode <- captureMode
-        if CaptureMode then setFullScreen true
+        if CaptureMode
+        then setFullScreen true
+        else setFullScreen false
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
@@ -2453,8 +2455,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.Text "Capture Mode (F10)"
                 ImGui.SameLine ()
                 let mutable captureMode = CaptureMode
-                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
+                if ImGui.Checkbox ("##captureMode", &captureMode) then
+                    setCaptureMode captureMode
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode (F10 to toggle)."
                     ImGui.EndTooltip ()
