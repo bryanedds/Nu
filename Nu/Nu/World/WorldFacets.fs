@@ -3074,8 +3074,7 @@ type AnimatedModelFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.StartTime GameTime.zero
-         define Entity.InsetOpt None
+        [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
