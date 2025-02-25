@@ -3395,7 +3395,7 @@ module TraversalInterpolatedFacetExtensions =
             if FQueue.notEmpty rotationHistory then
                 let rotations = FQueue.conj rotation rotationHistory
                 if rotations.Length > 1 then
-                    let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f)
+                    let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f) // HACK: we just interpolate the first and last rotations...
                     unnormalized.Normalized
                 else rotation
             else rotation
