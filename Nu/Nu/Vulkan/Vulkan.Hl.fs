@@ -949,6 +949,7 @@ module Hl =
             | Some memoryType -> memoryType
             | None -> Log.fail "Failed to find suitable memory type!"
         
+        // TODO: DJL: fix the BadImageFormatException this triggers!
         static member private createInternal uploadEnabled bufferInfo vkg =
 
             // create buffer
@@ -1010,7 +1011,7 @@ module Hl =
         
         /// Destroy a ManualAllocatedBuffer.
         static member destroy buffer device =
-            Vulkan.vkUnmapMemory (device, buffer.Memory)
+            if buffer.Mapping <> nullPtr then Vulkan.vkUnmapMemory (device, buffer.Memory)
             Vulkan.vkDestroyBuffer (device, buffer.Buffer, nullPtr)
             Vulkan.vkFreeMemory (device, buffer.Memory, nullPtr)
     
