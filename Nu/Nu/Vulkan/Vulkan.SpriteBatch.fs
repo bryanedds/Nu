@@ -69,7 +69,6 @@ module SpriteBatch =
                 [||] vkg.RenderPass vkg.Device
 
         // create sprite batch uniform buffers
-        let perimetersUniform = Hl.ManualAllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg
         let perimetersUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
         let pivotsUniform = Hl.FifBuffer.createUniform (sizeof<single> * 2 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
         let rotationsUniform = Hl.FifBuffer.createUniform (sizeof<single> * 1 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
