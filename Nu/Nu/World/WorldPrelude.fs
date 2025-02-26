@@ -437,10 +437,11 @@ type Timers =
 [<AutoOpen>]
 module AmbientState =
 
-    let [<Literal>] private ImperativeMask =    0b0001u
-    let [<Literal>] private AccompaniedMask =   0b0010u
-    let [<Literal>] private AdvancingMask =     0b0100u
-    let [<Literal>] private FramePacingMask =   0b1000u
+    let [<Literal>] private ImperativeMask =        0b00001u
+    let [<Literal>] private AccompaniedMask =       0b00010u
+    let [<Literal>] private AdvancingMask =         0b00100u
+    let [<Literal>] private FramePacingMask =       0b01000u
+    let [<Literal>] private PhysicsEnabledMask =    0b10000u
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
@@ -473,6 +474,7 @@ module AmbientState =
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
         member this.Advancing = this.Flags &&& AdvancingMask <> 0u
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
+        member this.PhysicsEnabled = this.Flags &&& PhysicsEnabledMask <> 0u
 
     /// Get the the liveness state of the engine.
     let getLiveness state =
@@ -488,6 +490,10 @@ module AmbientState =
     /// Set whether the world's frame rate is being explicitly paced based on clock progression.
     let setFramePacing framePacing (state : _ AmbientState) =
         { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
+
+    /// Set whether the world's physics are being integrated.
+    let setPhysicsEnabled enabled (state : _ AmbientState) =
+        { state with Flags = if enabled then state.Flags ||| PhysicsEnabledMask else state.Flags &&& ~~~PhysicsEnabledMask }
 
     /// Get the collection config value.
     let getConfig (state : _ AmbientState) =
@@ -737,7 +743,8 @@ module AmbientState =
             (if imperative then ImperativeMask else 0u) |||
             (if accompanied then AccompaniedMask else 0u) |||
             (if advancing then AdvancingMask else 0u) |||
-            (if framePacing then FramePacingMask else 0u)
+            (if framePacing then FramePacingMask else 0u) |||
+            PhysicsEnabledMask
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Flags = flags
           Liveness = Live

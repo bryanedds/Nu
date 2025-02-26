@@ -1938,9 +1938,9 @@ module WorldModule2 =
                 match liveness with Dead -> World.exit world | Live -> world
             else world
 
-        static member private processPhysics2d world =
+        static member private processPhysics2d stepTime world =
             let physicsEngine = World.getPhysicsEngine2d world
-            match physicsEngine.TryIntegrate world.GameDelta with
+            match physicsEngine.TryIntegrate stepTime with
             | Some integrationMessages ->
                 let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
                 let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
@@ -1948,9 +1948,9 @@ module WorldModule2 =
                 world
             | None -> world
 
-        static member private processPhysics3d world =
+        static member private processPhysics3d stepTime world =
             let physicsEngine = World.getPhysicsEngine3d world
-            match physicsEngine.TryIntegrate world.GameDelta with
+            match physicsEngine.TryIntegrate stepTime with
             | Some integrationMessages ->
                 let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
                 let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
@@ -1958,9 +1958,10 @@ module WorldModule2 =
                 world
             | None -> world
 
-        static member private processPhysics world =
-            let world = World.processPhysics3d world
-            let world = World.processPhysics2d world
+        static member private processPhysics (world : World) =
+            let stepTime = if world.PhysicsEnabled then world.GameDelta else GameTime.zero
+            let world = World.processPhysics3d stepTime world
+            let world = World.processPhysics2d stepTime world
             world
 
         /// Clean-up the resources held by the world.
