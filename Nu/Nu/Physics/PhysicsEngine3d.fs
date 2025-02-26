@@ -101,17 +101,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           IntegrationMessages : IntegrationMessage List }
 
     static member sanitizeHeight (height : single) =
-        let height' = max height 0.05f // prevent having near zero or negative height
+        let height' = max height 0.1f // prevent having near zero or negative height
         if height' <> height then Log.infoOnce ("3D physics engine received height too near or less than zero. Using " + scstring height' + " instead.")
         height'
 
     static member sanitizeRadius (radius : single) =
-        let radius' = max radius 0.05f // prevent having near zero or negative radius
+        let radius' = max radius 0.1f // prevent having near zero or negative radius
         if radius' <> radius then Log.infoOnce ("3D physics engine received radius too near or less than zero. Using " + scstring radius' + " instead.")
         radius'
 
     static member sanitizeExtent extent =
-        let extent' = Vector3.Max (extent, v3Dup 0.05f) // prevent having near zero or negative extent
+        let extent' = Vector3.Max (extent, v3Dup 0.1f) // prevent having near zero or negative extent
         if extent' <> extent then Log.infoOnce ("3D physics engine received extent too near or less than zero. Using " + scstring extent' + " instead.")
         extent'
 
