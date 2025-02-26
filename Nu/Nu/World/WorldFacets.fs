@@ -1921,63 +1921,57 @@ type SpineSkeletonFacet () =
         entity.SetStartTime world.GameTime world
 
     override this.Update (entity, world) =
-
-        // pause skeleton animation when disabled
-        let (deltaTime, world) =
-            if not (entity.GetEnabled world) then
-                let world = entity.StartTime.Map ((+) world.GameDelta) world
-                (GameTime.zero, world)
-            else (world.GameDelta, world)
-
-        // update spine skeleton animation
-        let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
-        match spineSkeletonStateOpt with
-        | Some spineSkeletonState ->
-            let startTrackArgs = List ()
-            let interruptTrackArgs = List ()
-            let completeTrackArgs = List ()
-            let endTrackArgs = List ()
-            let eventTrackArgs = List ()
-            let startDelegate = Spine.AnimationState.TrackEntryDelegate startTrackArgs.Add
-            let interruptDelegate = Spine.AnimationState.TrackEntryDelegate interruptTrackArgs.Add
-            let completeDelegate = Spine.AnimationState.TrackEntryDelegate completeTrackArgs.Add
-            let endDelegate = Spine.AnimationState.TrackEntryDelegate endTrackArgs.Add
-            let eventDelegate = Spine.AnimationState.TrackEntryEventDelegate (fun entry event -> eventTrackArgs.Add (entry, event))
-            spineSkeletonState.SpineAnimationState.add_Start startDelegate
-            spineSkeletonState.SpineAnimationState.add_Interrupt interruptDelegate
-            spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
-            spineSkeletonState.SpineAnimationState.add_End endDelegate
-            spineSkeletonState.SpineAnimationState.add_Event eventDelegate
-            let color = entity.GetColor world
-            spineSkeletonState.SpineSkeleton.R <- color.R
-            spineSkeletonState.SpineSkeleton.G <- color.G
-            spineSkeletonState.SpineSkeleton.B <- color.B
-            spineSkeletonState.SpineSkeleton.A <- color.A
-            let struct (scaleX, scaleY) =
-                match entity.GetFlip world with
-                | FlipNone -> struct (1.0f, 1.0f)
-                | FlipH -> struct (-1.0f, 1.0f)
-                | FlipV -> struct (1.0f, -1.0f)
-                | FlipHV -> struct (-1.0f, -1.0f)
-            spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
-            spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
-            spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-            spineSkeletonState.SpineSkeleton.Update deltaTime.Seconds
-            spineSkeletonState.SpineAnimationState.Update deltaTime.Seconds
-            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
-            spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
-            spineSkeletonState.SpineAnimationState.remove_Start startDelegate
-            spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
-            spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
-            spineSkeletonState.SpineAnimationState.remove_End endDelegate
-            spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world startTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world interruptTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world completeTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world endTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world eventTrackArgs
-            world
-        | None -> world
+        if entity.GetEnabled world then
+            let gameDelta = world.GameDelta
+            let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
+            match spineSkeletonStateOpt with
+            | Some spineSkeletonState ->
+                let startTrackArgs = List ()
+                let interruptTrackArgs = List ()
+                let completeTrackArgs = List ()
+                let endTrackArgs = List ()
+                let eventTrackArgs = List ()
+                let startDelegate = Spine.AnimationState.TrackEntryDelegate startTrackArgs.Add
+                let interruptDelegate = Spine.AnimationState.TrackEntryDelegate interruptTrackArgs.Add
+                let completeDelegate = Spine.AnimationState.TrackEntryDelegate completeTrackArgs.Add
+                let endDelegate = Spine.AnimationState.TrackEntryDelegate endTrackArgs.Add
+                let eventDelegate = Spine.AnimationState.TrackEntryEventDelegate (fun entry event -> eventTrackArgs.Add (entry, event))
+                spineSkeletonState.SpineAnimationState.add_Start startDelegate
+                spineSkeletonState.SpineAnimationState.add_Interrupt interruptDelegate
+                spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
+                spineSkeletonState.SpineAnimationState.add_End endDelegate
+                spineSkeletonState.SpineAnimationState.add_Event eventDelegate
+                let color = entity.GetColor world
+                spineSkeletonState.SpineSkeleton.R <- color.R
+                spineSkeletonState.SpineSkeleton.G <- color.G
+                spineSkeletonState.SpineSkeleton.B <- color.B
+                spineSkeletonState.SpineSkeleton.A <- color.A
+                let struct (scaleX, scaleY) =
+                    match entity.GetFlip world with
+                    | FlipNone -> struct (1.0f, 1.0f)
+                    | FlipH -> struct (-1.0f, 1.0f)
+                    | FlipV -> struct (1.0f, -1.0f)
+                    | FlipHV -> struct (-1.0f, -1.0f)
+                spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
+                spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
+                spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
+                spineSkeletonState.SpineSkeleton.Update gameDelta.Seconds
+                spineSkeletonState.SpineAnimationState.Update gameDelta.Seconds
+                spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
+                spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
+                spineSkeletonState.SpineAnimationState.remove_Start startDelegate
+                spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
+                spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
+                spineSkeletonState.SpineAnimationState.remove_End endDelegate
+                spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
+                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world startTrackArgs
+                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world interruptTrackArgs
+                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world completeTrackArgs
+                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world endTrackArgs
+                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world eventTrackArgs
+                world
+            | None -> world
+        else entity.StartTime.Map ((+) world.GameDelta) world
 
     override this.Render (_, entity, world) =
         let spineSkeleton = entity.GetSpineSkeleton world
@@ -3130,35 +3124,31 @@ type AnimatedModelFacet () =
         world
 
     override this.Update (entity, world) =
+        if entity.GetEnabled world then
+            let time = world.GameTime
+            let animations = entity.GetAnimations world
+            let animatedModel = entity.GetAnimatedModel world
+            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
+            let resultOpt =
+                if entity.GetUseJobGraph world then
+                    let resultOpt =
+                        match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
+                        | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+                        | _ -> None
+                    let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
+                    World.enqueueJob 1.0f job world
+                    resultOpt
+                else entity.TryComputeBoneTransforms time animations sceneOpt
+            match resultOpt with
+            | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
+            | None -> world
+        else
+            let animations =
+                Array.map (fun (animation : Animation) ->
+                    { animation with StartTime = animation.StartTime + world.GameDelta })
+                    (entity.GetAnimations world)
+            entity.SetAnimations animations world
 
-        // pause animations when disabled
-        let world =
-            if not (entity.GetEnabled world) then
-                let animations =
-                    Array.map (fun (animation : Animation) ->
-                        { animation with StartTime = animation.StartTime + world.GameDelta })
-                        (entity.GetAnimations world)
-                entity.SetAnimations animations world
-            else world
-
-        // update animations
-        let time = world.GameTime
-        let animations = entity.GetAnimations world
-        let animatedModel = entity.GetAnimatedModel world
-        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
-        let resultOpt =
-            if entity.GetUseJobGraph world then
-                let resultOpt =
-                    match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-                    | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
-                    | _ -> None
-                let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
-                World.enqueueJob 1.0f job world
-                resultOpt
-            else entity.TryComputeBoneTransforms time animations sceneOpt
-        match resultOpt with
-        | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
-        | None -> world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
