@@ -222,7 +222,7 @@ module WorldModule2 =
                     // slide-specific behavior currently has to ignore desired screen in order to work. However, we
                     // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
                     // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
-                    // we use a special case to quick cut when halted in the editor
+                    // we use a special case to quick cut when halted (or incidentally processing with zeroDelta) in the editor.
                     match World.getDesiredScreen world with
                     | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
                         let transitionTime = world.GameTime
@@ -240,7 +240,7 @@ module WorldModule2 =
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if world.Accompanied && world.Halted then // special case to quick cut when halted in the editor
+                            if world.Accompanied && world.Halted then // special case to quick cut when halted (or incidentally processing with zeroDelta) in the editor.
                                 let transitionTime = world.GameTime
                                 let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
                                 World.updateScreenIdling transitionTime desiredScreen world
@@ -447,7 +447,7 @@ module WorldModule2 =
                 else world
             let world =
                 if screen.GetExists world && select then
-                    if world.Accompanied && world.Halted then // special case to quick cut when halted in the editor
+                    if world.Accompanied && world.Halted then // special case to quick cut when halted (or incidentally processing with zeroDelta) in the editor.
                         let transitionTime = world.GameTime
                         let world = World.selectScreen (IdlingState transitionTime) screen world
                         World.updateScreenIdling transitionTime screen world
