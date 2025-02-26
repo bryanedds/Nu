@@ -231,6 +231,7 @@ module WorldImNui =
 
                     // fin
                     (true, world)
+
             let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
@@ -341,6 +342,7 @@ module WorldImNui =
 
                     // fin
                     (true, world)
+
             let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
             let world =

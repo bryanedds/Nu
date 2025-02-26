@@ -433,6 +433,7 @@ module WorldModule2 =
 
                     // fin
                     (true, world)
+
             let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
