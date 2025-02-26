@@ -491,9 +491,8 @@ module AssimpExtensions =
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
                 let mutable animationChannel = Unchecked.defaultof<_>
                 if animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name, &animationChannel) then
-                    let localTime = time - animationStartTime
-                    if  localTime >= 0.0f &&
-                        (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
+                    let localTime = max 0.0f (time - animationStartTime)
+                    if  (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
                         (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
                         let localTimeScaled =
                             match animation.Playback with

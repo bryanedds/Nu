@@ -3109,11 +3109,9 @@ type AnimatedModelFacet () =
             World.sense
                 (fun evt world ->
                     let playBox = fst' (World.getPlayBounds3d world)
-                    let notUpdating =
-                        world.Halted ||
-                        entity.GetPresence world <> Omnipresent &&
-                        not (entity.GetAlwaysUpdate world) &&
-                        not (playBox.Intersects (evt.Subscriber.GetBounds world))
+                    let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (evt.Subscriber.GetBounds world))
+                    let disabled = not (entity.GetEnabled world)
+                    let notUpdating = world.Halted || outsidePlayBounds || disabled
                     let world = if notUpdating then evt.Subscriber.AnimateBones world else world
                     (Cascade, world))
                 (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
