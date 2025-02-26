@@ -111,7 +111,7 @@ type AnimatedSpriteFacet () =
         let celCount = entity.GetCelCount world
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
-            let localTime = world.GameTime - startTime
+            let localTime = max GameTime.zero (world.GameTime - startTime)
             let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
             let celSize = entity.GetCelSize world
             let celI = cel % celRun
@@ -136,8 +136,6 @@ type AnimatedSpriteFacet () =
          define Entity.Flip FlipNone]
 
     override this.Update (entity, world) =
-
-        // pause animation when disabled
         if not (entity.GetEnabled world)
         then entity.StartTime.Map ((+) world.GameDelta) world
         else world
@@ -1872,7 +1870,7 @@ type SpineSkeletonFacet () =
             match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
             | ValueSome metadata ->
                 let startTime = entity.GetStartTime world
-                let localTime = world.GameTime - startTime
+                let localTime = max GameTime.zero (world.GameTime - startTime)
                 let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
                 spineSkeletonInstance.Time <- localTime.Seconds
                 let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
@@ -2546,7 +2544,7 @@ type AnimatedBillboardFacet () =
         let celCount = entity.GetCelCount world
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
-            let localTime = world.GameTime - startTime
+            let localTime = max GameTime.zero (world.GameTime - startTime)
             let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
             let celSize = entity.GetCelSize world
             let celI = cel % celRun
@@ -2571,8 +2569,6 @@ type AnimatedBillboardFacet () =
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
 
     override this.Update (entity, world) =
-
-        // pause animation when disabled
         if not (entity.GetEnabled world)
         then entity.StartTime.Map ((+) world.GameDelta) world
         else world
