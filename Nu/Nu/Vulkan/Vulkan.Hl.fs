@@ -769,11 +769,17 @@ module Hl =
         /// Begin the frame.
         static member beginFrame (vkg : VulkanGlobal) =
 
-            // wait for previous cycle to finish
-            awaitFence vkg.InFlightFence vkg.Device
+            // ensure current frame is ready
+            let mutable fence = vkg.InFlightFence
+            Vulkan.vkWaitForFences (vkg.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
 
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
+            
+            // swapchain refresh happens here
+            
+            // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
+            Vulkan.vkResetFences (vkg.Device, 1u, asPointer &fence) |> check
 
             // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
@@ -783,7 +789,7 @@ module Hl =
             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             beginRenderBlock vkg.RenderCommandBuffer vkg.ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
-            endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] vkg.InFlightFence
+            endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] fence
 
         /// End the frame.
         static member endFrame () =
@@ -866,11 +872,6 @@ module Hl =
                 let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
                 let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
 
-                // setup swapchain and its assets
-                let swapchain = VulkanGlobal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
-                let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
-                let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
-
                 // setup command system
                 let transientCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
                 let mainCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
@@ -890,7 +891,10 @@ module Hl =
                 let clearRenderPass = VulkanGlobal.createRenderPass true false surfaceFormat.format device
                 let presentRenderPass = VulkanGlobal.createRenderPass false true surfaceFormat.format device
 
-                // create swapchain framebuffers
+                // setup swapchain and its assets
+                let swapchain = VulkanGlobal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
+                let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
+                let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
                 let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent renderPass swapchainImageViews device
 
                 // make VulkanGlobal
