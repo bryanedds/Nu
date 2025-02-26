@@ -762,10 +762,7 @@ and Facet (physical, lightProbe, light) =
 
     /// Participate in getting the default size of an entity.
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
-    default this.GetAttributesInferred (entity, world) =
-        if WorldTypes.getEntityIs2d entity world
-        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
-        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
+    default this.GetAttributesInferred (_, _) = AttributesInferred.unimportant
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World
