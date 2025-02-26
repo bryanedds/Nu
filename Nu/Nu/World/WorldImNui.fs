@@ -222,12 +222,13 @@ module WorldImNui =
                     // create group only when needed
                     let world =
                         if groupCreation then
-                            let world =
-                                match groupFilePathOpt with
-                                | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                                | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> snd
-                            World.setGroupProtected true group world |> snd'
+                            match groupFilePathOpt with
+                            | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
+                            | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> snd
                         else world
+
+                    // protect group
+                    let world = World.setGroupProtected true group world |> snd'
 
                     // fin
                     (true, world)
@@ -335,10 +336,12 @@ module WorldImNui =
 
                     // create entity only when needed
                     let world =
-                        if entityCreation then
-                            let world = World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
-                            World.setEntityProtected true entity world |> snd'
+                        if entityCreation
+                        then World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                         else world
+
+                    // protect entity
+                    let world = World.setEntityProtected true entity world |> snd'
 
                     // fin
                     (true, world)
