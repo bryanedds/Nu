@@ -3108,25 +3108,23 @@ type AnimatedModelFacet () =
         world
 
     override this.Update (entity, world) =
-        if entity.GetEnabled world then
-            let time = world.GameTime
-            let animations = entity.GetAnimations world
-            let animatedModel = entity.GetAnimatedModel world
-            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
-            let resultOpt =
-                if entity.GetUseJobGraph world then
-                    let resultOpt =
-                        match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-                        | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
-                        | _ -> None
-                    let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
-                    World.enqueueJob 1.0f job world
-                    resultOpt
-                else entity.TryComputeBoneTransforms time animations sceneOpt
-            match resultOpt with
-            | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
-            | None -> world
-        else world
+        let time = world.GameTime
+        let animations = entity.GetAnimations world
+        let animatedModel = entity.GetAnimatedModel world
+        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
+        let resultOpt =
+            if entity.GetUseJobGraph world then
+                let resultOpt =
+                    match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
+                    | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+                    | _ -> None
+                let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
+                World.enqueueJob 1.0f job world
+                resultOpt
+            else entity.TryComputeBoneTransforms time animations sceneOpt
+        match resultOpt with
+        | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
+        | None -> world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
