@@ -222,7 +222,7 @@ module WorldModule2 =
                     // slide-specific behavior currently has to ignore desired screen in order to work. However, we
                     // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
                     // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
-                    // we use a quick cut to the desired screen in this special case.
+                    // we use a special case to quick cut when halted in the editor
                     match World.getDesiredScreen world with
                     | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
                         let transitionTime = world.GameTime
@@ -1503,13 +1503,13 @@ module WorldModule2 =
 
                 // attempt to process groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryProcessGroup zeroDelta group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world && group.GetSelected world then World.tryProcessGroup zeroDelta group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // attempt to process entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
-                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet3dNormalCached
-                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet2dNormalCached
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world && element.Entry.GetSelected world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world && element.Entry.GetSelected world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
                 // fin
