@@ -167,9 +167,9 @@ module WorldModule2 =
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime - 2L >= lifeTime
-            | (ClockTime time, ClockTime lifeTime) ->
-                let localTime = world.ClockTime - time
-                localTime - world.ClockDelta * 2.0f >= lifeTime
+            | (TickTime time, TickTime lifeTime) ->
+                let localTime = world.TickTime - time
+                localTime - world.TickDelta * 2L >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
@@ -177,9 +177,9 @@ module WorldModule2 =
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime - 2L >= lifeTime
-            | (ClockTime time, ClockTime lifeTime) ->
-                let localTime = world.ClockTime - time
-                localTime - world.ClockDelta * 2.0f >= lifeTime
+            | (TickTime time, TickTime lifeTime) ->
+                let localTime = world.TickTime - time
+                localTime - world.TickDelta * 2L >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
@@ -1048,7 +1048,7 @@ module WorldModule2 =
             let shouldRun =
                 match tasklet.ScheduledTime with
                 | UpdateTime time -> time <= world.UpdateTime
-                | ClockTime time -> time <= world.ClockTime
+                | TickTime time -> time <= world.TickTime
             if shouldRun
             then (taskletsNotRun, tasklet.ScheduledOp world)
             else
@@ -1709,9 +1709,9 @@ module WorldModule2 =
                         | (UpdateTime time, UpdateTime lifeTime) ->
                             let localTime = world.UpdateTime - time
                             single localTime / single lifeTime
-                        | (ClockTime time, ClockTime lifeTime) ->
-                            let localTime = world.ClockTime - time
-                            single localTime / lifeTime
+                        | (TickTime time, TickTime lifeTime) ->
+                            let localTime = world.TickTime - time
+                            single localTime / single lifeTime
                         | (_, _) -> failwithumf ()
                     let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                     let color = Color.One.WithA alpha

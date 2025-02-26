@@ -537,13 +537,13 @@ module AmbientState =
     let getGameDelta (state : 'w AmbientState) =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
-        | DynamicFrameRate _ -> ClockTime (getClockDelta state)
+        | DynamicFrameRate _ -> TickTime (getTickDelta state)
 
     /// Get the polymorphic engine time.
     let getGameTime state =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
-        | DynamicFrameRate _ -> ClockTime (getClockTime state)
+        | DynamicFrameRate _ -> TickTime (getTickTime state)
 
     /// Get the date delta as a TimeSpan.
     let getDateDelta state =

@@ -270,7 +270,7 @@ type Character2dDispatcher () =
         let compressedTime =
             match (time, delay) with
             | (UpdateTime time, UpdateTime delay) -> time / delay
-            | (ClockTime time, ClockTime delay) -> time / delay |> int64
+            | (TickTime time, TickTime delay) -> time / delay
             | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
         let frame = compressedTime % int64 celRun
         let i = single (frame % 3L)

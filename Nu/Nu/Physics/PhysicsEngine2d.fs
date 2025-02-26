@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.Numerics
 open nkast.Aether.Physics2D
 open nkast.Aether.Physics2D.Dynamics
@@ -668,14 +669,18 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 
         member physicsEngine.TryIntegrate stepTime =
-            let physicsStepAmount =
-                match (Constants.GameTime.DesiredFrameRate, stepTime) with
-                | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
-                | (DynamicFrameRate _, ClockTime time) -> if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
-                | (_, _) -> failwithumf ()
-            if physicsStepAmount > 0.0f then
-                PhysicsEngine2d.applyGravity physicsStepAmount physicsEngine
-                physicsEngine.PhysicsContext.Step physicsStepAmount
+
+            // constrain step time
+            let stepTime = stepTime.Seconds
+            let stepTime =
+                if stepTime > 0.0f && stepTime < 0.001f then 0.001f
+                elif stepTime > 0.1f then 0.1f
+                else stepTime
+
+            // integrate only when time has passed
+            if stepTime > 0.0f then
+                PhysicsEngine2d.applyGravity stepTime physicsEngine
+                physicsEngine.PhysicsContext.Step stepTime
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()

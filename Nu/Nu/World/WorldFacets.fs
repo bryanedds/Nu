@@ -111,7 +111,7 @@ type AnimatedSpriteFacet () =
         let celCount = entity.GetCelCount world
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
-            let localTime = max GameTime.zero (world.GameTime - startTime)
+            let localTime = world.GameTime - startTime
             let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
             let celSize = entity.GetCelSize world
             let celI = cel % celRun
@@ -1870,7 +1870,7 @@ type SpineSkeletonFacet () =
             match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
             | ValueSome metadata ->
                 let startTime = entity.GetStartTime world
-                let localTime = max GameTime.zero (world.GameTime - startTime)
+                let localTime = world.GameTime - startTime
                 let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
                 spineSkeletonInstance.Time <- localTime.Seconds
                 let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
@@ -2544,7 +2544,7 @@ type AnimatedBillboardFacet () =
         let celCount = entity.GetCelCount world
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
-            let localTime = max GameTime.zero (world.GameTime - startTime)
+            let localTime = world.GameTime - startTime
             let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
             let celSize = entity.GetCelSize world
             let celI = cel % celRun
@@ -3118,7 +3118,7 @@ type AnimatedModelFacet () =
         world
 
     override this.Update (entity, world) =
-        if entity.GetEnabled world then
+        //if entity.GetEnabled world then
             let time = world.GameTime
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
@@ -3133,16 +3133,18 @@ type AnimatedModelFacet () =
                     World.enqueueJob 1.0f job world
                     resultOpt
                 else entity.TryComputeBoneTransforms time animations sceneOpt
-            match resultOpt with
-            | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
-            | None -> world
-        else
-            let animations =
-                Array.map (fun (animation : Animation) ->
-                    { animation with StartTime = animation.StartTime + world.GameDelta })
-                    (entity.GetAnimations world)
-            entity.SetAnimations animations world
-
+            let world =
+                match resultOpt with
+                | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
+                | None -> world
+        //else
+            if not (entity.GetEnabled world) then
+                let animations =
+                    Array.map (fun (animation : Animation) ->
+                        { animation with StartTime = animation.StartTime + world.GameDelta })
+                        (entity.GetAnimations world)
+                entity.SetAnimations animations world
+            else world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world

@@ -1164,11 +1164,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.TryIntegrate stepTime =
 
+            // constraint step time to reasonable values
+            let stepTime = stepTime.Seconds
+            let stepTime =
+                if stepTime > 0.0f && stepTime < 0.001f then 0.001f
+                elif stepTime > 0.1f then 0.1f
+                else stepTime
+
             // integrate only when time has passed
-            if not stepTime.IsZero then
+            if stepTime > 0.0f then
 
                 // update non-character physics, logging on error (integration should still advance sim regardless of error)
-                match physicsEngine.PhysicsContext.Update (stepTime.Seconds, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
+                match physicsEngine.PhysicsContext.Update (stepTime, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
                 | PhysicsUpdateError.ManifoldCacheFull as error ->
                     Log.warnOnce
                         ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
@@ -1200,8 +1207,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     character.LinearVelocity <-
                         if character.GroundState = GroundState.OnGround
                         then character.LinearVelocity.MapY (max 0.0f)
-                        else character.LinearVelocity + characterGravity * stepTime.Seconds
-                    character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+                        else character.LinearVelocity + characterGravity * stepTime
+                    character.ExtendedUpdate (stepTime, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
                 // update constraints
                 for bodyConstraintEntry in physicsEngine.BodyConstraints do
