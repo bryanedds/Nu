@@ -78,7 +78,7 @@ module WorldModule =
     let mutable internal tryProcessGame : bool -> Game -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessScreen : bool -> bool -> Screen -> World -> World =
+    let mutable internal tryProcessScreen : bool -> Screen -> World -> World =
         Unchecked.defaultof<_>
         
     let mutable internal tryProcessGroup : bool -> Group -> World -> World =

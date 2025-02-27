@@ -1368,7 +1368,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let world = World.setEventFilter Constants.Gaia.EventFilter world
 
             // attempt to process ImNui once to make sure initial simulants are created
-            let world = World.tryProcessSimulants true true world
+            let world = World.tryProcessSimulants true world
 
             // apply any selected mode
             let world =
@@ -1380,7 +1380,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | None -> world
 
             // attempt to process ImNui again to ensure simulants in new mode are created
-            let world = World.tryProcessSimulants false true world
+            let world = World.tryProcessSimulants true world
 
             // figure out which screen to use
             let (screen, world) =
@@ -2682,7 +2682,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = World.tryProcessSimulants false true world
+                                        let world = World.tryProcessSimulants true world
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world

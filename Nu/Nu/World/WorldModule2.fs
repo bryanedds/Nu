@@ -467,7 +467,7 @@ module WorldModule2 =
                 else world
             let world =
                 if screenCreation && screen.GetExists world && WorldModule.UpdatingSimulants && World.getScreenSelected screen world
-                then WorldModule.tryProcessScreen select true screen world
+                then WorldModule.tryProcessScreen true screen world
                 else world
             let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> ScreenResult FQueue * 'r
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen.ScreenAddress world
@@ -1489,7 +1489,7 @@ module WorldModule2 =
         /// Process ImNui for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
         /// meaningful time. Do NOT call this in the course of normal operations!
-        static member tryProcessSimulants firstFrame zeroDelta (world : World) =
+        static member tryProcessSimulants zeroDelta (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1510,7 +1510,7 @@ module WorldModule2 =
 
                 // attempt to process screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen firstFrame zeroDelta screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen zeroDelta screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // attempt to process groups
@@ -1605,7 +1605,7 @@ module WorldModule2 =
             // fin
             world
 
-        static member private updateSimulants firstFrame (world : World) =
+        static member private updateSimulants (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1631,7 +1631,7 @@ module WorldModule2 =
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
                     Seq.fold (fun world (screen : Screen) ->
-                        let world = if screen.GetExists world then World.tryProcessScreen firstFrame false screen world else world
+                        let world = if screen.GetExists world then World.tryProcessScreen false screen world else world
                         let world = if advancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world else world
                         world)
                         world screens
@@ -2027,7 +2027,7 @@ module WorldModule2 =
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
                                     WorldModule.UpdatingSimulants <- true
-                                    let world = World.updateSimulants firstFrame world
+                                    let world = World.updateSimulants world
                                     WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
                                     match World.getLiveness world with
@@ -2815,7 +2815,7 @@ module ScreenDispatcherModule =
     type [<AbstractClass>] ScreenDispatcherImNui () =
         inherit ScreenDispatcher ()
 
-        override this.TryProcess (firstFrame, screen, world) =
+        override this.TryProcess (screen, world) =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
             let (selectResults, world) = World.doSubscription "@SelectResults" screen.SelectEvent world |> mapFst (FQueue.map (constant Select))
