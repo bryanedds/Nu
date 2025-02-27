@@ -430,7 +430,7 @@ module WorldModule2 =
                     // create screen only when needed
                     let world =
                         if screenCreation then
-                            let world = World.createScreen4 true typeof<'d>.Name (Some name) world |> snd
+                            let world = World.createScreen4 typeof<'d>.Name (Some name) world |> snd
                             match groupFilePathOpt with
                             | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                             | None -> world
@@ -2819,7 +2819,6 @@ module ScreenDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
             let (selectResults, world) = World.doSubscription "@SelectResults" screen.SelectEvent world |> mapFst (FQueue.map (constant Select))
-            let selectResults = if firstFrame then FQueue.conj Select selectResults else selectResults // HACK: add in Select result manually when this is first frame as it is otherwise missed.
             let (incomingStartResults, world) = World.doSubscription "@IncomingStartResults" screen.IncomingStartEvent world |> mapFst (FQueue.map (constant IncomingStart))
             let (incomingFinishResults, world) = World.doSubscription "@IncomingFinishResults" screen.IncomingFinishEvent world |> mapFst (FQueue.map (constant IncomingFinish))
             let (outgoingStartResults, world) = World.doSubscription "@OutgoingStartResults" screen.OutgoingStartEvent world |> mapFst (FQueue.map (constant OutgoingStart))

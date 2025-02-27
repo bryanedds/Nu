@@ -349,7 +349,7 @@ module Content =
                     List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
                             if not (screen.GetExists world) || screen.GetDestroying world
-                            then World.createScreen4 false screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
+                            then World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
                             else world
                         let world = World.setScreenProtected true screen world |> snd'
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
