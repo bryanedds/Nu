@@ -229,19 +229,11 @@ type [<NoEquality; NoComparison>] BodyUserObject =
       Dispose : unit -> unit }
 
 /// Describes the substantial nature of a body in terms of mass or density.
-[<Syntax
-    ("", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax)>]
 type [<Struct>] Substance =
     | Mass of Mass : single
     | Density of Density : single
 
 /// Describe the form of collision detection to use.
-[<Syntax
-    ("", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax)>]
 type [<Struct>] CollisionDetection =
     | Discontinuous
     | Continuous of MotionThreshold : single * SweptSphereRadius : single
