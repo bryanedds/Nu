@@ -437,10 +437,11 @@ type Timers =
 [<AutoOpen>]
 module AmbientState =
 
-    let [<Literal>] private ImperativeMask =        0b00001u
-    let [<Literal>] private AccompaniedMask =       0b00010u
-    let [<Literal>] private AdvancingMask =         0b00100u
-    let [<Literal>] private FramePacingMask =       0b01000u
+    let [<Literal>] private ImperativeMask =            0b00001u
+    let [<Literal>] private AccompaniedMask =           0b00010u
+    let [<Literal>] private AdvancingMask =             0b00100u
+    let [<Literal>] private FramePacingMask =           0b01000u
+    let [<Literal>] private AdvancementClearedMask =    0b10000u
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
@@ -473,6 +474,7 @@ module AmbientState =
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
         member this.Advancing = this.Flags &&& AdvancingMask <> 0u
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
+        member this.AdvancementCleared = this.Flags &&& AdvancementClearedMask <> 0u
 
     /// Get the the liveness state of the engine.
     let getLiveness state =
@@ -495,19 +497,20 @@ module AmbientState =
 
     let internal clearAdvancement (state : _ AmbientState) =
         { state with
-            Flags = state.Flags &&& ~~~AdvancingMask
+            Flags = state.Flags &&& ~~~AdvancingMask ||| AdvancementClearedMask
             UpdateDelta = 0L
             ClockDelta = 0.0f
-            TickDelta = 0L
-            DateDelta = TimeSpan.Zero }
+            TickDelta = 0L }
 
-    let internal restoreAdvancement advancing updateDelta clockDelta tickDelta dateDelta (state : _ AmbientState) =
+    let internal restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
+        let flags = state.Flags
+        let flags = if advancing then flags ||| AdvancingMask else flags &&& ~~~AdvancingMask
+        let flags = if advancementCleared then flags ||| AdvancementClearedMask else flags &&& ~~~AdvancementClearedMask
         { state with
-            Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask
+            Flags = flags
             UpdateDelta = updateDelta
             ClockDelta = clockDelta
-            TickDelta = tickDelta
-            DateDelta = dateDelta }
+            TickDelta = tickDelta }
 
     /// Get the update delta.
     let getUpdateDelta state =

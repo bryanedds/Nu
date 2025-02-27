@@ -222,12 +222,15 @@ module WorldModule2 =
                     // slide-specific behavior currently has to ignore desired screen in order to work. However, we
                     // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
                     // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
-                    // we use a special case to quick cut when halted (or incidentally processing with zeroDelta) in the editor.
+                    // we use a special case to quick cut when halted in the editor.
                     match World.getDesiredScreen world with
                     | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
-                        let transitionTime = world.GameTime
-                        let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
-                        World.updateScreenIdling transitionTime desiredScreen world
+                        World.defer (fun world ->
+                            let transitionTime = world.GameTime
+                            let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
+                            World.updateScreenIdling transitionTime desiredScreen world)
+                            desiredScreen
+                            world
                     | DesireNone ->
                         World.selectScreenOpt None world
                     | _ ->
@@ -240,10 +243,13 @@ module WorldModule2 =
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if world.Accompanied && world.Halted then // special case to quick cut when halted (or incidentally processing with zeroDelta) in the editor.
-                                let transitionTime = world.GameTime
-                                let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
-                                World.updateScreenIdling transitionTime desiredScreen world
+                            if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to quick cut when halted in the editor.
+                                World.defer (fun world ->
+                                    let transitionTime = world.GameTime
+                                    let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
+                                    World.updateScreenIdling transitionTime desiredScreen world)
+                                    desiredScreen
+                                    world
                             else
                                 let transitionTime = world.GameTime
                                 let world = World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
@@ -449,11 +455,14 @@ module WorldModule2 =
                 then World.applyScreenBehavior setScreenSlide behavior screen world
                 else world
             let world =
-                if screen.GetExists world && select then
-                    if world.Accompanied && world.Halted then // special case to quick cut when halted (or incidentally processing with zeroDelta) in the editor.
-                        let transitionTime = world.GameTime
-                        let world = World.selectScreen (IdlingState transitionTime) screen world
-                        World.updateScreenIdling transitionTime screen world
+                if screen.GetExists world && select && not (Option.contains screen (World.getSelectedScreenOpt world)) then
+                    if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to quick cut when halted in the editor.
+                        World.defer (fun world ->
+                            let transitionTime = world.GameTime
+                            let world = World.selectScreen (IdlingState transitionTime) screen world
+                            World.updateScreenIdling transitionTime screen world)
+                            screen
+                            world
                     else transitionScreen screen world
                 else world
             let world =
@@ -1506,13 +1515,13 @@ module WorldModule2 =
 
                 // attempt to process groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world && group.GetSelected world then World.tryProcessGroup zeroDelta group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryProcessGroup zeroDelta group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // attempt to process entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
-                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world && element.Entry.GetSelected world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet3dNormalCached
-                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world && element.Entry.GetSelected world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet2dNormalCached
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryProcessEntity zeroDelta element.Entry world else world) world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
                 // fin

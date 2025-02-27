@@ -92,19 +92,22 @@ type GameplayDispatcher () =
         | CreateSections ->
 
             // create stage sections from random section files
-            let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
+            let world =
+                List.fold (fun world sectionIndex ->
 
-                // load a random section from file (except the first section which is always 0)
-                let section = Simulants.GameplaySection sectionIndex
-                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                let world = World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> snd
+                    // load a random section from file (except the first section which is always 0)
+                    let section = Simulants.GameplaySection sectionIndex
+                    let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                    let world = World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> snd
 
-                // shift all entities in the loaded section so that they go after the previously loaded section
-                let sectionXShift = 1024.0f * single sectionIndex
-                let sectionEntities = World.getEntities section world
-                Seq.fold (fun world (sectionEntity : Entity) ->
-                    sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
-                    world sectionEntities)
+                    // shift all entities in the loaded section so that they go after the previously loaded section
+                    let sectionXShift = 1024.0f * single sectionIndex
+                    let sectionEntities = World.getEntities section world
+                    Seq.fold (fun world (sectionEntity : Entity) ->
+                        sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
+                        world sectionEntities)
+
+                    world [0 .. dec SectionCount]
 
             // fin
             just world
@@ -118,9 +121,11 @@ type GameplayDispatcher () =
         | DestroySections ->
 
             // destroy stage sections that were created from section files
-            let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
-                let section = Simulants.GameplaySection sectionIndex
-                World.destroyGroup section world)
+            let world =
+                List.fold (fun world sectionIndex ->
+                    let section = Simulants.GameplaySection sectionIndex
+                    World.destroyGroup section world)
+                    world [0 .. dec SectionCount]
             just world
 
         | UpdateEye ->

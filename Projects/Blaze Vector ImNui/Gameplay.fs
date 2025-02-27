@@ -41,7 +41,7 @@ type GameplayDispatcher () =
                 let world = Simulants.Gameplay.SetScore 0 world
 
                 // create stage sections from random section files
-                (world, [0 .. dec Constants.Gameplay.SectionCount]) ||> List.fold (fun world sectionIndex ->
+                List.fold (fun world sectionIndex ->
 
                     // load a random section from file (except the first section which is always 0)
                     let section = Simulants.GameplaySection sectionIndex
@@ -55,6 +55,8 @@ type GameplayDispatcher () =
                         sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
                         world sectionEntities)
 
+                    world [0 .. dec Constants.Gameplay.SectionCount]
+
             else world
 
         // process clean-up
@@ -62,9 +64,10 @@ type GameplayDispatcher () =
             if FQueue.contains Deselecting screenResults then
 
                 // destroy stage sections that were created from section files
-                (world, [0 .. dec Constants.Gameplay.SectionCount]) ||> List.fold (fun world sectionIndex ->
+                List.fold (fun world sectionIndex ->
                     let section = Simulants.GameplaySection sectionIndex
                     World.destroyGroup section world)
+                    world [0 .. dec Constants.Gameplay.SectionCount]
 
             else world
 

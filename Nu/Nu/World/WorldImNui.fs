@@ -56,52 +56,52 @@ module WorldImNui =
             let dispatcher = game.GetDispatcher world
             if zeroDelta then
                 let advancing = world.Advancing
+                let advancementCleared = world.AdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                let dateDelta = world.DateDelta
                 let world = World.mapAmbientState AmbientState.clearAdvancement world
                 let world = dispatcher.TryProcess (game, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing updateDelta clockDelta tickDelta dateDelta) world
+                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
             else dispatcher.TryProcess (game, world)
 
         static member internal tryProcessScreen firstFrame zeroDelta (screen : Screen) (world : World) =
             let dispatcher = screen.GetDispatcher world
             if zeroDelta then
                 let advancing = world.Advancing
+                let advancementCleared = world.AdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                let dateDelta = world.DateDelta
                 let world = World.mapAmbientState AmbientState.clearAdvancement world
                 let world = dispatcher.TryProcess (firstFrame, screen, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing updateDelta clockDelta tickDelta dateDelta) world
+                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
             else dispatcher.TryProcess (firstFrame, screen, world)
 
         static member internal tryProcessGroup zeroDelta (group : Group) (world : World) =
             let dispatcher = group.GetDispatcher world
             if zeroDelta then
                 let advancing = world.Advancing
+                let advancementCleared = world.AdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                let dateDelta = world.DateDelta
                 let world = World.mapAmbientState AmbientState.clearAdvancement world
                 let world = dispatcher.TryProcess (group, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing updateDelta clockDelta tickDelta dateDelta) world
+                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
             else dispatcher.TryProcess (group, world)
 
         static member internal tryProcessEntity zeroDelta (entity : Entity) (world : World) =
             let dispatcher = entity.GetDispatcher world
             if zeroDelta then
                 let advancing = world.Advancing
+                let advancementCleared = world.AdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                let dateDelta = world.DateDelta
                 let world = World.mapAmbientState AmbientState.clearAdvancement world
                 let world = dispatcher.TryProcess (entity, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing updateDelta clockDelta tickDelta dateDelta) world
+                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
             else dispatcher.TryProcess (entity, world)
 
         /// Whether ImNui is reinitializing this frame (such as on a code reload).
