@@ -3111,10 +3111,8 @@ type AnimatedModelFacet () =
                     let world = if notUpdating then evt.Subscriber.AnimateBones world else world
                     (Cascade, world))
                 (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
-        let world =
-            World.sense
-                (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world))
-                (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
+        let world = World.sense (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world)) (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
+        let world = World.sense (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world)) Game.AssetsReloadEvent entity (nameof AnimatedModelFacet) world
         world
 
     override this.Update (entity, world) =
