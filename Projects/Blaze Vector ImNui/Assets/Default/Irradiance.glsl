@@ -19,7 +19,6 @@ void main()
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
-const float TONE_UNMAP_SCALAR = 1.6225;
 
 uniform samplerCube cubeMap;
 
@@ -49,9 +48,7 @@ void main()
             vec3 sampleColor = texture(cubeMap, sampleVector).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
-                vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR; // NOTE: non-standard, but done for tone unmap as we're currently working without HDR maps
-                vec3 sampleSquared = sampleScaled * sampleScaled; // NOTE: non-standard, but done for taste as we're currently working without HDR maps
-                irradiance += sampleSquared * cos(theta) * sin(theta);
+                irradiance += sampleColor * cos(theta) * sin(theta);
                 ++sampleCount;
             }
         }
