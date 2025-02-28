@@ -22,7 +22,7 @@ const int LIGHTS_MAX = 32;
 const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 8;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.00001;
+const float SHADOW_SEAM_INSET = 0.001;
 
 const vec4 SSVF_DITHERING[4] =
 vec4[](
