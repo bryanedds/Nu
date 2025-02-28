@@ -3744,7 +3744,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let world =
                 if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.GetExists world) then
                     let worldOld = world
-                    try let world = World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> snd
+                    try let world = snapshot CreateGroup world
+                        let world = World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> snd
                         selectEntityOpt None world
                         selectGroup true newGroup
                         ShowNewGroupDialog <- false

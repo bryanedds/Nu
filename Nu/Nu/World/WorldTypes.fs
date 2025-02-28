@@ -65,6 +65,7 @@ and SnapshotType =
     | PasteEntity
     | LoadEntity
     | DuplicateEntity
+    | CreateGroup
     | RenameGroup
     | OpenGroup
     | CloseGroup
@@ -105,6 +106,7 @@ and SnapshotType =
         | LoadEntity -> (scstringMemo this).Spaced
         | DuplicateEntity -> (scstringMemo this).Spaced
         | RenameGroup -> (scstringMemo this).Spaced
+        | CreateGroup -> (scstringMemo this).Spaced
         | OpenGroup -> (scstringMemo this).Spaced
         | CloseGroup -> (scstringMemo this).Spaced
         | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
