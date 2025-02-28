@@ -921,41 +921,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 false
         | Some _ | None -> false
 
-    let private tryLoadSelectedEntity filePath world =
+    let private tryLoadEntity filePath world =
 
-        // ensure entity isn't protected
-        if SelectedEntityOpt.IsNone || not (SelectedEntityOpt.Value.GetProtected world) then
+        // attempt to load entity descriptor
+        let entityAndDescriptorOpt =
+            try let entityDescriptorStr = File.ReadAllText filePath
+                let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+                let entityProperties =
+                    Map.removeMany
+                        [nameof Entity.Position
+                         nameof Entity.Rotation
+                         nameof Entity.Elevation
+                         nameof Entity.Visible]
+                        entityDescriptor.EntityProperties
+                let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
+                let entity =
+                    match SelectedEntityOpt with
+                    | Some entity when entity.GetExists world -> entity
+                    | Some _ | None ->
+                        let name = Gen.nameForEditor entityDescriptor.EntityDispatcherName
+                        let surnames =
+                            match NewEntityParentOpt with
+                            | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
+                            | Some _ | None -> [|name|]
+                        Nu.Entity (Array.append SelectedGroup.GroupAddress.Names surnames)
+                Right (entity, entityDescriptor)
+            with exn -> Left exn
 
-            // attempt to load entity descriptor
-            let entityAndDescriptorOpt =
-                try let entityDescriptorStr = File.ReadAllText filePath
-                    let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                    let entityProperties =
-                        Map.removeMany
-                            [nameof Entity.Position
-                             nameof Entity.Rotation
-                             nameof Entity.Elevation
-                             nameof Entity.Visible]
-                            entityDescriptor.EntityProperties
-                    let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
-                    let entity =
-                        match SelectedEntityOpt with
-                        | Some entity when entity.GetExists world -> entity
-                        | Some _ | None ->
-                            let name = Gen.nameForEditor entityDescriptor.EntityDispatcherName
-                            let surnames =
-                                match NewEntityParentOpt with
-                                | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
-                                | Some _ | None -> [|name|]
-                            Nu.Entity (Array.append SelectedGroup.GroupAddress.Names surnames)
-                    Right (entity, entityDescriptor)
-                with exn -> Left exn
-
-            // attempt to load entity
-            match entityAndDescriptorOpt with
-            | Right (entity, entityDescriptor) ->
-                let worldOld = world
-                try let world =
+        // attempt to load entity
+        match entityAndDescriptorOpt with
+        | Right (entity, entityDescriptor) ->
+            let worldOld = world
+            try if not (entity.GetExists world) || not (entity.GetProtected world) then
+                    let world =
                         if entity.GetExists world then
                             let world = snapshot LoadEntity world
                             let order = entity.GetOrder world
@@ -980,19 +978,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
                     EntityFileDialogState.FileName <- ""
                     (true, world)
-                with exn ->
-                    let world = World.switch worldOld
-                    MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
+                else
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
                     (false, world)
-
-            // error
-            | Left exn ->
+            with exn ->
+                let world = World.switch worldOld
                 MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
                 (false, world)
 
         // error
-        else
-            MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
+        | Left exn ->
+            MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
             (false, world)
 
     let private tryDeleteSelectedEntity world =
@@ -1124,27 +1120,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
             false
 
-    let private tryLoadSelectedGroup filePath world =
+    let private tryLoadGroup filePath world =
 
-        // ensure group isn't protected
-        if not (SelectedGroup.GetProtected world) then
+        // attempt to load group descriptor
+        let groupAndDescriptorOpt =
+            try let groupDescriptorStr = File.ReadAllText filePath
+                let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                let groupName =
+                    match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                    | Some (Atom (name, _) | Text (name, _)) -> name
+                    | _ -> failwithumf ()
+                Right (SelectedScreen / groupName, groupDescriptor)
+            with exn -> Left exn
 
-            // attempt to load group descriptor
-            let groupAndDescriptorOpt =
-                try let groupDescriptorStr = File.ReadAllText filePath
-                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                    let groupName =
-                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                        | Some (Atom (name, _) | Text (name, _)) -> name
-                        | _ -> failwithumf ()
-                    Right (SelectedScreen / groupName, groupDescriptor)
-                with exn -> Left exn
-
-            // attempt to load group
-            match groupAndDescriptorOpt with
-            | Right (group, groupDescriptor) ->
-                let worldOld = world
-                try let world =
+        // attempt to load group
+        match groupAndDescriptorOpt with
+        | Right (group, groupDescriptor) ->
+            let worldOld = world
+            try if not (group.GetExists world) || not (group.GetProtected world) then
+                    let world =
                         if group.GetExists world
                         then World.destroyGroupImmediate SelectedGroup world
                         else world
@@ -1156,19 +1150,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     GroupFilePaths <- Map.add group.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
                     GroupFileDialogState.FileName <- ""
                     (true, world)
-                with exn ->
-                    let world = World.switch worldOld
-                    MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                else
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
                     (false, world)
-
-            // error
-            | Left exn ->
+            with exn ->
+                let world = World.switch worldOld
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                 (false, world)
 
         // error
-        else
-            MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
+        | Left exn ->
+            MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
             (false, world)
 
     let private tryReloadAssets world =
@@ -3767,7 +3759,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         GroupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
         if ImGui.FileDialog (&ShowOpenGroupDialog, GroupFileDialogState) then
             let world = snapshot OpenGroup world
-            let (loaded, world) = tryLoadSelectedGroup GroupFileDialogState.FilePath world
+            let (loaded, world) = tryLoadGroup GroupFileDialogState.FilePath world
             ShowOpenGroupDialog <- not loaded
             world
         else world
@@ -3817,7 +3809,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         EntityFileDialogState.FilePattern <- "*.nuentity"
         EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
         if ImGui.FileDialog (&ShowOpenEntityDialog, EntityFileDialogState) then
-            let (loaded, world) = tryLoadSelectedEntity EntityFileDialogState.FilePath world
+            let (loaded, world) = tryLoadEntity EntityFileDialogState.FilePath world
             ShowOpenEntityDialog <- not loaded
             world
         else world
