@@ -66,6 +66,7 @@ const int LIGHTS_MAX = 8;
 const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 4;
 const float SHADOW_FOV_MAX = 2.1;
+const float SHADOW_SEAM_INSET = 0.001;
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -232,14 +233,20 @@ float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lig
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-    float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
-    float shadowZExp = exp(-lightShadowExponent * shadowZ);
-    float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
-    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-    shadowScalar = pow(shadowScalar, lightShadowDensity);
-    shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
-    return shadowScalar;
+    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        return shadowScalar;
+    }
+    return 1.0;
 }
 
 float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
