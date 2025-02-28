@@ -994,7 +994,8 @@ module WorldModule2 =
             let outputAssetGraphFilePath = outputDirectory + "/" + Assets.Global.AssetGraphFilePath
             try if File.Exists outputAssetGraphFilePath then File.SetAttributes (outputAssetGraphFilePath, FileAttributes.None)
                 File.Copy (inputAssetGraphFilePath, outputAssetGraphFilePath, true)
-                File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
+                // NOTE: dummied out the following because it seems to be somehow responsible for the asset graph's file lock leaking when closing Gaia...
+                //File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
 
                 // attempt to load asset graph
                 match AssetGraph.tryMakeFromFile outputAssetGraphFilePath with
