@@ -102,18 +102,18 @@ type CharacterDispatcher () =
             let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 0.5f else 0.0f
             let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 0.5f else 0.0f
             let animations =
-                [Animation.make 0L None "Armature|Idle" Loop 1.0f 1.0f None]
+                [Animation.make 0L None "Idle" Loop 1.0f 1.0f None]
             let animations =
-                if forwardness >= 0.01f then Animation.make 0L None "Armature|WalkForward" Loop 1.0f forwardness None :: animations
-                elif backness >= 0.01f then Animation.make 0L None "Armature|WalkBack" Loop 1.0f backness None :: animations
+                if forwardness >= 0.01f then Animation.make 0L None "WalkForward" Loop 1.0f forwardness None :: animations
+                elif backness >= 0.01f then Animation.make 0L None "WalkBack" Loop 1.0f backness None :: animations
                 else animations
             let animations =
-                if rightness >= 0.01f then Animation.make 0L None "Armature|WalkRight" Loop 1.0f rightness None :: animations
-                elif leftness >= 0.01f then Animation.make 0L None "Armature|WalkLeft" Loop 1.0f leftness None :: animations
+                if rightness >= 0.01f then Animation.make 0L None "WalkRight" Loop 1.0f rightness None :: animations
+                elif leftness >= 0.01f then Animation.make 0L None "WalkLeft" Loop 1.0f leftness None :: animations
                 else animations
             let animations =
-                if turnRightness >= 0.01f then Animation.make 0L None "Armature|TurnRight" Loop 1.0f turnRightness None :: animations
-                elif turnLeftness >= 0.01f then Animation.make 0L None "Armature|TurnLeft" Loop 1.0f turnLeftness None :: animations
+                if turnRightness >= 0.01f then Animation.make 0L None "TurnRight" Loop 1.0f turnRightness None :: animations
+                elif turnLeftness >= 0.01f then Animation.make 0L None "TurnLeft" Loop 1.0f turnLeftness None :: animations
                 else animations
             Array.ofList animations
         | _ -> [||]
@@ -130,17 +130,17 @@ type CharacterDispatcher () =
             | _ -> ()
             let (animationTime, animationName) =
                 if localTime <= 55L
-                then (attack.AttackTime, "Armature|AttackVertical")
-                else (attack.AttackTime + 55L, "Armature|AttackHorizontal")
+                then (attack.AttackTime, "AttackVertical")
+                else (attack.AttackTime + 55L, "AttackHorizontal")
             let animation = Animation.once animationTime None animationName
             (true, [|animation|], world)
         | InjuryState injury ->
-            let animation = Animation.once injury.InjuryTime None "Armature|WalkBack"
+            let animation = Animation.once injury.InjuryTime None "WalkBack"
             (true, [|animation|], world)
         | WoundState wound ->
             let localTime = world.UpdateTime - wound.WoundTime
             let visible = localTime / 5L % 2L <> 0L
-            let animation = Animation.loop wound.WoundTime None "Armature|WalkBack"
+            let animation = Animation.loop wound.WoundTime None "WalkBack"
             (visible, [|animation|], world)
 
     static let processEnemyInput (playerPosition : Vector3) (entity : Entity) world =

@@ -409,7 +409,7 @@ module WorldImGui =
                             let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
                             match Metadata.tryGetAnimatedModelMetadata animatedModel with
                             | ValueSome metadata when metadata.SceneOpt.IsSome ->
-                                let animationNames = metadata.SceneOpt.Value.Animations |> Seq.map _.Name
+                                let animationNames = metadata.SceneOpt.Value.Animations |> Seq.rev |> Seq.map _.Name // NOTE: for some reason, Assimp seems to store animations in reverse order.
                                 let mutable animationName = field :?> string
                                 let mutable animationNameEdited = false
                                 if ImGui.BeginCombo (name, animationName) then

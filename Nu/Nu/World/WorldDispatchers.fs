@@ -617,18 +617,18 @@ type Character3dDispatcher () =
         let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 0.5f else 0.0f
         let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 0.5f else 0.0f
         let animations =
-            [Animation.make GameTime.zero None "Armature|Idle" Loop 1.0f 1.0f None]
+            [Animation.make GameTime.zero None "Idle" Loop 1.0f 1.0f None]
         let animations =
-            if forwardness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkForward" Loop 1.0f (max 0.025f forwardness) None :: animations
-            elif backness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkBack" Loop 1.0f (max 0.025f backness) None :: animations
+            if forwardness >= 0.01f then Animation.make GameTime.zero None "WalkForward" Loop 1.0f (max 0.025f forwardness) None :: animations
+            elif backness >= 0.01f then Animation.make GameTime.zero None "WalkBack" Loop 1.0f (max 0.025f backness) None :: animations
             else animations
         let animations =
-            if rightness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkRight" Loop 1.0f (max 0.025f rightness) None :: animations
-            elif leftness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkLeft" Loop 1.0f (max 0.025f leftness) None :: animations
+            if rightness >= 0.01f then Animation.make GameTime.zero None "WalkRight" Loop 1.0f (max 0.025f rightness) None :: animations
+            elif leftness >= 0.01f then Animation.make GameTime.zero None "WalkLeft" Loop 1.0f (max 0.025f leftness) None :: animations
             else animations
         let animations =
-            if turnRightness >= 0.01f then Animation.make GameTime.zero None "Armature|TurnRight" Loop 1.0f (max 0.025f turnRightness) None :: animations
-            elif turnLeftness >= 0.01f then Animation.make GameTime.zero None "Armature|TurnLeft" Loop 1.0f (max 0.025f turnLeftness) None :: animations
+            if turnRightness >= 0.01f then Animation.make GameTime.zero None "TurnRight" Loop 1.0f (max 0.025f turnRightness) None :: animations
+            elif turnLeftness >= 0.01f then Animation.make GameTime.zero None "TurnLeft" Loop 1.0f (max 0.025f turnLeftness) None :: animations
             else animations
         let world = entity.SetAnimations (List.toArray animations) world
         world
