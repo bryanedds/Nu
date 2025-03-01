@@ -2401,13 +2401,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         for struct (model, presence, texCoordsOffset, properties, boneTransformsOpt, surface, _) in renderTasks.ForwardSorted do
             match boneTransformsOpt with
             | ValueSome boneTransforms ->
-                let boneArrays = List ()
                 let bonesArrays = Array.zeroCreate boneTransforms.Length
                 for i in 0 .. dec boneTransforms.Length do
-                    let boneArray = new PooledArray<single> (16, false)
-                    boneTransforms.[i].ToArray (boneArray.Deref, 0)
-                    boneArrays.Add boneArray
-                    bonesArrays.[i] <- boneArray.Deref
+                    let boneArray = boneTransforms.[i].ToArray ()
+                    bonesArrays.[i] <- boneArray
                 let shadowShader =
                     match lightType with
                     | PointLight -> renderer.PhysicallyBasedShadowAnimatedPointShader
@@ -2674,18 +2671,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key
             let parameters = entry.Value
-            let boneArrays = List ()
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
-                let boneArray = new PooledArray<single> (16, false)
-                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
-                boneArrays.Add boneArray
-                bonesArrays.[i] <- boneArray.Deref
+                let boneArray = surfaceKey.BoneTransforms.[i].ToArray ()
+                bonesArrays.[i] <- boneArray
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 SingletonPhase viewArray geometryProjectionArray bonesArrays eyeCenter parameters
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surfaceKey.AnimatedSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
-            for boneArray in boneArrays do boneArray.Dispose ()
             OpenGL.Hl.Assert ()
 
         // render terrains deferred
@@ -3192,7 +3185,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                     shadowView.Translation <- lightOrigin
                                     shadowView <- shadowView.Inverted
-                                    let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                                    let shadowCutoff = lightCutoff
                                     let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                     (lightOrigin, shadowView, shadowProjection)
                                 | PointLight -> failwithumf ()
