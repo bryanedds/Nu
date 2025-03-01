@@ -316,6 +316,13 @@ module FreezerFacetModule =
                     if (not renderPass.IsShadowPass || surface.CastShadow) && intersects false false surface.Presence bounds then
                         World.renderStaticModelSurfaceFast (&surface.ModelMatrix, surface.CastShadow, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.DepthTest, surface.RenderType, renderPass, world)
 
+        override this.RayCast (ray, entity, world) =
+            if entity.GetPickable world then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else [||]
+
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =
 
