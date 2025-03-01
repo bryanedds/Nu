@@ -3049,7 +3049,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
             | ConfigureLighting3d l3c ->
-                renderer.LightingConfigChanged <- renderer.LightingConfig <> l3c
+                if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
             | ConfigureRenderer3d r3c ->
                 renderer.RendererConfig <- r3c

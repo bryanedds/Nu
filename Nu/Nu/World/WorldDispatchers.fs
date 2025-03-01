@@ -391,18 +391,16 @@ module Lighting3dConfigDispatcherExtensions =
 
 type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
-
+    
     static member Properties =
-        [define Entity.AlwaysUpdate true
-         define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig]
+        [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig]
 
     override this.PresenceOverride =
         ValueSome Omnipresent
 
-    override this.Update (entity, world) =
+    override this.Render (_, entity, world) =
         let config = entity.GetLighting3dConfig world
         World.enqueueRenderMessage3d (ConfigureLighting3d config) world
-        world
 
 /// Gives an entity the base behavior of a 3d light probe.
 type LightProbe3dDispatcher () =
