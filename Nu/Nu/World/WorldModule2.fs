@@ -994,7 +994,8 @@ module WorldModule2 =
             let outputAssetGraphFilePath = outputDirectory + "/" + Assets.Global.AssetGraphFilePath
             try if File.Exists outputAssetGraphFilePath then File.SetAttributes (outputAssetGraphFilePath, FileAttributes.None)
                 File.Copy (inputAssetGraphFilePath, outputAssetGraphFilePath, true)
-                File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
+                // NOTE: dummied out the following because it seems to be somehow responsible for the asset graph's file lock leaking when closing Gaia...
+                //File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
 
                 // attempt to load asset graph
                 match AssetGraph.tryMakeFromFile outputAssetGraphFilePath with
@@ -1883,7 +1884,7 @@ module WorldModule2 =
                                     let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                     shadowView.Translation <- light.GetPosition world
                                     shadowView <- shadowView.Inverted
-                                    let shadowCutoff = light.GetLightCutoff world
+                                    let shadowCutoff = max (light.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                     let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                     (shadowView, shadowProjection)
                             let shadowFrustum =

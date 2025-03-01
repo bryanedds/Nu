@@ -22,14 +22,14 @@ const int LIGHTS_MAX = 32;
 const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 8;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.00001;
+const float SHADOW_SEAM_INSET = 0.001;
 
 const vec4 SSVF_DITHERING[4] =
-    vec4[](
-        vec4(0.0, 0.5, 0.125, 0.625),
-        vec4(0.75, 0.22, 0.875, 0.375),
-        vec4(0.1875, 0.6875, 0.0625, 0.5625),
-        vec4(0.9375, 0.4375, 0.8125, 0.3125));
+vec4[](
+    vec4(0.0, 0.5, 0.125, 0.625),
+    vec4(0.75, 0.22, 0.875, 0.375),
+    vec4(0.1875, 0.6875, 0.0625, 0.5625),
+    vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
@@ -168,14 +168,20 @@ float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lig
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-    float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
-    float shadowZExp = exp(-lightShadowExponent * shadowZ);
-    float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
-    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-    shadowScalar = pow(shadowScalar, lightShadowDensity);
-    shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
-    return shadowScalar;
+    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        return shadowScalar;
+    }
+    return 1.0;
 }
 
 float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
@@ -428,9 +434,9 @@ void main()
             float shadowScalar = 1.0f;
             if (shadowIndex >= 0)
                 shadowScalar =
-                    shadowIndex < SHADOW_TEXTURES_MAX ?
-                    computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
-                    computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+                shadowIndex < SHADOW_TEXTURES_MAX ?
+                computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
 
             // cook-torrance brdf
             float hDotV = max(dot(h, v), 0.0);
@@ -453,20 +459,17 @@ void main()
             lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
         }
 
-        // compute ambient terms
-        // NOTE: ambientSpecular gets an additional ao multiply for some specular occlusion.
-        // TODO: use a better means of computing specular occlusion as this one isn't very effective.
+        // compute ambient light
         vec3 ambientColor = ambientColorAndBrightness.rgb;
         float ambientBrightness = ambientColorAndBrightness.a;
-        vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientOcclusion;
-        vec3 ambientSpecular = ambientDiffuse * ambientOcclusion;
+        vec3 ambientLight = ambientColor * ambientBrightness * ambientOcclusion;
 
         // compute diffuse term
         vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
         vec3 kS = f;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
-        vec3 diffuse = kD * irradiance * albedo * ambientDiffuse;
+        vec3 diffuse = kD * irradiance * albedo * ambientLight;
 
         // compute specular term and weight from screen-space
         vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
@@ -488,7 +491,7 @@ void main()
         // compute specular term
         vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
         vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientSpecular;
+        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
         // write lighting values

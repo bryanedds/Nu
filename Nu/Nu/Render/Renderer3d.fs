@@ -3192,7 +3192,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                     shadowView.Translation <- lightOrigin
                                     shadowView <- shadowView.Inverted
-                                    let shadowCutoff = lightCutoff
+                                    let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                     let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                     (lightOrigin, shadowView, shadowProjection)
                                 | PointLight -> failwithumf ()

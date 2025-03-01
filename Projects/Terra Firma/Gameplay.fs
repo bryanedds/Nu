@@ -91,7 +91,7 @@ type GameplayDispatcher () =
             let mutable shadowViewInverse = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion (sun.GetRotation world)
             shadowViewInverse.Translation <- sun.GetPosition world
             let shadowView = shadowViewInverse.Inverted
-            let shadowWidth = sun.GetLightCutoff world * 2.0f
+            let shadowWidth = max (sun.GetLightCutoff world * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
             let shadowResolution = Viewport.getShadowTextureBufferResolution 0 world.GeometryViewport
             let shadowTexelSize = shadowWidth / single shadowResolution.X // assuming square, of course
             let position = Simulants.GameplayPlayer.GetPositionInterpolated world
