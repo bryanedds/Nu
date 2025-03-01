@@ -67,7 +67,7 @@
         [SsaoRadius 0.125]
         [SsaoDistanceMax 0.125]
         [SsvfEnabled True]
-        [SsvfSteps 48]
+        [SsvfSteps 24]
         [SsvfAsymmetry 0.1]
         [SsvfIntensity 0.04]
         [SsrEnabled True]
@@ -88,7 +88,8 @@
         [SsrLightColor [1 1 1 1]]
         [SsrLightBrightness 1]]]
       [MountOpt [Some ^]]
-      [Name Lighting3dConfig]]
+      [Name Lighting3dConfig]
+      [Presence Omnipresent]]
      []]
     [Nav3dConfigDispatcher
      [[MountOpt [Some ^]]
