@@ -143,8 +143,8 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     /// The progress of time down a bounded time range.
     static member progress startTime currentTime lifeTime =
         match struct (startTime, currentTime, lifeTime) with
-        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime
-        | struct (TickTime startTime, TickTime currentTime, TickTime lifeTime) -> single (currentTime - startTime) / single lifeTime
+        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime |> max 0.0f |> min 1.0f
+        | struct (TickTime startTime, TickTime currentTime, TickTime lifeTime) -> single (currentTime - startTime) / single lifeTime |> max 0.0f |> min 1.0f
         | struct (_, _, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member (+) (left, right) = GameTime.ap (+) (+) left right
