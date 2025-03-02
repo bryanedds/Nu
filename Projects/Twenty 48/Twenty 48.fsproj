@@ -80,8 +80,8 @@
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
 		<PackageReference Include="Twizzle.ImPlot.NET" Version="1.89.4" />
 		<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />
-		<PackageReference Include="Vortice.Vulkan" Version="1.9.5" />
-		<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.5.0" />
+		<PackageReference Include="Vortice.Vulkan" Version="2.1.1" />
+		<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />
 	</ItemGroup>
 
 	<ItemGroup>
