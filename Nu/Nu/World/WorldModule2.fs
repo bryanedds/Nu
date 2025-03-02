@@ -3301,11 +3301,11 @@ module WorldModule2' =
             | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
             | _ -> failwithumf ()
 
-        static member internal updateLateBindings3 (latebindings : LateBindings) (simulant : Simulant) world =
+        static member internal updateLateBindings3 (lateBindings : LateBindings) (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity ->
                 let entityState = World.getEntityState entity world
-                match latebindings with
+                match lateBindings with
                 | :? Facet as facet ->
                     match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
                     | Some index ->
@@ -3317,29 +3317,29 @@ module WorldModule2' =
                                 facets.[index] <- facet
                                 let entityState = { entityState with Facets = facets }
                                 World.setEntityState entityState entity world
-                        World.updateEntityPresenceFromOverride entity world
+                        World.updateEntityPresenceOverride entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
-                        let (entityState,  world) =
+                        let struct (entityState,  world) =
                             if entityState.Imperative
-                            then entityState.Dispatcher <- entityDispatcher; (entityState, world)
+                            then entityState.Dispatcher <- entityDispatcher; struct (entityState, world)
                             else
                                 let entityState = { entityState with Dispatcher = entityDispatcher }
                                 let world = World.setEntityState entityState entity world
-                                (entityState, world)
+                                struct (entityState, world)
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
                         let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
                         let (entityState, world) = World.tryAddFacets intrinsicFacetNamesAdded entityState (Some entity) world |> Either.getRight
                         let intrinsicFacetNamesRemoved = Set.difference intrinsicFacetNamesOld intrinsicFacetNamesNew
                         let (_, world) = World.tryRemoveFacets intrinsicFacetNamesRemoved entityState (Some entity) world |> Either.getRight
-                        World.updateEntityPresenceFromOverride entity world
+                        World.updateEntityPresenceOverride entity world
                     else world
                 | _ -> world
             | :? Group as group ->
                 let groupState = World.getGroupState group world
-                match latebindings with
+                match lateBindings with
                 | :? GroupDispatcher as groupDispatcher ->
                     if getTypeName groupState.Dispatcher = getTypeName groupDispatcher
                     then World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
@@ -3347,7 +3347,7 @@ module WorldModule2' =
                 | _ -> world
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
-                match latebindings with
+                match lateBindings with
                 | :? ScreenDispatcher as screenDispatcher ->
                     if getTypeName screenState.Dispatcher = getTypeName screenDispatcher
                     then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
@@ -3355,7 +3355,7 @@ module WorldModule2' =
                 | _ -> world
             | :? Game as game ->
                 let gameState = World.getGameState game world
-                match latebindings with
+                match lateBindings with
                 | :? GameDispatcher as gameDispatcher ->
                     if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
                     then World.setGameState { gameState with Dispatcher = gameDispatcher } game world

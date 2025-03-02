@@ -1183,7 +1183,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
     member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
     member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
-    member this.PresenceOverride = if this.Absolute then ValueSome Omnipresent else match this.Dispatcher.PresenceOverride with ValueSome _ as override_ -> override_ | _ -> ValueNone
+    member this.PresenceOverride with get () = this.Transform.PresenceOverride and set value = this.Transform.PresenceOverride <- value
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
@@ -1211,8 +1211,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Optimized = this.Transform.Optimized
     member internal this.VisibleSpatial = this.Visible || this.AlwaysRender
     member internal this.StaticSpatial = this.Static && not this.AlwaysUpdate
-    /// NOTE: there is a minor semantic hole here where an entity's facets may have higher PresenceOverrides, but for
-    /// basic efficiency reasons, this often invoked property doesn't take those into consideration.
     member internal this.PresenceSpatial = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
 
     /// Copy an entity state.
