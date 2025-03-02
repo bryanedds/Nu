@@ -25,7 +25,7 @@
      []]
     [SkyBoxDispatcher
      [[Absolute True]
-      [AmbientBrightness 0.15]
+      [AmbientBrightness 0.25]
       [AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]
       [Name SkyBox]
@@ -43,7 +43,8 @@
       [Static True]]
      []]
     [LightProbe3dDispatcher
-     [[AmbientBrightness 0.15]
+     [[AmbientBrightness 0.25]
+      [AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]
       [Name LightProbe3d]
       [Position [12.4 5.7 11.4]]
