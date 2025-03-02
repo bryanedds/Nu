@@ -3391,9 +3391,6 @@ module TraversalInterpolatedFacetExtensions =
         member this.GetAngularVelocityHistory world : Vector3 FQueue = this.Get (nameof this.AngularVelocityHistory) world
         member this.SetAngularVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.AngularVelocityHistory) value world
         member this.AngularVelocityHistory = lens (nameof this.AngularVelocityHistory) this this.GetAngularVelocityHistory this.SetAngularVelocityHistory
-        member this.GetPositionHistoryResetThreshold world : single = this.Get (nameof this.PositionHistoryResetThreshold) world
-        member this.SetPositionHistoryResetThreshold (value : single) world = this.Set (nameof this.PositionHistoryResetThreshold) value world
-        member this.PositionHistoryResetThreshold = lens (nameof this.PositionHistoryResetThreshold) this this.GetPositionHistoryResetThreshold this.SetPositionHistoryResetThreshold
         member this.GetTraversalHistoryMax world : int = this.Get (nameof this.TraversalHistoryMax) world
         member this.SetTraversalHistoryMax (value : int) world = this.Set (nameof this.TraversalHistoryMax) value world
         member this.TraversalHistoryMax = lens (nameof this.TraversalHistoryMax) this this.GetTraversalHistoryMax this.SetTraversalHistoryMax
@@ -3443,7 +3440,6 @@ type TraversalInterpoledFacet () =
          nonPersistent Entity.RotationHistory FQueue.empty
          nonPersistent Entity.LinearVelocityHistory FQueue.empty
          nonPersistent Entity.AngularVelocityHistory FQueue.empty
-         define Entity.PositionHistoryResetThreshold 1.0f
          define Entity.TraversalHistoryMax 4]
 
     override this.Update (entity, world) =
@@ -3454,18 +3450,17 @@ type TraversalInterpoledFacet () =
         let world = entity.RotationHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
         let world = entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
         let world = entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
-
-        // ensure position history isn't stale (such as when an entity is moved in the editor)
-        let world =
-            let position = entity.GetPosition world
-            let positionInterp = entity.GetPositionInterpolated world
-            if Vector3.Distance (positionInterp, position) >= entity.GetPositionHistoryResetThreshold world then
-                let positionHistory = List.init historyMax (fun _ -> position) |> FQueue.ofList
-                entity.SetPositionHistory positionHistory world
-            else world
-
-        // fin
         world
+
+    override this.Edit (op, entity, world) =
+
+        // ensure position history isn't stale when editing
+        match op with
+        | ViewportOverlay _ when world.Halted ->
+            let position = entity.GetPosition world
+            let positionHistory = FQueue.singleton position
+            entity.SetPositionHistory positionHistory world
+        | _ -> world
 
 [<AutoOpen>]
 module NavBodyFacetExtensions =
