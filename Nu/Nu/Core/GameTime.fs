@@ -179,11 +179,11 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     member this.Milliseconds =
         GameTime.toMilliseconds this
 
-    /// Check that the game time reprsents zero time.
+    /// Check that the game time represents zero time.
     member this.IsZero =
         GameTime.isZero this
 
-    /// Check that the game time reprsents non-zero time.
+    /// Check that the game time represents non-zero time.
     member this.NotZero =
         GameTime.notZero this
 

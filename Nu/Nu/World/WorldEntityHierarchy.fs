@@ -212,9 +212,9 @@ module WorldEntityHierarchy =
             for entity in frozenEntities do
                 world <- entity.SetVisibleLocal false world
             world <- parent.SetPresence Omnipresent world
-            world <- parent.SetPickable false world
             match boundsOpt with
             | Some bounds ->
+                if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then world <- parent.SetPickable false world
                 world <- parent.SetSize bounds.Size world
                 world <- parent.SetOffset (bounds.Center - parent.GetPosition world) world
             | None ->
