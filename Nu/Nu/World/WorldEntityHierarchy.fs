@@ -214,7 +214,9 @@ module WorldEntityHierarchy =
             world <- parent.SetPresence Omnipresent world
             match boundsOpt with
             | Some bounds ->
-                if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then world <- parent.SetPickable false world
+                if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
+                    world <- parent.SetPickable false world
+                    Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and setting it non-pickable."
                 world <- parent.SetSize bounds.Size world
                 world <- parent.SetOffset (bounds.Center - parent.GetPosition world) world
             | None ->
@@ -233,7 +235,9 @@ module WorldEntityHierarchy =
                     showChildren child
             showChildren parent
             world <- parent.SetPresence presenceConferred world // just choosing a default...
-            world <- parent.SetPickable true world
+            if (parent.GetSize world).Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
+                world <- parent.SetPickable true world
+                Log.infoOnce "Presuming large thawed parent contains an environment due to total bounds of children and setting it pickable."
             world <- parent.SetSize v3One world
             world <- parent.SetOffset v3Zero world
             world
