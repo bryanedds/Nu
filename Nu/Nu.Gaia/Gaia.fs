@@ -2350,6 +2350,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                                         else world
                                                     else world)
                                                     world (getDescendantPairs entity duplicate world)
+                                            let world = if duplicate.Has<FreezerFacet> world then duplicate.SetFrozen false world else world
                                             selectEntityOpt (Some duplicate) world
                                             ImGui.SetWindowFocus "Viewport"
                                             ShowSelectedEntity <- true
