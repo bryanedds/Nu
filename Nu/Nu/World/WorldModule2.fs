@@ -3322,15 +3322,18 @@ module WorldModule2' =
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
-                        let extrinsicFacetNamesOld = entityState.FacetNames
-                        let world =
+                        let (entityState,  world) =
                             if entityState.Imperative
-                            then entityState.Dispatcher <- entityDispatcher; world
-                            else World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                            then entityState.Dispatcher <- entityDispatcher; (entityState, world)
+                            else
+                                let entityState = { entityState with Dispatcher = entityDispatcher }
+                                let world = World.setEntityState entityState entity world
+                                (entityState, world)
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
-                        let intrinsicFacetNamesRemoved = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
-                        let extrinsicFacetNamesNew = Set.difference extrinsicFacetNamesOld intrinsicFacetNamesRemoved
-                        let world = World.trySetEntityFacetNames extrinsicFacetNamesNew entity world |> snd
+                        let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
+                        let (entityState, world) = World.tryAddFacets intrinsicFacetNamesAdded entityState (Some entity) world |> Either.getRight
+                        let intrinsicFacetNamesRemoved = Set.difference intrinsicFacetNamesOld intrinsicFacetNamesNew
+                        let (_, world) = World.tryRemoveFacets intrinsicFacetNamesRemoved entityState (Some entity) world |> Either.getRight
                         World.updateEntityPresenceFromOverride entity world
                     else world
                 | _ -> world

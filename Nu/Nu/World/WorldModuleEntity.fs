@@ -1726,7 +1726,7 @@ module WorldModuleEntity =
                 else Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Surnames + "'.")
             | Left error -> Left error
 
-        static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
+        static member internal tryRemoveFacets facetNamesToRemove entityState entityOpt world =
             Set.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
@@ -1735,7 +1735,7 @@ module WorldModuleEntity =
                 (Right (entityState, world))
                 facetNamesToRemove
 
-        static member private tryAddFacets facetNamesToAdd entityState entityOpt world =
+        static member internal tryAddFacets facetNamesToAdd entityState entityOpt world =
             Set.fold
                 (fun eitherEntityStateWorld facetName ->
                     match eitherEntityStateWorld with
