@@ -3116,7 +3116,7 @@ type AnimatedModelFacet () =
         world
 
     override this.Update (entity, world) =
-        //if entity.GetEnabled world then
+        if entity.GetEnabled world then
             let time = world.GameTime
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
@@ -3131,18 +3131,15 @@ type AnimatedModelFacet () =
                     World.enqueueJob 1.0f job world
                     resultOpt
                 else entity.TryComputeBoneTransforms time animations sceneOpt
-            let world =
-                match resultOpt with
-                | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
-                | None -> world
-        //else
-            if not (entity.GetEnabled world) then
-                let animations =
-                    Array.map (fun (animation : Animation) ->
-                        { animation with StartTime = animation.StartTime + world.GameDelta })
-                        (entity.GetAnimations world)
-                entity.SetAnimations animations world
-            else world
+            match resultOpt with
+            | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
+            | None -> world
+        else
+            let animations =
+                Array.map (fun (animation : Animation) ->
+                    { animation with StartTime = animation.StartTime + world.GameDelta })
+                    (entity.GetAnimations world)
+            entity.SetAnimations animations world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
