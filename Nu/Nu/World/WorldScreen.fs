@@ -9,13 +9,14 @@ open System.Numerics
 open System.Threading.Tasks
 open DotRecast.Core.Numerics
 open DotRecast.Detour
+open DotRecast.Detour.Dynamic
+open DotRecast.Detour.Dynamic.Io
 open DotRecast.Recast
 open DotRecast.Recast.Geom
+open DotRecast.Recast.Toolset
 open DotRecast.Recast.Toolset.Builder
 open DotRecast.Recast.Toolset.Tools
 open Prime
-open DotRecast.Detour.Dynamic.Io
-open DotRecast.Detour.Dynamic
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -458,6 +459,11 @@ module WorldScreenModule =
             // attempt to execute 3d navigation mesh construction steps
             match geomProviderOpt with
             | Some geomProvider ->
+                let detailSampleDistance =
+                    let detailSampleDistanceInner = config.CellSize * config.DetailSampleDistance
+                    if detailSampleDistanceInner <= 0.9f // NOTE: if too low, something in recast zeros out and causes an IndexOutOfBoundsException.
+                    then 1.0f / (config.CellSize / 0.9f) + 0.0001f // adding epsilon to make sure we get the result up to the magic value
+                    else config.DetailSampleDistance
                 let rcConfig =
                     RcConfig
                         (true, 32, 32, 1,
@@ -466,32 +472,36 @@ module WorldScreenModule =
                          config.AgentSlopeMax, config.AgentHeight, config.AgentRadius, config.AgentClimbMax,
                          single config.RegionSizeMin, single config.RegionSizeMerge,
                          config.EdgeLengthMax, config.EdgeErrorMax,
-                         config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleErrorMax,
+                         config.VertsPerPolygon, detailSampleDistance, config.DetailSampleErrorMax,
                          config.FilterLowHangingObstacles, config.FilterLedgeSpans, config.FilterWalkableLowHeightSpans,
                          SampleAreaModifications.SAMPLE_AREAMOD_WALKABLE, true)
-                let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
-                let rcBuilder = RcBuilder ()
-                let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, true) // NOTE: keeping intermediate results now! TODO: P0: try to get rid of any unnecessary intermediate results data!
-                if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but null here seems to be an indication of nav mesh build failure.
-                    let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
-                    let voxelFile = DtVoxelFile.From (rcConfig, List [rcBuilderResult])
-                    let dtNavMesh = DtDynamicNavMesh voxelFile
-                    dtNavMesh.Build Task.Factory |> ignore<bool>
-                    let dtQuery = DtNavMeshQuery (dtNavMesh.NavMesh ())
-                    Some (navBuilderResultData, dtNavMesh, dtQuery)
-
-                    //let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
-                    //match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
-                    //| null -> None // some sort of argument issue
-                    //| dtMeshData ->
-                    //    DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
-                    //    let dtNavMesh = DtNavMesh ()
-                    //    if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
-                    //        let dtQuery = DtNavMeshQuery dtNavMesh
-                    //        Some (navBuilderResultData, dtNavMesh, dtQuery)
-                    //    else None
-
-                else None
+                let navMeshBuildSettings = RcNavMeshBuildSettings ()
+                navMeshBuildSettings.partitioning <- int config.PartitionType
+                navMeshBuildSettings.cellSize <- config.CellSize
+                navMeshBuildSettings.cellHeight <- config.CellHeight
+                navMeshBuildSettings.agentMaxSlope <- config.AgentSlopeMax
+                navMeshBuildSettings.agentHeight <- config.AgentHeight
+                navMeshBuildSettings.agentRadius <- config.AgentRadius
+                navMeshBuildSettings.agentMaxClimb <- config.AgentClimbMax
+                navMeshBuildSettings.minRegionSize <- config.RegionSizeMin
+                navMeshBuildSettings.mergedRegionSize <- config.RegionSizeMerge
+                navMeshBuildSettings.edgeMaxLen <- config.EdgeLengthMax
+                navMeshBuildSettings.edgeMaxError <- config.EdgeErrorMax
+                navMeshBuildSettings.vertsPerPoly <- config.VertsPerPolygon
+                navMeshBuildSettings.detailSampleDist <- detailSampleDistance
+                navMeshBuildSettings.detailSampleMaxError <- config.DetailSampleErrorMax
+                navMeshBuildSettings.filterLowHangingObstacles <- config.FilterLowHangingObstacles
+                navMeshBuildSettings.filterLedgeSpans <- config.FilterLedgeSpans
+                navMeshBuildSettings.filterWalkableLowHeightSpans <- config.FilterWalkableLowHeightSpans
+                navMeshBuildSettings.keepInterResults <- true
+                let tileNavMeshBuilder = TileNavMeshBuilder ()
+                let navMeshBuildResult = tileNavMeshBuilder.Build (geomProvider, navMeshBuildSettings)
+                let navBuilderResultData = NavBuilderResultData.make navMeshBuildResult.RecastBuilderResults
+                let voxelFile = DtVoxelFile.From (rcConfig, navMeshBuildResult.RecastBuilderResults)
+                let dtDynamicNavMesh = DtDynamicNavMesh voxelFile
+                dtDynamicNavMesh.Build Task.Factory |> ignore<bool>
+                let dtQuery = DtNavMeshQuery (dtDynamicNavMesh.NavMesh ())
+                Some (navBuilderResultData, dtDynamicNavMesh, dtQuery)
 
             // geometry not found
             | None -> None

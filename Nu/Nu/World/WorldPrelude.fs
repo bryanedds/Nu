@@ -101,7 +101,7 @@ type [<SymbolicExpansion>] Nav3dConfig =
 
     /// The default 3d navigation configuration.
     static member defaultConfig =
-        { CellSize = 0.1f
+        { CellSize = 0.5f // TODO: P0: make 0.1f again because 0.5 isn't granular enough
           CellHeight = 0.1f
           AgentHeight = 1.5f
           AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
@@ -112,8 +112,8 @@ type [<SymbolicExpansion>] Nav3dConfig =
           EdgeLengthMax = 6.0f
           EdgeErrorMax = 1.3f
           VertsPerPolygon = 6
-          DetailSampleDistance = 6.0f
-          DetailSampleErrorMax = 1.0f
+          DetailSampleDistance = 1.8f
+          DetailSampleErrorMax = 0.2f
           FilterLowHangingObstacles = true
           FilterLedgeSpans = true
           FilterWalkableLowHeightSpans = true
@@ -155,89 +155,97 @@ type NavBuilderResultData =
       NavExteriorEdges : Segment3 array }
 
     /// Make from an RcBuilderResult.
-    static member make (builderResult : RcBuilderResult) =
+    static member make (builderResults : RcBuilderResult IList) =
 
         // compute points
-        let dmesh = builderResult.MeshDetail
         let mutable pointsMinY = Single.MaxValue
         let mutable pointsMaxY = Single.MinValue
         let points =
-            [|for i in 0 .. dec dmesh.nmeshes do
-                let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let nverts = dmesh.meshes.[m + 1]
-                let verts = bverts * 3
-                for j in 0 .. dec nverts do
-                    let point = v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2]
-                    if pointsMinY > point.Y then pointsMinY <- point.Y
-                    if pointsMaxY < point.Y then pointsMaxY <- point.Y
-                    point|]
+            [|for result in builderResults do
+                let detail = result.MeshDetail
+                if notNull detail then
+                    for i in 0 .. dec detail.nmeshes do
+                        let m = i * 4
+                        let bverts = detail.meshes.[m]
+                        let nverts = detail.meshes.[m + 1]
+                        let verts = bverts * 3
+                        for j in 0 .. dec nverts do
+                            let point = v3 detail.verts.[verts + j * 3] detail.verts.[verts + j * 3 + 1] detail.verts.[verts + j * 3 + 2]
+                            if pointsMinY > point.Y then pointsMinY <- point.Y
+                            if pointsMaxY < point.Y then pointsMaxY <- point.Y
+                            point|]
 
         // compute interior edges
         let mutable edgesMinY = Single.MaxValue
         let mutable edgesMaxY = Single.MinValue
         let interiorEdges =
-            [|for i in 0 .. dec dmesh.nmeshes do
-                let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let btris = dmesh.meshes.[m + 2]
-                let ntris = dmesh.meshes.[m + 3]
-                let verts = bverts * 3
-                let tris = btris * 4
-                for j in 0 .. dec ntris do
-                    let t = tris + j * 4
-                    let mutable k = 0
-                    let mutable kp = 2
-                    while k < 3 do
-                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
-                        if ef = 0 then
-                            let start =
-                                v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
-                            let stop =
-                                v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                            segment3 start stop
-                        kp <- k
-                        k <- inc k|]
+            [|for result in builderResults do
+                let detail = result.MeshDetail
+                if notNull detail then
+                    for i in 0 .. dec detail.nmeshes do
+                        let m = i * 4
+                        let bverts = detail.meshes.[m]
+                        let btris = detail.meshes.[m + 2]
+                        let ntris = detail.meshes.[m + 3]
+                        let verts = bverts * 3
+                        let tris = btris * 4
+                        for j in 0 .. dec ntris do
+                            let t = tris + j * 4
+                            let mutable k = 0
+                            let mutable kp = 2
+                            while k < 3 do
+                                let ef = (detail.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                                if ef = 0 then
+                                    let start =
+                                        v3
+                                            detail.verts.[verts + detail.tris.[t + kp] * 3]
+                                            detail.verts.[verts + detail.tris.[t + kp] * 3 + 1]
+                                            detail.verts.[verts + detail.tris.[t + kp] * 3 + 2]
+                                    let stop =
+                                        v3
+                                            detail.verts.[verts + detail.tris.[t + k] * 3]
+                                            detail.verts.[verts + detail.tris.[t + k] * 3 + 1]
+                                            detail.verts.[verts + detail.tris.[t + k] * 3 + 2]
+                                    segment3 start stop
+                                kp <- k
+                                k <- inc k|]
 
         // compute exterior edges
         let exteriorEdges =
-            [|for i in 0 .. dec dmesh.nmeshes do
-                let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let btris = dmesh.meshes.[m + 2]
-                let ntris = dmesh.meshes.[m + 3]
-                let verts = bverts * 3
-                let tris = btris * 4
-                for j in 0 .. dec ntris do
-                    let t = tris + j * 4
-                    let mutable k = 0
-                    let mutable kp = 2
-                    while k < 3 do
-                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
-                        if ef <> 0 then
-                            let start =
-                                v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
-                            let stop =
-                                v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                            if edgesMinY > start.Y then edgesMinY <- start.Y
-                            if edgesMaxY < start.Y then edgesMaxY <- start.Y
-                            if edgesMinY > stop.Y then edgesMinY <- stop.Y
-                            if edgesMaxY < stop.Y then edgesMaxY <- stop.Y
-                            segment3 start stop
-                        kp <- k
-                        k <- inc k|]
+            [|for result in builderResults do
+                let detail = result.MeshDetail
+                if notNull detail then
+                    for i in 0 .. dec detail.nmeshes do
+                        let m = i * 4
+                        let bverts = detail.meshes.[m]
+                        let btris = detail.meshes.[m + 2]
+                        let ntris = detail.meshes.[m + 3]
+                        let verts = bverts * 3
+                        let tris = btris * 4
+                        for j in 0 .. dec ntris do
+                            let t = tris + j * 4
+                            let mutable k = 0
+                            let mutable kp = 2
+                            while k < 3 do
+                                let ef = (detail.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                                if ef <> 0 then
+                                    let start =
+                                        v3
+                                            detail.verts.[verts + detail.tris.[t + kp] * 3]
+                                            detail.verts.[verts + detail.tris.[t + kp] * 3 + 1]
+                                            detail.verts.[verts + detail.tris.[t + kp] * 3 + 2]
+                                    let stop =
+                                        v3
+                                            detail.verts.[verts + detail.tris.[t + k] * 3]
+                                            detail.verts.[verts + detail.tris.[t + k] * 3 + 1]
+                                            detail.verts.[verts + detail.tris.[t + k] * 3 + 2]
+                                    if edgesMinY > start.Y then edgesMinY <- start.Y
+                                    if edgesMaxY < start.Y then edgesMaxY <- start.Y
+                                    if edgesMinY > stop.Y then edgesMinY <- stop.Y
+                                    if edgesMaxY < stop.Y then edgesMaxY <- stop.Y
+                                    segment3 start stop
+                                kp <- k
+                                k <- inc k|]
 
         // fin
         { NavPointsMinY = pointsMinY
