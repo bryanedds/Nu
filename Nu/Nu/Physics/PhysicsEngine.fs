@@ -223,6 +223,13 @@ type BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+    static member validateUtilization3d properties =
+        properties.FrictionOpt.IsNone &&
+        properties.RestitutionOpt.IsNone &&
+        properties.CollisionCategoriesOpt.IsNone &&
+        properties.CollisionMaskOpt.IsNone &&
+        properties.SensorOpt.IsNone
+
 /// Internal object that carries interstitial information between Nu and a physics engine.
 type [<NoEquality; NoComparison>] BodyUserObject =
     { BodyId : BodyId
