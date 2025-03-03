@@ -493,11 +493,11 @@ module WorldScreenModule =
                 navMeshBuildSettings.filterLowHangingObstacles <- config.FilterLowHangingObstacles
                 navMeshBuildSettings.filterLedgeSpans <- config.FilterLedgeSpans
                 navMeshBuildSettings.filterWalkableLowHeightSpans <- config.FilterWalkableLowHeightSpans
-                navMeshBuildSettings.keepInterResults <- true
                 let tileNavMeshBuilder = TileNavMeshBuilder ()
                 let navMeshBuildResult = tileNavMeshBuilder.Build (geomProvider, navMeshBuildSettings)
                 let navBuilderResultData = NavBuilderResultData.make navMeshBuildResult.RecastBuilderResults
                 let voxelFile = DtVoxelFile.From (rcConfig, navMeshBuildResult.RecastBuilderResults)
+                navMeshBuildResult.RecastBuilderResults.Clear () // get rid of excess objects
                 let dtDynamicNavMesh = DtDynamicNavMesh voxelFile
                 dtDynamicNavMesh.Build Task.Factory |> ignore<bool>
                 let dtQuery = DtNavMeshQuery (dtDynamicNavMesh.NavMesh ())

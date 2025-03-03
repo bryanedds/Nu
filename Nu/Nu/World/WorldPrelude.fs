@@ -101,10 +101,10 @@ type [<SymbolicExpansion>] Nav3dConfig =
 
     /// The default 3d navigation configuration.
     static member defaultConfig =
-        { CellSize = 0.5f // TODO: P0: make 0.1f again because 0.5 isn't granular enough
+        { CellSize = 0.15f
           CellHeight = 0.1f
           AgentHeight = 1.5f
-          AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
+          AgentRadius = 0.25f
           AgentClimbMax = 0.4f
           AgentSlopeMax = 45.0f
           RegionSizeMin = 8
