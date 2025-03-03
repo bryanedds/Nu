@@ -173,24 +173,33 @@ type [<StructuralEquality; NoComparison>] HeightMap =
         | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map
 
 /// Identifies a body that can be found in a physics engine.
-/// TODO: see if removing CustomEquality here doesn't increase GC pressure or cause other perf overhead.
-type [<CustomEquality; NoComparison>] BodyId =
+type [<CustomEquality; CustomComparison>] BodyId =
     { BodySource : Simulant
       BodyIndex : int }
 
     /// Hash a BodyId.
-    static member hash pid =
-        pid.BodySource.SimulantAddress.GetHashCode () ^^^
-        pid.BodyIndex.GetHashCode ()
+    static member hash bid =
+        bid.BodySource.SimulantAddress.GetHashCode () ^^^
+        bid.BodyIndex.GetHashCode ()
 
     /// Equate BodyIds.
-    static member equals pid pid2 =
-        String.equateMany pid.BodySource.SimulantAddress.Names pid2.BodySource.SimulantAddress.Names &&
-        pid.BodyIndex = pid2.BodyIndex
+    static member equals bid bid2 =
+        String.equateMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names &&
+        bid.BodyIndex = bid2.BodyIndex
+
+    /// Compare BodyIds.
+    static member compare bid bid2 =
+        let result = String.compareMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names
+        if result <> 0 then result
+        else bid.BodyIndex.CompareTo bid2.BodyIndex
 
     interface BodyId IEquatable with
         member this.Equals that =
             BodyId.equals this that
+
+    interface BodyId IComparable with
+        member this.CompareTo that =
+            BodyId.compare this that
 
     override this.Equals that =
         match that with
