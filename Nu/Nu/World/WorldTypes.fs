@@ -1472,15 +1472,15 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
     override this.GetHashCode () =
         Address.hash this.ScreenAddress
 
+    interface Screen IComparable with
+        member this.CompareTo that =
+            Address.compare this.ScreenAddress that.ScreenAddress
+
     interface IComparable with
         member this.CompareTo that =
             match that with
             | :? Screen as that -> (this :> Screen IComparable).CompareTo that
             | _ -> failwith "Invalid Screen comparison (comparee not of type Screen)."
-
-    interface Screen IComparable with
-        member this.CompareTo that =
-            Address.compare this.ScreenAddress that.ScreenAddress
 
     interface Simulant with
         member this.SimulantAddress = screenAddress

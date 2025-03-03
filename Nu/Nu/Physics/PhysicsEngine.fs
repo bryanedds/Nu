@@ -201,6 +201,12 @@ type [<CustomEquality; CustomComparison>] BodyId =
         member this.CompareTo that =
             BodyId.compare this that
 
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? BodyId as that -> BodyId.compare this that
+            | _ -> -1
+
     override this.Equals that =
         match that with
         | :? BodyId as that -> BodyId.equals this that
