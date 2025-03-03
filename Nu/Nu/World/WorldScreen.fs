@@ -499,7 +499,9 @@ module WorldScreenModule =
                 let voxelFile = DtVoxelFile.From (rcConfig, navMeshBuildResult.RecastBuilderResults)
                 navMeshBuildResult.RecastBuilderResults.Clear () // get rid of excess objects
                 let dtDynamicNavMesh = DtDynamicNavMesh voxelFile
-                dtDynamicNavMesh.Build Task.Factory |> ignore<bool>
+                if Constants.Engine.RunSynchronously
+                then dtDynamicNavMesh.Build ()
+                else dtDynamicNavMesh.Build Task.Factory |> ignore<bool>
                 let dtQuery = DtNavMeshQuery (dtDynamicNavMesh.NavMesh ())
                 Some (navBuilderResultData, dtDynamicNavMesh, dtQuery)
 
