@@ -100,25 +100,32 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyConstraints : Dictionary<BodyJointId, Constraint>
           IntegrationMessages : IntegrationMessage List }
 
-    static member sanitizeHeight (height : single) =
+    static member private sanitizeHeight (height : single) =
         let height' = max height 0.1f // prevent having near zero or negative height
         if height' <> height then Log.infoOnce ("3D physics engine received height too near or less than zero. Using " + scstring height' + " instead.")
         height'
 
-    static member sanitizeRadius (radius : single) =
+    static member private sanitizeRadius (radius : single) =
         let radius' = max radius 0.1f // prevent having near zero or negative radius
         if radius' <> radius then Log.infoOnce ("3D physics engine received radius too near or less than zero. Using " + scstring radius' + " instead.")
         radius'
 
-    static member sanitizeExtent extent =
+    static member private sanitizeExtent extent =
         let extent' = Vector3.Max (extent, v3Dup 0.1f) // prevent having near zero or negative extent
         if extent' <> extent then Log.infoOnce ("3D physics engine received extent too near or less than zero. Using " + scstring extent' + " instead.")
         extent'
 
-    static member sanitizeScale scale =
+    static member private sanitizeScale scale =
         let scale' = Vector3.Max (scale, v3Dup 0.0001f) // prevent having near zero or negative scale
         if scale' <> scale then Log.infoOnce ("3D physics engine received scale too near or less than zero. Using " + scstring scale' + " instead.")
         scale'
+
+    static member private validateBodyShape (bodyShape : BodyShape) =
+        match bodyShape.PropertiesOpt with
+        | Some properties ->
+            if not (BodyShapeProperties.validateUtilization3d properties) then
+                Log.warnOnce "Invalid utilization of BodyShape.PropertiesOpt in PhysicsEngine3d. Only BodyShapeProperties.BodyShapeIndex can be utilized in the context of 3d physics."
+        | None -> ()
 
     static member private handleBodyPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
 
@@ -427,6 +434,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             bodyShapes
 
     static member private attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine =
+        PhysicsEngine3d.validateBodyShape bodyShape
         match bodyShape with
         | EmptyShape -> masses
         | BoxShape boxShape -> PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
