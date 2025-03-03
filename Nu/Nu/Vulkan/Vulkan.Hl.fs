@@ -389,6 +389,141 @@ module Hl =
                 Some physicalDeviceData
             | (_, _) -> None
     
+    /// A single swapchain and its assets.
+    type private SwapchainInternal =
+        { Swapchain : VkSwapchainKHR
+          ImageViews : VkImageView array
+          Framebuffers : VkFramebuffer array }
+
+        /// Create the swapchain.
+        static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
+
+            // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
+            // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
+            // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
+            let capabilities = physicalDeviceData.SurfaceCapabilities
+            let minImageCount =
+                if capabilities.maxImageCount = 0u
+                then capabilities.minImageCount + 1u
+                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
+
+            // in case graphics and present queue families differ
+            // TODO: as part of optimization, the sharing mode in this case should probably be VK_SHARING_MODE_EXCLUSIVE (see below).
+            let indicesArray = [|physicalDeviceData.GraphicsQueueFamily; physicalDeviceData.PresentQueueFamily|]
+            use indicesArrayPin = new ArrayPin<_> (indicesArray)
+
+            // create swapchain
+            let mutable info = VkSwapchainCreateInfoKHR ()
+            info.surface <- surface
+            info.minImageCount <- minImageCount
+            info.imageFormat <- surfaceFormat.format
+            info.imageColorSpace <- surfaceFormat.colorSpace
+            info.imageExtent <- swapExtent
+            info.imageArrayLayers <- 1u
+            info.imageUsage <- Vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            if (physicalDeviceData.GraphicsQueueFamily = physicalDeviceData.PresentQueueFamily) then
+                info.imageSharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            else
+                info.imageSharingMode <- Vulkan.VK_SHARING_MODE_CONCURRENT
+                info.queueFamilyIndexCount <- 2u
+                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
+            info.preTransform <- capabilities.currentTransform
+            info.compositeAlpha <- Vulkan.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+            info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
+            info.clipped <- true
+            info.oldSwapchain <- VkSwapchainKHR.Null
+            let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
+            Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &swapchain) |> check
+            swapchain
+
+        /// Get swapchain images.
+        static member private getSwapchainImages swapchain device =
+            let mutable imageCount = 0u
+            Vulkan.vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, nullPtr) |> check
+            let images = Array.zeroCreate<VkImage> (int imageCount)
+            use imagesPin = new ArrayPin<_> (images)
+            Vulkan.vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, imagesPin.Pointer) |> check
+            images
+
+        /// Create the image views.
+        static member private createImageViews format (images : VkImage array) device =
+            let imageViews = Array.zeroCreate<VkImageView> images.Length
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView format 1u images.[i] device
+            imageViews
+        
+        /// Create the framebuffers.
+        static member private createFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
+
+            // handle array
+            let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
+
+            // create framebuffers
+            for i in 0 .. dec framebuffers.Length do
+                let mutable imageView = imageViews.[i]
+                let mutable info = VkFramebufferCreateInfo ()
+                info.renderPass <- renderPass
+                info.attachmentCount <- 1u
+                info.pAttachments <- asPointer &imageView
+                info.width <- extent.width
+                info.height <- extent.height
+                info.layers <- 1u
+                Vulkan.vkCreateFramebuffer (device, &info, nullPtr, &framebuffers.[i]) |> check
+            
+            // fin
+            framebuffers
+        
+        /// Create a SwapchainInternal.
+        static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
+            
+            // create swapchain and its assets
+            let swapchain = SwapchainInternal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
+            let images = SwapchainInternal.getSwapchainImages swapchain device
+            let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
+            let framebuffers = SwapchainInternal.createFramebuffers swapExtent renderPass imageViews device
+
+            // make swapchainInternal
+            let swapchainInternal =
+                { Swapchain = swapchain
+                  ImageViews = imageViews
+                  Framebuffers = framebuffers }
+
+            // fin
+            swapchainInternal
+        
+        /// Destroy a SwapchainInternal.
+        static member destroy swapchainInternal device =
+            for i in 0 .. dec swapchainInternal.Framebuffers.Length do Vulkan.vkDestroyFramebuffer (device, swapchainInternal.Framebuffers.[i], nullPtr)
+            for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
+            Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.Swapchain, nullPtr)
+
+    /// A swapchain and its assets that may be refreshed for a given extent.
+    type Swapchain =
+        private
+            { _Swapchain : SwapchainInternal }
+
+        /// The swapchain itself.
+        member this.Swapchain = this._Swapchain.Swapchain
+
+        /// The framebuffer for the current swapchain image.
+        member this.Framebuffer = this._Swapchain.Framebuffers.[int ImageIndex]
+        
+        /// Create a Swapchain.
+        static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
+            
+            //
+            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent physicalDeviceData renderPass surface device
+
+            // make Swapchain
+            let swapchain =
+                { _Swapchain = swapchainInternal }
+
+            // fin
+            swapchain
+        
+        /// Destroy a Swapchain.
+        static member destroy swapchain device =
+            SwapchainInternal.destroy swapchain._Swapchain device
+    
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     /// TODO: maybe rename this to VulkanContext.
     /// TODO: DJL: make props private.
@@ -398,8 +533,7 @@ module Hl =
           PhysicalDevice : VkPhysicalDevice
           Device : VkDevice
           VmaAllocator : VmaAllocator
-          Swapchain : VkSwapchainKHR
-          SwapchainImageViews : VkImageView array
+          Swapchain : Swapchain
           TransientCommandPool : VkCommandPool
           MainCommandPool : VkCommandPool
           RenderCommandBuffers : VkCommandBuffer array
@@ -413,7 +547,6 @@ module Hl =
           RenderPass : VkRenderPass
           ClearRenderPass : VkRenderPass
           PresentRenderPass : VkRenderPass
-          SwapchainFramebuffers : VkFramebuffer array
           SwapExtent : VkExtent2D }
 
         /// The render command buffer for the current frame.
@@ -432,7 +565,7 @@ module Hl =
         member this.InFlightFence = this.InFlightFences.[CurrentFrame]
         
         /// The current swapchain framebuffer.
-        member this.SwapchainFramebuffer = this.SwapchainFramebuffers.[int ImageIndex]
+        member this.SwapchainFramebuffer = this.Swapchain.Framebuffer
 
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
@@ -615,62 +748,6 @@ module Hl =
                 // fin
                 VkExtent2D (width, height)
 
-        /// Create the swapchain.
-        static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
-
-            // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
-            // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
-            // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-            let capabilities = physicalDeviceData.SurfaceCapabilities
-            let minImageCount =
-                if capabilities.maxImageCount = 0u
-                then capabilities.minImageCount + 1u
-                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
-
-            // in case graphics and present queue families differ
-            // TODO: as part of optimization, the sharing mode in this case should probably be VK_SHARING_MODE_EXCLUSIVE (see below).
-            let indicesArray = [|physicalDeviceData.GraphicsQueueFamily; physicalDeviceData.PresentQueueFamily|]
-            use indicesArrayPin = new ArrayPin<_> (indicesArray)
-
-            // create swapchain
-            let mutable info = VkSwapchainCreateInfoKHR ()
-            info.surface <- surface
-            info.minImageCount <- minImageCount
-            info.imageFormat <- surfaceFormat.format
-            info.imageColorSpace <- surfaceFormat.colorSpace
-            info.imageExtent <- swapExtent
-            info.imageArrayLayers <- 1u
-            info.imageUsage <- Vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-            if (physicalDeviceData.GraphicsQueueFamily = physicalDeviceData.PresentQueueFamily) then
-                info.imageSharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            else
-                info.imageSharingMode <- Vulkan.VK_SHARING_MODE_CONCURRENT
-                info.queueFamilyIndexCount <- 2u
-                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-            info.preTransform <- capabilities.currentTransform
-            info.compositeAlpha <- Vulkan.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
-            info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
-            info.clipped <- true
-            info.oldSwapchain <- VkSwapchainKHR.Null
-            let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
-            Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &swapchain) |> check
-            swapchain
-
-        /// Get swapchain images.
-        static member private getSwapchainImages swapchain device =
-            let mutable imageCount = 0u
-            Vulkan.vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, nullPtr) |> check
-            let images = Array.zeroCreate<VkImage> (int imageCount)
-            use imagesPin = new ArrayPin<_> (images)
-            Vulkan.vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, imagesPin.Pointer) |> check
-            images
-
-        /// Create swapchain image views.
-        static member private createSwapchainImageViews format (images : VkImage array) device =
-            let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView format 1u images.[i] device
-            imageViews
-
         /// Create a command pool.
         static member private createCommandPool transient queueFamilyIndex device =
             
@@ -745,27 +822,6 @@ module Hl =
             Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
             renderPass
 
-        /// Create the swapchain framebuffers.
-        static member private createSwapchainFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
-
-            // handle array
-            let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
-
-            // create framebuffers
-            for i in 0 .. dec framebuffers.Length do
-                let mutable imageView = imageViews.[i]
-                let mutable info = VkFramebufferCreateInfo ()
-                info.renderPass <- renderPass
-                info.attachmentCount <- 1u
-                info.pAttachments <- asPointer &imageView
-                info.width <- extent.width
-                info.height <- extent.height
-                info.layers <- 1u
-                Vulkan.vkCreateFramebuffer (device, &info, nullPtr, &framebuffers.[i]) |> check
-            
-            // fin
-            framebuffers
-
         /// Begin the frame.
         static member beginFrame (vkg : VulkanGlobal) =
 
@@ -774,7 +830,7 @@ module Hl =
             Vulkan.vkWaitForFences (vkg.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
 
             // acquire image from swapchain to draw onto
-            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
+            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
             // swapchain refresh happens here
             
@@ -805,7 +861,7 @@ module Hl =
             endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
             
             // present image
-            let mutable swapchain = vkg.Swapchain
+            let mutable swapchain = vkg.Swapchain.Swapchain
             let mutable info = VkPresentInfoKHR ()
             info.waitSemaphoreCount <- 1u
             info.pWaitSemaphores <- asPointer &renderFinished
@@ -823,7 +879,7 @@ module Hl =
 
         /// Destroy the Vulkan handles.
         static member cleanup vkg =
-            for i in 0 .. dec vkg.SwapchainFramebuffers.Length do Vulkan.vkDestroyFramebuffer (vkg.Device, vkg.SwapchainFramebuffers.[i], nullPtr)
+            Swapchain.destroy vkg.Swapchain vkg.Device
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.RenderPass, nullPtr)
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.ClearRenderPass, nullPtr)
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.PresentRenderPass, nullPtr)
@@ -833,8 +889,6 @@ module Hl =
             Vulkan.vkDestroyFence (vkg.Device, vkg.ResourceReadyFence, nullPtr)
             Vulkan.vkDestroyCommandPool (vkg.Device, vkg.MainCommandPool, nullPtr)
             Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransientCommandPool, nullPtr)
-            for i in 0 .. dec vkg.SwapchainImageViews.Length do Vulkan.vkDestroyImageView (vkg.Device, vkg.SwapchainImageViews.[i], nullPtr)
-            Vulkan.vkDestroySwapchainKHR (vkg.Device, vkg.Swapchain, nullPtr)
             Vma.vmaDestroyAllocator vkg.VmaAllocator
             Vulkan.vkDestroyDevice (vkg.Device, nullPtr)
             Vulkan.vkDestroySurfaceKHR (vkg.Instance, vkg.Surface, nullPtr)
@@ -891,11 +945,8 @@ module Hl =
                 let clearRenderPass = VulkanGlobal.createRenderPass true false surfaceFormat.format device
                 let presentRenderPass = VulkanGlobal.createRenderPass false true surfaceFormat.format device
 
-                // setup swapchain and its assets
-                let swapchain = VulkanGlobal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
-                let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
-                let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
-                let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent renderPass swapchainImageViews device
+                // setup swapchain
+                let swapchain = Swapchain.create surfaceFormat swapExtent physicalDeviceData renderPass surface device
 
                 // make VulkanGlobal
                 let vulkanGlobal =
@@ -905,7 +956,6 @@ module Hl =
                       Device = device
                       VmaAllocator = allocator
                       Swapchain = swapchain
-                      SwapchainImageViews = swapchainImageViews
                       TransientCommandPool = transientCommandPool
                       MainCommandPool = mainCommandPool
                       RenderCommandBuffers = renderCommandBuffers
@@ -919,7 +969,6 @@ module Hl =
                       RenderPass = renderPass
                       ClearRenderPass = clearRenderPass
                       PresentRenderPass = presentRenderPass
-                      SwapchainFramebuffers = swapchainFramebuffers
                       SwapExtent = swapExtent }
 
                 // fin
