@@ -1144,6 +1144,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, character) -> character.GroundState = GroundState.OnGround
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
+        member physicsEngine.GetBodySensor bodyId =
+            match PhysicsEngine3d.tryGetBodyID bodyId physicsEngine with
+            | ValueSome bodyID ->
+                let mutable bodyLockRead = BodyLockRead ()
+                try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&bodyID, &bodyLockRead)
+                    if bodyLockRead.Succeeded
+                    then bodyLockRead.Body.IsSensor
+                    else Log.warnOnce "Failed to find expected body."; false
+                finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
+            | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
+
         member physicsEngine.RayCast (segment, collisionMask, closestOnly) =
             let mutable ray = Ray ()
             ray.Position <- segment.A

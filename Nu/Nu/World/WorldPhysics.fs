@@ -162,6 +162,16 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        /// Check that the body with the given body id is a sensor.
+        static member getBodySensor bodyId world =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodySensor bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodySensor bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                false
+
         /// Ray cast against 3d physics bodies.
         static member rayCast3dBodies segment collisionMask closestOnly world =
             world.Subsystems.PhysicsEngine3d.RayCast (segment, collisionMask, closestOnly)

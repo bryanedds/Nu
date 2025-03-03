@@ -639,6 +639,20 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             Array.notEmpty groundNormals
 
+        member physicsEngine.GetBodySensor bodyId =
+            let (_, body) = physicsEngine.Bodies.[bodyId]
+            let mutable found = false
+            let mutable sensor = false
+            let mutable i = 0
+            while i < body.FixtureList.Count && not found do
+                let fixture = body.FixtureList.[i]
+                let fixtureBodyId = (fixture.Tag :?> BodyShapeIndex).BodyId
+                if fixtureBodyId = bodyId then
+                    sensor <- fixture.IsSensor
+                    found <- true
+                i <- inc i
+            sensor
+
         member physicsEngine.RayCast (segment, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
