@@ -45,6 +45,6 @@ module CoreOperators =
     /// TODO: remove this after updating Prime.
     let tryCast<'a> (obj : obj) = match obj with :? 'a as a -> Some a | _ -> None
 
-    /// Attempt to cast an obj to type 'a, returning 'a option.
+    /// Attempt to cast an obj to type 'a, returning 'a voption.
     /// TODO: remove this after updating Prime.
     let tryCast'<'a> (obj : obj) = match obj with :? 'a as a -> ValueSome a | _ -> ValueNone
