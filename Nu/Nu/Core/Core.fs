@@ -40,3 +40,11 @@ module CoreOperators =
     /// Test for object inequality.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
+
+    /// Attempt to cast an obj to type 'a, returning 'a option.
+    /// TODO: remove this after updating Prime.
+    let tryCast<'a> (obj : obj) = match obj with :? 'a as a -> Some a | _ -> None
+
+    /// Attempt to cast an obj to type 'a, returning 'a option.
+    /// TODO: remove this after updating Prime.
+    let tryCast'<'a> (obj : obj) = match obj with :? 'a as a -> ValueSome a | _ -> ValueNone
