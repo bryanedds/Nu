@@ -33,7 +33,6 @@ type EnemyDispatcher () =
          define Entity.CelSize (v2 48.0f 96.0f)
          define Entity.AnimationDelay (UpdateTime 8L)
          define Entity.AnimationSheet Assets.Gameplay.EnemyImage
-         define Entity.Observable true
          define Entity.Health 7]
 
     override this.Process (entity, world) =

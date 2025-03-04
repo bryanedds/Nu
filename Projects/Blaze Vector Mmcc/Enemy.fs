@@ -45,7 +45,6 @@ type EnemyDispatcher () =
          Entity.CelSize == v2 48.0f 96.0f
          Entity.AnimationDelay == UpdateTime 8L
          Entity.AnimationSheet == Assets.Gameplay.EnemyImage
-         Entity.Observable == true
          Entity.UpdateEvent => Update
          Entity.BodyPenetrationEvent =|> fun evt -> Penetration evt.Data]
 

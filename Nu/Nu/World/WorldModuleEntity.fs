@@ -43,8 +43,7 @@ module WorldModuleEntity =
               "CollisionCategories"
               "CollisionMask"
               "BodyShape"
-              "Sensor"
-              "Observable"],
+              "Sensor"],
             StringComparer.Ordinal)
 
     type World with

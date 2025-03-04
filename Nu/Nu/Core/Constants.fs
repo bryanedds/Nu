@@ -212,7 +212,6 @@ module Audio =
 module Physics =
 
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
-    let [<Uniform>] mutable AlwaysObserve = match ConfigurationManager.AppSettings.["AlwaysObserve"] with null -> true | observe -> scvalue observe
     let [<Literal>] BreakingPointDefault = 100000.0f
     let [<Literal>] CollisionWildcard = "*"
     let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings.["Collision3dBodiesMax"] with null -> 10240 | value -> scvalue value

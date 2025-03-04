@@ -27,8 +27,7 @@ type [<Struct>] private BodyContactEvent =
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
       BodyCollisionCategories : int
-      BodyCollisionMask : int
-      BodyObserving : bool }
+      BodyCollisionMask : int }
 
 type [<Struct>] private BodyConstraintEvent =
     | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
@@ -490,8 +489,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyUserData =
                 { BodyId = bodyId
                   BodyCollisionCategories = bodyProperties.CollisionCategories
-                  BodyCollisionMask = bodyProperties.CollisionMask
-                  BodyObserving = bodyProperties.ShouldObserve }
+                  BodyCollisionMask = bodyProperties.CollisionMask }
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
             physicsEngine.BodyUserData.Add (innerBodyID, bodyUserData)
@@ -603,8 +601,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyUserData =
                 { BodyId = bodyId
                   BodyCollisionCategories = bodyProperties.CollisionCategories
-                  BodyCollisionMask = bodyProperties.CollisionMask
-                  BodyObserving = bodyProperties.ShouldObserve }
+                  BodyCollisionMask = bodyProperties.CollisionMask }
             physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
             physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, body.ID)

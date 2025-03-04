@@ -294,7 +294,7 @@ module TmxMap =
         Seq.concat |>
         Seq.toList
 
-    let getBodyProperties enabled friction restitution collisionCategories collisionMask observable bodyIndex tileMapDescriptor =
+    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =
             { Enabled = enabled
               Center = v3Zero
@@ -317,7 +317,6 @@ module TmxMap =
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false
-              Observable = observable
               Awake = false
               BodyIndex = bodyIndex }
         bodyProperties

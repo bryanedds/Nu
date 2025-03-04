@@ -304,10 +304,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         try PhysicsEngine2d.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
         with :? ArgumentOutOfRangeException -> ()
 
-        // listen for collisions when observable
-        if bodyProperties.ShouldObserve then
-            body.add_OnCollision physicsEngine.PenetrationHandler
-            body.add_OnSeparation physicsEngine.SeparationHandler
+        // listen for collisions
+        body.add_OnCollision physicsEngine.PenetrationHandler
+        body.add_OnSeparation physicsEngine.SeparationHandler
 
         // attempt to add the body
         let bodyId = { BodySource = createBodyMessage.BodyId.BodySource; BodyIndex = bodyProperties.BodyIndex }

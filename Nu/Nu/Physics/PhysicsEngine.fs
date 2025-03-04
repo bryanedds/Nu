@@ -479,16 +479,12 @@ type BodyProperties =
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int
-      Sensor : bool // sensor is always inherently observable
-      Observable : bool
+      Sensor : bool
       Awake : bool
       BodyIndex : int }
 
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
-
-    member this.ShouldObserve =
-        Constants.Physics.AlwaysObserve || this.HasSensors || this.Observable
 
 /// Identifies a joint in a physics engine.
 type BodyJointId =

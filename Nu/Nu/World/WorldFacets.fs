@@ -1383,9 +1383,6 @@ module RigidBodyFacetExtensions =
         member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
         member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
-        member this.GetObservable world : bool = this.Get (nameof this.Observable) world
-        member this.SetObservable (value : bool) world = this.Set (nameof this.Observable) value world
-        member this.Observable = lens (nameof this.Observable) this this.GetObservable this.SetObservable
         member this.GetAwakeTimeStamp world : int64 = this.Get (nameof this.AwakeTimeStamp) world
         member this.SetAwakeTimeStamp (value : int64) world = this.Set (nameof this.AwakeTimeStamp) value world
         member this.AwakeTimeStamp = lens (nameof this.AwakeTimeStamp) this this.GetAwakeTimeStamp this.SetAwakeTimeStamp
@@ -1461,7 +1458,6 @@ type RigidBodyFacet () =
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.Sensor false
-         define Entity.Observable false
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalIndex }) None]
@@ -1515,7 +1511,6 @@ type RigidBodyFacet () =
               CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
               CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
               Sensor = entity.GetSensor world
-              Observable = entity.GetObservable world
               Awake = entity.GetAwake world
               BodyIndex = (entity.GetBodyId world).BodyIndex }
         World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
@@ -1642,7 +1637,6 @@ type TileMapFacet () =
          define Entity.Restitution 0.0f
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
-         define Entity.Observable false
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
@@ -1663,7 +1657,6 @@ type TileMapFacet () =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Observable)) entity (nameof TileMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
         let world =
@@ -1695,7 +1688,6 @@ type TileMapFacet () =
                     (entity.GetRestitution world)
                     (entity.GetCollisionCategories world)
                     (entity.GetCollisionMask world)
-                    (entity.GetObservable world)
                     (entity.GetBodyId world).BodyIndex
                     tileMapDescriptor
             World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
@@ -1751,7 +1743,6 @@ type TmxMapFacet () =
          define Entity.Restitution 0.0f
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
-         define Entity.Observable false
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
@@ -1772,7 +1763,6 @@ type TmxMapFacet () =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Observable)) entity (nameof TmxMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
         let world =
@@ -1803,7 +1793,6 @@ type TmxMapFacet () =
                 (entity.GetRestitution world)
                 (entity.GetCollisionCategories world)
                 (entity.GetCollisionMask world)
-                (entity.GetObservable world)
                 (entity.GetBodyId world).BodyIndex
                 tmxMapDescriptor
         World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
@@ -3286,7 +3275,6 @@ type TerrainFacet () =
          define Entity.Tiles (v2 256.0f 256.0f)
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
          define Entity.Segments v2iOne
-         define Entity.Observable false
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
@@ -3337,7 +3325,6 @@ type TerrainFacet () =
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
-                  Observable = entity.GetObservable world
                   Awake = entity.GetAwake world
                   BodyIndex = (entity.GetBodyId world).BodyIndex }
             World.createBody false (entity.GetBodyId world) bodyProperties world

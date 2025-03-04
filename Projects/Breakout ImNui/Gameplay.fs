@@ -135,7 +135,6 @@ type GameplayDispatcher () =
                  Entity.AngularFactor .= v3Zero
                  Entity.GravityOverride .= Some v3Zero
                  Entity.CollisionDetection .= Continuous
-                 Entity.Observable .= true
                  Entity.StaticImage .= Assets.Default.Ball] world
         let ball = world.DeclaredEntity
 

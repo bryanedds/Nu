@@ -44,7 +44,6 @@ module Configure =
                 | nameof Constants.Render.ShadowTexturesMax -> Constants.Render.ShadowTexturesMax <- min (scvalue value) Constants.Render.ShadowTexturesMaxShader
                 | nameof Constants.Render.ShadowMapsMax -> Constants.Render.ShadowMapsMax <- min (scvalue value) Constants.Render.ShadowMapsMaxShader
                 | nameof Constants.Render.ShadowDetailedResolutionScalar -> Constants.Render.ShadowDetailedResolutionScalar <- scvalue value
-                | nameof Constants.Physics.AlwaysObserve -> Constants.Physics.AlwaysObserve <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
                 | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
                 | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value

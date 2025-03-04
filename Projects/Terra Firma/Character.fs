@@ -281,7 +281,6 @@ type CharacterDispatcher () =
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
          define Entity.Substance (Mass 50.0f)
          define Entity.CharacterProperties characterType.CharacterProperties
-         define Entity.Observable true
          define Entity.CharacterType characterType
          define Entity.ActionState NormalState
          define Entity.HitPoints characterType.HitPointsMax
