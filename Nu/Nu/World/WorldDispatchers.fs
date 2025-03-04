@@ -473,7 +473,8 @@ type SensorModelDispatcher () =
 
     static member Properties =
         [define Entity.Visible false
-         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Sensor true]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -544,7 +545,8 @@ type SensorModelSurfaceDispatcher () =
 
     static member Properties =
         [define Entity.Visible false
-         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Sensor true]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
