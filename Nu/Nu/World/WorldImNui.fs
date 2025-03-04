@@ -589,21 +589,31 @@ module WorldImNui =
         /// ImNui declare a static model with the given arguments.
         static member doStaticModel name args world = World.doEntity<StaticModelDispatcher> name args world
 
-        /// ImNui declare a static model surface with the given arguments.
-        static member doStaticModelSurface name args world = World.doEntity<StaticModelSurfaceDispatcher> name args world
+        /// ImNui declare a animated model with the given arguments.
+        static member doAnimatedModel name args world = World.doEntity<AnimatedModelDispatcher> name args world
+
+        /// ImNui declare a sensor model with the given arguments.
+        static member doSensorModel name args world =
+            let (results, world) = World.doEntityPlus<SensorModelDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results, world)
 
         /// ImNui declare a rigid model with the given arguments.
         static member doRigidModel name args world =
             let (results, world) = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results, world)
 
-        /// ImNui declare a rigid model with the given arguments.
+        /// ImNui declare a static model surface with the given arguments.
+        static member doStaticModelSurface name args world = World.doEntity<StaticModelSurfaceDispatcher> name args world
+
+        /// ImNui declare a sensor model surface with the given arguments.
+        static member doSensorModelSurface name args world =
+            let (results, world) = World.doEntityPlus<SensorModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results, world)
+
+        /// ImNui declare a rigid model surface with the given arguments.
         static member doRigidModelSurface name args world =
             let (results, world) = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results, world)
-
-        /// ImNui declare a animated model with the given arguments.
-        static member doAnimatedModel name args world = World.doEntity<AnimatedModelDispatcher> name args world
 
         /// ImNui declare a 3d character with the given arguments.
         static member doCharacter3d name args world =

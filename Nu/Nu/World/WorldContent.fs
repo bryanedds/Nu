@@ -505,17 +505,23 @@ module Content =
     /// Describe a static model with the given definitions.
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
 
-    /// Describe a static model surface with the given definitions.
-    let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+    /// Describe an animated model with the given definitions.
+    let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
+
+    /// Describe a sensor model with the given definitions.
+    let sensorModel entityName definitions = entity<SensorModelDispatcher> entityName definitions
 
     /// Describe a rigid model with the given definitions.
     let rigidModel entityName definitions = entity<RigidModelDispatcher> entityName definitions
 
+    /// Describe a static model surface with the given definitions.
+    let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+
+    /// Describe a sensor model surface with the given definitions.
+    let sensorModelSurface entityName definitions = entity<SensorModelSurfaceDispatcher> entityName definitions
+
     /// Describe a rigid model surface with the given definitions.
     let rigidModelSurface entityName definitions = entity<RigidModelSurfaceDispatcher> entityName definitions
-
-    /// Describe an animated model with the given definitions.
-    let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
 
     /// Describe a 3d character with the given definitions.
     let character3d entityName definitions = entity<Character3dDispatcher> entityName definitions

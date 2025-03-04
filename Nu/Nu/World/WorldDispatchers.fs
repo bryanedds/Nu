@@ -453,6 +453,33 @@ type AnimatedModelDispatcher () =
     static member Facets =
         [typeof<AnimatedModelFacet>]
 
+/// Gives an entity the base behavior of physics-driven sensor model.
+type SensorModelDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static let updateBodyShape evt world =
+        let entity = evt.Subscriber : Entity
+        let bodyShape = entity.GetBodyShape world
+        let staticModel = entity.GetStaticModel world
+        if (match bodyShape with StaticModelShape staticModelShape -> staticModelShape.StaticModel <> staticModel | _ -> false) then
+            let staticModelShape = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
+            let world = entity.SetBodyShape (StaticModelShape staticModelShape) world
+            (Cascade, world)
+        else (Cascade, world)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticModelFacet>]
+
+    static member Properties =
+        [define Entity.Visible false
+         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+
+    override this.Register (entity, world) =
+        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
+        world
+
 /// Gives an entity the base behavior of physics-driven rigid model.
 type RigidModelDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
@@ -495,6 +522,34 @@ type StaticModelSurfaceDispatcher () =
 
     static member Facets =
         [typeof<StaticModelSurfaceFacet>]
+
+/// Gives an entity the base behavior of an indexed, physics-driven sensor model.
+type SensorModelSurfaceDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static let updateBodyShape evt world =
+        let entity = evt.Subscriber : Entity
+        let bodyShape = entity.GetBodyShape world
+        let staticModel = entity.GetStaticModel world
+        let surfaceIndex = entity.GetSurfaceIndex world
+        if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex | _ -> false) then
+            let staticModelShape = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
+            let world = entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+            (Cascade, world)
+        else (Cascade, world)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticModelSurfaceFacet>]
+
+    static member Properties =
+        [define Entity.Visible false
+         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+
+    override this.Register (entity, world) =
+        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
+        world
 
 /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
 type RigidModelSurfaceDispatcher () =
