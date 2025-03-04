@@ -3309,6 +3309,12 @@ module WorldModule2' =
                 | :? Facet as facet ->
                     match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
                     | Some index ->
+                        let visibleOld = entityState.VisibleSpatial
+                        let staticOld = entityState.StaticSpatial
+                        let lightProbeOld = entityState.LightProbe
+                        let lightOld = entityState.Light
+                        let presenceOld = entityState.Presence
+                        let boundsOld = entityState.Bounds
                         let world =
                             if entityState.Imperative
                             then entityState.Facets.[index] <- facet; world
@@ -3317,18 +3323,26 @@ module WorldModule2' =
                                 facets.[index] <- facet
                                 let entityState = { entityState with Facets = facets }
                                 World.setEntityState entityState entity world
+                        let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                        let visibleOld = entityState.VisibleSpatial
+                        let staticOld = entityState.StaticSpatial
+                        let lightProbeOld = entityState.LightProbe
+                        let lightOld = entityState.Light
+                        let presenceOld = entityState.Presence
+                        let boundsOld = entityState.Bounds
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
-                        let struct (entityState,  world) =
+                        let world =
                             if entityState.Imperative
-                            then entityState.Dispatcher <- entityDispatcher; struct (entityState, world)
+                            then entityState.Dispatcher <- entityDispatcher; world
                             else
                                 let entityState = { entityState with Dispatcher = entityDispatcher }
-                                let world = World.setEntityState entityState entity world
-                                struct (entityState, world)
+                                World.setEntityState entityState entity world
+                        let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
+                        let entityState = World.getEntityState entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
                         let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
                         let (entityState, world) = World.tryAddFacets intrinsicFacetNamesAdded entityState (Some entity) world |> Either.getRight
