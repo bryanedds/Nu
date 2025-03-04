@@ -1166,7 +1166,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             ray.Direction <- segment.Vector
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
-                | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
+                | (true, bodyUserData) ->
+                    let bodyEnabled = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID <> Constants.Physics.ObjectLayerDisabled
+                    bodyEnabled && bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
             use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
