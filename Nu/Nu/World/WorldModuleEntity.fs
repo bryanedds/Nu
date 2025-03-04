@@ -1736,8 +1736,8 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityPresenceOverride entity world
                         let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
+                        let world = World.updateEntityPresenceOverride entity world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.getSelected entity world
