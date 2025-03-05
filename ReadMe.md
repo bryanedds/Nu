@@ -51,6 +51,9 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
+![image](https://github.com/user-attachments/assets/b1f31eab-f636-4579-8c6d-daeafb97a3c2)
+Screenshot from our current game in early development.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
