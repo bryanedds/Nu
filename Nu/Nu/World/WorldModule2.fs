@@ -1001,29 +1001,23 @@ module WorldModule2 =
             let world = World.switchAmbientState world
 
             // rebuild spatial trees
-            let quadtree = World.getQuadtree world in Quadtree.clear quadtree
             let octree = World.getOctree world in Octree.clear octree
+            let quadtree = World.getQuadtree world in Quadtree.clear quadtree
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some screen -> World.admitScreenElements screen world
                 | None -> world
 
             // rebuild physics states
-            World.clearPhysics world
-            match World.getSelectedScreenOpt world with
-            | Some screen ->
-                let groups = World.getGroups screen world
-                Seq.fold (fun world (group : Group) ->
-                    if group.GetExists world then
-                        let entities = World.getEntities group world
-                        Seq.fold (fun world (entity : Entity) ->
-                            if entity.GetExists world
-                            then World.registerEntityPhysics entity world
-                            else world)
-                            world entities
-                        else world)
-                    world groups
-            | None -> world
+            let physics3d = World.getPhysicsEngine3d world in physics3d.ClearInternal ()
+            let physics2d = World.getPhysicsEngine2d world in physics2d.ClearInternal ()
+            let world =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.registerScreenPhysics screen world
+                | None -> world
+
+            // fin
+            world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =

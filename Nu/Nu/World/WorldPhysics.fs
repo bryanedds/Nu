@@ -292,11 +292,6 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
 
-        /// Clear all the physics objects in the built-in physics subsystems.
-        static member internal clearPhysics world =
-            world.Subsystems.PhysicsEngine3d.ClearInternal ()
-            world.Subsystems.PhysicsEngine2d.ClearInternal ()
-
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =
             match World.getSelectedScreenOpt world with
