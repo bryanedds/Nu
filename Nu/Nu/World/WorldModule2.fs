@@ -38,42 +38,6 @@ module WorldModule2 =
 
     type World with
 
-        static member internal rebuildQuadtree world =
-            let quadtree = World.getQuadtree world
-            Quadtree.clear quadtree
-            let selectedEntities =
-                match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                | None -> Seq.empty
-            for entity in selectedEntities do
-                let bounds = entity.GetBounds world
-                let visible = entity.GetVisible world || entity.GetAlwaysRender world
-                let static_ = entity.GetStatic world
-                let presence = entity.GetPresence world
-                if entity.GetIs2d world then
-                    let element = Quadelement.make visible static_ entity
-                    Quadtree.addElement presence bounds.Box2 element quadtree
-            world
-
-        static member internal rebuildOctree world =
-            let octree = World.getOctree world
-            Octree.clear octree
-            let selectedEntities =
-                match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                | None -> Seq.empty
-            for entity in selectedEntities do
-                let bounds = entity.GetBounds world
-                let visible = entity.GetVisible world || entity.GetAlwaysRender world
-                let static_ = entity.GetStatic world
-                let lightProbe = entity.GetLightProbe world
-                let light = entity.GetLight world
-                let presence = entity.GetPresence world
-                if entity.GetIs3d world then
-                    let element = Octelement.make visible static_ lightProbe light presence bounds entity
-                    Octree.addElement presence bounds element octree
-            world
-
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             let world =
@@ -1037,8 +1001,12 @@ module WorldModule2 =
             let world = World.switchAmbientState world
 
             // rebuild spatial trees
-            let world = World.rebuildOctree world
-            let world = World.rebuildQuadtree world
+            let quadtree = World.getQuadtree world in Quadtree.clear quadtree
+            let octree = World.getOctree world in Octree.clear octree
+            let world =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.admitScreenElements screen world
+                | None -> world
 
             // clear existing physics, then register them again
             World.clearPhysics world
