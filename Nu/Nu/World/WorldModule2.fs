@@ -1008,7 +1008,7 @@ module WorldModule2 =
                 | Some screen -> World.admitScreenElements screen world
                 | None -> world
 
-            // clear existing physics, then register them again
+            // rebuild physics states
             World.clearPhysics world
             match World.getSelectedScreenOpt world with
             | Some screen ->
