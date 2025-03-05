@@ -396,7 +396,7 @@ module Hl =
           Framebuffers : VkFramebuffer array }
 
         /// Create the swapchain.
-        static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
+        static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldSwapchain physicalDeviceData surface device =
 
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
@@ -431,7 +431,7 @@ module Hl =
             info.compositeAlpha <- Vulkan.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
             info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
             info.clipped <- true
-            info.oldSwapchain <- VkSwapchainKHR.Null
+            info.oldSwapchain <- oldSwapchain
             let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
             Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &swapchain) |> check
             swapchain
@@ -473,10 +473,10 @@ module Hl =
             framebuffers
         
         /// Create a SwapchainInternal.
-        static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
+        static member create surfaceFormat swapExtent oldSwapchain physicalDeviceData renderPass surface device =
             
             // create swapchain and its assets
-            let swapchain = SwapchainInternal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
+            let swapchain = SwapchainInternal.createSwapchain surfaceFormat swapExtent oldSwapchain physicalDeviceData surface device
             let images = SwapchainInternal.getSwapchainImages swapchain device
             let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
             let framebuffers = SwapchainInternal.createFramebuffers swapExtent renderPass imageViews device
@@ -500,6 +500,7 @@ module Hl =
     type Swapchain =
         private
             { _SwapchainOpts : SwapchainInternal option array
+              _PhysicalDeviceData : PhysicalDeviceData
               _SurfaceFormat : VkSurfaceFormatKHR
               mutable _SwapchainIndex : int }
 
@@ -509,6 +510,24 @@ module Hl =
         /// The framebuffer for the current swapchain image.
         member this.Framebuffer = (Option.get this._SwapchainOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
         
+        /// Refresh the swapchain for a new swap extent.
+        member this.Refresh swapExtent renderPass surface device =
+            
+            // don't pass the old swapchain if only 1 frame in flight as it will get destroyed immediately
+            let oldSwapchain = if this._SwapchainOpts.Length > 1 then this.Swapchain else VkSwapchainKHR.Null
+
+            // advance swapchain index
+            this._SwapchainIndex <- (inc this._SwapchainIndex) % this._SwapchainOpts.Length
+
+            // destroy swapchain at new index if present
+            match this._SwapchainOpts.[this._SwapchainIndex] with
+            | Some swapchain -> SwapchainInternal.destroy swapchain device
+            | None -> ()
+            
+            // create new swapchain
+            let swapchainInternal = SwapchainInternal.create this._SurfaceFormat swapExtent oldSwapchain this._PhysicalDeviceData renderPass surface device
+            this._SwapchainOpts.[this._SwapchainIndex] <- Some swapchainInternal
+        
         /// Create a Swapchain.
         static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
             
@@ -516,11 +535,13 @@ module Hl =
             let swapchainOpts = Array.create Constants.Vulkan.MaxFramesInFlight None
             
             // create first swapchain
-            swapchainOpts.[0] <- Some (SwapchainInternal.create surfaceFormat swapExtent physicalDeviceData renderPass surface device)
+            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDeviceData renderPass surface device
+            swapchainOpts.[0] <- Some swapchainInternal
 
             // make Swapchain
             let swapchain =
                 { _SwapchainOpts = swapchainOpts
+                  _PhysicalDeviceData = physicalDeviceData
                   _SurfaceFormat = surfaceFormat
                   _SwapchainIndex = 0 }
 
@@ -843,6 +864,7 @@ module Hl =
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
             // swap extent is updated here
+            // TODO: DJL: find out how to deal with this statefulness properly.
             
             // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
 
