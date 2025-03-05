@@ -499,30 +499,40 @@ module Hl =
     /// A swapchain and its assets that may be refreshed for a given extent.
     type Swapchain =
         private
-            { _Swapchain : SwapchainInternal }
+            { _SwapchainOpts : SwapchainInternal option array
+              _SurfaceFormat : VkSurfaceFormatKHR
+              mutable _SwapchainIndex : int }
 
         /// The swapchain itself.
-        member this.Swapchain = this._Swapchain.Swapchain
+        member this.Swapchain = (Option.get this._SwapchainOpts.[this._SwapchainIndex]).Swapchain
 
         /// The framebuffer for the current swapchain image.
-        member this.Framebuffer = this._Swapchain.Framebuffers.[int ImageIndex]
+        member this.Framebuffer = (Option.get this._SwapchainOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
         
         /// Create a Swapchain.
         static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
             
-            //
-            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent physicalDeviceData renderPass surface device
+            // create swapchain array
+            let swapchainOpts = Array.create Constants.Vulkan.MaxFramesInFlight None
+            
+            // create first swapchain
+            swapchainOpts.[0] <- Some (SwapchainInternal.create surfaceFormat swapExtent physicalDeviceData renderPass surface device)
 
             // make Swapchain
             let swapchain =
-                { _Swapchain = swapchainInternal }
+                { _SwapchainOpts = swapchainOpts
+                  _SurfaceFormat = surfaceFormat
+                  _SwapchainIndex = 0 }
 
             // fin
             swapchain
         
         /// Destroy a Swapchain.
         static member destroy swapchain device =
-            SwapchainInternal.destroy swapchain._Swapchain device
+            for i in 0 .. dec swapchain._SwapchainOpts.Length do
+                match swapchain._SwapchainOpts.[i] with
+                | Some swapchain -> SwapchainInternal.destroy swapchain device
+                | None -> ()
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     /// TODO: maybe rename this to VulkanContext.
@@ -832,7 +842,11 @@ module Hl =
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
-            // swapchain refresh happens here
+            // swap extent is updated here
+            
+            // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
+
+            // TODO: DJL: find out what's going on with the image available semaphore
             
             // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
             Vulkan.vkResetFences (vkg.Device, 1u, asPointer &fence) |> check
