@@ -1919,11 +1919,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 Box2 (px, py, sx, sy)
                             | None -> box2 v2Zero v2Zero
 
-                        // check if dual rendering needed
-                        let dualRendering = drsIndices.Contains i
-
                         // deferred render animated surface when needed
-                        if renderType = DeferredRenderType || dualRendering then
+                        if renderType = DeferredRenderType then
                             let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                             match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
                             | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
@@ -1937,7 +1934,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let sortsOpt =
                             match renderType with
                             | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
-                            | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                            | _ -> if drsIndices.Contains i then ValueSome struct (subsortOffset, 0.0f) else ValueNone
                         match sortsOpt with
                         | ValueSome struct (subsort, sort) ->
                             renderTasks.Forward.Add struct (subsort, sort, model, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
