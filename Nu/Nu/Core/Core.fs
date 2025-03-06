@@ -51,4 +51,4 @@ module CoreOperators =
 
     /// Force a value to be in between zero and one.
     /// TODO: remove this after updating Prime.
-    let inline saturate (a : 'a) = a |> min (zero ()) |> max (one ())
+    let inline saturate (a : 'a) = a |> min (one ()) |> max (zero ())
