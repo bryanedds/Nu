@@ -4044,15 +4044,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         world
                     else world
                 let world =
-                    if ImGui.Button "Paste Entity as Child at Local Origin" then
-                        let (pasted, world) = tryPaste true PasteAtMouse (Option.map cast NewEntityParentOpt) world
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Paste Entity as Child at Local Origin" then
+                        let (pasted, world) = tryPaste true PasteAtMouse (Option.map cast SelectedEntityOpt) world
                         let world = if pasted then tryMoveSelectedEntityToOrigin true world |> snd else world
                         ShowEntityContextMenu <- false
                         world
                     else world
                 let world =
-                    if ImGui.Button "Paste Entity as Child" then
-                        let world = tryPaste true PasteAtMouse (Option.map cast NewEntityParentOpt) world |> snd
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Paste Entity as Child" then
+                        let (_, world) = tryPaste true PasteAtMouse (Option.map cast SelectedEntityOpt) world
                         ShowEntityContextMenu <- false
                         world
                     else world
