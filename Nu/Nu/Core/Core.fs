@@ -43,8 +43,18 @@ module CoreOperators =
 
     /// Attempt to cast an obj to type 'a, returning 'a option.
     /// TODO: remove this after updating Prime.
-    let tryCast<'a> (obj : obj) = match obj with :? 'a as a -> Some a | _ -> None
+    let inline tryCast<'a> (obj : obj) = match obj with :? 'a as a -> Some a | _ -> None
 
     /// Attempt to cast an obj to type 'a, returning 'a voption.
     /// TODO: remove this after updating Prime.
-    let tryCast'<'a> (obj : obj) = match obj with :? 'a as a -> ValueSome a | _ -> ValueNone
+    let inline tryCast'<'a> (obj : obj) = match obj with :? 'a as a -> ValueSome a | _ -> ValueNone
+
+    /// Force a value to be in between zero and one.
+    /// TODO: remove this after updating Prime.
+    let inline saturate<'a
+        when 'a : comparison
+        and 'a : (static member Zero : 'a)
+        and 'a : (static member One : 'a)> a =
+        let zero = Generic.zero () : 'a
+        let one = Generic.one () : 'a
+        a |> min one |> max zero
