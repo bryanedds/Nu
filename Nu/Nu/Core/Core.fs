@@ -51,10 +51,4 @@ module CoreOperators =
 
     /// Force a value to be in between zero and one.
     /// TODO: remove this after updating Prime.
-    let inline saturate<'a
-        when 'a : comparison
-        and 'a : (static member Zero : 'a)
-        and 'a : (static member One : 'a)> a =
-        let zero = Generic.zero () : 'a
-        let one = Generic.one () : 'a
-        a |> min one |> max zero
+    let inline saturate (a : 'a) = a |> min (zero ()) |> max (one ())
