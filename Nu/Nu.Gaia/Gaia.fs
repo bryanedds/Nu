@@ -3219,7 +3219,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 "#r \"Pfim.dll\"\n" +
                                 "#r \"SDL2-CS.dll\"\n" +
                                 "#r \"TiledSharp.dll\"\n" +
-                                "#r \"Twizzle.ImGui-Bundle.NET.dll\"\n" +
+                                "#r \"ImGui-Bundle.NET.dll\"\n" + // NOTE: this one dll has a different name than the package because Twizzle used to just be a collection of sub-assemblies.
                                 "#r \"Prime.dll\"\n" +
                                 "#r \"Nu.Math.dll\"\n" +
                                 "#r \"Nu.dll\"\n" +
