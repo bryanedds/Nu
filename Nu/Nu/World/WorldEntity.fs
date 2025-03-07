@@ -417,9 +417,10 @@ module WorldEntityModule =
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
-                    let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
-                    let rotationLocal = affineMatrixLocal.Rotation
-                    let scaleLocal = affineMatrixLocal.Scale
+                    let mutable positionLocal = Unchecked.defaultof<_>
+                    let mutable rotationLocal = Unchecked.defaultof<_>
+                    let mutable scaleLocal = Unchecked.defaultof<_>
+                    Matrix4x4.Decompose (affineMatrixLocal, &scaleLocal, &rotationLocal, &positionLocal) |> ignore<bool>
                     let world = this.SetPositionLocal positionLocal world
                     let world = this.SetRotationLocal rotationLocal world
                     let world = this.SetScaleLocal scaleLocal world
@@ -454,16 +455,17 @@ module WorldEntityModule =
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
-                    let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
-                    let rotationLocal = affineMatrixLocal.Rotation
-                    let scaleLocal = affineMatrixLocal.Scale
+                    let mutable positionLocal = Unchecked.defaultof<_>
+                    let mutable rotationLocal = Unchecked.defaultof<_>
+                    let mutable scaleLocal = Unchecked.defaultof<_>
+                    Matrix4x4.Decompose (affineMatrixLocal, &scaleLocal, &rotationLocal, &positionLocal) |> ignore<bool>
                     let world = this.SetPositionLocal positionLocal world
                     let world = this.SetRotationLocal rotationLocal world
                     let world = this.SetScaleLocal scaleLocal world
                     let elevationLocal = this.GetElevation world - mountNew.GetElevation world
                     let world = this.SetElevationLocal elevationLocal world
-                    let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
-                    let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
+                    let world = this.SetEnabledLocal (this.GetEnabled world && mountNew.GetEnabled world) world
+                    let world = this.SetVisibleLocal (this.GetVisible world && mountNew.GetVisible world) world
                     let world = this.SetMountOpt value world
                     world
                 else world
