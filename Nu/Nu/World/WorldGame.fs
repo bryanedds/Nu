@@ -203,11 +203,27 @@ module WorldGameModule =
             Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat
 
+        /// Get all the entities in the selected screen, if any.
+        static member getSelectedEntities world =
+            World.getSelectedGroups world |>
+            Seq.map (fun selectedGroup -> World.getEntities selectedGroup world)
+
+        /// Get all the entities directly parented by a group in the selected screen, if any.
+        static member getSelectedEntitiesSovereign world =
+            World.getSelectedGroups world |>
+            Seq.map (fun selectedGroup -> World.getEntitiesSovereign selectedGroup world)
+
         /// Get all the groups in the world.
         static member getGroups1 world =
             World.getScreens world |>
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
+
+        /// Get all the groups in the selected screen, if any.
+        static member getSelectedGroups world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen -> World.getGroups selectedScreen world
+            | None -> []
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor game world =
