@@ -694,7 +694,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // load texture
                             let vkg = renderer.VulkanGlobal
-                            renderer.TextTexture.LoadBgra
+                            Texture.DynamicTexture.loadBgra
                                 vkg.TextureCommandBuffer
                                 vkg.GraphicsQueue
                                 Vulkan.VK_FILTER_NEAREST
@@ -702,6 +702,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
                                 textSurface.pixels
                                 vkg.InFlightFence
+                                renderer.TextTexture
                                 vkg
                             
                             // init render
@@ -838,7 +839,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let allocator = renderer.VulkanGlobal.VmaAllocator
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            renderer.TextTexture.Destroy  renderer.VulkanGlobal
+            Texture.DynamicTexture.destroy renderer.TextTexture renderer.VulkanGlobal
             Pipeline.Pipeline.destroy pipeline device
             Hl.FifBuffer.destroy modelViewProjectionUniform allocator
             Hl.FifBuffer.destroy texCoords4Uniform allocator

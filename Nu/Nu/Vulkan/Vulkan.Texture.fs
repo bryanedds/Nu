@@ -359,49 +359,49 @@ module Texture =
         member private this.CurrentStagingBuffer = this.StagingBuffers.[this.TextureIndex]
         member private this.ImageSize = (int this.Extent.width) * (int this.Extent.height) * 4
 
-        member private this.NewCycle metadata pixels (vkg : Hl.VulkanGlobal) =
+        static member private newCycle metadata pixels dynamicTexture (vkg : Hl.VulkanGlobal) =
             
             // advance index
-            this.TextureIndex <- (inc this.TextureIndex) % 2
+            dynamicTexture.TextureIndex <- (inc dynamicTexture.TextureIndex) % 2
 
             // enlarge staging buffer size if needed
-            this.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            while this.ImageSize > this.StagingBufferSize do this.StagingBufferSize <- this.StagingBufferSize * 2
-            this.CurrentStagingBuffer.UpdateSize this.StagingBufferSize vkg.VmaAllocator
+            dynamicTexture.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
+            while dynamicTexture.ImageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
+            Hl.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkg.VmaAllocator
 
             // stage pixels
-            Hl.FifBuffer.upload 0 this.ImageSize pixels this.CurrentStagingBuffer
+            Hl.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer
 
             // destroy expired VulkanTexture
-            VulkanTexture.destroy this.VulkanTexture vkg
+            VulkanTexture.destroy dynamicTexture.VulkanTexture vkg
 
         /// Add a new bgra VulkanTexture.
-        member private this.AddBgra minFilter magFilter metadata pixels vkg =
-            this.NewCycle metadata pixels vkg
-            this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createBgra minFilter magFilter metadata None vkg
+        static member private addBgra minFilter magFilter metadata pixels dynamicTexture vkg =
+            DynamicTexture.newCycle metadata pixels dynamicTexture vkg
+            dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.createBgra minFilter magFilter metadata None vkg
 
         /// Add a new rgba VulkanTexture.
-        member private this.AddRgba minFilter magFilter metadata pixels vkg =
-            this.NewCycle metadata pixels vkg
-            this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter metadata None vkg
+        static member private addRgba minFilter magFilter metadata pixels dynamicTexture vkg =
+            DynamicTexture.newCycle metadata pixels dynamicTexture vkg
+            dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter metadata None vkg
         
         /// Transfer pixels to texture.
-        member private this.LoadTexture cb commandQueue fence device =
+        static member private loadTexture cb commandQueue fence dynamicTexture device =
             Hl.beginCommandBlock cb fence device
-            VulkanTexture.recordBufferToImageCopy cb this.Extent this.CurrentStagingBuffer.Buffer this.VulkanTexture.Image.Image
+            VulkanTexture.recordBufferToImageCopy cb dynamicTexture.Extent dynamicTexture.CurrentStagingBuffer.Buffer dynamicTexture.VulkanTexture.Image.Image
             Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
 
         /// Instantly stage a bgra image, then submit texture load once fence is ready.
         /// A Pipeline barrier ensures the load is complete before use. TODO: DJL: confirm this!
-        member this.LoadBgra cb commandQueue minFilter magFilter metadata pixels fence vkg =
-            this.AddBgra minFilter magFilter metadata pixels vkg
-            this.LoadTexture cb commandQueue fence vkg.Device
+        static member loadBgra cb commandQueue minFilter magFilter metadata pixels fence dynamicTexture vkg =
+            DynamicTexture.addBgra minFilter magFilter metadata pixels dynamicTexture vkg
+            DynamicTexture.loadTexture cb commandQueue fence dynamicTexture vkg.Device
 
         /// Instantly stage an rgba image, then submit texture load once fence is ready.
         /// A Pipeline barrier ensures the load is complete before use. TODO: DJL: confirm this!
-        member this.LoadRgba cb commandQueue minFilter magFilter metadata pixels fence vkg =
-            this.AddRgba minFilter magFilter metadata pixels vkg
-            this.LoadTexture cb commandQueue fence vkg.Device
+        static member loadRgba cb commandQueue minFilter magFilter metadata pixels fence dynamicTexture vkg =
+            DynamicTexture.addRgba minFilter magFilter metadata pixels dynamicTexture vkg
+            DynamicTexture.loadTexture cb commandQueue fence dynamicTexture vkg.Device
 
         /// Create DynamicTexture.
         static member create vkg =
@@ -424,11 +424,11 @@ module Texture =
             dynamicTexture
         
         /// Destroy DynamicTexture.
-        member this.Destroy vkg =
-            VulkanTexture.destroy this.VulkanTextures.[0] vkg
-            VulkanTexture.destroy this.VulkanTextures.[1] vkg
-            Hl.FifBuffer.destroy this.StagingBuffers.[0] vkg.VmaAllocator
-            Hl.FifBuffer.destroy this.StagingBuffers.[1] vkg.VmaAllocator
+        static member destroy dynamicTexture vkg =
+            VulkanTexture.destroy dynamicTexture.VulkanTextures.[0] vkg
+            VulkanTexture.destroy dynamicTexture.VulkanTextures.[1] vkg
+            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[0] vkg.VmaAllocator
+            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[1] vkg.VmaAllocator
     
     /// Describes data loaded from a texture.
     type TextureData =

@@ -511,22 +511,22 @@ module Hl =
         member this.Framebuffer = (Option.get this._SwapchainOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
         
         /// Refresh the swapchain for a new swap extent.
-        member this.Refresh swapExtent renderPass surface device =
+        static member refresh swapExtent renderPass surface swapchain device =
             
             // don't pass the old swapchain if only 1 frame in flight as it will get destroyed immediately
-            let oldSwapchain = if this._SwapchainOpts.Length > 1 then this.Swapchain else VkSwapchainKHR.Null
+            let oldSwapchain = if swapchain._SwapchainOpts.Length > 1 then swapchain.Swapchain else VkSwapchainKHR.Null
 
             // advance swapchain index
-            this._SwapchainIndex <- (inc this._SwapchainIndex) % this._SwapchainOpts.Length
+            swapchain._SwapchainIndex <- (inc swapchain._SwapchainIndex) % swapchain._SwapchainOpts.Length
 
             // destroy swapchain at new index if present
-            match this._SwapchainOpts.[this._SwapchainIndex] with
+            match swapchain._SwapchainOpts.[swapchain._SwapchainIndex] with
             | Some swapchain -> SwapchainInternal.destroy swapchain device
             | None -> ()
             
             // create new swapchain
-            let swapchainInternal = SwapchainInternal.create this._SurfaceFormat swapExtent oldSwapchain this._PhysicalDeviceData renderPass surface device
-            this._SwapchainOpts.[this._SwapchainIndex] <- Some swapchainInternal
+            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapExtent oldSwapchain swapchain._PhysicalDeviceData renderPass surface device
+            swapchain._SwapchainOpts.[swapchain._SwapchainIndex] <- Some swapchainInternal
         
         /// Create a Swapchain.
         static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
@@ -864,7 +864,6 @@ module Hl =
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
             // swap extent is updated here
-            // TODO: DJL: find out how to deal with this statefulness properly.
             
             // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
 
@@ -1336,11 +1335,11 @@ module Hl =
             fifBuffer
         
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-        member this.UpdateSize size allocator =
-            if size > this.BufferSizes.[CurrentFrame] then
-                AllocatedBuffer.destroy this.AllocatedBuffers.[CurrentFrame] allocator
-                this.AllocatedBuffers.[CurrentFrame] <- FifBuffer.createBuffer size this.BufferUsage allocator
-                this.BufferSizes.[CurrentFrame] <- size
+        static member updateSize size fifBuffer allocator =
+            if size > fifBuffer.BufferSizes.[CurrentFrame] then
+                AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[CurrentFrame] allocator
+                fifBuffer.AllocatedBuffers.[CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferUsage allocator
+                fifBuffer.BufferSizes.[CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
         static member upload offset size ptr fifBuffer =
