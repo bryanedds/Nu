@@ -259,6 +259,13 @@ module WorldImNui =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
+            let world = // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
+                if  group.Name = "Scene" &&
+                    group.GetExists world &&
+                    Seq.isEmpty (World.getEntitiesSovereign group world) &&
+                    getTypeName (group.GetDispatcher world) = nameof GroupDispatcher then
+                    World.destroyGroupImmediate group world
+                else world
             let groupCreation = not (group.GetExists world)
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group.GroupAddress with
