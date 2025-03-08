@@ -689,7 +689,7 @@ type PhysicsEngine =
     /// Check that the body with the given body id is a sensor.
     abstract GetBodySensor : BodyId -> bool
     /// Cast a ray into the physics bodies.
-    abstract RayCast : Segment3 * int * bool -> BodyIntersection array
+    abstract RayCast : Ray3 * int * bool -> BodyIntersection array
     /// Handle a physics message from an external source.
     abstract HandleMessage : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.

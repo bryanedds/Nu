@@ -1160,10 +1160,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
-        member physicsEngine.RayCast (segment, collisionMask, closestOnly) =
-            let mutable ray = Ray ()
-            ray.Position <- segment.A
-            ray.Direction <- segment.Vector
+        member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
+            let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData) ->

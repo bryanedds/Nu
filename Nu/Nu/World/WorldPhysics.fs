@@ -173,12 +173,12 @@ module WorldPhysics =
                 false
 
         /// Ray cast against 3d physics bodies.
-        static member rayCast3dBodies segment collisionMask closestOnly world =
-            world.Subsystems.PhysicsEngine3d.RayCast (segment, collisionMask, closestOnly)
+        static member rayCast3dBodies ray collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
 
         /// Ray cast against 2d physics bodies.
-        static member rayCast2dBodies segment collisionMask closestOnly world =
-            world.Subsystems.PhysicsEngine2d.RayCast (segment, collisionMask, closestOnly)
+        static member rayCast2dBodies ray collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
 
         /// Send a physics message to create a physics body.
         static member createBody is2d bodyId (bodyProperties : BodyProperties) world =

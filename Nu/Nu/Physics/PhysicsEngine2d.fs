@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Diagnostics
 open System.Numerics
 open nkast.Aether.Physics2D
 open nkast.Aether.Physics2D.Dynamics
@@ -652,7 +651,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 i <- inc i
             sensor
 
-        member physicsEngine.RayCast (segment, collisionMask, closestOnly) =
+        member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
@@ -670,8 +669,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                     if closestOnly then fraction else 1.0f)
             physicsEngine.PhysicsContext.RayCast
                 (callback,
-                 Common.Vector2 (segment.A.X, segment.A.Y),
-                 Common.Vector2 (segment.B.X, segment.B.Y))
+                 Common.Vector2 (ray.Origin.X, ray.Origin.Y),
+                 Common.Vector2 (ray.Origin.X + ray.Direction.X, ray.Origin.Y + ray.Direction.Y))
             if closestOnly then
                 match closestOpt with
                 | Some closest -> [|closest|]
