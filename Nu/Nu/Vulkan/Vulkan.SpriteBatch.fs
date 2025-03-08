@@ -121,7 +121,7 @@ module SpriteBatch =
             Pipeline.Pipeline.writeDescriptorTextureSingleFrame 6 0 texture.VulkanTexture env.Pipeline vkg.Device
 
             // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getPipeline env.State.Blend env.Pipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
             Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
             // set viewport and scissor

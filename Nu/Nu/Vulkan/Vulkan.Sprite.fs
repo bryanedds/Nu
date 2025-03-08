@@ -130,7 +130,7 @@ module Sprite =
         
         // bind pipeline
         let cb = vkg.RenderCommandBuffer
-        let vkPipeline = Pipeline.Pipeline.getPipeline Pipeline.Transparent pipeline
+        let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
         Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
         // set viewport and scissor

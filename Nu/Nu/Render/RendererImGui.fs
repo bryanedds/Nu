@@ -360,7 +360,7 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getPipeline Pipeline.ImGui pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui pipeline
                 Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
                 // bind vertex and index buffer

@@ -40,7 +40,7 @@ module Pipeline =
     /// An abstraction of a rendering pipeline.
     /// TODO: DJL: make private.
     type Pipeline =
-        { Pipelines : Map<Blend, VkPipeline>
+        { VkPipelines : Map<Blend, VkPipeline>
           DescriptorPool : VkDescriptorPool
           DescriptorSets : VkDescriptorSet array
           PipelineLayout : VkPipelineLayout
@@ -108,7 +108,7 @@ module Pipeline =
             descriptorSets
 
         /// Create the Vulkan pipelines themselves.
-        static member private createPipelines shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes pipelineLayout renderPass device =
+        static member private createVkPipelines shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes pipelineLayout renderPass device =
             
             // create shader modules
             let vertModule = Hl.createShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device
@@ -160,9 +160,9 @@ module Pipeline =
             dsInfo.dynamicStateCount <- uint dynamicStates.Length
             dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
-            // create pipelines
-            let pipelines = Array.zeroCreate<VkPipeline> blends.Length
-            for i in 0 .. dec pipelines.Length do
+            // create vulkan pipelines
+            let vkPipelines = Array.zeroCreate<VkPipeline> blends.Length
+            for i in 0 .. dec vkPipelines.Length do
             
                 // blend info
                 let mutable blend = Blend.makeAttachment blends.[i]
@@ -170,8 +170,8 @@ module Pipeline =
                 bInfo.attachmentCount <- 1u
                 bInfo.pAttachments <- asPointer &blend
 
-                // create pipeline
-                // TODO: DJL: create pipelines with single call outside loop.
+                // create vulkan pipeline
+                // TODO: DJL: create vulkan pipelines with single call outside loop.
                 let mutable info = VkGraphicsPipelineCreateInfo ()
                 info.stageCount <- uint ssInfos.Length
                 info.pStages <- ssInfosPin.Pointer
@@ -186,21 +186,21 @@ module Pipeline =
                 info.layout <- pipelineLayout
                 info.renderPass <- renderPass
                 info.subpass <- 0u
-                let mutable pipeline = Unchecked.defaultof<VkPipeline>
-                Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &pipeline) |> Hl.check
-                pipelines.[i] <- pipeline
+                let mutable vkPipeline = Unchecked.defaultof<VkPipeline>
+                Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &vkPipeline) |> Hl.check
+                vkPipelines.[i] <- vkPipeline
             
             // destroy shader modules
             Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
             Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
             
-            // pack pipelines with blend parameters
-            let pipelinesPacked = Array.zip blends pipelines |> Map.ofArray
-            pipelinesPacked
+            // pack vulkan pipelines with blend parameters
+            let vkPipelinesPacked = Array.zip blends vkPipelines |> Map.ofArray
+            vkPipelinesPacked
         
         /// Get the Vulkan Pipeline built for the given blend.
-        static member getPipeline blend pipeline =
-            Map.find blend pipeline.Pipelines
+        static member getVkPipeline blend pipeline =
+            Map.find blend pipeline.VkPipelines
         
         /// Write a uniform to the descriptor set for each frame in flight.
         static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.FifBuffer) (pipeline : Pipeline) device =
@@ -266,7 +266,7 @@ module Pipeline =
         
         /// Destroy a Pipeline.
         static member destroy pipeline device =
-            Map.iter (fun _ pipeline -> Vulkan.vkDestroyPipeline (device, pipeline, nullPtr)) pipeline.Pipelines
+            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (device, vkPipeline, nullPtr)) pipeline.VkPipelines
             Vulkan.vkDestroyDescriptorPool (device, pipeline.DescriptorPool, nullPtr)
             Vulkan.vkDestroyPipelineLayout (device, pipeline.PipelineLayout, nullPtr)
             Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
@@ -282,11 +282,11 @@ module Pipeline =
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
             let descriptorPool = Pipeline.createDescriptorPool resourceBindings device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool device
-            let vulkanPipelines = Pipeline.createPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout renderPass device
+            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout renderPass device
 
             // make Pipeline
             let pipeline =
-                { Pipelines = vulkanPipelines
+                { VkPipelines = vkPipelines
                   DescriptorPool = descriptorPool
                   DescriptorSets = descriptorSets
                   PipelineLayout = pipelineLayout
