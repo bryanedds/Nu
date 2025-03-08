@@ -403,7 +403,16 @@ module WorldEntityModule =
         /// Check that an entity is selected.
         member this.GetSelected world = World.getEntitySelected this world
 
-        /// Check if an entity is intersected by a ray.
+        /// Attempt to get an entity on which this entity is mounted.
+        member this.TryGetMountee world = Option.bind (tryResolve this) (this.GetMountOpt world)
+
+        /// Check that this entity is mounted on another entity.
+        member this.HasMountee world = Option.isSome (this.TryGetMountee world)
+
+        /// Check that this entity is mounted on another entity.
+        member this.IsMounter world = this.HasMountee world
+
+        /// Check that an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world
 
         /// Automatically change an entity's bounds using its inferred attributes.
