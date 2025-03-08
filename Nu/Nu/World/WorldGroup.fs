@@ -205,7 +205,7 @@ module WorldGroupModule =
             let world = World.tryRemoveSimulantFromDestruction group world
             EventGraph.cleanEventAddressCache group.GroupAddress
             if World.getGroupExists group world then
-                let entities = World.getEntitiesSovereign group world
+                let entities = World.getSovereignEntities group world
                 let world = World.unregisterGroup group world
                 let world = World.removeTasklets group world
                 let world = World.removeSimulantImNui group world
@@ -237,7 +237,7 @@ module WorldGroupModule =
             match groupStateOpt with
             | Some groupState ->
                 let groupState = { groupState with Id = Gen.id64; Name = destination.Name; Content = GroupContent.empty }
-                let children = World.getEntitiesSovereign source world
+                let children = World.getSovereignEntities source world
                 let world = World.addGroup false groupState destination world
                 let world =
                     Seq.fold (fun world (child : Entity) ->
@@ -263,7 +263,7 @@ module WorldGroupModule =
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
             let getGroupProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            let entities = World.getEntitiesSovereign group world
+            let entities = World.getSovereignEntities group world
             { groupDescriptor with EntityDescriptors = World.writeEntities false true entities world }
 
         /// Write multiple groups to a screen descriptor.

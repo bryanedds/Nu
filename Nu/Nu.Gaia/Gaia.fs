@@ -2857,7 +2857,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // entity editing
                 let world =
-                    World.getEntitiesSovereign SelectedGroup world |>
+                    World.getSovereignEntities SelectedGroup world |>
                     Array.ofSeq |>
                     Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
                     Array.sortBy fst |>

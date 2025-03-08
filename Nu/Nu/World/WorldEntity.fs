@@ -621,7 +621,7 @@ module WorldEntityModule =
             getEntitiesRec (group :> Simulant) world
 
         /// Get all the entities directly parented by the group.
-        static member getEntitiesSovereign (group : Group) world =
+        static member getSovereignEntities (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
             | (true, entitiesOpt) ->
@@ -700,7 +700,7 @@ module WorldEntityModule =
                 Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntitiesSovereign parent world |>
+                World.getSovereignEntities parent world |>
                 Seq.map (fun child -> (child.GetOrder world, child)) |>
                 Array.ofSeq |>
                 Array.sortBy fst |>
@@ -722,7 +722,7 @@ module WorldEntityModule =
                 Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntitiesSovereign parent world |>
+                World.getSovereignEntities parent world |>
                 Seq.map (fun child -> (child.GetOrder world, child)) |>
                 Array.ofSeq |>
                 Array.sortBy fst |>
