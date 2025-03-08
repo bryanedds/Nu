@@ -1667,7 +1667,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let eyeToPositionFlat = positionFlat - eyeFlat
                     if eyeToPositionFlat.MagnitudeSquared > 0.0f then
                         let forward = eyeToPositionFlat.Normalized
-                        let yaw = -MathF.Atan2 (forward.Z, forward.X) - MathF.PI_OVER_2
+                        let yaw = MathF.Atan2 (forward.X, forward.Z) - MathF.PI
                         Matrix4x4.CreateRotationY yaw
                     else m4Identity
                 else Matrix4x4.CreateFromQuaternion lookRotation
