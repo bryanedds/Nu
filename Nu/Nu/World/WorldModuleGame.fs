@@ -34,9 +34,9 @@ module WorldModuleGame =
             ignore<Game> game
             World.choose { world with GameState = gameState }
 
-        static member internal getGameXtensionProperties game world =
+        static member internal getGameXtension game world =
             let gameState = World.getGameState game world
-            gameState.Xtension |> Xtension.toSeq |> Seq.toList
+            gameState.Xtension
 
         static member internal getGameId game world = (World.getGameState game world).Id
         static member internal getGameOrder game world = (World.getGameState game world).Order
@@ -653,15 +653,18 @@ module WorldModuleGame =
             | (true, setter) -> setter property game world
             | (false, _) -> World.setGameXtensionProperty propertyName property game world
 
-        static member internal attachGameProperty propertyName property game world =
+        static member internal attachGameMissingProperties game world =
             let gameState = World.getGameState game world
-            let gameState = GameState.attachProperty propertyName property gameState
-            let world = World.setGameState gameState game world
-            World.publishGameChange propertyName property.PropertyValue property.PropertyValue game world
-
-        static member internal detachGameProperty propertyName game world =
-            let gameState = World.getGameState game world
-            let gameState = GameState.detachProperty propertyName gameState
+            let definitions = Reflection.getReflectivePropertyDefinitions gameState
+            let gameState =
+                Map.fold (fun gameState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetGameProperty (propertyName, game, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        GameState.attachProperty propertyName property gameState
+                    else gameState)
+                    gameState definitions
             World.setGameState gameState game world
 
         static member internal viewGameProperties game world =

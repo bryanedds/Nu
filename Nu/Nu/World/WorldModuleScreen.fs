@@ -88,9 +88,9 @@ module WorldModuleScreen =
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
 
-        static member internal getScreenXtensionProperties screen world =
+        static member internal getScreenXtension screen world =
             let screenState = World.getScreenState screen world
-            screenState.Xtension |> Xtension.toSeq |> Seq.toList
+            screenState.Xtension
 
         static member internal getScreenExists screen world =
             Option.isSome (World.getScreenStateOpt screen world)
@@ -414,20 +414,19 @@ module WorldModuleScreen =
             | (false, _) ->
                 World.setScreenXtensionProperty propertyName property screen world
 
-        static member internal attachScreenProperty propertyName property screen world =
-            if World.getScreenExists screen world then
-                let screenState = World.getScreenState screen world
-                let screenState = ScreenState.attachProperty propertyName property screenState
-                let world = World.setScreenState screenState screen world
-                World.publishScreenChange propertyName property.PropertyValue property.PropertyValue screen world
-            else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + scstring screen + "' is not found.")
-
-        static member internal detachScreenProperty propertyName screen world =
-            if World.getScreenExists screen world then
-                let screenState = World.getScreenState screen world
-                let screenState = ScreenState.detachProperty propertyName screenState
-                World.setScreenState screenState screen world
-            else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + scstring screen + "' is not found.")
+        static member internal attachScreenMissingProperties screen world =
+            let screenState = World.getScreenState screen world
+            let definitions = Reflection.getReflectivePropertyDefinitions screenState
+            let screenState =
+                Map.fold (fun screenState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetScreenProperty (propertyName, screen, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        ScreenState.attachProperty propertyName property screenState
+                    else screenState)
+                    screenState definitions
+            World.setScreenState screenState screen world
 
         static member internal registerScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world

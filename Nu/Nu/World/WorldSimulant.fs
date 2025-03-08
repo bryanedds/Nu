@@ -34,12 +34,12 @@ module WorldSimulantModule =
             | :? Game as game -> World.getGameState game world :> SimulantState
             | _ -> failwithumf ()
 
-        static member internal getXtensionProperties (simulant : Simulant) world =
+        static member internal getXtension (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.getEntityXtensionProperties entity world
-            | :? Group as group -> World.getGroupXtensionProperties group world
-            | :? Screen as screen -> World.getScreenXtensionProperties screen world
-            | :? Game as game -> World.getGameXtensionProperties game world
+            | :? Entity as entity -> World.getEntityXtension entity world
+            | :? Group as group -> World.getGroupXtension group world
+            | :? Screen as screen -> World.getScreenXtension screen world
+            | :? Game as game -> World.getGameXtension game world
             | _ -> failwithumf ()
 
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
@@ -97,20 +97,12 @@ module WorldSimulantModule =
                 | 3 -> World.setGroupProperty name property (simulant :?> Group) world
                 | _ -> failwithumf ()
 
-        static member internal attachProperty name property (simulant : Simulant) world =
+        static member internal attachMissingProperties (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.attachEntityProperty name property entity world
-            | :? Group as group -> World.attachGroupProperty name property group world
-            | :? Screen as screen -> World.attachScreenProperty name property screen world
-            | :? Game as game -> World.attachGameProperty name property game world
-            | _ -> failwithumf ()
-
-        static member internal detachProperty name (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.detachEntityProperty name entity world
-            | :? Group as group -> World.detachGroupProperty name group world
-            | :? Screen as screen -> World.detachScreenProperty name screen world
-            | :? Game as game -> World.detachGameProperty name game world
+            | :? Entity as entity -> World.attachEntityMissingProperties entity world
+            | :? Group as group -> World.attachGroupMissingProperties group world
+            | :? Screen as screen -> World.attachScreenMissingProperties screen world
+            | :? Game as game -> World.attachGameMissingProperties game world
             | _ -> failwithumf ()
 
         /// Get the given simulant's dispatcher.
@@ -355,7 +347,7 @@ module PropertyDescriptor =
             let propertyDefinitions =
                 World.getPropertyDefinitions simulant world
             let propertyDescriptors =
-                let properties' = World.getXtensionProperties simulant world
+                let properties' = World.getXtension simulant world
                 let propertyDescriptors' =
                     Seq.fold
                         (fun propertyDescriptors' (propertyName, _) ->
@@ -366,8 +358,7 @@ module PropertyDescriptor =
                                 let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
                                 propertyDescriptor :: propertyDescriptors'
                             else propertyDescriptors')
-                        []
-                        properties'
+                        [] (Xtension.toSeq properties')
                 Seq.append propertyDescriptors' propertyDescriptors
             List.ofSeq propertyDescriptors
         | None -> []

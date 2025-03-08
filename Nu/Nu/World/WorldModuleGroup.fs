@@ -91,9 +91,9 @@ module WorldModuleGroup =
         static member internal setGroupState groupState group world =
             World.groupStateSetter groupState group world
 
-        static member internal getGroupXtensionProperties group world =
+        static member internal getGroupXtension group world =
             let groupState = World.getGroupState group world
-            groupState.Xtension |> Xtension.toSeq |> Seq.toList
+            groupState.Xtension
 
         static member internal getGroupExists group world =
             Option.isSome (World.getGroupStateOpt group world)
@@ -377,20 +377,19 @@ module WorldModuleGroup =
             | (false, _) ->
                 World.setGroupXtensionProperty propertyName property group world
 
-        static member internal attachGroupProperty propertyName property group world =
-            if World.getGroupExists group world then
-                let groupState = World.getGroupState group world
-                let groupState = GroupState.attachProperty propertyName property groupState
-                let world = World.setGroupState groupState group world
-                World.publishGroupChange propertyName property.PropertyValue property.PropertyValue group world
-            else failwith ("Cannot attach group property '" + propertyName + "'; group '" + scstring group + "' is not found.")
-
-        static member internal detachGroupProperty propertyName group world =
-            if World.getGroupExists group world then
-                let groupState = World.getGroupState group world
-                let groupState = GroupState.detachProperty propertyName groupState
-                World.setGroupState groupState group world
-            else failwith ("Cannot detach group property '" + propertyName + "'; group '" + scstring group + "' is not found.")
+        static member internal attachGroupMissingProperties group world =
+            let groupState = World.getGroupState group world
+            let definitions = Reflection.getReflectivePropertyDefinitions groupState
+            let groupState =
+                Map.fold (fun groupState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetGroupProperty (propertyName, group, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        GroupState.attachProperty propertyName property groupState
+                    else groupState)
+                    groupState definitions
+            World.setGroupState groupState group world
 
         static member internal registerGroup group world =
             let dispatcher = World.getGroupDispatcher group world

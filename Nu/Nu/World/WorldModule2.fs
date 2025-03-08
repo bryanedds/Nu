@@ -3285,7 +3285,8 @@ module WorldModule2' =
                                 let entityState = { entityState with Facets = facets }
                                 World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
-                        World.updateEntityPresenceOverride entity world
+                        let world = World.updateEntityPresenceOverride entity world
+                        World.attachEntityMissingProperties entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
@@ -3309,31 +3310,35 @@ module WorldModule2' =
                         let (entityState, world) = World.tryAddFacets intrinsicFacetNamesAdded entityState (Some entity) world |> Either.getRight
                         let intrinsicFacetNamesRemoved = Set.difference intrinsicFacetNamesOld intrinsicFacetNamesNew
                         let (_, world) = World.tryRemoveFacets intrinsicFacetNamesRemoved entityState (Some entity) world |> Either.getRight
-                        World.updateEntityPresenceOverride entity world
+                        let world = World.updateEntityPresenceOverride entity world
+                        World.attachEntityMissingProperties entity world
                     else world
                 | _ -> world
             | :? Group as group ->
                 let groupState = World.getGroupState group world
                 match lateBindings with
                 | :? GroupDispatcher as groupDispatcher ->
-                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher
-                    then World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
+                        let world = World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                        World.attachGroupMissingProperties group world
                     else world
                 | _ -> world
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
                 match lateBindings with
                 | :? ScreenDispatcher as screenDispatcher ->
-                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher
-                    then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
+                        let world = World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                        World.attachScreenMissingProperties screen world
                     else world
                 | _ -> world
             | :? Game as game ->
                 let gameState = World.getGameState game world
                 match lateBindings with
                 | :? GameDispatcher as gameDispatcher ->
-                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
-                    then World.setGameState { gameState with Dispatcher = gameDispatcher } game world
+                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
+                        let world = World.setGameState { gameState with Dispatcher = gameDispatcher } game world
+                        World.attachGameMissingProperties game world
                     else world
                 | _ -> world
             | _ -> failwithumf ()

@@ -156,9 +156,9 @@ module WorldModuleEntity =
             World.entityStateFinder entity world
 #endif
 
-        static member internal getEntityXtensionProperties entity world =
+        static member internal getEntityXtension entity world =
             let entityState = World.getEntityState entity world
-            entityState.Xtension |> Xtension.toSeq |> Seq.toList
+            entityState.Xtension
 
         static member inline internal setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
@@ -2054,20 +2054,19 @@ module WorldModuleEntity =
             | struct (true, changed, world) -> struct (changed, world)
             | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal attachEntityProperty propertyName property entity world =
-            if World.getEntityExists entity world then
-                let entityState = World.getEntityState entity world
-                let entityState = EntityState.attachProperty propertyName property entityState
-                let world = World.setEntityState entityState entity world
-                World.publishEntityChange propertyName property.PropertyValue property.PropertyValue entityState.PublishChangeEvents entity world
-            else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + scstring entity + "' is not found.")
-
-        static member internal detachEntityProperty propertyName entity world =
-            if World.getEntityExists entity world then
-                let entityState = World.getEntityState entity world
-                let entityState = EntityState.detachProperty propertyName entityState
-                World.setEntityState entityState entity world
-            else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + scstring entity + "' is not found.")
+        static member internal attachEntityMissingProperties entity world =
+            let entityState = World.getEntityState entity world
+            let definitions = Reflection.getReflectivePropertyDefinitions entityState
+            let entityState =
+                Map.fold (fun entityState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetEntityProperty (propertyName, entity, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        EntityState.attachProperty propertyName property entityState
+                    else entityState)
+                    entityState definitions
+            World.setEntityState entityState entity world
 
         static member internal getEntityDefaultOverlayName dispatcherName world =
             match World.tryGetRoutedOverlayNameOpt dispatcherName world with
