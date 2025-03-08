@@ -545,6 +545,10 @@ module Quaternion =
 
     type Quaternion with
 
+        /// Create a look-at rotation.
+        static member CreateLookAt (source, destination, up) =
+            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (source, destination, up))
+
         /// The right vector of the quaternion.
         member inline this.Right =
             v3Right.Transform this

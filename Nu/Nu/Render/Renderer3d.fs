@@ -1622,7 +1622,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderTasks
 
     static member private categorizeBillboardSurface
-        (eyeRotation : Quaternion,
+        (eyeCenter : Vector3,
+         eyeRotation : Quaternion,
          model : Matrix4x4,
          castShadow : bool,
          presence : Presence,
@@ -1660,8 +1661,15 @@ type [<ReferenceEquality>] GlRenderer3d =
             match renderPass with
             | ShadowPass (_, _, _, _) -> Matrix4x4.CreateFromQuaternion lookRotation
             | _ ->
-                if orientUp
-                then Quaternion.CreateFromAxisAngle (lookRotation.Right, lookRotation.Up.AngleBetween v3Up) * lookRotation |> Matrix4x4.CreateFromQuaternion
+                if orientUp then
+                    let eyeFlat = eyeCenter.WithY 0.0f
+                    let positionFlat = model.Translation.WithY 0.0f
+                    let eyeToPositionFlat = positionFlat - eyeFlat
+                    if eyeToPositionFlat.MagnitudeSquared > 0.0f then
+                        let forward = eyeToPositionFlat.Normalized
+                        let yaw = -MathF.Atan2 (forward.Z, forward.X) - MathF.PI_OVER_2
+                        Matrix4x4.CreateRotationY yaw
+                    else m4Identity
                 else Matrix4x4.CreateFromQuaternion lookRotation
         let mutable affineRotation = model
         affineRotation.Translation <- v3Zero
@@ -2944,7 +2952,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
     /// Render 3d surfaces.
-    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView geometryViewport (rasterViewport : Viewport) renderbuffer framebuffer renderMessages renderer =
+    static member render (frustumInterior : Frustum) frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView geometryViewport (rasterViewport : Viewport) renderbuffer framebuffer renderMessages renderer =
 
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
@@ -3000,12 +3008,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, true, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
+                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, true, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 for (model, castShadow, presence, insetOpt) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, true, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, true, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
@@ -3016,7 +3024,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
