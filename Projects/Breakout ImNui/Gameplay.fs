@@ -206,12 +206,6 @@ type GameplayDispatcher () =
                      Entity.StaticImage .= Assets.Default.Brick] world |> __c)
                 world (gameplay.GetBricks world).Pairs
 
-        // end scene declaration
-        let world = World.endGroup world
-
-        // declare gui group
-        let world = World.beginGroup "Gui" [] world
-
         // declare score
         let world = World.doText "Score" [Entity.Position .= v3 248.0f 136.0f 0.0f; Entity.Text @= "Score: " + string (gameplay.GetScore world)] world
 
@@ -233,6 +227,5 @@ type GameplayDispatcher () =
         let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world
         let world = if clicked then gameplay.SetGameplayState Quit world else world
 
-        // end gui declaration
-        let world = World.endGroup world
-        world
+        // end scene declaration
+        World.endGroup world

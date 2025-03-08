@@ -28,15 +28,16 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Process (_, screen, world) =
 
-        // declare scene group
+        // begin scene declaration
         let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+
+        // declare static model
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
         let world = World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
-        let world = World.endGroup world
 
-        // declare gui group
-        let world = World.beginGroup "Gui" [] world
+        // declare quit button
         let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world
         let world = if clicked then screen.SetGameplayState Quit world else world
-        let world = World.endGroup world
-        world
+
+        // end scene declaration
+        World.endGroup world

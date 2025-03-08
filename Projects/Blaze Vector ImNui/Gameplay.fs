@@ -112,16 +112,15 @@ type GameplayDispatcher () =
                     World.setEye2dCenter eyeCenter world
                 else world
 
-            // end scene declaration
-            let world = World.endGroup world
-
-            // declare gui group
-            let world = World.beginGroup "Gui" [] world
+            // declare score text
             let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
+
+            // declare quit button
             let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
             let world = if clicked then screen.SetGameplayState Quit world else world
-            let world = World.endGroup world
-            world
+
+            // end scene declaration
+            World.endGroup world
 
         // otherwise, no gameplay
         else world
