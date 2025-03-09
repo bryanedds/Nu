@@ -112,10 +112,6 @@ module WorldImNui =
             let results = results |> Seq.map snd |> FQueue.ofSeq
             (results, world)
 
-        /// ImGui subscribe to the given entity's spine skeleton events.
-        static member doSubscriptionToSpineSkeletonEvents name (entity : Entity) (world : World) : SpineSkeletonEvent FQueue * World =
-            World.doSubscriptionPlus SpineSkeletonAnimationTrigger name entity.SpineSkeletonAnimationTriggerEvent world
-
         /// TODO: document this!
         static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) entity.BodyPenetrationEvent entity world
@@ -126,7 +122,7 @@ module WorldImNui =
 
         /// TODO: document this!
         static member initSpineSkeletonAnimationResult mapResult (entity : Entity) world =
-            World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ SpineSkeletonAnimationTrigger event.Data) world)) entity.SpineSkeletonAnimationTriggerEvent entity world
+            World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ event.Data) world)) entity.SpineSkeletonAnimationTriggerEvent entity world
 
         /// Clear the current ImNui context.
         static member scopeWorld world =

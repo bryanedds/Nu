@@ -129,10 +129,6 @@ type BodyEvent =
     | BodySeparationImplicit of BodySeparationImplicitData
     | BodyTransform of BodyTransformData
 
-/// Describes a Spine skeleton event.
-type SpineSkeletonEvent =
-    | SpineSkeletonAnimationTrigger of SpineSkeletonAnimationTriggerData
-
 [<RequireQualifiedAccess>]
 module Events =
 
