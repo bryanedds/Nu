@@ -2188,10 +2188,20 @@ module EntityDispatcherModule2 =
         override this.PresenceOverride =
             ValueSome Omnipresent // by default, we presume Process may produce child entities that may be referred to unconditionally
 
-        override this.TryProcess (entity, world) =
+        override this.TryProcess (zeroDelta, entity, world) =
             let context = world.ContextImNui
             let world = World.scopeEntity entity [] world
-            let world = this.Process (entity, world)
+            let world =
+                if zeroDelta then
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    let world = World.mapAmbientState AmbientState.clearAdvancement world
+                    let world = this.Process (entity, world)
+                    World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else this.Process (entity, world)
 #if DEBUG
             if world.ContextImNui <> entity.EntityAddress then
                 Log.warnOnce
@@ -2573,10 +2583,20 @@ module GroupDispatcherModule =
     type [<AbstractClass>] GroupDispatcherImNui () =
         inherit GroupDispatcher ()
 
-        override this.TryProcess (group, world) =
+        override this.TryProcess (zeroDelta, group, world) =
             let context = world.ContextImNui
             let world = World.scopeGroup group [] world
-            let world = this.Process (group, world)
+            let world =
+                if zeroDelta then
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    let world = World.mapAmbientState AmbientState.clearAdvancement world
+                    let world = this.Process (group, world)
+                    World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else this.Process (group, world)
 #if DEBUG
             if world.ContextImNui <> group.GroupAddress then
                 Log.warnOnce
@@ -2777,7 +2797,7 @@ module ScreenDispatcherModule =
     type [<AbstractClass>] ScreenDispatcherImNui () =
         inherit ScreenDispatcher ()
 
-        override this.TryProcess (screen, world) =
+        override this.TryProcess (zeroDelta, screen, world) =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
             let (selectResults, world) = World.doSubscription "@SelectResults" screen.SelectEvent world |> mapFst (FQueue.map (constant Select))
@@ -2787,7 +2807,17 @@ module ScreenDispatcherModule =
             let (outgoingFinishResults, world) = World.doSubscription "@OutgoingFinishResults" screen.OutgoingFinishEvent world |> mapFst (FQueue.map (constant OutgoingFinish))
             let (deselectingResults, world) = World.doSubscription "@DeselectingResults" screen.DeselectingEvent world |> mapFst (FQueue.map (constant Deselecting))
             let results = seq { yield! selectResults; yield! incomingStartResults; yield! incomingFinishResults; yield! outgoingStartResults; yield! outgoingFinishResults; yield! deselectingResults }
-            let world = this.Process (FQueue.ofSeq results, screen, world)
+            let world =
+                if zeroDelta then
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    let world = World.mapAmbientState AmbientState.clearAdvancement world
+                    let world = this.Process (FQueue.ofSeq results, screen, world)
+                    World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImNui <> screen.ScreenAddress then
                 Log.warnOnce
@@ -2988,10 +3018,20 @@ module GameDispatcherModule =
     type [<AbstractClass>] GameDispatcherImNui () =
         inherit GameDispatcher ()
 
-        override this.TryProcess (game, world) =
+        override this.TryProcess (zeroDelta, game, world) =
             let context = world.ContextImNui
             let world = World.scopeGame [] world
-            let world = this.Process (game, world)
+            let world =
+                if zeroDelta then
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    let world = World.mapAmbientState AmbientState.clearAdvancement world
+                    let world = this.Process (game, world)
+                    World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else this.Process (game, world)
 #if DEBUG
             if world.ContextImNui <> game.GameAddress then
                 Log.warnOnce

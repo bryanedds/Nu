@@ -453,8 +453,8 @@ and GameDispatcher () =
     default this.Unregister (_, world) = world
 
     /// Attempt to ImNui process a game.
-    abstract TryProcess : Game * World -> World
-    default this.TryProcess (_, world) = world
+    abstract TryProcess : bool * Game * World -> World
+    default this.TryProcess (_, _, world) = world
 
     /// Pre-update a game.
     abstract PreUpdate : Game * World -> World
@@ -509,8 +509,8 @@ and ScreenDispatcher () =
     default this.Unregister (_, world) = world
 
     /// Attempt to ImNui process a screen.
-    abstract TryProcess : Screen * World -> World
-    default this.TryProcess (_, world) = world
+    abstract TryProcess : bool * Screen * World -> World
+    default this.TryProcess (_, _, world) = world
 
     /// Pre-update a screen.
     abstract PreUpdate : Screen * World -> World
@@ -565,8 +565,8 @@ and GroupDispatcher () =
     default this.Unregister (_, world) = world
 
     /// Attempt to ImNui process a group.
-    abstract TryProcess : Group * World -> World
-    default this.TryProcess (_, world) = world
+    abstract TryProcess : bool * Group * World -> World
+    default this.TryProcess (_, _, world) = world
 
     /// Pre-update a group.
     abstract PreUpdate : Group * World -> World
@@ -662,8 +662,8 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     default this.Unregister (_, world) = world
 
     /// Attempt to ImNui process an entity.
-    abstract TryProcess : Entity * World -> World
-    default this.TryProcess (_, world) = world
+    abstract TryProcess : bool * Entity * World -> World
+    default this.TryProcess (_, _, world) = world
 
     /// Update an entity.
     abstract Update : Entity * World -> World

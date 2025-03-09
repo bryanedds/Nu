@@ -54,55 +54,19 @@ module WorldImNui =
 
         static member internal tryProcessGame zeroDelta (game : Game) (world : World) =
             let dispatcher = game.GetDispatcher world
-            if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
-                let updateDelta = world.UpdateDelta
-                let clockDelta = world.ClockDelta
-                let tickDelta = world.TickDelta
-                let world = World.mapAmbientState AmbientState.clearAdvancement world
-                let world = dispatcher.TryProcess (game, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
-            else dispatcher.TryProcess (game, world)
+            dispatcher.TryProcess (zeroDelta, game, world)
 
         static member internal tryProcessScreen zeroDelta (screen : Screen) (world : World) =
             let dispatcher = screen.GetDispatcher world
-            if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
-                let updateDelta = world.UpdateDelta
-                let clockDelta = world.ClockDelta
-                let tickDelta = world.TickDelta
-                let world = World.mapAmbientState AmbientState.clearAdvancement world
-                let world = dispatcher.TryProcess (screen, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
-            else dispatcher.TryProcess (screen, world)
+            dispatcher.TryProcess (zeroDelta, screen, world)
 
         static member internal tryProcessGroup zeroDelta (group : Group) (world : World) =
             let dispatcher = group.GetDispatcher world
-            if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
-                let updateDelta = world.UpdateDelta
-                let clockDelta = world.ClockDelta
-                let tickDelta = world.TickDelta
-                let world = World.mapAmbientState AmbientState.clearAdvancement world
-                let world = dispatcher.TryProcess (group, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
-            else dispatcher.TryProcess (group, world)
+            dispatcher.TryProcess (zeroDelta, group, world)
 
         static member internal tryProcessEntity zeroDelta (entity : Entity) (world : World) =
             let dispatcher = entity.GetDispatcher world
-            if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
-                let updateDelta = world.UpdateDelta
-                let clockDelta = world.ClockDelta
-                let tickDelta = world.TickDelta
-                let world = World.mapAmbientState AmbientState.clearAdvancement world
-                let world = dispatcher.TryProcess (entity, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
-            else dispatcher.TryProcess (entity, world)
+            dispatcher.TryProcess (zeroDelta,  entity, world)
 
         /// Whether ImNui is reinitializing this frame (such as on a code reload).
         member this.ReinitializingImNui =
