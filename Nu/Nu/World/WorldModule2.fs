@@ -2178,6 +2178,42 @@ module WorldModule2 =
                 World.cleanUp world
                 Constants.Engine.ExitCodeFailure
 
+module FacetModule =
+
+    /// The ImNui facet.
+    type [<AbstractClass>] FacetImNui (physical, lightProbe, light) =
+        inherit Facet (physical, lightProbe, light)
+
+        override this.PresenceOverride =
+            ValueSome Omnipresent // by default, we presume Process may produce child entities that may be referred to unconditionally
+
+        override this.TryProcess (zeroDelta, entity, world) =
+            let context = world.ContextImNui
+            let world = World.scopeEntity entity [] world
+            let world =
+                if zeroDelta then
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    let world = World.mapAmbientState AmbientState.clearAdvancement world
+                    let world = this.Process (entity, world)
+                    World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else this.Process (entity, world)
+#if DEBUG
+            if world.ContextImNui <> entity.EntityAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring entity.EntityAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+#endif
+            World.advanceContext entity.EntityAddress context world
+
+        /// ImNui process an entity.
+        abstract Process : Entity * World -> World
+        default this.Process (_, world) = world
+
 [<AutoOpen>]
 module EntityDispatcherModule2 =
 

@@ -65,6 +65,15 @@ module WorldImNui =
             dispatcher.TryProcess (zeroDelta, group, world)
 
         static member internal tryProcessEntity zeroDelta (entity : Entity) (world : World) =
+            let world =
+                if World.getEntityTryProcessFacets entity world then
+                    let facets = entity.GetFacets world
+                    let mutable world = world // OPTIMIZATION: inlining fold for speed.
+                    if Array.notEmpty facets then // OPTIMIZATION: eliding iteration setup for speed.
+                        for facet in facets do
+                            world <- facet.TryProcess (zeroDelta, entity, world)
+                    world
+                else world
             let dispatcher = entity.GetDispatcher world
             dispatcher.TryProcess (zeroDelta,  entity, world)
 

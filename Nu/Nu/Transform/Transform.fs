@@ -10,28 +10,29 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b000000000000000000001u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] DirtyMask =                     0b000000000000000000010u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000001000u
-    let [<Literal>] ImperativeMask =                0b000000000000000010000u
-    let [<Literal>] EnabledMask =                   0b000000000000000100000u
-    let [<Literal>] VisibleMask =                   0b000000000000001000000u
-    let [<Literal>] CastShadowMask =                0b000000000000010000000u
-    let [<Literal>] PickableMask =                  0b000000000000100000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000001000000000u
-    let [<Literal>] AlwaysRenderMask =              0b000000000010000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000100000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000001000000000000u
-    let [<Literal>] ProtectedMask =                 0b000000010000000000000u
-    let [<Literal>] PersistentMask =                0b000000100000000000000u
-    let [<Literal>] MountedMask =                   0b000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
-    let [<Literal>] StaticMask =                    0b001000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b010000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b100000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b100110100000111110001u
+    let [<Literal>] ActiveMask =                    0b0000000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b0000000000000000000010u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b0000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b0000000000000000010000u
+    let [<Literal>] EnabledMask =                   0b0000000000000000100000u
+    let [<Literal>] VisibleMask =                   0b0000000000000001000000u
+    let [<Literal>] CastShadowMask =                0b0000000000000010000000u
+    let [<Literal>] PickableMask =                  0b0000000000000100000000u
+    let [<Literal>] AlwaysUpdateMask =              0b0000000000001000000000u
+    let [<Literal>] AlwaysRenderMask =              0b0000000000010000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b0000000000100000000000u
+    let [<Literal>] PublishUpdatesMask =            0b0000000001000000000000u
+    let [<Literal>] TryProcessFacetsMask =          0b0000000010000000000000u
+    let [<Literal>] ProtectedMask =                 0b0000000100000000000000u
+    let [<Literal>] PersistentMask =                0b0000001000000000000000u
+    let [<Literal>] MountedMask =                   0b0000010000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b0000100000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b0001000000000000000000u
+    let [<Literal>] StaticMask =                    0b0010000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b0100000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b1000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b1001101000000111110001u
 
 // opening masks for succinctness
 open TransformMasks
@@ -58,14 +59,15 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Invalidated             with get () = this.Flags_ &&& InvalidatedMask <> 0u             and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
     member this.Absolute                with get () = this.Flags_ &&& AbsoluteMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
     member this.Imperative              with get () = this.Flags_ &&& ImperativeMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
-    member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
     member this.Enabled                 with get () = this.Flags_ &&& EnabledMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
     member this.Visible                 with get () = this.Flags_ &&& VisibleMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
     member this.CastShadow              with get () = this.Flags_ &&& CastShadowMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| CastShadowMask else this.Flags_ &&& ~~~CastShadowMask
     member this.Pickable                with get () = this.Flags_ &&& PickableMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| PickableMask else this.Flags_ &&& ~~~PickableMask
     member this.AlwaysUpdate            with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
     member this.AlwaysRender            with get () = this.Flags_ &&& AlwaysRenderMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
+    member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
     member this.PublishUpdates          with get () = this.Flags_ &&& PublishUpdatesMask <> 0u          and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
+    member this.TryProcessFacets        with get () = this.Flags_ &&& TryProcessFacetsMask <> 0u        and set value = this.Flags_ <- if value then this.Flags_ ||| TryProcessFacetsMask else this.Flags_ &&& ~~~TryProcessFacetsMask
     member this.Protected               with get () = this.Flags_ &&& ProtectedMask <> 0u               and set value = this.Flags_ <- if value then this.Flags_ ||| ProtectedMask else this.Flags_ &&& ~~~ProtectedMask
     member this.Persistent              with get () = this.Flags_ &&& PersistentMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
     member this.Mounted                 with get () = this.Flags_ &&& MountedMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask

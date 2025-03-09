@@ -381,7 +381,6 @@ module WorldModuleEntity =
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
         static member internal getEntityPropagationSourceOpt entity world = (World.getEntityState entity world).PropagationSourceOpt
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
-        static member internal getEntityPublishChangeEvents entity world = (World.getEntityState entity world).PublishChangeEvents
         static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
         static member internal getEntityEnabledLocal entity world = (World.getEntityState entity world).EnabledLocal
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
@@ -390,7 +389,9 @@ module WorldModuleEntity =
         static member internal getEntityPickable entity world = (World.getEntityState entity world).Pickable
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal getEntityAlwaysRender entity world = (World.getEntityState entity world).AlwaysRender
+        static member internal getEntityPublishChangeEvents entity world = (World.getEntityState entity world).PublishChangeEvents
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
+        static member internal getEntityTryProcessFacets entity world = (World.getEntityState entity world).TryProcessFacets
         static member internal getEntityProtected entity world = (World.getEntityState entity world).Protected
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
@@ -676,6 +677,20 @@ module WorldModuleEntity =
             if World.getEntityExists entity world
             then setFlag publishEvent entity world
             else struct (false, world)
+
+        static member private updateEntityTryProcessFacets entity world =
+            let entityState = World.getEntityState entity world
+            let value = Seq.exists (fun facet -> facet :? FacetImNui) entityState.Facets
+            let previous = entityState.TryProcessFacets
+            if value <> previous then
+                if entityState.Imperative then
+                    entityState.TryProcessFacets <- value
+                    world
+                else
+                    let entityState = EntityState.diverge entityState
+                    entityState.TryProcessFacets <- value
+                    World.setEntityState entityState entity world
+            else world
 
         static member internal updateEntityPresenceOverride entity world =
             let entityState = World.getEntityState entity world
@@ -1709,6 +1724,7 @@ module WorldModuleEntity =
                 | Some entity ->
                     let world = World.setEntityState entityState entity world
                     let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
+                    let world = World.updateEntityTryProcessFacets entity world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> Left ("Failure to remove facet '" + facetName + "' from entity.")
@@ -1737,6 +1753,7 @@ module WorldModuleEntity =
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                         let world = World.updateEntityPresenceOverride entity world
+                        let world = World.updateEntityTryProcessFacets entity world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.getSelected entity world
@@ -2830,7 +2847,6 @@ module WorldModuleEntity =
                  ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
                  ("PropagationSourceOpt", fun entity world -> { PropertyType = typeof<Entity option>; PropertyValue = World.getEntityPropagationSourceOpt entity world })
                  ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
-                 ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
                  ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
                  ("EnabledLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabledLocal entity world })
                  ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
@@ -2839,7 +2855,9 @@ module WorldModuleEntity =
                  ("Pickable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPickable entity world })
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
+                 ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
                  ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
+                 ("TryProcessFacets", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityTryProcessFacets entity world })
                  ("Protected", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world })
                  ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
                  ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })

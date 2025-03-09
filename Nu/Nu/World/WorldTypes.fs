@@ -750,6 +750,10 @@ and Facet (physical, lightProbe, light) =
     abstract UnregisterPhysics : Entity * World -> World
     default this.UnregisterPhysics (_, world) = world
 
+    /// Attempt to ImNui process an entity.
+    abstract TryProcess : bool * Entity * World -> World
+    default this.TryProcess (_, _, world) = world
+
     /// Update a facet.
     abstract Update : Entity * World -> World
     default this.Update (_, world) = world
@@ -1189,7 +1193,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
     member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
     member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
-    member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
     member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
     member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
     member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
@@ -1198,7 +1201,9 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
+    member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
+    member this.TryProcessFacets with get () = this.Transform.TryProcessFacets and set value = this.Transform.TryProcessFacets <- value
     member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
