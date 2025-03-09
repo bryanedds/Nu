@@ -156,7 +156,7 @@ type GameplayDispatcher () =
         let world =
             FQueue.fold (fun world result ->
                 match result with
-                | BodyPenetration penetration ->
+                | BodyPenetrationData penetration ->
                     let penetrateeId = penetration.BodyShapePenetratee.BodyId
                     if penetrateeId = paddleBodyId then
 

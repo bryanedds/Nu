@@ -35,7 +35,7 @@ type JumpBoxDispatcher () =
         let world =
             FQueue.fold (fun world result ->
                 match result with
-                | BodyPenetration _ -> jumpBox.Collisions.Map inc world
+                | BodyPenetrationData _ -> jumpBox.Collisions.Map inc world
                 | _ -> world)
                 world results
 

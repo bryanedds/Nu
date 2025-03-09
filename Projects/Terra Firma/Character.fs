@@ -374,23 +374,23 @@ type CharacterDispatcher () =
         let world =
             FQueue.fold (fun world result ->
                 match result with
-                | BodyPenetration penetration ->
+                | BodyPenetrationData penetration ->
                     match penetration.BodyShapePenetratee.BodyId.BodySource with
                     | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
                         if characterType <> penetratee.GetCharacterType world
                         then entity.WeaponCollisions.Map (Set.add penetratee) world
                         else world
                     | _ -> world
-                | BodySeparationExplicit separation ->
+                | BodySeparationExplicitData separation ->
                     match separation.BodyShapeSeparatee.BodyId.BodySource with
                     | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
                         entity.WeaponCollisions.Map (Set.remove separatee) world
                     | _ -> world
-                | BodySeparationImplicit separation ->
+                | BodySeparationImplicitData separation ->
                     match separation.BodyId.BodySource with
                     | :? Entity as separatee -> entity.WeaponCollisions.Map (Set.remove separatee) world
                     | _ -> world
-                | BodyTransform _ -> world)
+                | BodyTransformData _ -> world)
                 world results
 
         // process attacks
