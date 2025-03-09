@@ -3,30 +3,11 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open System.Numerics
 open Prime
 open Nu
-
-/// Describes an ImNui screen result.
-type ScreenResult =
-    | Select
-    | IncomingStart
-    | IncomingFinish
-    | OutgoingStart
-    | OutgoingFinish
-    | Deselecting
-
-/// Describes an ImNui physics body result.
-type BodyResult =
-    | BodyPenetration of BodyPenetrationData
-    | BodySeparationExplicit of BodySeparationExplicitData
-    | BodySeparationImplicit of BodySeparationImplicitData
-    | BodyTransform of BodyTransformData
-
-/// Describe a Spine skeleton result.
-type SpineSkeletonResult =
-    | SpineSkeletonAnimationTrigger of SpineSkeletonAnimationTriggerData
 
 [<AutoOpen>]
 module WorldImNui =
@@ -76,8 +57,8 @@ module WorldImNui =
         static member getReinitializingImNui (world : World) =
             world.ReinitializingImNui
 
-        /// ImNui subscribe to the given event address.
-        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue * World =
+        /// ImNui subscribe to the given event address with a user-defined result mapper.
+        static member doSubscriptionPlus<'d, 'r> (mapResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue * World =
             let eventAddress' =
                 if not (Array.contains "Event" eventAddress.Names)
                 then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImNui.Names|])
@@ -91,17 +72,49 @@ module WorldImNui =
                     let (_, world) =
                         World.subscribePlus subId (fun event world ->
                             let mapSubscriptionImNui subscriptionImNui =
-                                let results = subscriptionImNui.Results :?> 'd FQueue
-                                { subscriptionImNui with Results = FQueue.conj event.Data results }
+                                let results = subscriptionImNui.Results :?> 'r FQueue
+                                { subscriptionImNui with Results = FQueue.conj (mapResult event.Data) results }
                             let world = World.tryMapSubscriptionImNui mapSubscriptionImNui subscriptionKey world
                             (Cascade, world))
                             eventAddress'
                             Game
                             world
-                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'d> } world
-            let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'd FQueue
-            let world = World.mapSubscriptionImNui (fun subscriptionImNui -> { subscriptionImNui with Results = FQueue.empty<'d> }) subscriptionKey world
+                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'r> } world
+            let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'r FQueue
+            let world = World.mapSubscriptionImNui (fun subscriptionImNui -> { subscriptionImNui with Results = FQueue.empty<'r> }) subscriptionKey world
             (results, world)
+
+        /// ImNui subscribe to the given event address.
+        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue * World =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world
+
+        /// ImGui subscribe to the given screen's selection events.
+        static member doSubscriptionToSelectionEvents name (screen : Screen) (world : World) : SelectionEvent FQueue * World =
+            let (selects, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, Select)) name screen.SelectEvent world
+            let (incomingStarts, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingStart)) name screen.IncomingStartEvent world
+            let (incomingFinishes, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingFinish)) name screen.IncomingFinishEvent world
+            let (outgoingStarts, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, OutgoingStart)) name screen.OutgoingStartEvent world
+            let (outgoingFinishes, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, OutgoingFinish)) name screen.OutgoingFinishEvent world
+            let (deselectings, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, Deselecting)) name screen.DeselectingEvent world
+            let results = selects |> Seq.append incomingStarts |> Seq.append incomingFinishes |> Seq.append outgoingStarts |> Seq.append outgoingFinishes |> Seq.append deselectings |> List
+            results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
+            let results = results |> Seq.map snd |> FQueue.ofSeq
+            (results, world)
+
+        /// ImGui subscribe to the given entity's body events.
+        static member doSubscriptionToBodyEvents name (entity : Entity) (world : World) : BodyEvent FQueue * World =
+            let (penetrations, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyPenetration data)) name entity.BodyPenetrationEvent world
+            let (separationExplicits, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationExplicit data)) name entity.BodySeparationExplicitEvent world
+            let (separationImplicits, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationImplicit data)) name entity.BodySeparationImplicitEvent world
+            let (bodyTransforms, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyTransform data)) name entity.BodyTransformEvent world
+            let results = penetrations |> Seq.append separationExplicits |> Seq.append separationImplicits |> Seq.append bodyTransforms |> List
+            results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
+            let results = results |> Seq.map snd |> FQueue.ofSeq
+            (results, world)
+
+        /// ImGui subscribe to the given entity's spine skeleton events.
+        static member doSubscriptionToSpineSkeletonEvents name (entity : Entity) (world : World) : SpineSkeletonEvent FQueue * World =
+            World.doSubscriptionPlus SpineSkeletonAnimationTrigger name entity.SpineSkeletonAnimationTriggerEvent world
 
         /// TODO: document this!
         static member initBodyResult mapResult (entity : Entity) world =

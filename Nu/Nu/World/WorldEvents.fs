@@ -113,6 +113,26 @@ type SpineSkeletonAnimationTriggerData =
     | SpineSkeletonAnimationEndData of Spine.TrackEntry
     | SpineSkeletonAnimationEventData of Spine.TrackEntry * Spine.Event
 
+/// Describes a screen selection event.
+type SelectionEvent =
+    | Select
+    | IncomingStart
+    | IncomingFinish
+    | OutgoingStart
+    | OutgoingFinish
+    | Deselecting
+
+/// Describes a physics body event.
+type BodyEvent =
+    | BodyPenetration of BodyPenetrationData
+    | BodySeparationExplicit of BodySeparationExplicitData
+    | BodySeparationImplicit of BodySeparationImplicitData
+    | BodyTransform of BodyTransformData
+
+/// Describes a Spine skeleton event.
+type SpineSkeletonEvent =
+    | SpineSkeletonAnimationTrigger of SpineSkeletonAnimationTriggerData
+
 [<RequireQualifiedAccess>]
 module Events =
 
