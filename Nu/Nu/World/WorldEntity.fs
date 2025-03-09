@@ -422,7 +422,7 @@ module WorldEntityModule =
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
-                if mountOld.GetExists world && mountNew.GetExists world then
+                if mountOld <> mountNew && mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
