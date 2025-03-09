@@ -783,7 +783,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         then (Resolve, world)
         else (Cascade, world)
 
-    let private handleNuLifeCycleGroup (evt : Event<LifeCycleData, Game>) world =
+    let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
         let world =
             match evt.Data with
             | UnregisteringData simulant ->

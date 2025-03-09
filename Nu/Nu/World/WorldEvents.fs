@@ -6,13 +6,13 @@ open System
 open System.Numerics
 open Prime
 
-/// The data for a generalized life-cycle event.
-type LifeCycleData =
+/// The data for a life-cycle event.
+type LifeCycleEventData =
     | RegisterData of Simulant
     | UnregisteringData of Simulant
     | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
 
-/// The data for a generalized screen selection event.
+/// The data for a screen selection event.
 type SelectionEventData =
     | Select
     | IncomingStart
@@ -103,7 +103,7 @@ type BodyTransformData =
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
 
-/// The data for a generalized physics body event.
+/// The data for a physics body event.
 type BodyEventData =
     | BodyPenetrationData of BodyPenetrationData
     | BodySeparationExplicitData of BodySeparationExplicitData
@@ -135,7 +135,7 @@ module Events =
     let RegisterEvent = stoa<unit> "Register/Event"
     let UnregisteringEvent = stoa<unit> "Unregistering/Event"
     let ChangeEvent propertyName = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
-    let LifeCycleEvent simulantTypeName = rtoa<LifeCycleData> [|"LifeCycle"; simulantTypeName; "Event"|]
+    let LifeCycleEvent simulantTypeName = rtoa<LifeCycleEventData> [|"LifeCycle"; simulantTypeName; "Event"|]
     let PreUpdateEvent = stoa<unit> "PreUpdate/Event"
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
