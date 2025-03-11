@@ -874,7 +874,6 @@ module Hl =
             //VulkanGlobal.updateSwapExtent vkg
             
             // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
-            // TODO: DJL: investigate validation errors.
             //Swapchain.refresh vkg.SwapExtent vkg.PhysicalDeviceData vkg.RenderPass vkg.Surface vkg.Swapchain vkg.Device
 
             // TODO: DJL: find out what's going on with the image available semaphore
