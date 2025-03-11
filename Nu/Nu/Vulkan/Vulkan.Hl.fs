@@ -501,7 +501,6 @@ module Hl =
     type Swapchain =
         private
             { _SwapchainInternalOpts : SwapchainInternal option array
-              _PhysicalDeviceData : PhysicalDeviceData
               _SurfaceFormat : VkSurfaceFormatKHR
               mutable _SwapchainIndex : int }
 
@@ -512,7 +511,7 @@ module Hl =
         member this.Framebuffer = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
         
         /// Refresh the swapchain for a new swap extent.
-        static member refresh swapExtent renderPass surface swapchain device =
+        static member refresh swapExtent physicalDeviceData renderPass surface swapchain device =
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
             let oldVkSwapchain = if swapchain._SwapchainInternalOpts.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
@@ -526,7 +525,7 @@ module Hl =
             | None -> ()
             
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapExtent oldVkSwapchain swapchain._PhysicalDeviceData renderPass surface device
+            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapExtent oldVkSwapchain physicalDeviceData renderPass surface device
             swapchain._SwapchainInternalOpts.[swapchain._SwapchainIndex] <- Some swapchainInternal
         
         /// Create a Swapchain.
@@ -545,7 +544,6 @@ module Hl =
             // make Swapchain
             let swapchain =
                 { _SwapchainInternalOpts = swapchainInternalOpts
-                  _PhysicalDeviceData = physicalDeviceData
                   _SurfaceFormat = surfaceFormat
                   _SwapchainIndex = swapchainIndex }
 
@@ -563,9 +561,10 @@ module Hl =
     /// TODO: maybe rename this to VulkanContext.
     /// TODO: DJL: make props private.
     type [<ReferenceEquality>] VulkanGlobal =
-        { Instance : VkInstance
+        { Window : nativeint
+          Instance : VkInstance
           Surface : VkSurfaceKHR
-          PhysicalDevice : VkPhysicalDevice
+          PhysicalDeviceData : PhysicalDeviceData
           Device : VkDevice
           VmaAllocator : VmaAllocator
           Swapchain : Swapchain
@@ -582,7 +581,7 @@ module Hl =
           RenderPass : VkRenderPass
           ClearRenderPass : VkRenderPass
           PresentRenderPass : VkRenderPass
-          SwapExtent : VkExtent2D }
+          mutable SwapExtent : VkExtent2D }
 
         /// The render command buffer for the current frame.
         member this.RenderCommandBuffer = this.RenderCommandBuffers.[CurrentFrame]
@@ -857,6 +856,10 @@ module Hl =
             Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
             renderPass
 
+        /// Update the swap extent.
+        static member updateSwapExtent vkg =
+            vkg.SwapExtent <- VulkanGlobal.getSwapExtent vkg.PhysicalDeviceData.SurfaceCapabilities vkg.Window
+        
         /// Begin the frame.
         static member beginFrame (vkg : VulkanGlobal) =
 
@@ -868,8 +871,11 @@ module Hl =
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain.VkSwapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
             // swap extent is updated here
+            //VulkanGlobal.updateSwapExtent vkg
             
             // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
+            // TODO: DJL: investigate validation errors.
+            //Swapchain.refresh vkg.SwapExtent vkg.PhysicalDeviceData vkg.RenderPass vkg.Surface vkg.Swapchain vkg.Device
 
             // TODO: DJL: find out what's going on with the image available semaphore
             
@@ -989,9 +995,10 @@ module Hl =
 
                 // make VulkanGlobal
                 let vulkanGlobal =
-                    { Instance = instance
+                    { Window = window
+                      Instance = instance
                       Surface = surface
-                      PhysicalDevice = physicalDeviceData.PhysicalDevice
+                      PhysicalDeviceData = physicalDeviceData
                       Device = device
                       VmaAllocator = allocator
                       Swapchain = swapchain
@@ -1060,7 +1067,7 @@ module Hl =
             // allocate memory
             let mutable info = VkMemoryAllocateInfo ()
             info.allocationSize <- memRequirements.size
-            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice
+            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDeviceData.PhysicalDevice
             let mutable memory = Unchecked.defaultof<VkDeviceMemory>
             Vulkan.vkAllocateMemory (vkg.Device, asPointer &info, nullPtr, &memory) |> check
 
