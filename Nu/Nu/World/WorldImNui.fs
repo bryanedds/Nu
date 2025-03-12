@@ -65,7 +65,7 @@ module WorldImNui =
                 else eventAddress
             let subscriptionKey = (name, eventAddress :> Address, eventAddress' :> Address)
             let world =
-                match world.SubscriptionImNuis.TryGetValue subscriptionKey with
+                match world.SubscriptionsImNui.TryGetValue subscriptionKey with
                 | (true, subscriptionImNui) -> World.utilizeSubscriptionImNui subscriptionKey subscriptionImNui world
                 | (false, _) ->
                     let subId = Gen.id64
@@ -135,7 +135,7 @@ module WorldImNui =
             let world = World.setContext gameAddress world
             let game = Nu.Game gameAddress
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue game.GameAddress with
+                match world.SimulantsImNui.TryGetValue game.GameAddress with
                 | (true, gameImNui) -> (false, World.utilizeSimulantImNui game.GameAddress gameImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
@@ -181,7 +181,7 @@ module WorldImNui =
             let group = Nu.Group groupAddress
             let groupCreation = not (group.GetExists world)
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue group.GroupAddress with
+                match world.SimulantsImNui.TryGetValue group.GroupAddress with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
 
@@ -241,7 +241,7 @@ module WorldImNui =
                 else world
             let groupCreation = not (group.GetExists world)
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue group.GroupAddress with
+                match world.SimulantsImNui.TryGetValue group.GroupAddress with
                 | (true, groupImNui) ->
                     (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
@@ -302,7 +302,7 @@ module WorldImNui =
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue entity.EntityAddress with
+                match world.SimulantsImNui.TryGetValue entity.EntityAddress with
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
                 | (false, _) ->
 
@@ -363,7 +363,7 @@ module WorldImNui =
                     let world = World.readEntity false true entityDescriptor None entity.Group world |> snd
                     World.setEntityProtected true entity world |> snd'
                 else world
-            match world.SimulantImNuis.TryGetValue entity.EntityAddress with
+            match world.SimulantsImNui.TryGetValue entity.EntityAddress with
             | (true, entityImNui) -> (false, entity, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
             | (false, _) -> (true, entity, World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world)
 

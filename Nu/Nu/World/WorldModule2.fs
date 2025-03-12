@@ -367,7 +367,7 @@ module WorldModule2 =
             let screen = Nu.Screen screenAddress
             let screenCreation = not (screen.GetExists world)
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue screen.ScreenAddress with
+                match world.SimulantsImNui.TryGetValue screen.ScreenAddress with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen.ScreenAddress screenImNui world)
                 | (false, _) ->
 
@@ -1502,16 +1502,16 @@ module WorldModule2 =
                     if not simulantImNui.SimulantUtilized then
                         let simulant = World.deriveFromAddress simulantAddress
                         ImNuiSimulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
-                        World.setSimulantImNuis (SUMap.remove simulantAddress world.SimulantImNuis) world
+                        World.setSimulantsImNui (SUMap.remove simulantAddress world.SimulantsImNui) world
                     else
                         if world.Imperative then
                             simulantImNui.SimulantUtilized <- false
                             simulantImNui.SimulantInitializing <- false
                             world
                         else
-                            let simulantImNuis = SUMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
-                            World.setSimulantImNuis simulantImNuis world)
-                    world world.SimulantImNuis
+                            let simulantsImNui = SUMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantsImNui
+                            World.setSimulantsImNui simulantsImNui world)
+                    world world.SimulantsImNui
             ImNuiSimulantsToDestroy.Sort SimulantImNuiComparer
 
             // destroy simulants
@@ -1526,15 +1526,15 @@ module WorldModule2 =
                 SUMap.fold (fun world subscriptionKey subscriptionImNui ->
                     if not subscriptionImNui.SubscriptionUtilized then
                         let world = World.unsubscribe subscriptionImNui.SubscriptionId world
-                        World.setSubscriptionImNuis (SUMap.remove subscriptionKey world.SubscriptionImNuis) world
+                        World.setSubscriptionsImNui (SUMap.remove subscriptionKey world.SubscriptionsImNui) world
                     else
                         if world.Imperative then
                             subscriptionImNui.SubscriptionUtilized <- false
                             world
                         else
-                            let simulantImNuis = SUMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
-                            World.setSubscriptionImNuis simulantImNuis world)
-                    world world.SubscriptionImNuis
+                            let simulantsImNui = SUMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionsImNui
+                            World.setSubscriptionsImNui simulantsImNui world)
+                    world world.SubscriptionsImNui
 
             // fin
             world

@@ -1837,8 +1837,8 @@ and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImNui : Address
       mutable DeclaredImNui : Address
-      mutable SimulantImNuis : SUMap<Address, SimulantImNui>
-      mutable SubscriptionImNuis : SUMap<string * Address * Address, SubscriptionImNui>
+      mutable SimulantsImNui : SUMap<Address, SimulantImNui>
+      mutable SubscriptionsImNui : SUMap<string * Address * Address, SubscriptionImNui>
       GeometryViewport : Viewport
       RasterViewport : Viewport
       // cache line 2
@@ -1977,7 +1977,7 @@ and [<ReferenceEquality>] World =
 
     /// Check that the current ImNui context is initializing this frame.
     member this.ContextInitializing =
-        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.ContextImNui with
+        match this.WorldExtension.SimulantsImNui.TryGetValue this.WorldExtension.ContextImNui with
         | (true, simulantImNui) -> simulantImNui.SimulantInitializing
         | (false, _) -> false
 
@@ -2014,15 +2014,15 @@ and [<ReferenceEquality>] World =
 
     /// Check that the recent ImNui declaration is initializing this frame.
     member this.DeclaredInitializing =
-        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.DeclaredImNui with
+        match this.WorldExtension.SimulantsImNui.TryGetValue this.WorldExtension.DeclaredImNui with
         | (true, simulantImNui) -> simulantImNui.SimulantInitializing
         | (false, _) -> false
 
-    member internal this.SimulantImNuis =
-        this.WorldExtension.SimulantImNuis
+    member internal this.SimulantsImNui =
+        this.WorldExtension.SimulantsImNui
 
-    member internal this.SubscriptionImNuis =
-        this.WorldExtension.SubscriptionImNuis
+    member internal this.SubscriptionsImNui =
+        this.WorldExtension.SubscriptionsImNui
 
     /// The viewport of the geometry buffer.
     member this.GeometryViewport =

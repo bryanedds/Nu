@@ -305,29 +305,29 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with DeclaredImNui = declared; ContextImNui = context }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal getSimulantImNuis (world : World) =
-            world.SimulantImNuis
+        static member internal getSimulantsImNui (world : World) =
+            world.SimulantsImNui
 
-        static member internal setSimulantImNuis simulantImNuis (world : World) =
+        static member internal setSimulantsImNui simulantsImNui (world : World) =
             if world.Imperative then
-                world.WorldExtension.SimulantImNuis <- simulantImNuis
+                world.WorldExtension.SimulantsImNui <- simulantsImNui
                 world
             else
-                let worldExtension = { world.WorldExtension with SimulantImNuis = simulantImNuis }
+                let worldExtension = { world.WorldExtension with SimulantsImNui = simulantsImNui }
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSimulantImNui simulant (world : World) =
-            world.SimulantImNuis.[simulant]
+            world.SimulantsImNui.[simulant]
 
         static member internal addSimulantImNui simulant simulantImNui (world : World) =
-            let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
-            World.setSimulantImNuis simulantImNuis world
+            let simulantsImNui = SUMap.add simulant simulantImNui world.SimulantsImNui
+            World.setSimulantsImNui simulantsImNui world
 
         static member internal removeSimulantImNui (simulant : Simulant) (world : World) =
-            World.setSimulantImNuis (SUMap.remove simulant.SimulantAddress world.SimulantImNuis) world
+            World.setSimulantsImNui (SUMap.remove simulant.SimulantAddress world.SimulantsImNui) world
 
         static member internal tryMapSimulantImNui mapper simulant (world : World) =
-            match world.SimulantImNuis.TryGetValue simulant with
+            match world.SimulantsImNui.TryGetValue simulant with
             | (true, simulantImNui) ->
                 let simulantImNui = mapper simulantImNui
                 World.addSimulantImNui simulant simulantImNui world
@@ -344,29 +344,29 @@ module WorldModule =
                 world
             else
                 let simulantImNui = { simulantImNui with SimulantUtilized = true }
-                let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
-                World.setSimulantImNuis simulantImNuis world
+                let simulantsImNui = SUMap.add simulant simulantImNui world.SimulantsImNui
+                World.setSimulantsImNui simulantsImNui world
 
-        static member internal getSubscriptionImNuis (world : World) =
-            world.SubscriptionImNuis
+        static member internal getSubscriptionsImNui (world : World) =
+            world.SubscriptionsImNui
 
-        static member internal setSubscriptionImNuis subscriptionImNuis (world : World) =
+        static member internal setSubscriptionsImNui subscriptionsImNui (world : World) =
             if world.Imperative then
-                world.WorldExtension.SubscriptionImNuis <- subscriptionImNuis
+                world.WorldExtension.SubscriptionsImNui <- subscriptionsImNui
                 world
             else
-                let worldExtension = { world.WorldExtension with SubscriptionImNuis = subscriptionImNuis }
+                let worldExtension = { world.WorldExtension with SubscriptionsImNui = subscriptionsImNui }
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSubscriptionImNui subscription (world : World) =
-            world.SubscriptionImNuis.[subscription]
+            world.SubscriptionsImNui.[subscription]
 
         static member internal addSubscriptionImNui subscription subscriptionImNui (world : World) =
-            let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
-            World.setSubscriptionImNuis subscriptionImNuis world
+            let subscriptionsImNui = SUMap.add subscription subscriptionImNui world.SubscriptionsImNui
+            World.setSubscriptionsImNui subscriptionsImNui world
 
         static member internal tryMapSubscriptionImNui mapper subscription (world : World) =
-            match world.SubscriptionImNuis.TryGetValue subscription with
+            match world.SubscriptionsImNui.TryGetValue subscription with
             | (true, subscriptionImNui) ->
                 let subscriptionImNui = mapper subscriptionImNui
                 World.addSubscriptionImNui subscription subscriptionImNui world
@@ -383,8 +383,8 @@ module WorldModule =
                 world
             else
                 let subscriptionImNui = { subscriptionImNui with SubscriptionUtilized = true }
-                let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
-                World.setSubscriptionImNuis subscriptionImNuis world
+                let subscriptionsImNui = SUMap.add subscription subscriptionImNui world.SubscriptionsImNui
+                World.setSubscriptionsImNui subscriptionsImNui world
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =
