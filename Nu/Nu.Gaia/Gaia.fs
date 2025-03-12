@@ -979,7 +979,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     EntityFileDialogState.FileName <- ""
                     (true, world)
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC or ImNui API)."
                     (false, world)
             with exn ->
                 let world = World.switch worldOld
@@ -1004,7 +1004,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     SelectedEntityOpt <- None
                     (true, world)
             else
-                MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the ImNui or MMCC API)."
+                MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC or ImNui API)."
                 (false, world)
         | Some _ | None -> (false, world)
 
@@ -1065,7 +1065,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let world = World.cutEntityToClipboard entity world
                     (true, world)
             else
-                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImNui or MMCC API)."
+                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the MMCC or ImNui API)."
                 (false, world)
         | Some _ | None -> (false, world)
 
@@ -1076,7 +1076,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 World.copyEntityToClipboard entity world
                 (true, world)
             else
-                MessageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the ImNui or MMCC API)."
+                MessageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the MMCC or ImNui API)."
                 (false, world)
         | Some _ | None -> (false, world)
 
@@ -1151,7 +1151,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     GroupFileDialogState.FileName <- ""
                     (true, world)
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC or ImNui API)."
                     (false, world)
             with exn ->
                 let world = World.switch worldOld
@@ -1866,7 +1866,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             ShowSelectedEntity <- true
                                             world
                                     else Log.warn "Cannot mount an entity circularly."; world
-                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC or ImNui API)."; world
                         | None -> world
                     else world
                 ImGui.EndDragDropTarget ()
@@ -1996,7 +1996,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 if not (entity.GetProtected world) then
                                     let world = snapshot ChangeEntityDispatcher world
                                     World.changeEntityDispatcher dispatcherName entity world
-                                else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                                else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC or ImNui API)."; world
                             else world
                         if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                         if dispatcherName = dispatcherNameCurrent then ImGui.SetItemDefaultFocus ()
@@ -2848,7 +2848,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                                 ShowSelectedEntity <- true
                                                 world
                                             else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."; world
-                                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC or ImNui API)."; world
                                 | None -> world
                             else world
                         ImGui.EndDragDropTarget ()
@@ -3529,16 +3529,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
-                for projectType in ["ImNui Empty"; "ImNui Game"; "MMCC Empty"; "MMCC Game"] do
+                for projectType in ["MMCC Empty"; "MMCC Game"; "ImNui Empty"; "ImNui Game"] do
                     if ImGui.Selectable projectType then
                         NewProjectType <- projectType
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "ImNui Empty" -> "Create an empty ImNui project. This contains the minimum code needed to experiment with ImNui in a sandbox environment."
-                | "ImNui Game" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of ImNui usage."
                 | "MMCC Empty" -> "Create an empty MMCC project. This contains the minimum code needed to experiment with the MMCC API."
                 | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of MMCC usage."
+                | "ImNui Empty" -> "Create an empty ImNui project. This contains the minimum code needed to experiment with ImNui in a sandbox environment."
+                | "ImNui Game" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of ImNui usage."
                 | _ -> failwithumf ()
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
@@ -3560,10 +3560,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
                 let (templateFileName, templateDir, editMode, shortName) =
                     match NewProjectType with
-                    | "ImNui Empty" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial", "nu-template-imnui-empty")
-                    | "ImNui Game" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title", "nu-template-imnui-game")
                     | "MMCC Empty" -> ("Nu.Template.Mmcc.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial", "nu-template-mmcc-empty")
                     | "MMCC Game" -> ("Nu.Template.Mmcc.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title", "nu-template-mmcc-game")
+                    | "ImNui Empty" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial", "nu-template-imnui-empty")
+                    | "ImNui Game" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title", "nu-template-imnui-game")
                     | _ -> failwithumf ()
                 if Directory.Exists templateDir then
 
