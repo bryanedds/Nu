@@ -341,6 +341,10 @@ module WorldModuleScreen =
                 struct (true, changed, world)
             | struct (false, changed, _, world) -> struct (false, changed, world)
 
+        static member internal trySetScreenXtensionValue<'a> propertyName (value : 'a) screen world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetScreenXtensionProperty propertyName property screen world
+
         static member internal setScreenXtensionValue<'a> propertyName (value : 'a) screen world =
             let screenState = World.getScreenState screen world
             let propertyOld = ScreenState.getProperty propertyName screenState

@@ -304,6 +304,10 @@ module WorldModuleGroup =
                 struct (true, changed, world)
             | struct (false, changed, _, world) -> struct (false, changed, world)
 
+        static member internal trySetGroupXtensionValue<'a> propertyName (value : 'a) group world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGroupXtensionProperty propertyName property group world
+
         static member internal setGroupXtensionValue<'a> propertyName (value : 'a) group world =
             let groupState = World.getGroupState group world
             let propertyOld = GroupState.getProperty propertyName groupState

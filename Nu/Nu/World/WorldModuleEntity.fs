@@ -1960,6 +1960,10 @@ module WorldModuleEntity =
                 | struct (false, changed, _, world) -> struct (false, changed, world)
             else struct (false, false, world)
 
+        static member internal trySetEntityXtensionValue<'a> propertyName (value : 'a) entity world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetEntityXtensionProperty propertyName property entity world
+
         static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
             let entityState = World.getEntityState entity world
             match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with

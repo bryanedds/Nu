@@ -590,6 +590,10 @@ module WorldModuleGame =
                 struct (true, changed, world)
             | struct (false, changed, _, world) -> struct (false, changed, world)
 
+        static member internal trySetGameXtensionValue<'a> propertyName (value : 'a) game world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGameXtensionProperty propertyName property game world
+
         static member internal setGameXtensionValue<'a> propertyName (value : 'a) game world =
             let gameState = World.getGameState game world
             let propertyOld = GameState.getProperty propertyName gameState
