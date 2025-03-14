@@ -671,29 +671,29 @@ type PhysicsMessage =
 /// SList instead of List.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given body id.
-    abstract GetBodyExists : BodyId -> bool
+    abstract GetBodyExists : bodyId : BodyId -> bool
     /// Get the contact normals of the body with the given body id.
-    abstract GetBodyContactNormals : BodyId -> Vector3 array
+    abstract GetBodyContactNormals : bodyId : BodyId -> Vector3 array
     /// Get the linear velocity of the body with the given body id.
-    abstract GetBodyLinearVelocity : BodyId -> Vector3
+    abstract GetBodyLinearVelocity : bodyId : BodyId -> Vector3
     /// Get the angular velocity of the body with the given body id.
-    abstract GetBodyAngularVelocity : BodyId -> Vector3
+    abstract GetBodyAngularVelocity : bodyId : BodyId -> Vector3
     /// Get the contact normals where the body with the given body id is touching the ground.
-    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 array
+    abstract GetBodyToGroundContactNormals : bodyId : BodyId -> Vector3 array
     /// Get a contact normal where the body with the given body id is touching the ground (if one exists).
-    abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
+    abstract GetBodyToGroundContactNormalOpt : bodyId : BodyId -> Vector3 option
     /// Get a contact tangent where the body with the given body id is touching the ground (if one exists).
-    abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
+    abstract GetBodyToGroundContactTangentOpt : bodyId : BodyId -> Vector3 option
     /// Check that the body with the given body id is on the ground.
-    abstract GetBodyGrounded : BodyId -> bool
+    abstract GetBodyGrounded : bodyId : BodyId -> bool
     /// Check that the body with the given body id is a sensor.
-    abstract GetBodySensor : BodyId -> bool
+    abstract GetBodySensor : bodyId : BodyId -> bool
     /// Cast a ray into the physics bodies.
-    abstract RayCast : Ray3 * int * bool -> BodyIntersection array
+    abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     /// Handle a physics message from an external source.
-    abstract HandleMessage : PhysicsMessage -> unit
+    abstract HandleMessage : message : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
-    abstract TryIntegrate : GameTime -> IntegrationMessage SArray option
+    abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
     /// Handle physics clean up by freeing all created resources.

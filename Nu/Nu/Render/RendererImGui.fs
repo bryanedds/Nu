@@ -15,24 +15,24 @@ type RenderMessageImGui =
     | ReloadRenderAssets
 
 /// Renders an imgui view.
-/// NOTE: API is object-oriented / mutation-based because it's ported from a port.
+/// NOTE: API is object-oriented / mutation-based because it's ported from a port. 
 type RendererImGui =
-    abstract Initialize : ImFontAtlasPtr -> unit
-    abstract Render : Viewport -> ImDrawDataPtr -> RenderMessageImGui List -> unit
+    abstract Initialize : fonts : ImFontAtlasPtr -> unit
+    abstract Render : viewport_ : Viewport -> drawData : ImDrawDataPtr -> renderMessages : RenderMessageImGui List -> unit
     abstract CleanUp : unit -> unit
 
 /// A stub imgui renderer.
 type StubRendererImGui () =
     interface RendererImGui with
-        member this.Initialize fonts =
+        member renderer.Initialize fonts =
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable fontTextureWidth = 0
             let mutable fontTextureHeight = 0
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
-        member this.Render _ _ _ = ()
-        member this.CleanUp () = ()
+        member renderer.Render _ _ _ = ()
+        member renderer.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
 module StubRendererImGui =
@@ -62,7 +62,7 @@ type GlRendererImGui
     let mutable fontTextureHeight = 0
     let mutable fontTexture = Unchecked.defaultof<OpenGL.Texture.Texture>
 
-    member private this.DestroyAssetTextures (destroyedTextureIdsOpt : uint HashSet option) =
+    member private renderer.DestroyAssetTextures (destroyedTextureIdsOpt : uint HashSet option) =
         for assetTextureOpt in assetTextureOpts.Values do
             match assetTextureOpt with
             | ValueSome textureId ->
@@ -76,7 +76,7 @@ type GlRendererImGui
 
     interface RendererImGui with
 
-        member this.Initialize (fonts : ImFontAtlasPtr) =
+        member renderer.Initialize (fonts : ImFontAtlasPtr) =
         
             // initialize vao
             vertexArrayObject <- OpenGL.Gl.GenVertexArray ()
@@ -168,7 +168,7 @@ type GlRendererImGui
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 
-        member this.Render viewport_ (drawData : ImDrawDataPtr) renderMessages =
+        member renderer.Render viewport_ (drawData : ImDrawDataPtr) renderMessages =
 
             // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
@@ -186,7 +186,7 @@ type GlRendererImGui
             // handle render messages
             for renderMessage in renderMessages do
                 match renderMessage with
-                | ReloadRenderAssets -> this.DestroyAssetTextures (Some textureIdBlacklist)
+                | ReloadRenderAssets -> renderer.DestroyAssetTextures (Some textureIdBlacklist)
 
             // prepare asset textures for a finite period of time
             let now = DateTimeOffset.Now
@@ -304,10 +304,10 @@ type GlRendererImGui
                 OpenGL.Gl.Disable OpenGL.EnableCap.Blend
                 OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
 
-        member this.CleanUp () =
+        member renderer.CleanUp () =
 
             // destroy asset textures
-            this.DestroyAssetTextures None
+            renderer.DestroyAssetTextures None
 
             // destroy vao
             OpenGL.Gl.BindVertexArray vertexArrayObject

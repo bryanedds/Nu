@@ -178,16 +178,16 @@ type [<ReferenceEquality>] Output =
 and Emitter =
 
     /// Determine liveness of emitter.
-    abstract GetLiveness : GameTime -> Liveness
+    abstract GetLiveness : time : GameTime -> Liveness
 
     /// Run the emitter.
-    abstract Run : GameTime -> GameTime -> Output * Emitter
+    abstract Run : delta : GameTime -> time : GameTime -> Output * Emitter
 
     /// Convert the emitted particles to a ParticlesDescriptor.
-    abstract ToParticlesDescriptor : GameTime -> ParticlesDescriptor
+    abstract ToParticlesDescriptor : time : GameTime -> ParticlesDescriptor
 
     /// Change the maximum number of allowable particles.
-    abstract Resize : int -> Emitter
+    abstract Resize : particleMax : int -> Emitter
 
 /// Transforms a constrained value.
 type 'a Transformer =
@@ -546,10 +546,10 @@ module Scope =
 type Behavior =
 
     /// Run the behavior over a single target.
-    abstract Run : GameTime -> GameTime -> Constraint -> obj -> (Output * obj)
+    abstract Run : delta : GameTime -> time : GameTime -> constrain : Constraint -> targetObj : obj -> (Output * obj)
 
     /// Run the behavior over multiple targets.
-    abstract RunMany : GameTime -> GameTime -> Constraint -> obj -> Output
+    abstract RunMany : delta : GameTime -> time : GameTime -> constrain : Constraint -> targetObj : obj -> Output
 
 /// Defines a generic behavior.
 type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =

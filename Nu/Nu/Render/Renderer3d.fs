@@ -860,10 +860,23 @@ type [<ReferenceEquality>] private RenderTasks =
 
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 type Renderer3d =
+
     /// The current renderer configuration.
     abstract RendererConfig : Renderer3dConfig
+
     /// Render a frame of the game.
-    abstract Render : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> single -> Viewport -> Viewport -> RenderMessage3d List -> unit
+    abstract Render :
+        frustumInterior : Frustum ->
+        frustumExterior : Frustum ->
+        frustumImposter : Frustum ->
+        lightBox : Box3 ->
+        eyeCenter : Vector3 ->
+        eyeRotation : Quaternion ->
+        eyeFieldOfView : single ->
+        geometryViewport : Viewport ->
+        rasterViewport : Viewport ->
+        renderMessages : RenderMessage3d List -> unit
+
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 

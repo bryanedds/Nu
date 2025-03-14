@@ -51,7 +51,7 @@ type AudioPlayer =
     /// Clear all of the audio messages that have been enqueued.
     abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : AudioMessage -> unit
+    abstract EnqueueMessage : message : AudioMessage -> unit
     /// Get the current optionally-playing song.
     abstract SongOpt : SongDescriptor option
     /// Get the current song's position or 0.0 if one isn't playing.
@@ -63,7 +63,7 @@ type AudioPlayer =
     /// Whether a song is currently playing and fading out.
     abstract SongFadingOut : bool
     /// 'Play' the audio system. Must be called once per frame.
-    abstract Play : AudioMessage List -> unit
+    abstract Play : messages : AudioMessage List -> unit
 
 /// The stub implementation of AudioPlayer.
 type [<ReferenceEquality>] StubAudioPlayer =

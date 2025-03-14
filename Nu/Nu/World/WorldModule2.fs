@@ -2212,7 +2212,7 @@ module EntityDispatcherModule2 =
             World.advanceContext entity.EntityAddress context world
 
         /// ImNui process an entity.
-        abstract Process : Entity * World -> World
+        abstract Process : entity : Entity * world : World -> World
         default this.Process (_, world) = world
 
     /// An ImNui 2d entity dispatcher.
@@ -2369,43 +2369,43 @@ module EntityDispatcherModule2 =
             | _ -> None
 
         /// The fallback model value.
-        abstract GetFallbackModel : Symbol * Entity * World -> 'model
+        abstract GetFallbackModel : modelSymbol : Symbol * entity : Entity * world : World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The entity's own MMCC definitions.
-        abstract Definitions : 'model * Entity -> Entity DefinitionContent list
+        abstract Definitions : model : 'model * entity : Entity -> Entity DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
-        abstract Message : 'model * 'message * Entity * World -> Signal list * 'model
+        abstract Message : model : 'model * message : 'message * entity : Entity * world : World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The physics synchronization handler for the MMCC programming model.
-        abstract Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
+        abstract Physics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * model : 'model * entity : Entity * world : World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
         /// Implements additional editing behavior for an entity via the ImGui API.
-        abstract Edit : 'model * EditOperation * Entity * World -> Signal list * 'model
+        abstract Edit : model : 'model * op : EditOperation * entity : Entity * world : World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : 'model * 'command * Entity * World -> Signal list * World
+        abstract Command : model : 'model * command : 'command * entity : Entity * world : World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the MMCC programming model.
-        abstract Content : 'model * Entity -> EntityContent list
+        abstract Content : model : 'model * entity : Entity -> EntityContent list
         default this.Content (_, _) = []
 
         /// Render the entity using the given model.
-        abstract Render : 'model * RenderPass * Entity * World -> unit
+        abstract Render : model : 'model * renderPass : RenderPass * entity : Entity * world : World -> unit
         default this.Render (_, _, _, _) = ()
 
         /// Truncate the given model.
-        abstract TruncateModel : 'model -> 'model
+        abstract TruncateModel : model : 'model -> 'model
         default this.TruncateModel model = model
 
         /// Untruncate the given model.
-        abstract UntruncateModel : 'model * 'model -> 'model
+        abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
@@ -2607,7 +2607,7 @@ module GroupDispatcherModule =
             World.advanceContext group.GroupAddress context world
 
         /// ImNui process a group.
-        abstract Process : Group * World -> World
+        abstract Process : group : Group * world : World -> World
         default this.Process (_, world) = world
 
     type World with
@@ -2717,35 +2717,35 @@ module GroupDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The group's own MMCC definitions.
-        abstract Definitions : 'model * Group -> Group DefinitionContent list
+        abstract Definitions : model : 'model * group : Group -> Group DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
-        abstract Message : 'model * 'message * Group * World -> Signal list * 'model
+        abstract Message : model : 'model * message : 'message * group : Group * world : World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : 'model * 'command * Group * World -> Signal list * World
+        abstract Command : model : 'model * command : 'command * group : Group * world : World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the MMCC programming model.
-        abstract Content : 'model * Group -> EntityContent list
+        abstract Content : model : 'model * group : Group -> EntityContent list
         default this.Content (_, _) = []
 
         /// Render the group using the given model.
-        abstract Render : 'model * RenderPass * Group * World -> unit
+        abstract Render : model : 'model * renderPass : RenderPass * group : Group * world : World -> unit
         default this.Render (_, _, _, _) = ()
 
         /// Implements additional editing behavior for a group via the ImGui API.
-        abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
+        abstract Edit : model : 'model * op : EditOperation * group : Group * world : World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
 
         /// Truncate the given model.
-        abstract TruncateModel : 'model -> 'model
+        abstract TruncateModel : model : 'model -> 'model
         default this.TruncateModel model = model
 
         /// Untruncate the given model.
-        abstract UntruncateModel : 'model * 'model -> 'model
+        abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]
@@ -2824,7 +2824,7 @@ module ScreenDispatcherModule =
             World.advanceContext screen.ScreenAddress context world
 
         /// ImNui process a screen.
-        abstract Process : SelectionEventData FQueue * Screen * World -> World
+        abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> World
         default this.Process (_, _, world) = world
 
     type World with
@@ -2930,39 +2930,39 @@ module ScreenDispatcherModule =
             | _ -> None
 
         /// The fallback model value.
-        abstract GetFallbackModel : Symbol * Screen * World -> 'model
+        abstract GetFallbackModel : modelSymbol : Symbol * screen : Screen * world : World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The screen's own MMCC definitions.
-        abstract Definitions : 'model * Screen -> Screen DefinitionContent list
+        abstract Definitions : model : 'model * screen : Screen -> Screen DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
-        abstract Message : 'model * 'message * Screen * World -> Signal list * 'model
+        abstract Message : model : 'model * message : 'message * screen : Screen * world : World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : 'model * 'command * Screen * World -> Signal list * World
+        abstract Command : model : 'model * command : 'command * screen : Screen * world : World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the MMCC programming model.
-        abstract Content : 'model * Screen -> GroupContent list
+        abstract Content : model : 'model * screen : Screen -> GroupContent list
         default this.Content (_, _) = []
 
         /// Render the screen using the given model.
-        abstract Render : 'model * RenderPass * Screen * World -> unit
+        abstract Render : model : 'model * renderPass : RenderPass * screen : Screen * world : World -> unit
         default this.Render (_, _, _, _) = ()
 
         /// Implements additional editing behavior for a screen via the ImGui API.
-        abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
+        abstract Edit : model : 'model * op :  EditOperation * screen : Screen * world : World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
 
         /// Truncate the given model.
-        abstract TruncateModel : 'model -> 'model
+        abstract TruncateModel : model : 'model -> 'model
         default this.TruncateModel model = model
 
         /// Untruncate the given model.
-        abstract UntruncateModel : 'model * 'model -> 'model
+        abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]
@@ -3038,7 +3038,7 @@ module GameDispatcherModule =
             World.advanceContext game.GameAddress context world
 
         /// ImNui process a game.
-        abstract Process : Game * World -> World
+        abstract Process : game : Game * world : World -> World
         default this.Process (_, world) = world
 
     type World with
@@ -3145,39 +3145,39 @@ module GameDispatcherModule =
             | _ -> None
 
         /// The fallback model value.
-        abstract GetFallbackModel : Symbol * Game * World -> 'model
+        abstract GetFallbackModel : modelSymbol : Symbol * game : Game * world : World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The game own MMCC definitions.
-        abstract Definitions : 'model * Game -> Game DefinitionContent list
+        abstract Definitions : model : 'model * game : Game -> Game DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
-        abstract Message : 'model * 'message * Game * World -> Signal list * 'model
+        abstract Message : model : 'model * message : 'message * game : Game * world : World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : 'model * 'command * Game * World -> Signal list * World
+        abstract Command : model : 'model * command : 'command * game : Game * world : World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the MMCC programming model.
-        abstract Content : 'model * Game -> ScreenContent list
+        abstract Content : model : 'model * game : Game -> ScreenContent list
         default this.Content (_, _) = []
 
         /// Render the game using the given model.
-        abstract Render : 'model * RenderPass * Game * World -> unit
+        abstract Render : model : 'model * renderPass : RenderPass * game : Game * world : World -> unit
         default this.Render (_, _, _, _) = ()
 
         /// Implements additional editing behavior for a game via the ImGui API.
-        abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
+        abstract Edit : model : 'model * op : EditOperation * game : Game * world : World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
 
         /// Truncate the given model.
-        abstract TruncateModel : 'model -> 'model
+        abstract TruncateModel : model : 'model -> 'model
         default this.TruncateModel model = model
 
         /// Untruncate the given model.
-        abstract UntruncateModel : 'model * 'model -> 'model
+        abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]

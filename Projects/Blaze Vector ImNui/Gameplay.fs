@@ -30,10 +30,10 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (screenResults, screen, world) =
+    override this.Process (selectionResults, screen, world) =
 
         // process initialization
-        let initializing = FQueue.contains Select screenResults
+        let initializing = FQueue.contains Select selectionResults
         let world =
             if initializing then
 
@@ -61,7 +61,7 @@ type GameplayDispatcher () =
 
         // process clean-up
         let world =
-            if FQueue.contains Deselecting screenResults then
+            if FQueue.contains Deselecting selectionResults then
 
                 // destroy stage sections that were created from section files
                 List.fold (fun world sectionIndex ->
