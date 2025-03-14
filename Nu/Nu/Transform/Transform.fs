@@ -361,7 +361,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Overflow_ <- 1.0f
         transform
 
-    /// Make a transform based on human-intuited values.
+    /// Make a transform based on human-intuitive values.
     static member makeIntuitive absolute position scale offset size angles elevation =
         let mutable transform = Transform.makeDefault ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
