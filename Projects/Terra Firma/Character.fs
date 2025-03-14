@@ -158,13 +158,13 @@ type CharacterDispatcher () =
                     if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
                         rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
                         let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
-                        entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
+                        entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
                     else world
                 elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
                     if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
                         rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
                         let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
-                        entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
+                        entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
                     else world
                 else world
             | _ -> world
@@ -188,7 +188,7 @@ type CharacterDispatcher () =
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) walkSpeed turnSpeed position rotation nearest Simulants.Gameplay world    
-                let world = entity.SetLinearVelocity (followOutput.NavLinearVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
+                let world = entity.SetLinearVelocity (followOutput.NavLinearVelocity.WithY 0.0f + entity.GetLinearVelocity world * v3Up) world
                 let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
                 let world = entity.SetRotation followOutput.NavRotation world
                 world
@@ -200,6 +200,8 @@ type CharacterDispatcher () =
     static let processPlayerInput (entity : Entity) world =
 
         // process action state
+        let bodyId = entity.GetBodyId world
+        let grounded = World.getBodyGrounded bodyId world
         let world =
 
             // jumping
@@ -208,7 +210,7 @@ type CharacterDispatcher () =
                 let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
                 let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
                 if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
-                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world
+                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: P1: ise jump velocity constant!
                     let world = entity.SetLastTimeJump world.UpdateTime world
                     world
                 else world
@@ -218,7 +220,7 @@ type CharacterDispatcher () =
                 match entity.GetActionState world with
                 | NormalState ->
                     let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
-                    entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
+                    entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
                 | AttackState attack ->
                     let localTime = world.UpdateTime - attack.AttackTime
                     if localTime > 10L && not attack.FollowUpBuffered
@@ -233,8 +235,6 @@ type CharacterDispatcher () =
         let world =
 
             // can move only when in normal state or in air
-            let bodyId = entity.GetBodyId world
-            let grounded = World.getBodyGrounded bodyId world
             let actionState = entity.GetActionState world
             if actionState.IsNormalState || not grounded then
 
@@ -257,11 +257,16 @@ type CharacterDispatcher () =
                 let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
 
                 // apply changes
-                let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
+                let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + entity.GetLinearVelocity world * v3Up) world
                 let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
                 let world = entity.SetRotation rotation world
                 world
 
+            // stop movement
+            elif actionState.IsAttackState && grounded then
+                let world = entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
+                world
+            
             // no movement
             else world
 
