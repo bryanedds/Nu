@@ -1434,7 +1434,8 @@ type RigidBodyFacet () =
             (Cascade, World.setBodyAngularVelocity angularVelocity bodyId world)
         else (Cascade, world)
 
-    static let propagatePhysics (entity : Entity) (_ : Event<ChangeData, Entity>) world =
+    static let propagatePhysicsAffected (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+        let world = if evt.Data.Name = nameof Entity.BodyType && entity.GetBodyType world <> Static then entity.SetStatic false world else world
         let world = entity.PropagatePhysics world
         (Cascade, world)
 
@@ -1472,7 +1473,7 @@ type RigidBodyFacet () =
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
         let world = World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd
-        let world = World.subscribePlus subIds.[4] (propagatePhysics entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> snd
+        let world = World.subscribePlus subIds.[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> snd
         let unsubscribe = fun world ->
             Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
         let callback = fun evt world ->
