@@ -329,7 +329,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member private getSongFadingOut () =
         SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT
 
-    /// Make a NuAudioPlayer.
+    /// Make an SdlAudioPlayer.
     static member make () =
         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
