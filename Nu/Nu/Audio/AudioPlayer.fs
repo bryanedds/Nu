@@ -64,6 +64,8 @@ type AudioPlayer =
     abstract SongFadingOut : bool
     /// 'Play' the audio system. Must be called once per frame.
     abstract Play : messages : AudioMessage List -> unit
+    /// Handle audio clean up by stopping all playback and freeing all loaded audio assets.
+    abstract CleanUp : unit -> unit
 
 /// The stub implementation of AudioPlayer.
 type [<ReferenceEquality>] StubAudioPlayer =
@@ -83,6 +85,7 @@ type [<ReferenceEquality>] StubAudioPlayer =
         member audioPlayer.SongFadingIn = false
         member audioPlayer.SongFadingOut = false
         member audioPlayer.Play _ = ()
+        member audioPlayer.CleanUp () = ()
 
     static member make () =
         { StubAudioPlayer = () }
@@ -119,7 +122,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 SDL_mixer.Mix_FreeMusic mus
                 true
 
-    static member private haltSound () =
+    static member private haltAudio () =
         SDL_mixer.Mix_HaltMusic () |> ignore
         let (_, _, _, channelCount) =  SDL_mixer.Mix_QuerySpec ()
         for i in [0 .. channelCount - 1] do
@@ -248,7 +251,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         | Some package ->
             // all sounds / music must be halted because one of them might be playing during unload
             // (which is very bad according to the API docs).
-            SdlAudioPlayer.haltSound ()
+            SdlAudioPlayer.haltAudio ()
             for asset in package.Assets do
                 match __c asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
@@ -326,6 +329,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member private getSongFadingOut () =
         SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT
 
+    static member private cleanUp () =
+        SdlAudioPlayer.haltAudio ()
+
     /// Make a NuAudioPlayer.
     static member make () =
         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
@@ -391,3 +397,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
             SdlAudioPlayer.updateSong audioPlayer
+
+        member audioPlayer.CleanUp () =
+            SdlAudioPlayer.cleanUp ()
