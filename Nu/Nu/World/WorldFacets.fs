@@ -1435,7 +1435,7 @@ type RigidBodyFacet () =
         else (Cascade, world)
 
     static let propagatePhysicsAffected (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-        let world = if evt.Data.Name = nameof Entity.BodyType && not (entity.GetBodyType world).IsStatic then entity.SetStatic false world else world
+        let world = if evt.Data.Name = nameof Entity.BodyType && not (evt.Data.Value :?> BodyType).IsStatic then entity.SetStatic false world else world
         let world = entity.PropagatePhysics world
         (Cascade, world)
 
