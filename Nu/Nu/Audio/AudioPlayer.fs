@@ -329,9 +329,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member private getSongFadingOut () =
         SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT
 
-    static member private cleanUp () =
-        SdlAudioPlayer.haltAudio ()
-
     /// Make a NuAudioPlayer.
     static member make () =
         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
@@ -399,4 +396,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SdlAudioPlayer.updateSong audioPlayer
 
         member audioPlayer.CleanUp () =
-            SdlAudioPlayer.cleanUp ()
+            SdlAudioPlayer.haltAudio ()
+            let audioPackages = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Value)
+            let audioAssets = audioPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
+            for (_, _, audioAsset) in audioAssets do SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer |> ignore<bool>
+            audioPlayer.AudioPackages.Clear ()
