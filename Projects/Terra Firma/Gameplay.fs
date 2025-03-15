@@ -118,7 +118,7 @@ type GameplayDispatcher () =
             let world = if initializing then World.synchronizeNav3d screen world else world
 
             // declare score text
-            let world = World.doText "Score" [Entity.Position .= v3 260.0f 15.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
+            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
 
             // declare quit button
             let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
