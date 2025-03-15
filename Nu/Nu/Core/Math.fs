@@ -1551,7 +1551,7 @@ module Math =
     let TryUnionSegmentAndFrustum' (start : Vector3, stop : Vector3, frustum : Frustum) : struct (Vector3 * Vector3) array =
         let extent = stop - start
         let extentMagnitude = extent.Magnitude
-        let partMagnitude = 1.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
+        let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
         if extentMagnitude > partMagnitude then
             let partMax = 8 // NOTE: magic value that keeps too many operations from occurring, again for perf reasons...
             let partCount = min partMax (int (ceil (extentMagnitude / partMagnitude)))
@@ -1559,6 +1559,8 @@ module Math =
             [|for i in 0 .. dec partCount do
                 let start' = start + partExtent * single i
                 let stop' = start' + partExtent
-                TryUnionSegmentAndFrustum (start', stop', frustum)|] |>
-            Array.definitize
-        else Array.definitize [|TryUnionSegmentAndFrustum (start, stop, frustum)|]
+                if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
+                    struct (start', stop')|]
+        elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
+            [|struct (start, stop)|]
+        else [||]
