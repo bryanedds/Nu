@@ -17,6 +17,9 @@ module WorldPhysics =
         static member internal getPhysicsEngine3d world =
             world.Subsystems.PhysicsEngine3d
 
+        static member internal getRendererPhysics3d world =
+            world.Subsystems.RendererPhysics3d
+
         /// Localize a body shape to a specific size.
         static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) =
             Physics.localizeBodyShape size bodyShape

@@ -16,6 +16,7 @@ open Microsoft.FSharp.Core
 open ImGuiNET
 open ImGuizmoNET
 open ImPlotNET
+open JoltPhysicsSharp
 open Prime
 open Nu
 open Nu.Gaia
@@ -101,6 +102,7 @@ module Gaia =
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private SnapDrag = 0.1f
     let mutable private AlternativeEyeTravelInput = false
+    let mutable private PhysicsDebugRendering = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
     let mutable private EntityHierarchyFilterPropagationSources = false
@@ -2212,6 +2214,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
                 if not CaptureMode then
 
+                    // physics debug rendering
+                    if PhysicsDebugRendering then
+                        let mutable settings3d = DrawSettings ()
+                        settings3d.DrawBoundingBox <- true
+                        World.imGuiRenderPhysics3d settings3d world
+
                     // user-defined viewport manipulation
                     let rasterViewport = world.RasterViewport
                     let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
@@ -3458,7 +3466,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.DragFloat ("##newEntityDistance", &NewEntityDistance, SnapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
             ImGui.Text "Input"
             ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
-            ImGui.Text "Misc"
+            ImGui.Text "Debug"
+            ImGui.Checkbox ("Physics Debug Rendering (3D only)", &PhysicsDebugRendering) |> ignore<bool>
             ImGui.Checkbox ("ImGui Debug Window", &ImGuiDebugWindow) |> ignore<bool>
         ImGui.End ()
 

@@ -1266,6 +1266,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
+        member physicsEngine.TryRender (renderSettings, rendererObj) =
+            match (renderSettings, rendererObj) with
+            | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
+                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer)
+            | _ -> ()
+
         member physicsEngine.ClearInternal () =
 
             // clear any in-flight character contacts

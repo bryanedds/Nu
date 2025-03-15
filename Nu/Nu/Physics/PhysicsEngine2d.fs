@@ -699,6 +699,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 Some integrationMessages
             else None
 
+        member physicsEngine.TryRender (_, _) =
+            () // TODO: implement.
+
         member physicsEngine.ClearInternal () =
             physicsEngine.Joints.Clear ()
             physicsEngine.Bodies.Clear ()

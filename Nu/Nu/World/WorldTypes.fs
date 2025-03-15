@@ -10,6 +10,7 @@ open System.Numerics
 open System.Reflection
 open DotRecast.Core
 open DotRecast.Detour
+open JoltPhysicsSharp
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -1830,6 +1831,7 @@ and [<ReferenceEquality>] internal Subsystems =
       PhysicsEngine2d : PhysicsEngine
       PhysicsEngine3d : PhysicsEngine
       RendererProcess : RendererProcess
+      RendererPhysics3d : DebugRenderer
       AudioPlayer : AudioPlayer }
 
 /// Keeps the World from occupying more than two cache lines.

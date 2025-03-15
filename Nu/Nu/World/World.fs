@@ -280,7 +280,14 @@ module WorldModule3 =
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
-            let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
+            let rendererPhysics3d = new RendererPhysics3d ()
+            let subsystems =
+                { ImGui = imGui
+                  PhysicsEngine2d = physicsEngine2d
+                  PhysicsEngine3d = physicsEngine3d
+                  RendererProcess = rendererProcess
+                  RendererPhysics3d = rendererPhysics3d
+                  AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension =
                 { ContextImNui = Address.empty

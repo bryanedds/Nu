@@ -3,12 +3,14 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open System.Reflection
 open FSharp.NativeInterop
 open FSharp.Reflection
 open DotRecast.Recast
 open ImGuiNET
+open JoltPhysicsSharp
 open Prime
 
 [<AutoOpen>]
@@ -923,3 +925,34 @@ module WorldImGui =
                         if ImGui.IsItemFocused () then context.FocusProperty ()
                         (promoted, edited || edited2, value)
                 else (promoted, edited, value)
+
+/// Renders 3D physics via ImGui.
+/// NOTE: there's no need for this to be stubbable since it merely makes calls to ImGui which are themselves stubbable.
+type RendererPhysics3d () =
+    inherit DebugRenderer ()
+
+    let segments = List ()
+
+    override this.DrawLine (from, to_, _) =
+        let segment = Segment3 (from, to_)
+        if segment.Magnitude < 32.0f then segments.Add segment
+
+    override this.DrawText3D (_, _, _, _) =
+        () // TODO: implement.
+
+    /// Actually render all the stored drawing commands.
+    member this.Flush world =
+        World.imGuiSegments3d segments 1.0f Color.Magenta world
+        segments.Clear ()
+
+[<AutoOpen>]
+module WorldImGui2 =
+    
+    type World with
+
+        // Render the 3D physics via ImGui using the given settings.
+        static member imGuiRenderPhysics3d (settings : DrawSettings) world =
+            let physicsEngine3d = World.getPhysicsEngine3d world
+            let renderer = World.getRendererPhysics3d world :?> RendererPhysics3d
+            physicsEngine3d.TryRender (settings, renderer)
+            renderer.Flush world

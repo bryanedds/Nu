@@ -747,15 +747,9 @@ type Nav3dConfigDispatcher () =
                     let height = Math.Lerp (0.0f, 1.0f, (middleY - nbrData.NavEdgesMinY) / (nbrData.NavEdgesMaxY - nbrData.NavEdgesMinY))
                     Color (1.0f, 1.0f - height, height, 1.0f)
 
-                // point color compute lambda
-                let computePointColor (point : Vector3) =
-                    let height = Math.Lerp (0.0f, 1.0f, (point.Y - nbrData.NavPointsMinY) / (nbrData.NavPointsMaxY - nbrData.NavPointsMinY))
-                    Color (1.0f, 1.0f - height, height, 1.0f)
-
                 // draw edges and points
                 World.imGuiSegments3dPlus nbrData.NavInteriorEdges 1.0f computeEdgeColor world
                 World.imGuiSegments3dPlus nbrData.NavExteriorEdges 1.0f computeEdgeColor world
-                World.imGuiCircles3dPlus nbrData.NavPoints 2.5f true computePointColor world
                 world
 
             | None -> world
