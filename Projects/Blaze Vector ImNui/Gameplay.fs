@@ -80,7 +80,7 @@ type GameplayDispatcher () =
             // declare player
             let world =
                 World.doEntity<PlayerDispatcher> "Player"
-                    [if initializing then Entity.Position .= v3 -390.0f -50.0f 0.0f
+                    [if initializing then Entity.Position @= v3 -390.0f -50.0f 0.0f
                      Entity.Elevation .= 1.0f]
                     world
             let player = world.DeclaredEntity
