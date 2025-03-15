@@ -1397,6 +1397,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         if not (screen.GetExists world) then
                             let (screen, world) = World.createScreen (Some "Screen") world
                             let world = World.setSelectedScreen screen world
+                            let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                            let world = World.publishPlus () screen.SelectEvent eventTrace screen false false world
                             (screen, world)
                         else (screen, world)
                     | Some screen -> (screen, world)

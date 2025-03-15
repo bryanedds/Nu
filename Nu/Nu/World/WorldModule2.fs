@@ -353,6 +353,8 @@ module WorldModule2 =
                 let transitionTime = world.GameTime
                 let world = World.setScreenTransitionStatePlus (IncomingState transitionTime) destination world
                 let world = World.setSelectedScreen destination world
+                let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                let world = World.publishPlus () destination.SelectEvent eventTrace destination false false world
                 let world = World.updateScreenIncoming transitionTime destination world
                 (true, world)
 
@@ -419,6 +421,10 @@ module WorldModule2 =
                 then World.applyScreenBehavior setScreenSlide behavior screen world
                 else world
             let world =
+                if screenCreation && select && screen.GetExists world && WorldModule.UpdatingSimulants
+                then WorldModule.tryProcessScreen true screen world
+                else world
+            let world =
                 if screen.GetExists world && select && not (Option.contains screen (World.getSelectedScreenOpt world)) then
                     if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to quick cut when halted in the editor.
                         World.defer (fun world ->
@@ -428,10 +434,6 @@ module WorldModule2 =
                             screen
                             world
                     else transitionScreen screen world
-                else world
-            let world =
-                if screenCreation && screen.GetExists world && WorldModule.UpdatingSimulants && World.getScreenSelected screen world
-                then WorldModule.tryProcessScreen true screen world
                 else world
             let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
