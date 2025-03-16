@@ -2083,6 +2083,10 @@ and [<ReferenceEquality>] World =
         let eyeFieldOfView = this.Eye3dFieldOfView
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
+    /// Get the currently selected screen, if any.
+    member this.SelectedScreenOpt =
+        this.GameState.SelectedScreenOpt
+
 #if DEBUG
     member internal this.Choose () =
         match WorldTypes.Chosen with
