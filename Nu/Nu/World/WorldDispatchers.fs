@@ -533,11 +533,20 @@ type SensorModelSurfaceDispatcher () =
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
         let surfaceIndex = entity.GetSurfaceIndex world
-        if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex | _ -> false) then
-            let staticModelShape = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
-            let world = entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
-            (Cascade, world)
-        else (Cascade, world)
+        let world =
+            match bodyShape with
+            | StaticModelSurfaceShape staticModelSurfaceShape ->
+                if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          SurfaceIndex = surfaceIndex
+                          Convex = staticModelSurfaceShape.Convex
+                          TransformOpt = staticModelSurfaceShape.TransformOpt
+                          PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
 
     static member Facets =
         [typeof<RigidBodyFacet>

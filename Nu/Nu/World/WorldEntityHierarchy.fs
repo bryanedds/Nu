@@ -23,7 +23,7 @@ module WorldEntityHierarchy =
     type World with
 
         /// Attempt to import a static model hierarchy below the target entity.
-        static member tryImportEntityHierarchy presenceConferred staticModel surfaceMaterialsPopulated rigid (parent : Either<Group, Entity>) world =
+        static member tryImportEntityHierarchy presenceConferred staticModel surfaceMaterialsPopulated convex rigid (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | ValueSome staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
@@ -86,8 +86,23 @@ module WorldEntityHierarchy =
                             let (child, world) =
                                 if rigid then
                                     let (child, world) = World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
-                                    let shape = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape BoundsNavShape staticModelMetadata.SceneOpt surface
-                                    let world = child.SetNavShape shape world
+                                    let surfaceShape =
+                                        match child.GetBodyShape world with
+                                        | StaticModelSurfaceShape surfaceShape -> surfaceShape
+                                        | _ -> failwithumf () // should always be surface shape by default
+                                    // TODO: P1: consider implementing this so we can get local convexity from model surface itself.
+                                    //let convex = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractConvex convex staticModelMetadata.SceneOpt surface
+                                    let surfaceShape =
+                                        if convex
+                                        then surfaceShape // convex by default
+                                        else { surfaceShape with Convex = false }
+                                    let world = child.SetBodyShape (StaticModelSurfaceShape surfaceShape) world
+                                    let navShape =
+                                         if convex
+                                         then child.GetNavShape world // BoundsNavShape by default
+                                         else StaticModelSurfaceNavShape
+                                    let navShape = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape navShape staticModelMetadata.SceneOpt surface
+                                    let world = child.SetNavShape navShape world
                                     (child, world)
                                 else World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
                             let (position, rotation, scale, world) =
@@ -349,7 +364,7 @@ module StaticModelHierarchyDispatcherModule =
                     (entity.GetPresenceConferred world)
                     (entity.GetStaticModel world)
                     (entity.GetSurfaceMaterialsPopulated world)
-                    false (Right entity) world
+                    false false (Right entity) world
             entity.UpdateFrozenHierarchy world
 
         static let handleUpdateLoadedHierarchy evt world =
@@ -385,6 +400,11 @@ module StaticModelHierarchyDispatcherModule =
 [<AutoOpen>]
 module RigidModelHierarchyDispatcherModule =
 
+    type Entity with
+        member this.GetConvex world : bool = this.Get (nameof this.Convex) world
+        member this.SetConvex (value : bool) world = this.Set (nameof this.Convex) value world
+        member this.Convex = lens (nameof this.Convex) this this.GetConvex this.SetConvex
+
     /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
     type RigidModelHierarchyDispatcher () =
         inherit Entity3dDispatcher (true, false, false)
@@ -399,6 +419,7 @@ module RigidModelHierarchyDispatcherModule =
                     (entity.GetPresenceConferred world)
                     (entity.GetStaticModel world)
                     (entity.GetSurfaceMaterialsPopulated world)
+                    (entity.GetConvex world)
                     true (Right entity) world
             entity.UpdateFrozenHierarchy world
 
@@ -412,6 +433,7 @@ module RigidModelHierarchyDispatcherModule =
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.Convex true
              define Entity.Loaded false]
 
         override this.Register (entity, world) =
@@ -423,6 +445,7 @@ module RigidModelHierarchyDispatcherModule =
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.Convex)) entity world
             world
 
         override this.Edit (op, _, world) =
