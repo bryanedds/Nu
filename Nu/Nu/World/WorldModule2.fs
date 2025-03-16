@@ -421,7 +421,7 @@ module WorldModule2 =
                 then World.applyScreenBehavior setScreenSlide behavior screen world
                 else world
             let world =
-                if screenCreation && select && screen.GetExists world
+                if screenCreation && screen.GetExists world
                 then WorldModule.tryProcessScreen true screen world
                 else world
             let world =

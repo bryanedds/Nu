@@ -210,11 +210,15 @@ module WorldScreenModule =
 
         /// Create a screen and add it to the world.
         static member createScreen4 dispatcherName nameOpt world =
+
+            // make the dispatcher
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
+
+            // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
@@ -224,11 +228,12 @@ module WorldScreenModule =
                     then World.destroyScreenImmediate screen world
                     else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
+
+            // add the screen's state to the world
             let world = World.addScreen false screenState screen world
-            let world =
-                if WorldModule.UpdatingSimulants && screen.GetSelected world
-                then WorldModule.tryProcessScreen true screen world
-                else world
+
+            // unconditionally zero-process ImNui screen first time
+            let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.
@@ -323,11 +328,8 @@ module WorldScreenModule =
             // read the screen's groups
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
 
-            // attempt to process ImNui screen first time if in the middle of simulant update phase
-            let world =
-                if WorldModule.UpdatingSimulants && screen.GetSelected world
-                then WorldModule.tryProcessScreen true screen world
-                else world
+            // unconditionally zero-process ImNui screen first time
+            let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
         /// Read multiple screens from a game descriptor.
