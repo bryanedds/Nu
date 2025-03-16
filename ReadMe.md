@@ -69,8 +69,6 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 
 **[@arsmilitaris](https://github.com/arsmilitaris)** at **https://arsmilitaris.com**
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/1b8fe1bb-18c1-4a1e-9888-4f566204490a)
-
 **[@pauloud](https://github.com/pauloud)**
 
 **[@fswadling](https://github.com/fswadling)**
