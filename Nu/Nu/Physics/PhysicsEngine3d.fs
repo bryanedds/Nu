@@ -316,20 +316,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (pointsShape : PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let triangles =
-            geometryShape.Vertices |>
+            pointsShape.Points |>
             Seq.chunkBySize 3 |>
             Seq.map (fun t -> Triangle (&t.[0], &t.[1], &t.[2])) |>
             Array.ofSeq
         let shapeSettings = new MeshShapeSettings (triangles)
         shapeSettings.Sanitize ()
         let struct (center, rotation) =
-            match geometryShape.TransformOpt with
+            match pointsShape.TransformOpt with
             | Some transform -> struct (transform.Translation, transform.Rotation)
             | None -> (v3Zero, quatIdentity)
         let (scale, shapeSettings) =
-            match geometryShape.TransformOpt with
+            match pointsShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
@@ -337,11 +337,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
-        let bodyShapeId = match geometryShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
+        let bodyShapeId = match pointsShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
         scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
-        let box = box3 v3Zero ((Box3.Enclose geometryShape.Vertices).Size * scale)
+        let box = box3 v3Zero ((Box3.Enclose pointsShape.Points).Size * scale)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -350,11 +350,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachGeometryShape (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
-        if geometryShape.Convex then
-            let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
-            PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
-        else PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometryShape scShapeSettings masses
+    static member private attachPointsShape (bodyProperties : BodyProperties) (pointsShape : PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
+        if pointsShape.Convex
+        then PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        else PhysicsEngine3d.attachBodyBvhTriangles bodyProperties pointsShape scShapeSettings masses
+
+    static member private attachGeometryShape bodyProperties (geometryShape : GeometryShape) scShapeSettings masses physicsEngine =
+        let pointsShape = { Points = geometryShape.Vertices; Convex = geometryShape.Convex; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+        PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
 
     // TODO: add some error logging.
     static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
@@ -440,7 +443,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodyProperties sphereShape scShapeSettings masses
         | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
-        | PointsShape pointsShape -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        | PointsShape pointsShape -> PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
         | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
         | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
         | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngine3d.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine

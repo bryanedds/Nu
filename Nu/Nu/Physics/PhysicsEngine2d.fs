@@ -238,11 +238,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         PhysicsEngine2d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt bodyShape
         bodyShape
 
-    static member private attachBodyTriangles bodySource bodyProperties (geometryShape : GeometryShape) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity geometryShape.TransformOpt
-        let vertices = Array.zeroCreate geometryShape.Vertices.Length
-        for i in 0 .. dec geometryShape.Vertices.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (geometryShape.Vertices.[i].Transform transform)
+    static member private attachBodyTriangles bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
+        let vertices = Array.zeroCreate pointsShape.Points.Length
+        for i in 0 .. dec pointsShape.Points.Length do
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (pointsShape.Points.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -254,15 +254,18 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                  BodyShapeIndex = match geometryShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties geometryShape.PropertiesOpt bodyShape
+                  BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) (body : Body) =
-        if geometryShape.Convex then
-            let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
-            PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
-        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape body
+    static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
+        if pointsShape.Convex
+        then PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
+        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape body
+
+    static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) body =
+        let pointsShape = { Points = geometryShape.Vertices; Convex = geometryShape.Convex; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+        PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -278,7 +281,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
         | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
-        | PointsShape pointsShape -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
+        | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
         | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
         | StaticModelSurfaceShape _ -> [||]

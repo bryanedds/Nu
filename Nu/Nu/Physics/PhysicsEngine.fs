@@ -296,9 +296,10 @@ type BoxRoundedShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a convex physics body defined by body-relative points.
+/// The shape of a physics body defined by body-relative points.
 type PointsShape =
     { Points : Vector3 array
+      Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
