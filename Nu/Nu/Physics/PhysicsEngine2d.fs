@@ -221,6 +221,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         Array.ofSeq bodyShapes
 
     static member private attachBodyConvexHull bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
+        assert (not pointsShape.Concave)
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
         let vertices = Array.zeroCreate pointsShape.Points.Length
         for i in 0 .. dec pointsShape.Points.Length do
@@ -259,12 +260,12 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         Array.ofSeq bodyShapes
 
     static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
-        if pointsShape.Convex
-        then PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
-        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape body
+        if pointsShape.Concave
+        then PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape body
+        else PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
 
     static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) body =
-        let pointsShape = { Points = geometryShape.Vertices; Convex = geometryShape.Convex; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+        let pointsShape = { Points = geometryShape.Vertices; Concave = geometryShape.Concave; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
         PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =

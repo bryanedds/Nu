@@ -461,11 +461,19 @@ type SensorModelDispatcher () =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
-        if (match bodyShape with StaticModelShape staticModelShape -> staticModelShape.StaticModel <> staticModel | _ -> false) then
-            let staticModelShape = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
-            let world = entity.SetBodyShape (StaticModelShape staticModelShape) world
-            (Cascade, world)
-        else (Cascade, world)
+        let world =
+            match bodyShape with
+            | StaticModelShape staticModelShape ->
+                if staticModelShape.StaticModel <> staticModel then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          Concave = staticModelShape.Concave
+                          TransformOpt = staticModelShape.TransformOpt
+                          PropertiesOpt = staticModelShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -473,7 +481,7 @@ type SensorModelDispatcher () =
 
     static member Properties =
         [define Entity.Visible false
-         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })
+         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Concave = false; TransformOpt = None; PropertiesOpt = None })
          define Entity.Sensor true]
 
     override this.Register (entity, world) =
@@ -489,11 +497,19 @@ type RigidModelDispatcher () =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
-        if (match bodyShape with StaticModelShape staticModelShape -> staticModelShape.StaticModel <> staticModel | _ -> false) then
-            let staticModelShape = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
-            let world = entity.SetBodyShape (StaticModelShape staticModelShape) world
-            (Cascade, world)
-        else (Cascade, world)
+        let world =
+            match bodyShape with
+            | StaticModelShape staticModelShape ->
+                if staticModelShape.StaticModel <> staticModel then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          Concave = staticModelShape.Concave
+                          TransformOpt = staticModelShape.TransformOpt
+                          PropertiesOpt = staticModelShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
 
     static let updateNavShape evt world =
         let entity = evt.Subscriber : Entity
@@ -509,7 +525,7 @@ type RigidModelDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+        [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Concave = false; TransformOpt = None; PropertiesOpt = None })]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -540,7 +556,7 @@ type SensorModelSurfaceDispatcher () =
                     let staticModelShape =
                         { StaticModel = staticModel
                           SurfaceIndex = surfaceIndex
-                          Convex = staticModelSurfaceShape.Convex
+                          Concave = staticModelSurfaceShape.Concave
                           TransformOpt = staticModelSurfaceShape.TransformOpt
                           PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                     entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
@@ -554,7 +570,7 @@ type SensorModelSurfaceDispatcher () =
 
     static member Properties =
         [define Entity.Visible false
-         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })
+         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Concave = false; TransformOpt = None; PropertiesOpt = None })
          define Entity.Sensor true]
 
     override this.Register (entity, world) =
@@ -571,11 +587,20 @@ type RigidModelSurfaceDispatcher () =
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
         let surfaceIndex = entity.GetSurfaceIndex world
-        if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex | _ -> false) then
-            let staticModelShape = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
-            let world = entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
-            (Cascade, world)
-        else (Cascade, world)
+        let world =
+            match bodyShape with
+            | StaticModelSurfaceShape staticModelSurfaceShape ->
+                if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          SurfaceIndex = surfaceIndex
+                          Concave = staticModelSurfaceShape.Concave
+                          TransformOpt = staticModelSurfaceShape.TransformOpt
+                          PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -583,7 +608,7 @@ type RigidModelSurfaceDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+        [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Concave = false; TransformOpt = None; PropertiesOpt = None })]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world

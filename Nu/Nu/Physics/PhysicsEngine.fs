@@ -299,21 +299,21 @@ type BoxRoundedShape =
 /// The shape of a physics body defined by body-relative points.
 type PointsShape =
     { Points : Vector3 array
-      Convex : bool
+      Concave : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of triangle faces.
 type GeometryShape =
     { Vertices : Vector3 array
-      Convex : bool
+      Concave : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of a static model.
 type StaticModelShape =
     { StaticModel : StaticModel AssetTag
-      Convex : bool
+      Concave : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -321,7 +321,7 @@ type StaticModelShape =
 type StaticModelSurfaceShape =
     { StaticModel : StaticModel AssetTag
       SurfaceIndex : int
-      Convex : bool
+      Concave : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 

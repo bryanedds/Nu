@@ -273,6 +273,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
 
     static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (pointsShape : Nu.PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
+        assert (not pointsShape.Concave)
         let unscaledPointsKey = UnscaledPointsKey.make pointsShape.Points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
@@ -351,12 +352,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachPointsShape (bodyProperties : BodyProperties) (pointsShape : PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
-        if pointsShape.Convex
-        then PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
-        else PhysicsEngine3d.attachBodyBvhTriangles bodyProperties pointsShape scShapeSettings masses
+        if pointsShape.Concave
+        then PhysicsEngine3d.attachBodyBvhTriangles bodyProperties pointsShape scShapeSettings masses
+        else PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
 
     static member private attachGeometryShape bodyProperties (geometryShape : GeometryShape) scShapeSettings masses physicsEngine =
-        let pointsShape = { Points = geometryShape.Vertices; Convex = geometryShape.Convex; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+        let pointsShape = { Points = geometryShape.Vertices; Concave = geometryShape.Concave; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
         PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
 
     // TODO: add some error logging.
@@ -373,13 +374,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             (transform.Rotation * surface.SurfaceMatrix.Rotation)
                             (transform.Scale.Transform surface.SurfaceMatrix)
                     | None -> Affine.makeFromMatrix surface.SurfaceMatrix
-                let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
+                let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Concave = staticModelShape.Concave; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
                 match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
                 | ValueSome staticModel ->
                     if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                         let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
-                        let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                        let geometryShape = { Vertices = geometry.Vertices; Concave = staticModelSurfaceShape.Concave; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                         PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
@@ -395,7 +396,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
-                let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                let geometryShape = { Vertices = geometry.Vertices; Concave = staticModelSurfaceShape.Concave; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                 PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
             else masses
         | ValueNone -> masses

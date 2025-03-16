@@ -178,7 +178,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay House] False None None]]]
+            [[Gameplay House] True None None]]]
           [MountOpt [Some ^]]
           [Name House]
           [NavShape StaticModelNavShape]
@@ -192,7 +192,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay House] False None None]]]
+                [[Gameplay House] True None None]]]
               [MountOpt [Some ^]]
               [Name House]
               [NavShape StaticModelNavShape]
@@ -216,7 +216,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay House] False None None]]]
+            [[Gameplay House] True None None]]]
           [MountOpt [Some ^]]
           [Name House-0034]
           [NavShape StaticModelNavShape]
@@ -326,7 +326,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Well] True None None]]]
+            [[Gameplay Well] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -348,7 +348,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay Well] True None None]]]
+                [[Gameplay Well] False None None]]]
               [MaterialProperties
                [[AlbedoOpt
                  [Some [1 1 1 1]]]
@@ -376,7 +376,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Well] True None None]]]
+            [[Gameplay Well] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -401,7 +401,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrelDestroyed] True None None]]]
+            [[Gameplay RedBarrelDestroyed] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -423,7 +423,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay RedBarrelDestroyed] True None None]]]
+                [[Gameplay RedBarrelDestroyed] False None None]]]
               [MaterialProperties
                [[AlbedoOpt
                  [Some [1 1 1 1]]]
@@ -451,7 +451,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrelDestroyed] True None None]]]
+            [[Gameplay RedBarrelDestroyed] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -476,7 +476,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrelDestroyed] True None None]]]
+            [[Gameplay RedBarrelDestroyed] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -501,7 +501,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrelDestroyed] True None None]]]
+            [[Gameplay RedBarrelDestroyed] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -526,7 +526,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrelDestroyed] True None None]]]
+            [[Gameplay RedBarrelDestroyed] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -551,7 +551,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier]
           [NavShape StaticModelNavShape]
@@ -565,7 +565,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay Barrier] True None None]]]
+                [[Gameplay Barrier] False None None]]]
               [MountOpt [Some ^]]
               [Name Barrier]
               [NavShape StaticModelNavShape]
@@ -585,7 +585,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0012]
           [NavShape StaticModelNavShape]
@@ -602,7 +602,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0013]
           [NavShape StaticModelNavShape]
@@ -619,7 +619,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0014]
           [NavShape StaticModelNavShape]
@@ -638,7 +638,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0015]
           [NavShape StaticModelNavShape]
@@ -659,7 +659,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0016]
           [NavShape StaticModelNavShape]
@@ -680,7 +680,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0029]
           [NavShape StaticModelNavShape]
@@ -700,7 +700,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0031]
           [NavShape StaticModelNavShape]
@@ -717,7 +717,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0032]
           [NavShape StaticModelNavShape]
@@ -736,7 +736,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Genorator] True None None]]]
+            [[Gameplay Genorator] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
@@ -757,7 +757,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay Genorator] True None None]]]
+                [[Gameplay Genorator] False None None]]]
               [MaterialProperties
                [[AlbedoOpt None]
                 [RoughnessOpt [Some 0.75]]
@@ -788,7 +788,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Genorator] True None None]]]
+            [[Gameplay Genorator] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
@@ -816,7 +816,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Genorator] True None None]]]
+            [[Gameplay Genorator] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
@@ -842,7 +842,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -863,7 +863,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay WoodenCrate] True None None]]]
+                [[Gameplay WoodenCrate] False None None]]]
               [MaterialProperties
                [[AlbedoOpt None]
                 [RoughnessOpt [Some 2]]
@@ -892,7 +892,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -919,7 +919,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -944,7 +944,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -968,7 +968,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -992,7 +992,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -1019,7 +1019,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -1205,7 +1205,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Container] True None None]]]
+            [[Gameplay Container] False None None]]]
           [Material
            [[AlbedoImageOpt None]
             [RoughnessImageOpt
@@ -1234,7 +1234,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay TireWall] True None None]]]
+            [[Gameplay TireWall] False None None]]]
           [MountOpt [Some ^]]
           [Name Tires]
           [Offset [0 0.5155037 -1.1920929E-07]]
@@ -1246,7 +1246,7 @@
             [RigidModelDispatcher
              [[BodyShape
                [StaticModelShape
-                [[Gameplay TireWall] True None None]]]
+                [[Gameplay TireWall] False None None]]]
               [MountOpt [Some ^]]
               [Name Tires]
               [Offset [0 0.5155037 -1.1920929E-07]]
@@ -1264,7 +1264,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay TireWall] True None None]]]
+            [[Gameplay TireWall] False None None]]]
           [MountOpt [Some ^]]
           [Name Tires-0004]
           [Offset [0 0.5155037 -1.1920929E-07]]
@@ -1348,7 +1348,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House]
       [NavShape StaticModelNavShape]
@@ -1361,7 +1361,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay House] False None None]]]
+            [[Gameplay House] True None None]]]
           [MountOpt [Some ^]]
           [Name House]
           [NavShape StaticModelNavShape]
@@ -1385,7 +1385,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House-0034]
       [NavShape StaticModelNavShape]
@@ -1492,7 +1492,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1513,7 +1513,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Well] True None None]]]
+            [[Gameplay Well] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -1541,7 +1541,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1565,7 +1565,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1586,7 +1586,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrelDestroyed] True None None]]]
+            [[Gameplay RedBarrelDestroyed] False None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -1614,7 +1614,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1638,7 +1638,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1662,7 +1662,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1686,7 +1686,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -1710,7 +1710,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -1723,7 +1723,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
+            [[Gameplay Barrier] False None None]]]
           [MountOpt [Some ^]]
           [Name Barrier]
           [NavShape StaticModelNavShape]
@@ -1743,7 +1743,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -1759,7 +1759,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -1775,7 +1775,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -1793,7 +1793,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -1813,7 +1813,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -1833,7 +1833,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -1852,7 +1852,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -1868,7 +1868,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -1886,7 +1886,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -1906,7 +1906,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay Genorator] True None None]]]
+            [[Gameplay Genorator] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
@@ -1937,7 +1937,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -1964,7 +1964,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -1989,7 +1989,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2009,7 +2009,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay WoodenCrate] True None None]]]
+            [[Gameplay WoodenCrate] False None None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -2038,7 +2038,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2064,7 +2064,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2088,7 +2088,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2111,7 +2111,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2134,7 +2134,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2160,7 +2160,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2337,7 +2337,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Container] True None None]]]
+        [[Gameplay Container] False None None]]]
       [Material
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
@@ -2365,7 +2365,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -2376,7 +2376,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay TireWall] True None None]]]
+            [[Gameplay TireWall] False None None]]]
           [MountOpt [Some ^]]
           [Name Tires]
           [Offset [0 0.5155037 -1.1920929E-07]]
@@ -2394,7 +2394,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires-0004]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -2484,7 +2484,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House]
       [NavShape StaticModelNavShape]
@@ -2503,7 +2503,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House-0034]
       [NavShape StaticModelNavShape]
@@ -2582,7 +2582,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2607,7 +2607,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2632,7 +2632,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2657,7 +2657,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2682,7 +2682,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2707,7 +2707,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2732,7 +2732,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2757,7 +2757,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -2774,7 +2774,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -2791,7 +2791,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -2808,7 +2808,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -2826,7 +2826,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -2846,7 +2846,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -2866,7 +2866,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -2884,7 +2884,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -2901,7 +2901,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -2919,7 +2919,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -2945,7 +2945,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -2972,7 +2972,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -2998,7 +2998,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3022,7 +3022,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3048,7 +3048,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3072,7 +3072,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3096,7 +3096,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3120,7 +3120,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3146,7 +3146,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3309,7 +3309,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Container] True None None]]]
+        [[Gameplay Container] False None None]]]
       [Material
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
@@ -3337,7 +3337,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -3352,7 +3352,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires-0004]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -3442,7 +3442,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House]
       [NavShape StaticModelNavShape]
@@ -3461,7 +3461,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House-0034]
       [NavShape StaticModelNavShape]
@@ -3540,7 +3540,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3565,7 +3565,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3590,7 +3590,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3615,7 +3615,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3640,7 +3640,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3665,7 +3665,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3690,7 +3690,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3715,7 +3715,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -3732,7 +3732,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -3749,7 +3749,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -3766,7 +3766,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -3784,7 +3784,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -3804,7 +3804,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -3824,7 +3824,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -3842,7 +3842,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -3859,7 +3859,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -3877,7 +3877,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -3903,7 +3903,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -3930,7 +3930,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -3956,7 +3956,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3980,7 +3980,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4006,7 +4006,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4030,7 +4030,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4054,7 +4054,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4078,7 +4078,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4104,7 +4104,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4267,7 +4267,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Container] True None None]]]
+        [[Gameplay Container] False None None]]]
       [Material
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
@@ -4295,7 +4295,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -4310,7 +4310,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires-0004]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -4400,7 +4400,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House]
       [NavShape StaticModelNavShape]
@@ -4419,7 +4419,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay House] False None None]]]
+        [[Gameplay House] True None None]]]
       [MountOpt [Some ^]]
       [Name House-0034]
       [NavShape StaticModelNavShape]
@@ -4498,7 +4498,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4523,7 +4523,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Well] True None None]]]
+        [[Gameplay Well] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4548,7 +4548,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4573,7 +4573,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4598,7 +4598,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4623,7 +4623,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4648,7 +4648,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrelDestroyed] True None None]]]
+        [[Gameplay RedBarrelDestroyed] False None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4673,7 +4673,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -4690,7 +4690,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -4707,7 +4707,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -4724,7 +4724,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -4742,7 +4742,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -4762,7 +4762,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -4782,7 +4782,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -4800,7 +4800,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -4817,7 +4817,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
+        [[Gameplay Barrier] False None None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -4835,7 +4835,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -4861,7 +4861,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -4888,7 +4888,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Genorator] True None None]]]
+        [[Gameplay Genorator] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
@@ -4914,7 +4914,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4938,7 +4938,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4964,7 +4964,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4988,7 +4988,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -5012,7 +5012,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -5036,7 +5036,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -5062,7 +5062,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay WoodenCrate] True None None]]]
+        [[Gameplay WoodenCrate] False None None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -5225,7 +5225,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay Container] True None None]]]
+        [[Gameplay Container] False None None]]]
       [Material
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
@@ -5253,7 +5253,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires]
       [Offset [0 0.5155037 -1.1920929E-07]]
@@ -5268,7 +5268,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay TireWall] True None None]]]
+        [[Gameplay TireWall] False None None]]]
       [MountOpt [Some ^]]
       [Name Tires-0004]
       [Offset [0 0.5155037 -1.1920929E-07]]
