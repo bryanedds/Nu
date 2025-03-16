@@ -2026,6 +2026,14 @@ and [<ReferenceEquality>] World =
     member internal this.SubscriptionsImNui =
         this.WorldExtension.SubscriptionsImNui
 
+    /// Get the currently selected screen, if any.
+    member this.SelectedScreenOpt =
+        this.GameState.SelectedScreenOpt
+
+    /// Get the desired selected screen, if any.
+    member this.DesiredScreen =
+        this.GameState.DesiredScreen
+
     /// The viewport of the geometry buffer.
     member this.GeometryViewport =
         this.WorldExtension.GeometryViewport
@@ -2082,10 +2090,6 @@ and [<ReferenceEquality>] World =
         let eyeRotation = this.Eye3dRotation
         let eyeFieldOfView = this.Eye3dFieldOfView
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
-
-    /// Get the currently selected screen, if any.
-    member this.SelectedScreenOpt =
-        this.GameState.SelectedScreenOpt
 
 #if DEBUG
     member internal this.Choose () =
