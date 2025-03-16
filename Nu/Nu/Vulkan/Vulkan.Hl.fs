@@ -1047,7 +1047,6 @@ module Hl =
             | Some memoryType -> memoryType
             | None -> Log.fail "Failed to find suitable memory type!"
         
-        // TODO: DJL: fix the BadImageFormatException this triggers!
         static member private createInternal uploadEnabled bufferInfo vkg =
 
             // create buffer
@@ -1074,7 +1073,7 @@ module Hl =
             Vulkan.vkBindBufferMemory (vkg.Device, buffer, memory, 0UL) |> check
 
             // map memory if upload enabled
-            let mutable mapping = nullPtr
+            let mutable mapping = Unchecked.defaultof<nativeptr<voidptr>>
             if uploadEnabled then Vulkan.vkMapMemory (vkg.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mapping) |> check
             
             // make ManualAllocatedBuffer
