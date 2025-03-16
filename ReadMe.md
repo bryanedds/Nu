@@ -73,6 +73,8 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 
 **[@pauloud](https://github.com/pauloud)**
 
+**[@fswadling](https://github.com/fswadling)**
+
 **[@creynolds138](https://github.com/creynolds138)**
 
 **And a huge thank you to all of you who donate privately to keep this project going!**
