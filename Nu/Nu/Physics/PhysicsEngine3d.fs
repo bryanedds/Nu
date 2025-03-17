@@ -40,6 +40,10 @@ type private BodyFilterLambda (predicateBodyID, predicateBody) =
     override this.ShouldCollide bodyID = predicateBodyID bodyID
     override this.ShouldCollideLocked body = predicateBody body
 
+type private BodyDrawFilterLambda (predicateBody) =
+    inherit BodyDrawFilter ()
+    override this.ShouldDraw body = predicateBody body
+
 type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     { HashCode : int
       Vertices : Vector3 array }
@@ -498,16 +502,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
             physicsEngine.BodyUserData.Add (innerBodyID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
-
-            // set inner body physics properties
-            // NOTE: dummied out since I don't think any of this does anything.
-            //if bodyProperties.Enabled
-            //then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &innerBodyID
-            //else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &innerBodyID
-            //physicsEngine.PhysicsContext.BodyInterface.SetFriction (&innerBodyID, bodyProperties.Friction)
-            //physicsEngine.PhysicsContext.BodyInterface.SetRestitution (&innerBodyID, bodyProperties.Restitution)
-            //let motionQuality = match bodyProperties.CollisionDetection with Discontinuous -> MotionQuality.Discrete | Continuous -> MotionQuality.LinearCast
-            //physicsEngine.PhysicsContext.BodyInterface.SetMotionQuality (&innerBodyID, motionQuality)
 
             // validate contact with category and mask
             character.add_OnCharacterContactValidate (fun character character2 _ ->
@@ -1270,10 +1264,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
-        member physicsEngine.TryRender (renderSettings, rendererObj) =
+        member physicsEngine.TryRender (eyeCenter, renderSettings, rendererObj) =
             match (renderSettings, rendererObj) with
             | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
-                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer)
+                use drawBody = new BodyDrawFilterLambda (fun body -> body.Shape.Type <> ShapeType.HeightField && (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < 1024.0f (* 32^2 *))
+                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBody)
             | _ -> ()
 
         member physicsEngine.ClearInternal () =

@@ -2219,7 +2219,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // physics debug rendering
                     if PhysicsDebugRendering then
                         let mutable settings3d = DrawSettings ()
-                        settings3d.DrawBoundingBox <- true
+                        settings3d.DrawShapeWireframe <- true
                         World.imGuiRenderPhysics3d settings3d world
 
                     // user-defined viewport manipulation

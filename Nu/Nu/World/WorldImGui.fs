@@ -940,15 +940,17 @@ type RendererPhysics3d () =
 
     override this.DrawLine (from, to_, _) =
         let segment = Segment3 (from, to_)
-        if segment.Magnitude < 32.0f then segments.Add segment
+        if segment.MagnitudeSquared < 4096.0f (* 64^2 *) then segments.Add segment
 
     override this.DrawText3D (_, _, _, _) =
         () // TODO: implement.
 
     /// Actually render all the stored drawing commands.
-    member this.Flush world =
-        World.imGuiSegments3d segments 1.0f Color.Magenta world
+    member this.Flush (world : World) =
+        let segmentsNear = segments |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < 2304.0f (* 48^2 *))
+        World.imGuiSegments3d segmentsNear 1.0f Color.Magenta world
         segments.Clear ()
+        this.NextFrame ()
 
 [<AutoOpen>]
 module WorldImGui2 =
@@ -959,5 +961,5 @@ module WorldImGui2 =
         static member imGuiRenderPhysics3d (settings : DrawSettings) world =
             let physicsEngine3d = World.getPhysicsEngine3d world
             let renderer = World.getRendererPhysics3d world :?> RendererPhysics3d
-            physicsEngine3d.TryRender (settings, renderer)
+            physicsEngine3d.TryRender (world.Eye3dCenter,  settings, renderer)
             renderer.Flush world
