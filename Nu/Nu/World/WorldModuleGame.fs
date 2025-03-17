@@ -536,8 +536,10 @@ module WorldModuleGame =
                 value
 
         static member internal tryGetGameXtensionValue<'a> propertyName game world : 'a voption =
+            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
+            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getGameXtensionValue call.
             try World.getGameXtensionValue<'a> propertyName game world |> ValueSome
-            with _ -> ValueNone // NOTE: we're only using exceptions as flow-control in order to avoid code duplication and perf costs.
+            with _ -> ValueNone
 
         static member internal getGameProperty propertyName game world =
             match GameGetters.TryGetValue propertyName with

@@ -1886,8 +1886,10 @@ module WorldModuleEntity =
                     value
 
         static member internal tryGetEntityXtensionValue<'a> propertyName entity world : 'a voption =
+            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
+            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getEntityXtensionValue call.
             try World.getEntityXtensionValue<'a> propertyName entity world |> ValueSome
-            with _ -> ValueNone // NOTE: we're only using exceptions as flow-control in order to avoid code duplication and perf costs.
+            with _ -> ValueNone
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>
