@@ -2195,7 +2195,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let world =
             if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-                let io = ImGui.GetIO()
+                let io = ImGui.GetIO ()
                 let displaySize = io.DisplaySize.V2i
                 let windowPosition = ImGui.GetWindowPos().V2i
                 let windowSize = ImGui.GetWindowSize().V2i
@@ -2218,8 +2218,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                     // physics debug rendering
                     if PhysicsDebugRendering then
-                        let mutable settings3d = DrawSettings ()
-                        settings3d.DrawShapeWireframe <- true
+                        let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
                         World.imGuiRenderPhysics3d settings3d world
 
                     // user-defined viewport manipulation
