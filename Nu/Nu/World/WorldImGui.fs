@@ -936,20 +936,28 @@ module WorldImGui =
 type RendererPhysics3d () =
     inherit DebugRenderer ()
 
-    let segments = List ()
+    let segments = Dictionary<Color, Segment3 List> ()
 
-    override this.DrawLine (from, to_, _) =
-        let segment = Segment3 (from, to_)
-        if segment.MagnitudeSquared < 4096.0f (* 64^2 *) then segments.Add segment
+    override this.DrawLine (start, stop, color) =
+        let color = Color (color.ToVector4 ())
+        let segment = Segment3 (start, stop)
+        if segment.MagnitudeSquared < 4096.0f (* 64^2 *) then
+            match segments.TryGetValue color with
+            | (true, segmentList) -> segmentList.Add segment
+            | (false, _) ->
+                let segmentList = List ()
+                segmentList.Add segment
+                segments.Add (color, segmentList)
 
     override this.DrawText3D (_, _, _, _) =
         () // TODO: implement.
 
     /// Actually render all the stored drawing commands.
     member this.Flush (world : World) =
-        let segmentsNear = segments |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < 2304.0f (* 48^2 *))
-        World.imGuiSegments3d segmentsNear 1.0f Color.Magenta world
-        segments.Clear ()
+        for struct (color, segmentList) in segments.Pairs' do
+            let segmentsNear = segmentList |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < 2304.0f (* 48^2 *))
+            World.imGuiSegments3d segmentsNear 1.0f color world
+            segmentList.Clear ()
         this.NextFrame ()
 
 [<AutoOpen>]

@@ -1267,7 +1267,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         member physicsEngine.TryRender (eyeCenter, renderSettings, rendererObj) =
             match (renderSettings, rendererObj) with
             | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
-                use drawBody = new BodyDrawFilterLambda (fun body -> body.Shape.Type <> ShapeType.HeightField && (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < 1024.0f (* 32^2 *))
+                use drawBody =
+                    new BodyDrawFilterLambda (fun body ->
+                        body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's too expensive.
+                        (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < 1024.0f (* 32^2 *))
                 physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBody)
             | _ -> ()
 
