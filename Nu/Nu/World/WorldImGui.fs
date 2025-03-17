@@ -941,7 +941,10 @@ type RendererPhysics3d () =
     override this.DrawLine (start, stop, color) =
         let color = Color (color.ToVector4 ())
         let segment = Segment3 (start, stop)
-        if segment.MagnitudeSquared < 4096.0f (* 64^2 *) then
+        let magMaxSquared =
+            Constants.Render.Body3dSegmentRenderMagnitudeMax *
+            Constants.Render.Body3dSegmentRenderMagnitudeMax
+        if segment.MagnitudeSquared < magMaxSquared then
             match segments.TryGetValue color with
             | (true, segmentList) -> segmentList.Add segment
             | (false, _) ->
@@ -954,8 +957,11 @@ type RendererPhysics3d () =
 
     /// Actually render all the stored drawing commands.
     member this.Flush (world : World) =
+        let distanceMaxSquared =
+            Constants.Render.Body3dSegmentRenderDistanceMax *
+            Constants.Render.Body3dSegmentRenderDistanceMax
         for struct (color, segmentList) in segments.Pairs' do
-            let segmentsNear = segmentList |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < 2304.0f (* 48^2 *))
+            let segmentsNear = segmentList |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < distanceMaxSquared)
             World.imGuiSegments3d segmentsNear 1.0f color world
             segmentList.Clear ()
         this.NextFrame ()

@@ -193,6 +193,9 @@ module Render =
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
     let [<Literal>] FontSizeDefault = 14
+    let [<Literal>] Body3dSegmentRenderMagnitudeMax = 64.0f
+    let [<Literal>] Body3dSegmentRenderDistanceMax = 48.0f
+    let [<Literal>] Body3dRenderDistanceMax = 32.0f
 
 [<RequireQualifiedAccess>]
 module Audio =

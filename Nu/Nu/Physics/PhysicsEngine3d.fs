@@ -1267,12 +1267,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         member physicsEngine.TryRender (eyeCenter, renderSettings, rendererObj) =
             match (renderSettings, rendererObj) with
             | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
-                use drawBody =
+                let distanceMaxSquared =
+                    Constants.Render.Body3dRenderDistanceMax *
+                    Constants.Render.Body3dRenderDistanceMax
+                use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
                         body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's too expensive.
-                        (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < 1024.0f (* 32^2 *))
+                        (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < distanceMaxSquared)
                 //renderer.CameraPos <- eyeCenter // TODO: P1: once this is exposed from the wrapper, this should utilize LOD'ing from the renderer.
-                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBody)
+                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBodyFilter)
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
