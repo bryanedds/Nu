@@ -675,7 +675,7 @@ module WorldImGui =
                 (promoted, edited, animations)
             | :? CharacterProperties when
                 (match context.SelectedEntityOpt with
-                 | Some entity -> match entity.TryGet<Nu.BodyType> "BodyType" world with Some bodyType -> bodyType.IsCharacter | None -> false
+                 | Some entity -> match entity.TryGet<Nu.BodyType> "BodyType" world with Some bodyType -> not bodyType.IsCharacter | None -> false
                  | None -> false) ->
                 (false, false, value) // hides character properties unless is character body type
             | _ ->
