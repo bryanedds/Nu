@@ -77,6 +77,10 @@ module WorldScreenModule =
         member this.GetProperty propertyName world =
             World.getScreenProperty propertyName this world
 
+        /// Try to get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a option =
+            World.tryGetScreenXtensionValue<'a> propertyName this world
+
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getScreenXtensionValue<'a> propertyName this world

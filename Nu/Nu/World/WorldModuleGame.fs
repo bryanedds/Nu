@@ -535,6 +535,10 @@ module WorldModuleGame =
                 gameState.Xtension <- Xtension.attachProperty propertyName property gameState.Xtension
                 value
 
+        static member internal tryGetGameXtensionValue<'a> propertyName game world : 'a option =
+            try World.getGameXtensionValue<'a> propertyName game world |> Some
+            with _ -> None // NOTE: we're only using exceptions as flow-control in order to avoid code duplication and perf costs.
+
         static member internal getGameProperty propertyName game world =
             match GameGetters.TryGetValue propertyName with
             | (true, getter) -> getter game world

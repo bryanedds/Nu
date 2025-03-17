@@ -1885,6 +1885,10 @@ module WorldModuleEntity =
                     entityStateOpt.Xtension <- Xtension.attachProperty propertyName property entityStateOpt.Xtension
                     value
 
+        static member internal tryGetEntityXtensionValue<'a> propertyName entity world : 'a option =
+            try World.getEntityXtensionValue<'a> propertyName entity world |> Some
+            with _ -> None // NOTE: we're only using exceptions as flow-control in order to avoid code duplication and perf costs.
+
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>
             if World.tryGetEntityProperty (propertyName, entity, world, &property) then property

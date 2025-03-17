@@ -673,6 +673,11 @@ module WorldImGui =
                         name animations context
                 ImGui.PopID ()
                 (promoted, edited, animations)
+            | :? CharacterProperties when
+                (match context.SelectedEntityOpt with
+                 | Some entity -> match entity.TryGet<Nu.BodyType> "BodyType" world with Some bodyType -> bodyType.IsCharacter | None -> false
+                 | None -> false) ->
+                (false, false, value) // hides character properties unless is character body type
             | _ ->
                 let mutable combo = false
                 let (edited, value) =
