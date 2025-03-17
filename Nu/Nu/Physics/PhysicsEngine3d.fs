@@ -1271,6 +1271,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     new BodyDrawFilterLambda (fun body ->
                         body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's too expensive.
                         (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < 1024.0f (* 32^2 *))
+                //renderer.CameraPos <- eyeCenter // TODO: P1: once this is exposed from the wrapper, this should utilize LOD'ing from the renderer.
                 physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBody)
             | _ -> ()
 
