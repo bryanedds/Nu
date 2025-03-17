@@ -350,7 +350,7 @@ module WorldEntityModule =
             World.getEntityProperty propertyName this world
 
         /// Try to get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a option =
+        member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetEntityXtensionValue<'a> propertyName this world
 
         /// Get an xtension property value.
