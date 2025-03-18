@@ -1305,9 +1305,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     Constants.Render.Body3dRenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
-                        body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's too expensive.
+                        body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
                         (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < distanceMaxSquared)
-                //renderer.CameraPos <- eyeCenter // TODO: P1: once this is exposed from the wrapper, this should utilize LOD'ing from the renderer.
+                renderer.SetCameraPosition &eyeCenter
                 physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBodyFilter)
             | _ -> ()
 
