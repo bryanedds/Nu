@@ -354,8 +354,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                         let drawList = let range = drawData.CmdListsRange in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Hl.FifBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer
-                        Hl.FifBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer
+                        Hl.FifBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkg.VmaAllocator
+                        Hl.FifBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkg.VmaAllocator
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 

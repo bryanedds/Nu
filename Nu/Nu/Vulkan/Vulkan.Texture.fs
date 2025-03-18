@@ -370,7 +370,7 @@ module Texture =
             Hl.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkg.VmaAllocator
 
             // stage pixels
-            Hl.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer
+            Hl.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkg.VmaAllocator
 
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkg

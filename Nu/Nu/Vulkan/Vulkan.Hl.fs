@@ -1186,16 +1186,17 @@ module Hl =
         *)
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer =
-            if buffer.UploadEnabled
-            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.AllocationInfo.pMappedData
+        static member upload offset size ptr buffer allocator =
+            if buffer.UploadEnabled then
+                NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.AllocationInfo.pMappedData
+                Vma.vmaFlushAllocation (allocator, buffer.Allocation, uint64 offset, uint64 size) |> check // may be necessary as memory may not be host-coherent
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
-        static member uploadArray offset (array : 'a array) buffer =
+        static member uploadArray offset (array : 'a array) buffer allocator =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer
+            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer allocator
 
         /// Create an allocated staging buffer.
         static member createStaging size allocator =
@@ -1252,7 +1253,7 @@ module Hl =
         /// Create an allocated staging buffer and stage the data.
         static member stageData size ptr allocator =
             let buffer = AllocatedBuffer.createStaging size allocator
-            AllocatedBuffer.upload 0 size ptr buffer
+            AllocatedBuffer.upload 0 size ptr buffer allocator
             buffer
 
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
@@ -1351,12 +1352,12 @@ module Hl =
                 fifBuffer.BufferSizes.[CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
-        static member upload offset size ptr fifBuffer =
-            AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame]
+        static member upload offset size ptr fifBuffer allocator =
+            AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame] allocator
 
         /// Upload an array to FifBuffer.
-        static member uploadArray offset array fifBuffer =
-            AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame]
+        static member uploadArray offset array fifBuffer allocator =
+            AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame] allocator
 
         /// Create a staging FifBuffer.
         static member createStaging size allocator =
