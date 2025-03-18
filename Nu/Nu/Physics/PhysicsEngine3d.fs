@@ -276,13 +276,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
         PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
 
-    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (pointsShape : Nu.PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
-        assert (not pointsShape.Concave)
-        let unscaledPointsKey = UnscaledPointsKey.make pointsShape.Points
+    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
+        let unscaledPointsKey = UnscaledPointsKey.make points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
             | (true, unscaledVertices) -> (true, unscaledVertices)
-            | (false, _) -> (false, pointsShape.Points)
+            | (false, _) -> (false, points)
         let unscaledPoints =
             if not optimized then
                 let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: P1: attempt to find a way to remove dependency on Bullet here.
@@ -296,11 +295,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             else unscaledPoints
         let shapeSettings = new ConvexHullShapeSettings (unscaledPoints)
         let struct (center, rotation) =
-            match pointsShape.TransformOpt with
+            match transformOpt with
             | Some transform -> struct (transform.Translation, transform.Rotation)
             | None -> (v3Zero, quatIdentity)
         let (scale, shapeSettings) =
-            match pointsShape.TransformOpt with
+            match transformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
@@ -308,11 +307,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
-        let bodyShapeId = match pointsShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
+        let bodyShapeId = match propertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
         scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
-        let box = box3 v3Zero ((Box3.Enclose pointsShape.Points).Size * scale)
+        let box = box3 v3Zero ((Box3.Enclose points).Size * scale)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -321,20 +320,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (pointsShape : PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
         let triangles =
-            pointsShape.Points |>
+            vertices |>
             Seq.chunkBySize 3 |>
             Seq.map (fun t -> Triangle (&t.[0], &t.[1], &t.[2])) |>
             Array.ofSeq
         let shapeSettings = new MeshShapeSettings (triangles)
         shapeSettings.Sanitize ()
         let struct (center, rotation) =
-            match pointsShape.TransformOpt with
+            match transformOpt with
             | Some transform -> struct (transform.Translation, transform.Rotation)
             | None -> (v3Zero, quatIdentity)
         let (scale, shapeSettings) =
-            match pointsShape.TransformOpt with
+            match transformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
@@ -342,11 +341,40 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
-        let bodyShapeId = match pointsShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
+        let bodyShapeId = match propertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
         scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
-        let box = box3 v3Zero ((Box3.Enclose pointsShape.Points).Size * scale)
+        let box = box3 v3Zero ((Box3.Enclose vertices).Size * scale)
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
+        mass :: masses
+
+    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+        let bounds = Box3.Enclose points
+        let shapeSettings = new ConvexHullShapeSettings (bounds.Corners)
+        let struct (center, rotation) =
+            match transformOpt with
+            | Some transform -> struct (transform.Translation, transform.Rotation)
+            | None -> (v3Zero, quatIdentity)
+        let (scale, shapeSettings) =
+            match transformOpt with
+            | Some transform ->
+                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
+            | None when bodyProperties.Scale <> v3One ->
+                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
+            | None -> (v3One, shapeSettings)
+        let bodyShapeId = match propertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
+        scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
+        // NOTE: we approximate volume with the volume of a bounding box.
+        // TODO: use a more accurate volume calculation.
+        let box = box3 v3Zero ((Box3.Enclose points).Size * scale)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -356,13 +384,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachPointsShape (bodyProperties : BodyProperties) (pointsShape : PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
-        if pointsShape.Concave
-        then PhysicsEngine3d.attachBodyBvhTriangles bodyProperties pointsShape scShapeSettings masses
-        else PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        match pointsShape.Profile with
+        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses physicsEngine
+        | Concave ->
+            Log.warnOnce "Creating body bvh triangles with PointsShape; PointsShape generally specifies individual points rather than triangulated vertices, so unintended behavior may arise."
+            PhysicsEngine3d.attachBodyBvhTriangles bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses
+        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses
 
     static member private attachGeometryShape bodyProperties (geometryShape : GeometryShape) scShapeSettings masses physicsEngine =
-        let pointsShape = { Points = geometryShape.Vertices; Concave = geometryShape.Concave; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
-        PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        match geometryShape.Profile with
+        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses physicsEngine
+        | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
+        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
 
     // TODO: add some error logging.
     static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
@@ -378,13 +411,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             (transform.Rotation * surface.SurfaceMatrix.Rotation)
                             (transform.Scale.Transform surface.SurfaceMatrix)
                     | None -> Affine.makeFromMatrix surface.SurfaceMatrix
-                let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Concave = staticModelShape.Concave; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
+                let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Profile = staticModelShape.Profile; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
                 match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
                 | ValueSome staticModel ->
                     if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                         let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
-                        let geometryShape = { Vertices = geometry.Vertices; Concave = staticModelSurfaceShape.Concave; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                        let geometryShape = { Vertices = geometry.Vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                         PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
@@ -400,7 +433,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
-                let geometryShape = { Vertices = geometry.Vertices; Concave = staticModelSurfaceShape.Concave; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                let geometryShape = { Vertices = geometry.Vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                 PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
             else masses
         | ValueNone -> masses

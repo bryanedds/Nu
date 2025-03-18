@@ -220,53 +220,76 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyConvexHull bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
-        assert (not pointsShape.Concave)
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
-        let vertices = Array.zeroCreate pointsShape.Points.Length
-        for i in 0 .. dec pointsShape.Points.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (pointsShape.Points.[i].Transform transform)
+    static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
+        assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
+        let points' = Array.zeroCreate points.Length
+        for i in 0 .. dec points.Length do
+            points'.[i] <- PhysicsEngine2d.toPhysicsV2 (points.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass ->
-                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                let box = points' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
-        let bodyShape = body.CreatePolygon (Common.Vertices vertices, density)
+        let bodyShape = body.CreatePolygon (Common.Vertices points', density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt bodyShape
+              BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         bodyShape
 
-    static member private attachBodyTriangles bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
-        let vertices = Array.zeroCreate pointsShape.Points.Length
-        for i in 0 .. dec pointsShape.Points.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (pointsShape.Points.[i].Transform transform)
+    static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt propertiesOpt (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
+        let vertices' = Array.zeroCreate vertices.Length
+        for i in 0 .. dec vertices.Length do
+            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (vertices.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass ->
-                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                let box = vertices' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
-        let triangles = vertices |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
+        let triangles = vertices' |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
         let bodyShapes = body.CreateCompoundPolygon (triangles, density)
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                  BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt bodyShape
+                  BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
+    static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
+        let bounds = points |> Array.map _.V2 |> Box2.Enclose
+        let corners = bounds.Corners
+        let corners' = Array.zeroCreate points.Length
+        for i in 0 .. dec corners.Length do
+            corners'.[i] <- PhysicsEngine2d.toPhysicsV2 (corners.[i].V3.Transform transform)
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass -> mass / (bounds.Width * bounds.Height)
+        let bodyShape = body.CreatePolygon (bounds.Corners |> Array.map (fun v -> Common.Vector2 (v.X, v.Y)) |> Common.Vertices, density)
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
+        bodyShape
+
     static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
-        if pointsShape.Concave
-        then PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape body
-        else PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
+        match pointsShape.Profile with
+        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
+        | Concave ->
+            Log.warnOnce "Creating a compound polygon with PointsShape; PointsShape generally specifies individual points rather than triangulated vertices, so unintended behavior may arise."
+            PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
+        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
 
     static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) body =
-        let pointsShape = { Points = geometryShape.Vertices; Concave = geometryShape.Concave; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
-        PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body
+        match geometryShape.Profile with
+        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
+        | Concave -> PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
+        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -595,6 +618,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     /// Make a physics engine.
     static member make gravity =
+        Settings.UseConvexHullPolygons <- true
         let integrationMessages = List ()
         let penetrationHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages

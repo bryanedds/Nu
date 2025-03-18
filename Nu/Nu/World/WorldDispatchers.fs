@@ -467,7 +467,7 @@ type SensorModelDispatcher () =
                 if staticModelShape.StaticModel <> staticModel then
                     let staticModelShape =
                         { StaticModel = staticModel
-                          Concave = staticModelShape.Concave
+                          Profile = staticModelShape.Profile
                           TransformOpt = staticModelShape.TransformOpt
                           PropertiesOpt = staticModelShape.PropertiesOpt }
                     entity.SetBodyShape (StaticModelShape staticModelShape) world
@@ -481,8 +481,9 @@ type SensorModelDispatcher () =
 
     static member Properties =
         [define Entity.Visible false
-         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Concave = false; TransformOpt = None; PropertiesOpt = None })
-         define Entity.Sensor true]
+         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Sensor true
+         define Entity.NavShape EmptyNavShape]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -503,7 +504,7 @@ type RigidModelDispatcher () =
                 if staticModelShape.StaticModel <> staticModel then
                     let staticModelShape =
                         { StaticModel = staticModel
-                          Concave = staticModelShape.Concave
+                          Profile = staticModelShape.Profile
                           TransformOpt = staticModelShape.TransformOpt
                           PropertiesOpt = staticModelShape.PropertiesOpt }
                     entity.SetBodyShape (StaticModelShape staticModelShape) world
@@ -525,7 +526,8 @@ type RigidModelDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Concave = false; TransformOpt = None; PropertiesOpt = None })]
+        [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.NavShape StaticModelNavShape]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -556,7 +558,7 @@ type SensorModelSurfaceDispatcher () =
                     let staticModelShape =
                         { StaticModel = staticModel
                           SurfaceIndex = surfaceIndex
-                          Concave = staticModelSurfaceShape.Concave
+                          Profile = staticModelSurfaceShape.Profile
                           TransformOpt = staticModelSurfaceShape.TransformOpt
                           PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                     entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
@@ -570,8 +572,9 @@ type SensorModelSurfaceDispatcher () =
 
     static member Properties =
         [define Entity.Visible false
-         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Concave = false; TransformOpt = None; PropertiesOpt = None })
-         define Entity.Sensor true]
+         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Sensor true
+         define Entity.NavShape EmptyNavShape]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -594,7 +597,7 @@ type RigidModelSurfaceDispatcher () =
                     let staticModelShape =
                         { StaticModel = staticModel
                           SurfaceIndex = surfaceIndex
-                          Concave = staticModelSurfaceShape.Concave
+                          Profile = staticModelSurfaceShape.Profile
                           TransformOpt = staticModelSurfaceShape.TransformOpt
                           PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                     entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
@@ -608,7 +611,8 @@ type RigidModelSurfaceDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Concave = false; TransformOpt = None; PropertiesOpt = None })]
+        [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.NavShape StaticModelSurfaceNavShape]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world

@@ -662,6 +662,7 @@ module Box2 =
         member this.TopRight = v2 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y)
         member this.BottomLeft = this.Min
         member this.BottomRight = v2 (this.Min.X + this.Size.X) this.Min.Y
+        member this.Corners = [|this.TopLeft; this.TopRight; this.BottomLeft; this.BottomRight|] // TODO: move this into C# like Box3.
         member this.IsEmpty = this.Equals Box2.Zero
         member this.Translate translation = Box2 (this.Min + translation, this.Size)
         member this.WithMin min = Box2 (min, this.Size)

@@ -260,13 +260,15 @@ type Substance =
     | Density of Density : single
 
 /// Describe the form of collision detection to use.
-[<Syntax
-    ("", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax)>]
 type CollisionDetection =
     | Discontinuous
     | Continuous
+
+/// Describes the physical profile of a complex body.
+type [<Struct>] Profile =
+    | Convex
+    | Concave
+    | Bounds
 
 /// The shape of a physics body box.
 type BoxShape =
@@ -299,21 +301,21 @@ type BoxRoundedShape =
 /// The shape of a physics body defined by body-relative points.
 type PointsShape =
     { Points : Vector3 array
-      Concave : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of triangle faces.
 type GeometryShape =
     { Vertices : Vector3 array
-      Concave : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of a static model.
 type StaticModelShape =
     { StaticModel : StaticModel AssetTag
-      Concave : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -321,7 +323,7 @@ type StaticModelShape =
 type StaticModelSurfaceShape =
     { StaticModel : StaticModel AssetTag
       SurfaceIndex : int
-      Concave : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
