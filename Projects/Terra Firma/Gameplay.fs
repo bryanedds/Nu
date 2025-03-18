@@ -95,14 +95,14 @@ type GameplayDispatcher () =
             let shadowResolution = Viewport.getShadowTextureBufferResolution 0 world.GeometryViewport
             let shadowTexelSize = shadowWidth / single shadowResolution.X // assuming square, of course
             let position = Simulants.GameplayPlayer.GetPositionInterpolated world
-            let positionShadow = position.Transform shadowView + v3Up * 12.0f // position of player + offset in shadow space
+            let positionShadow = position.Transform shadowView
             let positionSnapped =
                 v3
                     (floor (positionShadow.X / shadowTexelSize) * shadowTexelSize)
                     (floor (positionShadow.Y / shadowTexelSize) * shadowTexelSize)
                     (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
             let position = positionSnapped.Transform shadowViewInverse
-            let world = sun.SetPosition position world
+            let world = sun.SetPositionLocal position world
 
             // update eye to look at player while game is advancing
             let world =
