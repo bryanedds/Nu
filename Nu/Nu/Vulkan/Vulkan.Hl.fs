@@ -1026,13 +1026,15 @@ module Hl =
     type ManualAllocatedBuffer =
         { Buffer : VkBuffer 
           Memory : VkDeviceMemory
-          Mapping : nativeptr<voidptr> }
+          Mapping : voidptr }
 
         static member private findMemoryType typeFilter properties physicalDevice =
             
             // get memory types
             let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
             Vulkan.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
+            
+            // TODO: DJL: fix this.
             let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
 
             // try find suitable memory type
@@ -1073,8 +1075,9 @@ module Hl =
             Vulkan.vkBindBufferMemory (vkg.Device, buffer, memory, 0UL) |> check
 
             // map memory if upload enabled
-            let mutable mapping = Unchecked.defaultof<nativeptr<voidptr>>
-            if uploadEnabled then Vulkan.vkMapMemory (vkg.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mapping) |> check
+            let mappingPtr = NativePtr.stackalloc<voidptr> 1 // must be allocated manually because managed allocation doesn't work
+            if uploadEnabled then Vulkan.vkMapMemory (vkg.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mappingPtr) |> check
+            let mapping = NativePtr.read mappingPtr // TODO: DJL: find out if this needs to be manually freed.
             
             // make ManualAllocatedBuffer
             let manualAllocatedBuffer = 
@@ -1087,8 +1090,8 @@ module Hl =
 
         /// Upload data to buffer if upload is enabled.
         static member upload offset size ptr buffer =
-            if buffer.Mapping <> nullPtr
-            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) (NativePtr.toVoidPtr buffer.Mapping)
+            if buffer.Mapping <> Unchecked.defaultof<voidptr>
+            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.Mapping
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
@@ -1108,7 +1111,7 @@ module Hl =
         
         /// Destroy a ManualAllocatedBuffer.
         static member destroy buffer device =
-            if buffer.Mapping <> nullPtr then Vulkan.vkUnmapMemory (device, buffer.Memory)
+            if buffer.Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (device, buffer.Memory)
             Vulkan.vkDestroyBuffer (device, buffer.Buffer, nullPtr)
             Vulkan.vkFreeMemory (device, buffer.Memory, nullPtr)
     
