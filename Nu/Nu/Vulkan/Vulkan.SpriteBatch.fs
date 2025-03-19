@@ -77,12 +77,12 @@ module SpriteBatch =
         let viewProjectionUniform = Hl.FifBuffer.createUniform (sizeof<single> * 16) vkg
 
         // write sprite batch descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 perimetersUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 pivotsUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 2 0 rotationsUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 texCoordsesUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 4 0 colorsUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 5 0 viewProjectionUniform pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 perimetersUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 pivotsUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 2 0 rotationsUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 texCoordsesUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 4 0 colorsUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 5 0 viewProjectionUniform.PerFrameBuffers pipeline vkg.Device
         
         // fin
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline)

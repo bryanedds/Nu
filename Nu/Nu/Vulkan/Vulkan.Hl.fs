@@ -1089,16 +1089,16 @@ module Hl =
             manualAllocatedBuffer
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer =
+        static member upload offset size ptr buffer _ =
             if buffer.Mapping <> Unchecked.defaultof<voidptr>
             then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.Mapping
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
-        static member uploadArray offset (array : 'a array) buffer =
+        static member uploadArray offset (array : 'a array) buffer vkg =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            ManualAllocatedBuffer.upload offset size arrayPin.NativeInt buffer
+            ManualAllocatedBuffer.upload offset size arrayPin.NativeInt buffer vkg
         
         /// Create a manually allocated uniform buffer.
         static member createUniform size vkg =
@@ -1110,10 +1110,61 @@ module Hl =
             allocatedBuffer
         
         /// Destroy a ManualAllocatedBuffer.
-        static member destroy buffer device =
-            if buffer.Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (device, buffer.Memory)
-            Vulkan.vkDestroyBuffer (device, buffer.Buffer, nullPtr)
-            Vulkan.vkFreeMemory (device, buffer.Memory, nullPtr)
+        static member destroy buffer vkg =
+            if buffer.Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkg.Device, buffer.Memory)
+            Vulkan.vkDestroyBuffer (vkg.Device, buffer.Buffer, nullPtr)
+            Vulkan.vkFreeMemory (vkg.Device, buffer.Memory, nullPtr)
+    
+    /// A set of upload enabled manually allocated buffers for each frame in flight.
+    type ManualFifBuffer =
+        private { ManualAllocatedBuffers : ManualAllocatedBuffer array
+                  BufferSizes : int array
+                  BufferUsage : VkBufferUsageFlags }
+
+        /// The VkBuffer for the current frame.
+        member this.Buffer = this.ManualAllocatedBuffers.[CurrentFrame].Buffer
+
+        /// The VkBuffer for each frame in flight.
+        member this.PerFrameBuffers = Array.map (fun manualAllocatedBuffer -> manualAllocatedBuffer.Buffer) this.ManualAllocatedBuffers
+
+        /// Create a ManualAllocatedBuffer based on usage.
+        static member private createBuffer size usage vkg =
+            match usage with
+            | Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT -> ManualAllocatedBuffer.createUniform size vkg
+            | _ -> Log.fail "Invalid VkBufferUsageFlags value for ManualFifBuffer."
+        
+        /// Create a ManualFifBuffer.
+        static member private createInternal size (usage : VkBufferUsageFlags) vkg =
+            
+            // create buffers and sizes
+            let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
+            let manualAllocatedBuffers = Array.zeroCreate<ManualAllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec manualAllocatedBuffers.Length do manualAllocatedBuffers.[i] <- ManualFifBuffer.createBuffer size usage vkg
+
+            // make FifBuffer
+            let manualFifBuffer =
+                { ManualAllocatedBuffers = manualAllocatedBuffers
+                  BufferSizes = bufferSizes
+                  BufferUsage = usage }
+
+            // fin
+            manualFifBuffer
+        
+        /// Upload data to ManualFifBuffer.
+        static member upload offset size ptr manualFifBuffer vkg =
+            ManualAllocatedBuffer.upload offset size ptr manualFifBuffer.ManualAllocatedBuffers.[CurrentFrame] vkg
+
+        /// Upload an array to ManualFifBuffer.
+        static member uploadArray offset array manualFifBuffer vkg =
+            ManualAllocatedBuffer.uploadArray offset array manualFifBuffer.ManualAllocatedBuffers.[CurrentFrame] vkg
+
+        /// Create a uniform ManualFifBuffer.
+        static member createUniform size vkg =
+            ManualFifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT vkg
+
+        /// Destroy ManualFifBuffer.
+        static member destroy manualFifBuffer vkg =
+            for i in 0 .. dec manualFifBuffer.ManualAllocatedBuffers.Length do ManualAllocatedBuffer.destroy manualFifBuffer.ManualAllocatedBuffers.[i] vkg
     
     /// Abstraction for vma allocated buffer.
     type AllocatedBuffer =

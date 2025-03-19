@@ -32,9 +32,9 @@ module Sprite =
         let colorUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg
 
         // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.PerFrameBuffers pipeline vkg.Device
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
