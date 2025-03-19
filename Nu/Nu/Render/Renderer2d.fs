@@ -835,17 +835,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         member renderer.CleanUp () =
             
             // destroy Vulkan resources
-            let device = renderer.VulkanGlobal.Device
-            let allocator = renderer.VulkanGlobal.VmaAllocator
+            let vkg = renderer.VulkanGlobal
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Texture.DynamicTexture.destroy renderer.TextTexture renderer.VulkanGlobal
-            Pipeline.Pipeline.destroy pipeline device
-            Hl.FifBuffer.destroy modelViewProjectionUniform allocator
-            Hl.FifBuffer.destroy texCoords4Uniform allocator
-            Hl.FifBuffer.destroy colorUniform allocator
-            Hl.AllocatedBuffer.destroy vertices allocator
-            Hl.AllocatedBuffer.destroy indices allocator
+            Texture.DynamicTexture.destroy renderer.TextTexture vkg
+            Pipeline.Pipeline.destroy pipeline vkg.Device
+            Hl.FifBuffer.destroy modelViewProjectionUniform vkg
+            Hl.FifBuffer.destroy texCoords4Uniform vkg
+            Hl.FifBuffer.destroy colorUniform vkg
+            Hl.AllocatedBuffer.destroy vertices vkg
+            Hl.AllocatedBuffer.destroy indices vkg
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

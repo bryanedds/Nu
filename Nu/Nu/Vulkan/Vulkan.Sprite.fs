@@ -27,14 +27,14 @@ module Sprite =
                 [||] vkg.RenderPass vkg.Device
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Hl.FifBuffer.createUniform (sizeof<single> * 16) vkg.VmaAllocator
-        let texCoords4Uniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg.VmaAllocator
-        let colorUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg.VmaAllocator
+        let modelViewProjectionUniform = Hl.FifBuffer.createUniform (sizeof<single> * 16) vkg
+        let texCoords4Uniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg
+        let colorUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg
 
         // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.PerFrameBuffers pipeline vkg.Device
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -121,9 +121,9 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        Hl.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkg.VmaAllocator
-        Hl.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkg.VmaAllocator
-        Hl.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkg.VmaAllocator
+        Hl.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkg
+        Hl.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkg
+        Hl.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkg
 
         // write texture to descriptor set
         Pipeline.Pipeline.writeDescriptorTextureSingleFrame 2 0 texture pipeline vkg.Device

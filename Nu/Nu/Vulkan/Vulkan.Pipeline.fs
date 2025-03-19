@@ -203,9 +203,8 @@ module Pipeline =
             Map.find blend pipeline.VkPipelines
         
         /// Write a uniform to the descriptor set for each frame in flight.
-        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.FifBuffer) (pipeline : Pipeline) device =
+        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffers : VkBuffer array) (pipeline : Pipeline) device =
 
-            let buffers = buffer.PerFrameBuffers
             for i in 0 .. dec pipeline.DescriptorSets.Length do
             
                 // buffer info
