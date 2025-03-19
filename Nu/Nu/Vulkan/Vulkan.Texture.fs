@@ -304,9 +304,9 @@ module Texture =
             match pixelsOpt with
             | Some pixels ->
                 let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
-                let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg.VmaAllocator
+                let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg
                 VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
-                Hl.AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
+                Hl.AllocatedBuffer.destroy stagingBuffer vkg
             | None -> ()
 
             // make VulkanTexture
@@ -367,10 +367,10 @@ module Texture =
             // enlarge staging buffer size if needed
             dynamicTexture.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             while dynamicTexture.ImageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
-            Hl.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkg.VmaAllocator
+            Hl.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkg
 
             // stage pixels
-            Hl.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkg.VmaAllocator
+            Hl.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkg
 
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkg
@@ -410,7 +410,7 @@ module Texture =
             let extent = VkExtent3D (32, 32, 1)
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let vulkanTextures = [|VulkanTexture.createEmpty vkg; VulkanTexture.createEmpty vkg|]
-            let stagingBuffers = [|Hl.FifBuffer.createStaging sbSize vkg.VmaAllocator; Hl.FifBuffer.createStaging sbSize vkg.VmaAllocator|]
+            let stagingBuffers = [|Hl.FifBuffer.createStaging sbSize vkg; Hl.FifBuffer.createStaging sbSize vkg|]
 
             // make DynamicTexture
             let dynamicTexture =
@@ -427,8 +427,8 @@ module Texture =
         static member destroy dynamicTexture vkg =
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[0] vkg
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[1] vkg
-            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[0] vkg.VmaAllocator
-            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[1] vkg.VmaAllocator
+            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[0] vkg
+            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[1] vkg
     
     /// Describes data loaded from a texture.
     type TextureData =

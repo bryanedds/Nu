@@ -317,8 +317,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- Hl.FifBuffer.createVertex vertexBufferSize vkg.VmaAllocator
-            indexBuffer <- Hl.FifBuffer.createIndex indexBufferSize vkg.VmaAllocator
+            vertexBuffer <- Hl.FifBuffer.createVertex vertexBufferSize vkg
+            indexBuffer <- Hl.FifBuffer.createIndex indexBufferSize vkg
         
         member this.Render (drawData : ImDrawDataPtr) =
             
@@ -344,8 +344,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                     // enlarge buffer sizes if needed
                     while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Hl.FifBuffer.updateSize vertexBufferSize vertexBuffer vkg.VmaAllocator
-                    Hl.FifBuffer.updateSize indexBufferSize indexBuffer vkg.VmaAllocator
+                    Hl.FifBuffer.updateSize vertexBufferSize vertexBuffer vkg
+                    Hl.FifBuffer.updateSize indexBufferSize indexBuffer vkg
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -354,8 +354,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                         let drawList = let range = drawData.CmdListsRange in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Hl.FifBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkg.VmaAllocator
-                        Hl.FifBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkg.VmaAllocator
+                        Hl.FifBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkg
+                        Hl.FifBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkg
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 
@@ -445,8 +445,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                 Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
         
         member this.CleanUp () =
-            Hl.FifBuffer.destroy indexBuffer vkg.VmaAllocator
-            Hl.FifBuffer.destroy vertexBuffer vkg.VmaAllocator
+            Hl.FifBuffer.destroy indexBuffer vkg
+            Hl.FifBuffer.destroy vertexBuffer vkg
             Texture.VulkanTexture.destroy fontTexture vkg
             Pipeline.Pipeline.destroy pipeline vkg.Device
 

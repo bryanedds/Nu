@@ -1122,7 +1122,7 @@ module Hl =
           AllocationInfo : VmaAllocationInfo
           UploadEnabled : bool }
 
-        static member private createInternal uploadEnabled bufferInfo allocator =
+        static member private createInternal uploadEnabled bufferInfo vkg =
 
             // allocation create info
             let mutable info = VmaAllocationCreateInfo ()
@@ -1133,7 +1133,7 @@ module Hl =
             let mutable buffer = Unchecked.defaultof<VkBuffer>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
             let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-            Vma.vmaCreateBuffer (allocator, &bufferInfo, &info, &buffer, &allocation, asPointer &allocationInfo) |> check
+            Vma.vmaCreateBuffer (vkg.VmaAllocator, &bufferInfo, &info, &buffer, &allocation, asPointer &allocationInfo) |> check
 
             // make AllocatedBuffer
             let allocatedBuffer =
@@ -1189,29 +1189,29 @@ module Hl =
         *)
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer allocator =
+        static member upload offset size ptr buffer vkg =
             if buffer.UploadEnabled then
                 NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.AllocationInfo.pMappedData
-                Vma.vmaFlushAllocation (allocator, buffer.Allocation, uint64 offset, uint64 size) |> check // may be necessary as memory may not be host-coherent
+                Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 offset, uint64 size) |> check // may be necessary as memory may not be host-coherent
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
-        static member uploadArray offset (array : 'a array) buffer allocator =
+        static member uploadArray offset (array : 'a array) buffer vkg =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer allocator
+            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer vkg
 
         /// Create an allocated staging buffer.
-        static member createStaging size allocator =
+        static member createStaging size vkg =
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
             info.usage <- Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal true info allocator
+            let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
             allocatedBuffer
 
         /// Create an allocated vertex buffer.
-        static member createVertex uploadEnabled size allocator =
+        static member createVertex uploadEnabled size vkg =
 
             // data can and must be transferred from a staging buffer if upload is not enabled
             let usage =
@@ -1224,11 +1224,11 @@ module Hl =
             info.size <- uint64 size
             info.usage <- usage
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info vkg
             allocatedBuffer
 
         /// Create an allocated index buffer.
-        static member createIndex uploadEnabled size allocator =
+        static member createIndex uploadEnabled size vkg =
 
             // data can and must be transferred from a staging buffer if upload is not enabled
             let usage =
@@ -1241,38 +1241,38 @@ module Hl =
             info.size <- uint64 size
             info.usage <- usage
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info vkg
             allocatedBuffer
 
         /// Create an allocated uniform buffer.
-        static member createUniform size allocator =
+        static member createUniform size vkg =
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
             info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal true info allocator
+            let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
             allocatedBuffer
 
         /// Create an allocated staging buffer and stage the data.
-        static member stageData size ptr allocator =
-            let buffer = AllocatedBuffer.createStaging size allocator
-            AllocatedBuffer.upload 0 size ptr buffer allocator
+        static member stageData size ptr vkg =
+            let buffer = AllocatedBuffer.createStaging size vkg
+            AllocatedBuffer.upload 0 size ptr buffer vkg
             buffer
 
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size ptr vkg =
-            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg.VmaAllocator
-            let vertexBuffer = AllocatedBuffer.createVertex false size vkg.VmaAllocator
+            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg
+            let vertexBuffer = AllocatedBuffer.createVertex false size vkg
             AllocatedBuffer.copyData size stagingBuffer vertexBuffer vkg
-            AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
+            AllocatedBuffer.destroy stagingBuffer vkg
             vertexBuffer
 
         /// Create an allocated index buffer with data uploaded via staging buffer.
         static member createIndexStaged size ptr vkg =
-            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg.VmaAllocator
-            let indexBuffer = AllocatedBuffer.createIndex false size vkg.VmaAllocator
+            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg
+            let indexBuffer = AllocatedBuffer.createIndex false size vkg
             AllocatedBuffer.copyData size stagingBuffer indexBuffer vkg
-            AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
+            AllocatedBuffer.destroy stagingBuffer vkg
             indexBuffer
 
         /// Create an allocated vertex buffer with data uploaded via staging buffer from an array.
@@ -1288,8 +1288,8 @@ module Hl =
             AllocatedBuffer.createIndexStaged size arrayPin.NativeInt vkg
         
         /// Destroy buffer and allocation.
-        static member destroy buffer allocator =
-            Vma.vmaDestroyBuffer (allocator, buffer.Buffer, buffer.Allocation)
+        static member destroy buffer vkg =
+            Vma.vmaDestroyBuffer (vkg.VmaAllocator, buffer.Buffer, buffer.Allocation)
 
     /// Abstraction for vma allocated image.
     type AllocatedImage =
@@ -1322,21 +1322,21 @@ module Hl =
         member this.PerFrameBuffers = Array.map (fun allocatedBuffer -> allocatedBuffer.Buffer) this.AllocatedBuffers
 
         /// Create an AllocatedBuffer based on usage.
-        static member private createBuffer size usage allocator =
+        static member private createBuffer size usage vkg =
             match usage with
-            | Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT -> AllocatedBuffer.createStaging size allocator
-            | Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT -> AllocatedBuffer.createVertex true size allocator
-            | Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT -> AllocatedBuffer.createIndex true size allocator
-            | Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT -> AllocatedBuffer.createUniform size allocator
+            | Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT -> AllocatedBuffer.createStaging size vkg
+            | Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT -> AllocatedBuffer.createVertex true size vkg
+            | Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT -> AllocatedBuffer.createIndex true size vkg
+            | Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT -> AllocatedBuffer.createUniform size vkg
             | _ -> Log.fail "Invalid VkBufferUsageFlags value for FifBuffer."
         
         /// Create a FifBuffer.
-        static member private createInternal size (usage : VkBufferUsageFlags) allocator =
+        static member private createInternal size (usage : VkBufferUsageFlags) vkg =
             
             // create buffers and sizes
             let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
             let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- FifBuffer.createBuffer size usage allocator
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- FifBuffer.createBuffer size usage vkg
 
             // make FifBuffer
             let fifBuffer =
@@ -1348,36 +1348,36 @@ module Hl =
             fifBuffer
         
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-        static member updateSize size fifBuffer allocator =
+        static member updateSize size fifBuffer vkg =
             if size > fifBuffer.BufferSizes.[CurrentFrame] then
-                AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[CurrentFrame] allocator
-                fifBuffer.AllocatedBuffers.[CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferUsage allocator
+                AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
+                fifBuffer.AllocatedBuffers.[CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferUsage vkg
                 fifBuffer.BufferSizes.[CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
-        static member upload offset size ptr fifBuffer allocator =
-            AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame] allocator
+        static member upload offset size ptr fifBuffer vkg =
+            AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
 
         /// Upload an array to FifBuffer.
-        static member uploadArray offset array fifBuffer allocator =
-            AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame] allocator
+        static member uploadArray offset array fifBuffer vkg =
+            AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
 
         /// Create a staging FifBuffer.
-        static member createStaging size allocator =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT allocator
+        static member createStaging size vkg =
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT vkg
         
         /// Create a vertex FifBuffer.
-        static member createVertex size allocator =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT allocator
+        static member createVertex size vkg =
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT vkg
 
         /// Create an index FifBuffer.
-        static member createIndex size allocator =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT allocator
+        static member createIndex size vkg =
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT vkg
 
         /// Create a uniform FifBuffer.
-        static member createUniform size allocator =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT allocator
+        static member createUniform size vkg =
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT vkg
 
         /// Destroy FifBuffer.
-        static member destroy fifBuffer allocator =
-            for i in 0 .. dec fifBuffer.AllocatedBuffers.Length do AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[i] allocator
+        static member destroy fifBuffer vkg =
+            for i in 0 .. dec fifBuffer.AllocatedBuffers.Length do AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[i] vkg
