@@ -234,7 +234,7 @@ module Address =
         Address.ntoa<'a> name
 
     /// Convert a weakly-typed Address interface into a strongly-typed address.
-    let makeFromInterface address : 'a Address =
+    let makeFromInterface<'a> address : 'a Address =
         Address.itoa<'a> address
 
     /// Anonymize an address.

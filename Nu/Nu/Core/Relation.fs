@@ -98,7 +98,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
         Relation.makeFromArray<'a> names
 
     /// Hash a Relation.
-    static member hash (relation : 'a Relation) =
+    static member hash<'a> (relation : 'a Relation) =
         Array.hash relation.Links
 
     /// Equate Relations.
@@ -188,22 +188,22 @@ module Relation =
 
     /// Make a relation from a '/' delimited string.
     let makeFromString<'a> relationStr =
-        Relation<'a>.makeFromString relationStr
+        Relation<'a>.makeFromString<'a> relationStr
 
     /// Make a current relation.
-    let makeCurrent () =
-        Relation.makeFromArray [|Constants.Relation.CurrentName|]
+    let makeCurrent<'a> () =
+        Relation.makeFromArray<'a> [|Constants.Relation.CurrentName|]
 
     /// Make a parent relation.
-    let makeParent () =
-        Relation.makeFromArray [|Constants.Relation.ParentName|]
+    let makeParent<'a> () =
+        Relation.makeFromArray<'a> [|Constants.Relation.ParentName|]
 
     /// Test relation equality.
     let equals<'a> (left : 'a Relation) (right : 'a Relation) =
         Relation<'a>.equals<'a> left right
 
     /// Get the links of a relation.
-    let getLinks relation =
+    let getLinks<'a> (relation : 'a Relation) =
         relation.Links
 
     /// Change the type of an address.
