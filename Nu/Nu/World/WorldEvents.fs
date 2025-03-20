@@ -199,4 +199,5 @@ module Events =
     let GamepadButtonUpEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Up"; "Event"|]
     let TextInputEvent = stoa<TextInputData> "TextInput/Event"
     let AssetsReloadEvent = stoa<unit> "Assets/Reload/Event"
+    let CodeReloadEvent = stoa<unit> "Code/Reload/Event"
     let ExitRequestEvent = stoa<unit> "ExitRequest/Event"
