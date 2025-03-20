@@ -196,7 +196,7 @@ module Texture =
             hash this.ImageView.Handle
 
         /// Create the image.
-        static member private createImage format extent allocator =
+        static member private createImage format extent vkg =
             let mutable info = VkImageCreateInfo ()
             info.imageType <- Vulkan.VK_IMAGE_TYPE_2D
             info.format <- format
@@ -208,7 +208,7 @@ module Texture =
             info.usage <- Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             info.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            let allocatedImage = Hl.AllocatedImage.create info allocator
+            let allocatedImage = Hl.AllocatedImage.create info vkg
             allocatedImage
         
         /// Create the sampler.
@@ -296,7 +296,7 @@ module Texture =
 
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            let image = VulkanTexture.createImage format extent vkg.VmaAllocator
+            let image = VulkanTexture.createImage format extent vkg
             let imageView = Hl.createImageView format 1u image.Image vkg.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter vkg.Device
             
@@ -335,7 +335,7 @@ module Texture =
         static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
             Vulkan.vkDestroySampler (vkg.Device, vulkanTexture.Sampler, nullPtr)
             Vulkan.vkDestroyImageView (vkg.Device, vulkanTexture.ImageView, nullPtr)
-            Hl.AllocatedImage.destroy vulkanTexture.Image vkg.VmaAllocator
+            Hl.AllocatedImage.destroy vulkanTexture.Image vkg
 
         /// Represents the empty texture used in Vulkan.
         static member empty =

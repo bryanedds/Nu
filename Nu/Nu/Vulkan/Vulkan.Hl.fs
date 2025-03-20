@@ -1348,15 +1348,15 @@ module Hl =
           Allocation : VmaAllocation }
 
         /// Destroy image and allocation.
-        static member destroy allocatedImage allocator =
-            Vma.vmaDestroyImage (allocator, allocatedImage.Image, allocatedImage.Allocation)
+        static member destroy allocatedImage vkg =
+            Vma.vmaDestroyImage (vkg.VmaAllocator, allocatedImage.Image, allocatedImage.Allocation)
 
         /// Create an AllocatedImage.
-        static member create imageInfo allocator =
+        static member create imageInfo vkg =
             let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
-            Vma.vmaCreateImage (allocator, &imageInfo, &info, &image, &allocation, nullPtr) |> check
+            Vma.vmaCreateImage (vkg.VmaAllocator, &imageInfo, &info, &image, &allocation, nullPtr) |> check
             let allocatedImage = { Image = image; Allocation = allocation }
             allocatedImage
 
