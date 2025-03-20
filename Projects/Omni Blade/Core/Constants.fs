@@ -62,8 +62,13 @@ module Constants =
         let RoomSize = v2iDup 32
         let AvatarCollisionShapeIndex = 0
         let AvatarSensorShapeIndex = 1
+#if DEV
+        let AvatarWalkForce = 40000.0f
+        let AvatarWalkForceMouse = 44000.0f
+#else
         let AvatarWalkForce = 20000.0f
         let AvatarWalkForceMouse = 22000.0f
+#endif
         let AvatarIdleSpeedMax = 5.0f
         let SpiritMovementDuration = 60L
         let SpiritWalkSpeed = 2.75f
@@ -71,11 +76,7 @@ module Constants =
         let SpiritOrbSize = v3 192.0f 192.0f 0.0f
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v3 21.0f 21.0f 0.0f
-#if DEV
-        let SpiritActivityThreshold = 10000L
-#else
         let SpiritActivityThreshold = 240L
-#endif
         let SpiritActivityAggressionThreshold = 4
         let SpiritRadius = 90.0f / SpiritOrbRatio
         let SpiritCollisionRadius = 72.0f

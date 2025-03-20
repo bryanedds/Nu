@@ -86,6 +86,9 @@ type FieldCommand =
     | ScheduleSound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * uint option * single * Song AssetTag
     | FadeOutSong of int64
+#if DEV
+    | ClearFieldDataMemoized
+#endif
     | Nop
     interface Command
 

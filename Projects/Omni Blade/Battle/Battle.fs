@@ -21,6 +21,9 @@ type BattleMessage =
     | TechItemCancel of CharacterIndex
     | ReticlesSelect of CharacterIndex * CharacterIndex
     | ReticlesCancel of CharacterIndex
+#if DEV
+    | Win
+#endif
     | Nop
     interface Message
 
@@ -1059,6 +1062,11 @@ module Battle =
 
     let spawnEnemy spawnType battle =
         spawnEnemies [spawnType] battle
+
+#if DEV
+    let win battle =
+        setBattleState (BattleState.BattleResult (battle.BattleTime_, true)) battle
+#endif
 
     (* High-Level Operations (signal-producing) *)
 

@@ -985,6 +985,13 @@ module FieldData =
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
+#if DEV
+    let clearMemoized () =
+        tileMapsMemoized <- Map.empty
+        propObjectsMemoized <- Map.empty
+        propDescriptorsMemoized <- Map.empty
+#endif
+
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
         let propPosition = v3 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) 0.0f // invert y
         let propSize = v3 (single object.Width) (single object.Height) 0.0f

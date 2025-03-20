@@ -142,6 +142,12 @@ type BattleDispatcher () =
             let battle = Battle.cancelCharacterInput characterIndex battle
             just battle
 
+#if DEV
+        | Win ->
+            let battle = Battle.win battle
+            just battle
+#endif
+
         | Nop -> just battle
 
     override this.Command (battle, command, screen, world) =
@@ -439,6 +445,19 @@ type BattleDispatcher () =
                 // character
                 let characterPlus = CharacterPlus.make battle.BattleTime character
                 Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.CharacterPlus := characterPlus]
+
+#if DEV
+             // win button
+             match battle.BattleState with
+             | BattleState.BattleRunning ->
+                 Content.button "Win"
+                    [Entity.Size == v3 144.0f 48.0f 0.0f; Entity.Position == v3 -72.0f -24.0f 0.0f; Entity.Elevation == 10.0f
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                     Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                     Entity.Text == "Win"
+                     Entity.ClickEvent => Win]
+             | _ -> ()
+#endif
 
              // hud
              for (index, character) in (Battle.getCharactersHudded battle).Pairs do

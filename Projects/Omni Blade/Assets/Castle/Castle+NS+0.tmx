@@ -54,7 +54,7 @@
     [Wait 120]
     [PlaySong 120 0 0 0.5 [Field Unfolding]]
     [Wait 180]
-    [Dialog &quot;What is freedom...?&quot;]
+    [Dialog &quot;WWWhat is freedom...?&quot;]
     [Wait 120]
     [Dialog &quot;It must be the death of purpose...&quot;]
     [Wait 60]

@@ -80,7 +80,11 @@ type FieldDispatcher () =
          Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
          Simulants.FieldAvatar.BodyPenetrationEvent =|> fun evt -> AvatarBodyPenetration evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
-         Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal]
+         Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
+#if DEV
+         Game.AssetsReloadEvent => ClearFieldDataMemoized
+#endif
+         ]
 
     override this.Message (field, message, _, world) =
 
@@ -856,6 +860,12 @@ type FieldDispatcher () =
         | FadeOutSong fade ->
             World.fadeOutSong fade world
             just world
+
+#if DEV
+        | ClearFieldDataMemoized ->
+            FieldData.clearMemoized ()
+            just world
+#endif
 
         | Nop -> just world
 
