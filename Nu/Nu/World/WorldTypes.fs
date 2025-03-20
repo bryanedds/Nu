@@ -35,7 +35,7 @@ module internal WorldTypes =
     // EventGraph F# reach-arounds.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
     let mutable internal getSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
-    let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
+    let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     // Simulant F# reach-arounds.
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
