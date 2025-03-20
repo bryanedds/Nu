@@ -75,16 +75,16 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGame : Game -> World -> World =
+    let mutable internal tryProcessGame : bool -> Game -> World -> World =
         Unchecked.defaultof<_>
         
     let mutable internal tryProcessScreen : bool -> Screen -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGroup : Group -> World -> World =
+    let mutable internal tryProcessGroup : bool -> Group -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessEntity : Entity -> World -> World =
+    let mutable internal tryProcessEntity : bool -> Entity -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal signal : obj -> Simulant -> World -> World =
@@ -182,7 +182,7 @@ module WorldModule =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing world =
-            World.frame (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing world =
@@ -214,6 +214,10 @@ module WorldModule =
 
         static member internal updateTime world =
             World.mapAmbientState AmbientState.updateTime world
+
+        /// Get the world's update delta time.
+        static member getUpdateDelta world =
+            World.getAmbientStateBy AmbientState.getUpdateDelta world
 
         /// Get the world's update time.
         static member getUpdateTime world =
@@ -301,26 +305,29 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with DeclaredImNui = declared; ContextImNui = context }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal getSimulantImNuis (world : World) =
-            world.SimulantImNuis
+        static member internal getSimulantsImNui (world : World) =
+            world.SimulantsImNui
 
-        static member internal setSimulantImNuis simulantImNuis (world : World) =
+        static member internal setSimulantsImNui simulantsImNui (world : World) =
             if world.Imperative then
-                world.WorldExtension.SimulantImNuis <- simulantImNuis
+                world.WorldExtension.SimulantsImNui <- simulantsImNui
                 world
             else
-                let worldExtension = { world.WorldExtension with SimulantImNuis = simulantImNuis }
+                let worldExtension = { world.WorldExtension with SimulantsImNui = simulantsImNui }
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSimulantImNui simulant (world : World) =
-            world.SimulantImNuis.[simulant]
+            world.SimulantsImNui.[simulant]
 
         static member internal addSimulantImNui simulant simulantImNui (world : World) =
-            let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
-            World.setSimulantImNuis simulantImNuis world
+            let simulantsImNui = SUMap.add simulant simulantImNui world.SimulantsImNui
+            World.setSimulantsImNui simulantsImNui world
+
+        static member internal removeSimulantImNui (simulant : Simulant) (world : World) =
+            World.setSimulantsImNui (SUMap.remove simulant.SimulantAddress world.SimulantsImNui) world
 
         static member internal tryMapSimulantImNui mapper simulant (world : World) =
-            match world.SimulantImNuis.TryGetValue simulant with
+            match world.SimulantsImNui.TryGetValue simulant with
             | (true, simulantImNui) ->
                 let simulantImNui = mapper simulantImNui
                 World.addSimulantImNui simulant simulantImNui world
@@ -337,29 +344,29 @@ module WorldModule =
                 world
             else
                 let simulantImNui = { simulantImNui with SimulantUtilized = true }
-                let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
-                World.setSimulantImNuis simulantImNuis world
+                let simulantsImNui = SUMap.add simulant simulantImNui world.SimulantsImNui
+                World.setSimulantsImNui simulantsImNui world
 
-        static member internal getSubscriptionImNuis (world : World) =
-            world.SubscriptionImNuis
+        static member internal getSubscriptionsImNui (world : World) =
+            world.SubscriptionsImNui
 
-        static member internal setSubscriptionImNuis subscriptionImNuis (world : World) =
+        static member internal setSubscriptionsImNui subscriptionsImNui (world : World) =
             if world.Imperative then
-                world.WorldExtension.SubscriptionImNuis <- subscriptionImNuis
+                world.WorldExtension.SubscriptionsImNui <- subscriptionsImNui
                 world
             else
-                let worldExtension = { world.WorldExtension with SubscriptionImNuis = subscriptionImNuis }
+                let worldExtension = { world.WorldExtension with SubscriptionsImNui = subscriptionsImNui }
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSubscriptionImNui subscription (world : World) =
-            world.SubscriptionImNuis.[subscription]
+            world.SubscriptionsImNui.[subscription]
 
         static member internal addSubscriptionImNui subscription subscriptionImNui (world : World) =
-            let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
-            World.setSubscriptionImNuis subscriptionImNuis world
+            let subscriptionsImNui = SUMap.add subscription subscriptionImNui world.SubscriptionsImNui
+            World.setSubscriptionsImNui subscriptionsImNui world
 
         static member internal tryMapSubscriptionImNui mapper subscription (world : World) =
-            match world.SubscriptionImNuis.TryGetValue subscription with
+            match world.SubscriptionsImNui.TryGetValue subscription with
             | (true, subscriptionImNui) ->
                 let subscriptionImNui = mapper subscriptionImNui
                 World.addSubscriptionImNui subscription subscriptionImNui world
@@ -376,8 +383,8 @@ module WorldModule =
                 world
             else
                 let subscriptionImNui = { subscriptionImNui with SubscriptionUtilized = true }
-                let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
-                World.setSubscriptionImNuis subscriptionImNuis world
+                let subscriptionsImNui = SUMap.add subscription subscriptionImNui world.SubscriptionsImNui
+                World.setSubscriptionsImNui subscriptionsImNui world
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =
@@ -408,12 +415,12 @@ module WorldModule =
             let time =
                 match delay with
                 | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
-                | ClockTime delay -> ClockTime (world.ClockTime + delay)
+                | TickTime delay -> TickTime (world.TickTime + delay)
             let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
-        static member frame operation (simulant : Simulant) (world : World) =
+        static member defer operation (simulant : Simulant) (world : World) =
             let time = if TaskletProcessingStarted && world.Advancing then UpdateTime 1L else UpdateTime 0L
             World.schedule time operation simulant world
 
@@ -579,6 +586,8 @@ module WorldModule =
 
         static member internal cleanUpSubsystems world =
             World.mapSubsystems (fun subsystems ->
+                subsystems.AudioPlayer.CleanUp ()
+                subsystems.RendererPhysics3d.Dispose ()
                 subsystems.RendererProcess.Terminate ()
                 subsystems.PhysicsEngine3d.CleanUp ()
                 subsystems.PhysicsEngine2d.CleanUp ()

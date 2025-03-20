@@ -88,9 +88,9 @@ module WorldModuleScreen =
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
 
-        static member internal getScreenXtensionProperties screen world =
+        static member internal getScreenXtension screen world =
             let screenState = World.getScreenState screen world
-            screenState.Xtension |> Xtension.toSeq |> Seq.toList
+            screenState.Xtension
 
         static member internal getScreenExists screen world =
             Option.isSome (World.getScreenStateOpt screen world)
@@ -261,12 +261,17 @@ module WorldModuleScreen =
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
                 | value ->
-                    let value' = value |> valueToSymbol |> symbolToValue
+                    let value =
+                        try value |> valueToSymbol |> symbolToValue
+                        with _ ->
+                            let value = typeof<'a>.GetDefaultValue ()
+                            Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                            value :?> 'a
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
-                    value'
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
+                    value
             else
                 let definitions = Reflection.getPropertyDefinitions (getType screenState.Dispatcher)
                 let value =
@@ -280,6 +285,12 @@ module WorldModuleScreen =
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
                 screenState.Xtension <- Xtension.attachProperty propertyName property screenState.Xtension
                 value
+
+        static member internal tryGetScreenXtensionValue<'a> propertyName screen world : 'a voption =
+            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
+            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getScreenXtensionValue call.
+            try World.getScreenXtensionValue<'a> propertyName screen world |> ValueSome
+            with _ -> ValueNone
 
         static member internal getScreenProperty propertyName screen world =
             match ScreenGetters.TryGetValue propertyName with
@@ -335,6 +346,10 @@ module WorldModuleScreen =
                     else world
                 struct (true, changed, world)
             | struct (false, changed, _, world) -> struct (false, changed, world)
+
+        static member internal trySetScreenXtensionValue<'a> propertyName (value : 'a) screen world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetScreenXtensionProperty propertyName property screen world
 
         static member internal setScreenXtensionValue<'a> propertyName (value : 'a) screen world =
             let screenState = World.getScreenState screen world
@@ -409,20 +424,19 @@ module WorldModuleScreen =
             | (false, _) ->
                 World.setScreenXtensionProperty propertyName property screen world
 
-        static member internal attachScreenProperty propertyName property screen world =
-            if World.getScreenExists screen world then
-                let screenState = World.getScreenState screen world
-                let screenState = ScreenState.attachProperty propertyName property screenState
-                let world = World.setScreenState screenState screen world
-                World.publishScreenChange propertyName property.PropertyValue property.PropertyValue screen world
-            else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + scstring screen + "' is not found.")
-
-        static member internal detachScreenProperty propertyName screen world =
-            if World.getScreenExists screen world then
-                let screenState = World.getScreenState screen world
-                let screenState = ScreenState.detachProperty propertyName screenState
-                World.setScreenState screenState screen world
-            else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + scstring screen + "' is not found.")
+        static member internal attachScreenMissingProperties screen world =
+            let screenState = World.getScreenState screen world
+            let definitions = Reflection.getReflectivePropertyDefinitions screenState
+            let screenState =
+                Map.fold (fun screenState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetScreenProperty (propertyName, screen, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        ScreenState.attachProperty propertyName property screenState
+                    else screenState)
+                    screenState definitions
+            World.setScreenState screenState screen world
 
         static member internal registerScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world

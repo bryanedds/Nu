@@ -528,10 +528,12 @@ module Metadata =
                         let aoAsset =               asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_ao")                            elif has_d then albedoAssetName.Replace ("_d", "_ao")                           else "")
                         let rmaAsset =              asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "RMA")                elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "RMA")                 elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "RMA")              else "")
                         let ambientOcclusionAsset = asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "AmbientOcclusion")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "AmbientOcclusion")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "AmbientOcclusion") else "")
+                        let occlusionAsset =        asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Occlusion")          elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Occlusion")           elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Occlusion")        else "")
                         let aoAsset' =              asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "AO")                 elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "AO")                  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "AO")               else "")
                         if getMetadataExists aoAsset then ValueSome aoAsset
                         elif getMetadataExists g_m_aoAsset then ValueSome g_m_aoAsset
                         elif getMetadataExists ambientOcclusionAsset then ValueSome ambientOcclusionAsset
+                        elif getMetadataExists occlusionAsset then ValueSome occlusionAsset
                         elif getMetadataExists aoAsset' then ValueSome aoAsset'
                         elif getMetadataExists rmaAsset then ValueSome rmaAsset
                         else ValueNone

@@ -133,17 +133,20 @@ void main()
             vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
             float distanceScreen = length(samplingPositionScreen - positionScreen);
 
-            // ensure we're not sampling too far from origin and thus blowing the texture cache and that position is
-            // written
-            vec4 samplePosition = texture(positionTexture, samplingPositionScreen);
-            if (distanceScreen < ssaoDistanceMax && samplePosition.w == 1.0)
+            // ensure we're not sampling too far from origin and thus blowing the texture cache
+            if (distanceScreen < ssaoDistanceMax)
             {
-                // compute sample position in view space
-                vec4 samplePositionView = view * samplePosition;
+                // ensure sample position is actually written
+                vec4 samplePosition = texture(positionTexture, samplingPositionScreen);
+                if (samplePosition.w == 1.0)
+                {
+                    // compute sample position in view space
+                    vec4 samplePositionView = view * samplePosition;
 
-                // perform range check and accumulate if occluded
-                float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
-                ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
+                    // perform range check and accumulate if occluded
+                    float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
+                    ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
+                }
             }
         }
         ssao *= ssaoSampleCountInverse;

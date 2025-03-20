@@ -16,6 +16,7 @@ open Microsoft.FSharp.Core
 open ImGuiNET
 open ImGuizmoNET
 open ImPlotNET
+open JoltPhysicsSharp
 open Prime
 open Nu
 open Nu.Gaia
@@ -101,6 +102,7 @@ module Gaia =
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private SnapDrag = 0.1f
     let mutable private AlternativeEyeTravelInput = false
+    let mutable private PhysicsDebugRendering = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
     let mutable private EntityHierarchyFilterPropagationSources = false
@@ -453,22 +455,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     (* Prelude Functions *)
 
-    let private setFullScreen fullScreen =
-        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
-        FullScreen <- fullScreen
-        if not FullScreen then CaptureMode <- false
-
-    let private setCaptureMode captureMode =
-        CaptureMode <- captureMode
-        if CaptureMode then setFullScreen true
-
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
-        not io.WantCaptureMouseGlobal && (world.Halted || EditWhileAdvancing)
+        not CaptureMode &&
+        not io.WantCaptureMouseGlobal &&
+        (world.Halted || EditWhileAdvancing)
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
-        not io.WantCaptureKeyboardGlobal && (world.Halted || EditWhileAdvancing)
+        not io.WantCaptureKeyboardGlobal &&
+        (world.Halted || EditWhileAdvancing)
 
     let private snapshot snapshotType world =
         Pasts <- (snapshotType, world) :: Pasts
@@ -502,8 +498,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Right world -> world
         | Left (_, world) -> world
 
-    let private setPropertyValue (value : obj) propertyDescriptor simulant world =
+    let private setPropertyValue skipSnapshot (value : obj) propertyDescriptor simulant world =
         let skipSnapshot =
+            skipSnapshot ||
             match Pasts with
             | (ChangeProperty (mouseLeftIdOpt, _), _) :: _ -> mouseLeftIdOpt = Some ImGui.MouseLeftId
             | _ -> false
@@ -512,6 +509,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             then snapshot (ChangeProperty (Some ImGui.MouseLeftId, propertyDescriptor.PropertyName)) world
             else world
         setPropertyValueWithoutUndo value propertyDescriptor simulant world
+
+    let private createSceneGroup screen world =
+        World.createGroup (Some "Scene") screen world
 
     let private selectScreen show screen =
         if screen <> SelectedScreen then
@@ -534,7 +534,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let (group, world) =
             match Seq.tryHead groups with
             | Some group -> (group, world)
-            | None -> (SelectedScreen.GetDispatcher world).CreateDefaultGroup (SelectedScreen, world)
+            | None -> createSceneGroup screen world
         selectGroup false group
         world
 
@@ -546,6 +546,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     and private selectEntityOpt entityOpt world =
 
+        // adjust editing state as needed
         if entityOpt <> SelectedEntityOpt then
 
             // try to focus on same entity property
@@ -560,15 +561,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some _ -> focusPropertyOpt None world
             | None -> ()
 
-            // make sure entity properties are showing
-            if entityOpt.IsSome then EntityPropertiesFocusRequested <- true
+            // adjust focus and manipulation / drag state accordingly
+            match entityOpt with
+            | Some _ -> EntityPropertiesFocusRequested <- true
+            | None -> DragEntityState <- DragEntityInactive
 
-        // actually set the selection
-        SelectedEntityOpt <- entityOpt
+            // actually set the selection
+            SelectedEntityOpt <- entityOpt
 
-    let private deselectEntity world =
-        focusPropertyOpt None world
-        selectEntityOpt None world
+    let private setFullScreen fullScreen world =
+        ignore<World> world // not yet used for anything here
+        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
+        FullScreen <- fullScreen
+        if not FullScreen then CaptureMode <- false
+
+    let private setCaptureMode captureMode world =
+        CaptureMode <- captureMode
+        if CaptureMode then
+            selectEntityOpt None world
+            setFullScreen true world
+        else setFullScreen false world
 
     let private tryUndo (world : World) =
         match
@@ -658,6 +670,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         Seq.concat |>
         Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world) |>
         Seq.fold (fun world lightProbe -> lightProbe.SetProbeStale true world) world
+
+    let private tryMoveSelectedEntityToOrigin skipSnapshot world =
+        match SelectedEntityOpt with
+        | Some selectedEntity ->
+            let world = if skipSnapshot then world else snapshot MoveEntityToOrigin world
+            let world =
+                match Option.bind (tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
+                | Some _ -> selectedEntity.SetPositionLocal v3Zero world
+                | None -> selectedEntity.SetPosition v3Zero world
+            (true, world)
+        | None -> (false, world)
 
     let private getSnaps () =
         if Snaps2dSelected
@@ -762,14 +785,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         then (Resolve, world)
         else (Cascade, world)
 
-    let private handleNuLifeCycleGroup (evt : Event<LifeCycleData, Game>) world =
+    let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
         let world =
             match evt.Data with
             | UnregisteringData simulant ->
                 if SelectedGroup :> Simulant = simulant then
                     let groups = World.getGroups SelectedScreen world
                     if Seq.isEmpty groups then
-                        let (group, world) = (SelectedScreen.GetDispatcher world).CreateDefaultGroup (SelectedScreen, world) // create default group if no group remains
+                        let (group, world) = createSceneGroup SelectedScreen world // create gui group if no group remains
                         SelectedGroup <- group
                         world
                     else
@@ -791,6 +814,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             focusPropertyOpt None world
             (Cascade, world)
         | None -> (Cascade, world) // just keep current group selection and screen if no screen selected
+
+    let private handleNuExitRequest _ world =
+        ShowConfirmExitDialog <- true
+        (Cascade, world)
 
     (* Editor Command Functions *)
 
@@ -872,7 +899,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
                     | Some _ | None -> [|name|]
             | None -> [|name|]
-        let (entity, world) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) SelectedGroup world
+        let (entity, world) = World.createEntity6 false dispatcherName overlayNameDescriptor (Some surnames) SelectedGroup world
         let world = inductEntity atMouse entity world
         selectEntityOpt (Some entity) world
         ImGui.SetWindowFocus "Viewport"
@@ -885,7 +912,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try World.writeEntityToFile false false filePath entity world
                 try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                     if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
+                        if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
                         File.Copy (filePath, deploymentPath, true)
+                        File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
                 with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
                 EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
                 true
@@ -894,41 +923,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 false
         | Some _ | None -> false
 
-    let private tryLoadSelectedEntity filePath world =
+    let private tryLoadEntity filePath world =
 
-        // ensure entity isn't protected
-        if SelectedEntityOpt.IsNone || not (SelectedEntityOpt.Value.GetProtected world) then
+        // attempt to load entity descriptor
+        let entityAndDescriptorOpt =
+            try let entityDescriptorStr = File.ReadAllText filePath
+                let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+                let entityProperties =
+                    Map.removeMany
+                        [nameof Entity.Position
+                         nameof Entity.Rotation
+                         nameof Entity.Elevation
+                         nameof Entity.Visible]
+                        entityDescriptor.EntityProperties
+                let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
+                let entity =
+                    match SelectedEntityOpt with
+                    | Some entity when entity.GetExists world -> entity
+                    | Some _ | None ->
+                        let name = Gen.nameForEditor entityDescriptor.EntityDispatcherName
+                        let surnames =
+                            match NewEntityParentOpt with
+                            | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
+                            | Some _ | None -> [|name|]
+                        Nu.Entity (Array.append SelectedGroup.GroupAddress.Names surnames)
+                Right (entity, entityDescriptor)
+            with exn -> Left exn
 
-            // attempt to load entity descriptor
-            let entityAndDescriptorOpt =
-                try let entityDescriptorStr = File.ReadAllText filePath
-                    let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                    let entityProperties =
-                        Map.removeMany
-                            [nameof Entity.Position
-                             nameof Entity.Rotation
-                             nameof Entity.Elevation
-                             nameof Entity.Visible]
-                            entityDescriptor.EntityProperties
-                    let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
-                    let entity =
-                        match SelectedEntityOpt with
-                        | Some entity when entity.GetExists world -> entity
-                        | Some _ | None ->
-                            let name = Gen.nameForEditor entityDescriptor.EntityDispatcherName
-                            let surnames =
-                                match NewEntityParentOpt with
-                                | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
-                                | Some _ | None -> [|name|]
-                            Nu.Entity (Array.append SelectedGroup.GroupAddress.Names surnames)
-                    Right (entity, entityDescriptor)
-                with exn -> Left exn
-
-            // attempt to load entity
-            match entityAndDescriptorOpt with
-            | Right (entity, entityDescriptor) ->
-                let worldOld = world
-                try let world =
+        // attempt to load entity
+        match entityAndDescriptorOpt with
+        | Right (entity, entityDescriptor) ->
+            let worldOld = world
+            try if not (entity.GetExists world) || not (entity.GetProtected world) then
+                    let world =
                         if entity.GetExists world then
                             let world = snapshot LoadEntity world
                             let order = entity.GetOrder world
@@ -953,19 +980,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
                     EntityFileDialogState.FileName <- ""
                     (true, world)
-                with exn ->
-                    let world = World.switch worldOld
-                    MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
+                else
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC or ImNui API)."
                     (false, world)
-
-            // error
-            | Left exn ->
+            with exn ->
+                let world = World.switch worldOld
                 MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
                 (false, world)
 
         // error
-        else
-            MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
+        | Left exn ->
+            MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
             (false, world)
 
     let private tryDeleteSelectedEntity world =
@@ -981,7 +1006,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     SelectedEntityOpt <- None
                     (true, world)
             else
-                MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the ImNui or MMCC API)."
+                MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC or ImNui API)."
                 (false, world)
         | Some _ | None -> (false, world)
 
@@ -1042,7 +1067,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let world = World.cutEntityToClipboard entity world
                     (true, world)
             else
-                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImNui or MMCC API)."
+                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the MMCC or ImNui API)."
                 (false, world)
         | Some _ | None -> (false, world)
 
@@ -1053,7 +1078,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 World.copyEntityToClipboard entity world
                 (true, world)
             else
-                MessageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the ImNui or MMCC API)."
+                MessageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the MMCC or ImNui API)."
                 (false, world)
         | Some _ | None -> (false, world)
 
@@ -1087,7 +1112,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         try World.writeGroupToFile filePath SelectedGroup world
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
+                    if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
                     File.Copy (filePath, deploymentPath, true)
+                    File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
             with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
             GroupFilePaths <- Map.add SelectedGroup.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
             true
@@ -1095,27 +1122,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
             false
 
-    let private tryLoadSelectedGroup filePath world =
+    let private tryLoadGroup filePath world =
 
-        // ensure group isn't protected
-        if not (SelectedGroup.GetProtected world) then
+        // attempt to load group descriptor
+        let groupAndDescriptorOpt =
+            try let groupDescriptorStr = File.ReadAllText filePath
+                let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                let groupName =
+                    match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                    | Some (Atom (name, _) | Text (name, _)) -> name
+                    | _ -> failwithumf ()
+                Right (SelectedScreen / groupName, groupDescriptor)
+            with exn -> Left exn
 
-            // attempt to load group descriptor
-            let groupAndDescriptorOpt =
-                try let groupDescriptorStr = File.ReadAllText filePath
-                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                    let groupName =
-                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                        | Some (Atom (name, _) | Text (name, _)) -> name
-                        | _ -> failwithumf ()
-                    Right (SelectedScreen / groupName, groupDescriptor)
-                with exn -> Left exn
-
-            // attempt to load group
-            match groupAndDescriptorOpt with
-            | Right (group, groupDescriptor) ->
-                let worldOld = world
-                try let world =
+        // attempt to load group
+        match groupAndDescriptorOpt with
+        | Right (group, groupDescriptor) ->
+            let worldOld = world
+            try if not (group.GetExists world) || not (group.GetProtected world) then
+                    let world =
                         if group.GetExists world
                         then World.destroyGroupImmediate SelectedGroup world
                         else world
@@ -1127,19 +1152,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     GroupFilePaths <- Map.add group.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
                     GroupFileDialogState.FileName <- ""
                     (true, world)
-                with exn ->
-                    let world = World.switch worldOld
-                    MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                else
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC or ImNui API)."
                     (false, world)
-
-            // error
-            | Left exn ->
+            with exn ->
+                let world = World.switch worldOld
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                 (false, world)
 
         // error
-        else
-            MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImNui or MMCC API)."
+        | Left exn ->
+            MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
             (false, world)
 
     let private tryReloadAssets world =
@@ -1351,7 +1374,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | None -> world
 
             // attempt to process ImNui again to ensure simulants in new mode are created
-            let world = World.tryProcessSimulants false world
+            let world = World.tryProcessSimulants true world
 
             // figure out which screen to use
             let (screen, world) =
@@ -1374,6 +1397,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         if not (screen.GetExists world) then
                             let (screen, world) = World.createScreen (Some "Screen") world
                             let world = World.setSelectedScreen screen world
+                            let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                            let world = World.publishPlus () screen.SelectEvent eventTrace screen false false world
                             (screen, world)
                         else (screen, world)
                     | Some screen -> (screen, world)
@@ -1617,8 +1642,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode); world
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen); world
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world; world
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen) world; world
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -1638,18 +1663,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
+            elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin false world |> snd
             elif not (ImGui.GetIO ()).WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity world |> snd
-                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste (ImGui.IsShiftUp ()) PasteAtLook (Option.map cast NewEntityParentOpt) world |> snd
+                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste true PasteAtLook (Option.map cast NewEntityParentOpt) world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false world
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
-                    if not (String.IsNullOrWhiteSpace EntityHierarchySearchStr)
-                    then EntityHierarchySearchStr <- ""
-                    else deselectEntity world
+                    if String.IsNullOrWhiteSpace EntityHierarchySearchStr then
+                        focusPropertyOpt None world
+                        selectEntityOpt None world
+                    else EntityHierarchySearchStr <- ""
                     world
                 else world
             else world
@@ -1697,12 +1724,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
                 selectEntityOpt (Some entity) world
                 let world = if ImGui.MenuItem "Create Entity" then createEntity false true world else world
+                let world =
+                    if SelectedEntityOpt.IsSome && ImGui.MenuItem "Create Entity at Local Origin" then
+                        let world = createEntity true true world
+                        tryMoveSelectedEntityToOrigin true world |> snd
+                    else world
                 let world = if ImGui.MenuItem "Delete Entity" then tryDeleteSelectedEntity world |> snd else world
                 ImGui.Separator ()
                 let world = if ImGui.MenuItem "Cut Entity" then tryCutSelectedEntity world |> snd else world
                 let world = if ImGui.MenuItem "Copy Entity" then tryCopySelectedEntity world |> snd else world
                 let world = if ImGui.MenuItem "Paste Entity" then tryPaste true PasteAtLook (Some entity) world |> snd else world
-                let world = if ImGui.MenuItem "Paste Entity (w/o Propagation Source)" then tryPaste false PasteAtLook (Some entity) world |> snd else world
+                let world =
+                    if ImGui.MenuItem "Paste Entity at Local Origin" then
+                        let (pasted, world) = tryPaste true PasteAtLook (Some entity) world
+                        if pasted then tryMoveSelectedEntityToOrigin true world |> snd else world
+                    else world
                 ImGui.Separator ()
                 if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then ShowOpenEntityDialog <- true
                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
@@ -1723,6 +1759,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         NewEntityParentOpt <- SelectedEntityOpt
                         ShowEntityContextMenu <- false
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
+                let world = if ImGui.MenuItem ("Move to Origin", "Ctrl+I") then tryMoveSelectedEntityToOrigin false world |> snd else world
                 let world = if ImGui.MenuItem ("Propagate Entity") then tryPropagateSelectedEntityStructure world |> snd else world
                 let world = if ImGui.MenuItem ("Wipe Propagated Descriptor") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                 let world =
@@ -1833,7 +1870,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             ShowSelectedEntity <- true
                                             world
                                     else Log.warn "Cannot mount an entity circularly."; world
-                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC or ImNui API)."; world
                         | None -> world
                     else world
                 ImGui.EndDragDropTarget ()
@@ -1927,7 +1964,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
-        (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
+        (setProperty : bool -> obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
         (headered : bool)
         (propertyDescriptor : PropertyDescriptor)
@@ -1935,20 +1972,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         (world : World) =
         let propertyValue = getProperty propertyDescriptor simulant world
         let context = makeContext (Some focusProperty) None
-        let (changed, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
-        if changed then setProperty propertyValue propertyDescriptor simulant world else world
+        let (promoted, edited, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
+        if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditProperty
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
-        (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
+        (setProperty : bool -> obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
         (propertyDescriptor : PropertyDescriptor)
         (simulant : Simulant)
         (world : World) =
         let propertyValue = getProperty propertyDescriptor simulant world
         let context = makeContext (Some focusProperty) None
-        let (changed, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
-        if changed then setProperty propertyValue propertyDescriptor simulant world else world
+        let (promoted, edited, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
+        if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
@@ -1963,7 +2000,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 if not (entity.GetProtected world) then
                                     let world = snapshot ChangeEntityDispatcher world
                                     World.changeEntityDispatcher dispatcherName entity world
-                                else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                                else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC or ImNui API)."; world
                             else world
                         if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                         if dispatcherName = dispatcherNameCurrent then ImGui.SetItemDefaultFocus ()
@@ -1977,7 +2014,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
         let facetNamesPropertyDescriptor = { PropertyName = Constants.Engine.FacetNamesPropertyName; PropertyType = typeof<string Set> }
         let mutable facetNamesValue' = Set.empty
-        let mutable changed = false
+        let mutable edited = false
         ImGui.Indent ()
         for i in 0 .. facetNamesValue.Count do
             let last = i = facetNamesValue.Count
@@ -1987,14 +2024,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 for facetNameSelectable in facetNamesSelectable do
                     if ImGui.Selectable (facetNameSelectable, strEq facetName NewEntityDispatcherName) then
                         facetName <- facetNameSelectable
-                        changed <- true
+                        edited <- true
                     if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if facetNameSelectable = facetName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if not last && ImGui.IsItemFocused () then focusPropertyOpt (Some (facetNamesPropertyDescriptor, entity :> Simulant)) world
             if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
         ImGui.Unindent ()
-        if changed
+        if edited
         then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
         else world
 
@@ -2057,7 +2094,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 | nameof Entity.Overflow -> "!12"
                                 | name -> name)
                         Array.fold (fun world propertyDescriptor ->
-                            if containsProperty propertyDescriptor simulant world then
+                            if containsProperty propertyDescriptor.PropertyName simulant world then
                                 if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
                                     match simulant with
                                     | :? Screen as screen ->
@@ -2090,14 +2127,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             | Some truncatedValue -> truncatedValue
                                             | None -> propertyValue
                                         else propertyValue
-                                    let setPropertyValue propertyValue propertyDescriptor simulant world =
+                                    let setPropertyValue skipSnapshot propertyValue propertyDescriptor simulant world =
                                         let propertyValue =
                                             if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
                                                 match World.tryUntruncateModel propertyValue simulant world with
                                                 | Some untruncatedValue -> untruncatedValue
                                                 | None -> propertyValue
                                             else propertyValue
-                                        setPropertyValue propertyValue propertyDescriptor simulant world
+                                        setPropertyValue skipSnapshot propertyValue propertyDescriptor simulant world
                                     let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                                     let mutable replaced = false
                                     let replaceProperty =
@@ -2158,7 +2195,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let world =
             if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-                let io = ImGui.GetIO()
+                let io = ImGui.GetIO ()
                 let displaySize = io.DisplaySize.V2i
                 let windowPosition = ImGui.GetWindowPos().V2i
                 let windowSize = ImGui.GetWindowSize().V2i
@@ -2177,248 +2214,261 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
         let world =
             if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
+                if not CaptureMode then
 
-                // user-defined viewport manipulation
-                let rasterViewport = world.RasterViewport
-                let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
-                let projection = projectionMatrix.ToArray ()
-                let operation =
-                    ViewportOverlay
-                        { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-                          ViewportProjection = projectionMatrix
-                          ViewportBounds = box2 v2Zero io.DisplaySize
-                          EditContext = makeContext None None }
-                let world = World.editGame operation Game world
-                let world = World.editScreen operation SelectedScreen world
-                let world = World.editGroup operation SelectedGroup world
-                let world =
-                    match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.GetIs3d world ->
-                        let operation =
-                            ViewportOverlay
-                                { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-                                  ViewportProjection = projectionMatrix
-                                  ViewportBounds = box2 v2Zero io.DisplaySize
-                                  EditContext = makeContext None None }
-                        World.editEntity operation entity world
-                    | Some _ | None -> world
+                    // physics debug rendering
+                    if PhysicsDebugRendering then
+                        let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
+                        World.imGuiRenderPhysics3d settings3d world
 
-                // light probe bounds manipulation
-                let world =
-                    match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->
-                        let mutable lightProbeBounds = entity.GetProbeBounds world
-                        let manipulationResult =
-                            ImGuizmo.ManipulateBox3
-                                (world.Eye3dCenter,
-                                 world.Eye3dRotation,
-                                 world.Eye3dFieldOfView,
-                                 rasterViewport,
-                                 (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
-                                 &lightProbeBounds)
-                        match manipulationResult with
-                        | ImGuiEditActive started ->
-                            let world = if started then snapshot (ChangeProperty (None, nameof Entity.ProbeBounds)) world else world
-                            entity.SetProbeBounds lightProbeBounds world
-                        | ImGuiEditInactive -> world
-                    | Some _ | None -> world
+                    // user-defined viewport manipulation
+                    let rasterViewport = world.RasterViewport
+                    let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
+                    let projection = projectionMatrix.ToArray ()
+                    let operation =
+                        ViewportOverlay
+                            { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+                              ViewportProjection = projectionMatrix
+                              ViewportBounds = box2 v2Zero io.DisplaySize
+                              EditContext = makeContext None None }
+                    let world = World.editGame operation Game world
+                    let world = World.editScreen operation SelectedScreen world
+                    let world = World.editGroup operation SelectedGroup world
+                    let world =
+                        match SelectedEntityOpt with
+                        | Some entity when entity.GetExists world && entity.GetIs3d world ->
+                            let operation =
+                                ViewportOverlay
+                                    { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+                                      ViewportProjection = projectionMatrix
+                                      ViewportBounds = box2 v2Zero io.DisplaySize
+                                      EditContext = makeContext None None }
+                            World.editEntity operation entity world
+                        | Some _ | None -> world
 
-                // setup guizmo manipulations
-                ImGuizmo.SetOrthographic false
-                ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
-                ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
+                    // light probe bounds manipulation
+                    let world =
+                        match SelectedEntityOpt with
+                        | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->
+                            let mutable lightProbeBounds = entity.GetProbeBounds world
+                            let manipulationResult =
+                                ImGuizmo.ManipulateBox3
+                                    (world.Eye3dCenter,
+                                     world.Eye3dRotation,
+                                     world.Eye3dFieldOfView,
+                                     rasterViewport,
+                                     (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
+                                     &lightProbeBounds)
+                            match manipulationResult with
+                            | ImGuiEditActive started ->
+                                let world = if started then snapshot (ChangeProperty (None, nameof Entity.ProbeBounds)) world else world
+                                entity.SetProbeBounds lightProbeBounds world
+                            | ImGuiEditInactive -> world
+                        | Some _ | None -> world
 
-                // transform manipulation
-                let world =
-                    match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
-                        let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-                        let view = viewMatrix.ToArray ()
-                        let affineMatrix = entity.GetAffineMatrix world
-                        let affine = affineMatrix.ToArray ()
-                        let (p, r, s) =
-                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                            then Snaps3d
-                            else (0.0f, 0.0f, 0.0f)
-                        let mutable copying = false
-                        if not ManipulationActive then
-                            if ImGui.IsCtrlDown () && not (entity.GetProtected world) then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
-                            elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
-                            elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
-                            elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
-                            elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
-                            elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
-                            else ManipulationOperation <- OPERATION.TRANSLATE
-                        let mutable snap =
-                            match ManipulationOperation with
-                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
-                            | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
-                        let delta = m4Identity.ToArray ()
-                        let manipulationResult =
-                            if snap = 0.0f
-                            then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
-                            else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
-                        let world =
-                            if manipulationResult then
-                                let (manipulationAwaken, world) =
-                                    if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
-                                        ManipulationActive <- true
-                                        (true, world)
-                                    else (false, world)
-                                let affine' = Matrix4x4.CreateFromArray affine
-                                let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
-                                if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
-                                    let delta = Matrix4x4.CreateFromArray delta
-                                    let translation = delta.Translation
-                                    let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
-                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
-                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
-                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
-                                    rotation <- rotation.Normalized // try to avoid weird angle combinations
-                                    let rollPitchYaw = rotation.RollPitchYaw
-                                    degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
-                                    degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
-                                    degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
-                                    degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
-                                    degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
-                                    degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
-                                    let scaling = delta.Scale
-                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
-                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
-                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
-                                    if scale.X < 0.01f then scale.X <- 0.01f
-                                    if scale.Y < 0.01f then scale.Y <- 0.01f
-                                    if scale.Z < 0.01f then scale.Z <- 0.01f
-                                let (entity, world) =
-                                    if copying then
-                                        let world = if manipulationAwaken then snapshot DuplicateEntity world else world
-                                        let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
-                                        let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
-                                        let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
-                                        let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
-                                        let world =
-                                            if ImGui.IsShiftDown () then
-                                                duplicate.SetPropagationSourceOpt None world
-                                            elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
-                                                duplicate.SetPropagationSourceOpt (Some entity) world
-                                            else world
-                                        let rec getDescendantPairs source entity world =
-                                            [for child in World.getEntityChildren entity world do
-                                                let childSource = source / child.Name
-                                                yield (childSource, child)
-                                                yield! getDescendantPairs childSource child world]
-                                        let world =
-                                            List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
-                                                if descendantDuplicate.GetExists world then
-                                                    let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                    if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
-                                                    then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
-                                                    else world
-                                                else world)
-                                                world (getDescendantPairs entity duplicate world)
-                                        selectEntityOpt (Some duplicate) world
-                                        ImGui.SetWindowFocus "Viewport"
-                                        ShowSelectedEntity <- true
-                                        (duplicate, world)
-                                    else
-                                        if manipulationAwaken then
-                                            let snapshotType =
-                                                match ManipulationOperation with
-                                                | OPERATION.TRANSLATE -> TranslateEntity
-                                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> RotateEntity
-                                                | _ -> ScaleEntity
-                                            let world = snapshot snapshotType world
-                                            (entity, world)
-                                        else (entity, world)
-                                let world =
-                                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                                    | Some mount ->
-                                        let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
-                                        let positionLocal = position.Transform mountAffineMatrixInverse
-                                        let mountRotationInverse = (mount.GetRotation world).Inverted
-                                        let rotationLocal = mountRotationInverse * rotation
-                                        let rollPitchYawLocal = rotationLocal.RollPitchYaw
-                                        let mutable degreesLocal = v3Zero
-                                        degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
-                                        degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
-                                        degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
-                                        degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
-                                        degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
-                                        degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
-                                        let mountScaleInverse = v3One / mount.GetScale world
-                                        let scaleLocal = mountScaleInverse * scale
-                                        match ManipulationOperation with
-                                        | OPERATION.TRANSLATE -> entity.SetPositionLocal positionLocal world
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegreesLocal degreesLocal world
-                                        | OPERATION.SCALE -> entity.SetScaleLocal scaleLocal world
-                                        | _ -> world // nothing to do
-                                    | None ->
-                                        match ManipulationOperation with
-                                        | OPERATION.TRANSLATE -> entity.SetPosition position world
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
-                                        | OPERATION.SCALE -> entity.SetScale scale world
-                                        | _ -> world // nothing to do
-                                if world.Advancing then
+                    // setup guizmo manipulations
+                    ImGuizmo.SetOrthographic false
+                    ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                    ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
+
+                    // transform manipulation
+                    let world =
+                        match SelectedEntityOpt with
+                        | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
+                            let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+                            let view = viewMatrix.ToArray ()
+                            let affineMatrix = entity.GetAffineMatrix world
+                            let affine = affineMatrix.ToArray ()
+                            let (p, r, s) =
+                                if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                                then Snaps3d
+                                else (0.0f, 0.0f, 0.0f)
+                            let mutable copying = false
+                            if not ManipulationActive then
+                                if ImGui.IsCtrlDown () && not (entity.GetProtected world) then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
+                                elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
+                                elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
+                                elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
+                                elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
+                                elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
+                                else ManipulationOperation <- OPERATION.TRANSLATE
+                            let mutable snap =
+                                match ManipulationOperation with
+                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
+                                | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
+                            let delta = m4Identity.ToArray ()
+                            let manipulationResult =
+                                if snap = 0.0f
+                                then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
+                                else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
+                            let world =
+                                if manipulationResult then
+                                    let (manipulationAwaken, world) =
+                                        if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
+                                            ManipulationActive <- true
+                                            (true, world)
+                                        else (false, world)
+                                    let affine' = Matrix4x4.CreateFromArray affine
+                                    let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
+                                    if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
+                                        let delta = Matrix4x4.CreateFromArray delta
+                                        let translation = delta.Translation
+                                        let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
+                                        if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
+                                        if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
+                                        if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+                                        rotation <- rotation.Normalized // try to avoid weird angle combinations
+                                        let rollPitchYaw = rotation.RollPitchYaw
+                                        degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
+                                        degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
+                                        degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
+                                        degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
+                                        degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
+                                        degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
+                                        let scaling = delta.Scale
+                                        if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
+                                        if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
+                                        if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
+                                        if scale.X < 0.01f then scale.X <- 0.01f
+                                        if scale.Y < 0.01f then scale.Y <- 0.01f
+                                        if scale.Z < 0.01f then scale.Z <- 0.01f
+                                    let (entity, world) =
+                                        if copying then
+                                            let world = if manipulationAwaken then snapshot DuplicateEntity world else world
+                                            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
+                                            let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
+                                            let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
+                                            let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
+                                            let world =
+                                                if ImGui.IsShiftDown () then
+                                                    duplicate.SetPropagationSourceOpt None world
+                                                elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                                    duplicate.SetPropagationSourceOpt (Some entity) world
+                                                else world
+                                            let rec getDescendantPairs source entity world =
+                                                [for child in World.getEntityChildren entity world do
+                                                    let childSource = source / child.Name
+                                                    yield (childSource, child)
+                                                    yield! getDescendantPairs childSource child world]
+                                            let world =
+                                                List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
+                                                    if descendantDuplicate.GetExists world then
+                                                        let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                                        if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
+                                                        then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                                        else world
+                                                    else world)
+                                                    world (getDescendantPairs entity duplicate world)
+                                            let world = if duplicate.Has<FreezerFacet> world then duplicate.SetFrozen false world else world
+                                            selectEntityOpt (Some duplicate) world
+                                            ImGui.SetWindowFocus "Viewport"
+                                            ShowSelectedEntity <- true
+                                            (duplicate, world)
+                                        else
+                                            if manipulationAwaken then
+                                                let snapshotType =
+                                                    match ManipulationOperation with
+                                                    | OPERATION.TRANSLATE -> TranslateEntity
+                                                    | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> RotateEntity
+                                                    | _ -> ScaleEntity
+                                                let world = snapshot snapshotType world
+                                                (entity, world)
+                                            else (entity, world)
                                     let world =
-                                        match entity.TryGetProperty (nameof entity.LinearVelocity) world with
-                                        | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
-                                        | Some _ | None -> world
+                                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                                        | Some mount ->
+                                            let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
+                                            let positionLocal = position.Transform mountAffineMatrixInverse
+                                            let mountRotationInverse = (mount.GetRotation world).Inverted
+                                            let rotationLocal = mountRotationInverse * rotation
+                                            let rollPitchYawLocal = rotationLocal.RollPitchYaw
+                                            let mutable degreesLocal = v3Zero
+                                            degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
+                                            degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
+                                            degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
+                                            degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
+                                            degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
+                                            degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
+                                            let mountScaleInverse = v3One / mount.GetScale world
+                                            let scaleLocal = mountScaleInverse * scale
+                                            match ManipulationOperation with
+                                            | OPERATION.TRANSLATE -> entity.SetPositionLocal positionLocal world
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegreesLocal degreesLocal world
+                                            | OPERATION.SCALE -> entity.SetScaleLocal scaleLocal world
+                                            | _ -> world // nothing to do
+                                        | None ->
+                                            match ManipulationOperation with
+                                            | OPERATION.TRANSLATE -> entity.SetPosition position world
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
+                                            | OPERATION.SCALE -> entity.SetScale scale world
+                                            | _ -> world // nothing to do
+                                    if world.Advancing then
+                                        let world =
+                                            match entity.TryGetProperty (nameof entity.LinearVelocity) world with
+                                            | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
+                                            | Some _ | None -> world
+                                        let world =
+                                            match entity.TryGetProperty (nameof entity.AngularVelocity) world with
+                                            | Some property when property.PropertyType = typeof<Vector3> -> entity.SetAngularVelocity v3Zero world
+                                            | Some _ | None -> world
+                                        world
+                                    else world
+                                else world
+                            if ImGui.IsMouseReleased ImGuiMouseButton.Left then
+                                if ManipulationActive then
+                                    do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
                                     let world =
-                                        match entity.TryGetProperty (nameof entity.AngularVelocity) world with
-                                        | Some property when property.PropertyType = typeof<Vector3> -> entity.SetAngularVelocity v3Zero world
-                                        | Some _ | None -> world
+                                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                                        | Some _ ->
+                                            match ManipulationOperation with
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
+                                                let degreesLocal = Math.SnapDegree3d (r, entity.GetDegreesLocal world)
+                                                entity.SetDegreesLocal degreesLocal world
+                                            | _ -> world
+                                        | None ->
+                                            match ManipulationOperation with
+                                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
+                                                let degrees = Math.SnapDegree3d (r, entity.GetDegrees world)
+                                                entity.SetDegrees degrees world
+                                            | _ -> world
+                                    ManipulationOperation <- OPERATION.TRANSLATE
+                                    ManipulationActive <- false
                                     world
                                 else world
                             else world
-                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then
-                            if ManipulationActive then
-                                do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
-                                let world =
-                                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                                    | Some _ ->
-                                        match ManipulationOperation with
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                            let degreesLocal = Math.SnapDegree3d (r, entity.GetDegreesLocal world)
-                                            entity.SetDegreesLocal degreesLocal world
-                                        | _ -> world
-                                    | None ->
-                                        match ManipulationOperation with
-                                        | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                            let degrees = Math.SnapDegree3d (r, entity.GetDegrees world)
-                                            entity.SetDegrees degrees world
-                                        | _ -> world
-                                ManipulationOperation <- OPERATION.TRANSLATE
-                                ManipulationActive <- false
-                                world
-                            else world
-                        else world
-                    | Some _ | None -> world
+                        | Some _ | None -> world
 
-                // view manipulation
-                if not CaptureMode && not ManipulationActive && DragEntityState = DragEntityInactive then
-                    let eyeRotationOld = world.Eye3dRotation
-                    let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
-                    let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
-                    let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
-                    let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
-                    if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f && eyeUpright then DesiredEye3dRotation <- eyeRotation
-                    if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
+                    // view manipulation
+                    if not ManipulationActive && DragEntityState = DragEntityInactive then
+                        let eyeRotationOld = world.Eye3dRotation
+                        let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
+                        ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                        let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
+                        let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
+                        let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
+                        if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f && eyeUpright then DesiredEye3dRotation <- eyeRotation
+                        if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
 
-                // fin
-                world
+                    // fin
+                    world
+
+                // clear editing states that this code otherwise affects
+                else
+                    ManipulationOperation <- OPERATION.TRANSLATE
+                    ManipulationActive <- false
+                    world
             else world
         ImGui.End ()
         world
 
-    let private imGuiFullScreenWindow () =
+    let private imGuiFullScreenWindow world =
         if not CaptureMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
                 ImGui.Text "Capture Mode (F10)"
                 ImGui.SameLine ()
                 let mutable captureMode = CaptureMode
-                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
+                if ImGui.Checkbox ("##captureMode", &captureMode) then
+                    setCaptureMode captureMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode (F10 to toggle)."
                     ImGui.EndTooltip ()
@@ -2426,7 +2476,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                setFullScreen fullScreen
+                setFullScreen fullScreen world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
@@ -2519,10 +2569,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let world = if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity world |> snd else world
                                 let world = if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity world |> snd else world
                                 let world = if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste true PasteAtLook (Option.map cast NewEntityParentOpt) world |> snd else world
-                                let world =
-                                    if ImGui.MenuItem ("Paste Entity (w/o Propagation Source)", "Ctrl+Shift+V")
-                                    then tryPaste false PasteAtLook (Option.map cast NewEntityParentOpt) world |> snd
-                                    else world
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then ShowOpenEntityDialog <- true
                                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
@@ -2543,6 +2589,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         NewEntityParentOpt <- SelectedEntityOpt
                                         ShowEntityContextMenu <- false
                                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
+                                let world = if ImGui.MenuItem ("Move to Origin", "Ctrl+I") then tryMoveSelectedEntityToOrigin false world |> snd else world
                                 let world = if ImGui.MenuItem ("Propagate Entity") then tryPropagateSelectedEntityStructure world |> snd else world
                                 let world = if ImGui.MenuItem ("Wipe Propagation Targets") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                                 ImGui.EndMenu ()
@@ -2637,7 +2684,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = World.tryProcessSimulants false world
+                                        let world = World.tryProcessSimulants true world
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world
@@ -2678,7 +2725,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 let mutable captureMode = CaptureMode
                 ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
+                setCaptureMode captureMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode view (F10 to toggle)."
                     ImGui.EndTooltip ()
@@ -2687,7 +2734,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                setFullScreen fullScreen
+                setFullScreen fullScreen world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
@@ -2810,7 +2857,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                                 ShowSelectedEntity <- true
                                                 world
                                             else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."; world
-                                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC or ImNui API)."; world
                                 | None -> world
                             else world
                         ImGui.EndDragDropTarget ()
@@ -2819,7 +2866,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // entity editing
                 let world =
-                    World.getEntitiesSovereign SelectedGroup world |>
+                    World.getSovereignEntities SelectedGroup world |>
                     Array.ofSeq |>
                     Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
                     Array.sortBy fst |>
@@ -3016,7 +3063,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                                     | Some truncatedValue -> truncatedValue
                                                     | None -> propertyValueTruncated
                                                 else propertyValueTruncated
-                                            setPropertyValue propertyValue propertyDescriptor simulant world
+                                            setPropertyValue false propertyValue propertyDescriptor simulant world
                                         with _ ->
                                             Pasts <- pasts
                                             world
@@ -3032,7 +3079,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             try let propertyValueEscaped = payload
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                setPropertyValue propertyValue propertyDescriptor simulant world
+                                                setPropertyValue false propertyValue propertyDescriptor simulant world
                                             with _ ->
                                                 Pasts <- pasts
                                                 world
@@ -3320,18 +3367,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let renderer3dConfig = World.getRenderer3dConfig world
-                let mutable renderer3dChanged = false
+                let mutable renderer3dEdited = false
                 let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
                 let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
                 let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
                 let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
                 let mutable ssrEnabled = renderer3dConfig.SsrEnabled
-                renderer3dChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dChanged
-                renderer3dChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dChanged
-                renderer3dChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dChanged
-                renderer3dChanged <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dChanged
-                renderer3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dChanged
-                if renderer3dChanged then
+                renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
+                renderer3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dEdited
+                renderer3dEdited <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dEdited
+                renderer3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dEdited
+                renderer3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dEdited
+                if renderer3dEdited then
                     let renderer3dConfig =
                         { LightMappingEnabled = lightMappingEnabled
                           SsaoEnabled = ssaoEnabled
@@ -3420,7 +3467,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.DragFloat ("##newEntityDistance", &NewEntityDistance, SnapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
             ImGui.Text "Input"
             ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
-            ImGui.Text "Misc"
+            ImGui.Text "Debug"
+            ImGui.Checkbox ("Physics Debug Rendering (3D only)", &PhysicsDebugRendering) |> ignore<bool>
             ImGui.Checkbox ("ImGui Debug Window", &ImGuiDebugWindow) |> ignore<bool>
         ImGui.End ()
 
@@ -3491,16 +3539,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
-                for projectType in ["ImNui Empty"; "ImNui Game"; "MMCC Empty"; "MMCC Game"] do
+                for projectType in ["MMCC Empty"; "MMCC Game"; "ImNui Empty"; "ImNui Game"] do
                     if ImGui.Selectable projectType then
                         NewProjectType <- projectType
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "ImNui Empty" -> "Create an empty ImNui project. This contains the minimum code needed to experiment with ImNui in a sandbox environment."
-                | "ImNui Game" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of ImNui usage."
                 | "MMCC Empty" -> "Create an empty MMCC project. This contains the minimum code needed to experiment with the MMCC API."
                 | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of MMCC usage."
+                | "ImNui Empty" -> "Create an empty ImNui project. This contains the minimum code needed to experiment with ImNui in a sandbox environment."
+                | "ImNui Game" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of ImNui usage."
                 | _ -> failwithumf ()
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
@@ -3522,10 +3570,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
                 let (templateFileName, templateDir, editMode, shortName) =
                     match NewProjectType with
-                    | "ImNui Empty" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial", "nu-template-imnui-empty")
-                    | "ImNui Game" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title", "nu-template-imnui-game")
                     | "MMCC Empty" -> ("Nu.Template.Mmcc.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial", "nu-template-mmcc-empty")
                     | "MMCC Game" -> ("Nu.Template.Mmcc.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title", "nu-template-mmcc-game")
+                    | "ImNui Empty" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial", "nu-template-imnui-empty")
+                    | "ImNui Game" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title", "nu-template-imnui-game")
                     | _ -> failwithumf ()
                 if Directory.Exists templateDir then
 
@@ -3699,7 +3747,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let world =
                 if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.GetExists world) then
                     let worldOld = world
-                    try let world = World.createGroup4 NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> snd
+                    try let world = snapshot CreateGroup world
+                        let world = World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> snd
                         selectEntityOpt None world
                         selectGroup true newGroup
                         ShowNewGroupDialog <- false
@@ -3721,7 +3770,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         GroupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
         if ImGui.FileDialog (&ShowOpenGroupDialog, GroupFileDialogState) then
             let world = snapshot OpenGroup world
-            let (loaded, world) = tryLoadSelectedGroup GroupFileDialogState.FilePath world
+            let (loaded, world) = tryLoadGroup GroupFileDialogState.FilePath world
             ShowOpenGroupDialog <- not loaded
             world
         else world
@@ -3771,7 +3820,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         EntityFileDialogState.FilePattern <- "*.nuentity"
         EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
         if ImGui.FileDialog (&ShowOpenEntityDialog, EntityFileDialogState) then
-            let (loaded, world) = tryLoadSelectedEntity EntityFileDialogState.FilePath world
+            let (loaded, world) = tryLoadEntity EntityFileDialogState.FilePath world
             ShowOpenEntityDialog <- not loaded
             world
         else world
@@ -3954,8 +4003,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let world =
                                     if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
                                         NewEntityDispatcherName <- dispatcherName
-                                        let world = createEntity true false world
-                                        ShowEntityContextMenu <- false
                                         world
                                     else world
                                 if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
@@ -3963,6 +4010,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 world)
                                 world dispatcherNames
                         ImGui.EndCombo ()
+                        world
+                    else world
+                let world =
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Create as Child at Local Origin" then
+                        let world = createEntity true true world
+                        let world = tryMoveSelectedEntityToOrigin true world |> snd
+                        ShowEntityContextMenu <- false
+                        world
+                    else world
+                let world =
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Create as Child" then
+                        let world = createEntity true true world
+                        ShowEntityContextMenu <- false
                         world
                     else world
                 let world =
@@ -3994,8 +4054,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         world
                     else world
                 let world =
-                    if ImGui.Button "Paste Entity (w/o Propagation Source)" then
-                        let world = tryPaste false PasteAtMouse (Option.map cast NewEntityParentOpt) world |> snd
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Paste Entity as Child at Local Origin" then
+                        let (pasted, world) = tryPaste true PasteAtMouse (Option.map cast SelectedEntityOpt) world
+                        let world = if pasted then tryMoveSelectedEntityToOrigin true world |> snd else world
+                        ShowEntityContextMenu <- false
+                        world
+                    else world
+                let world =
+                    if SelectedEntityOpt.IsSome && ImGui.Button "Paste Entity as Child" then
+                        let (_, world) = tryPaste true PasteAtMouse (Option.map cast SelectedEntityOpt) world
                         ShowEntityContextMenu <- false
                         world
                     else world
@@ -4023,6 +4090,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world =
                     if ImGui.Button "Auto Bounds Entity" then
                         let world = tryAutoBoundsSelectedEntity world |> snd
+                        ShowEntityContextMenu <- false
+                        world
+                    else world
+                let world =
+                    if ImGui.Button "Move to Origin" then
+                        let world = tryMoveSelectedEntityToOrigin false world |> snd
                         ShowEntityContextMenu <- false
                         world
                     else world
@@ -4113,15 +4186,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.TextWrapped (scstring exn)
             ImGui.Text "How would you like to handle this exception?"
             let world =
-                if ImGui.Button "Ignore exception and revert to old world." then
+                if ImGui.Button "Soft Rewind: undo the current ImGui frame." then
                     let world = World.switch worldOld
                     RecoverableExceptionOpt <- None
                     world
                 else world
-            if ImGui.Button "Ignore exception and proceed with current world." then
+            let world =
+                if ImGui.Button "Hard Rewind: undo the last edit operation." then
+                    let (_, world) = tryUndo world
+                    RecoverableExceptionOpt <- None
+                    world
+                else world
+            if ImGui.Button "Ignore: proceed with current world as-is." then
                 RecoverableExceptionOpt <- None
             let world =
-                if ImGui.Button "Exit the editor." then
+                if ImGui.Button "Exit: close the editor." then
                     let world = World.exit world
                     RecoverableExceptionOpt <- None
                     world
@@ -4154,7 +4233,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // windows
                 let (entityHierarchyFocused, world) =
                     if FullScreen then
-                        imGuiFullScreenWindow ()
+                        imGuiFullScreenWindow world
                         (false, world)
                     else
                         let world = imGuiMainMenuWindow world
@@ -4229,90 +4308,112 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiRender world =
 
-        // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
-        // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
-        if EntityPropertiesFocusRequested then
-            ImGui.SetWindowFocus "Entity Properties"
-            EntityPropertiesFocusRequested <- false
+        // augmentative rendering while not in capture mode
+        if not CaptureMode then
 
-        // render light probes of the selected group in light box and view frustum
-        let lightBox = World.getLight3dBox world
-        let viewFrustum = World.getEye3dFrustumView world
-        let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
-        let lightProbeModels =
-            entities |>
-            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-            SList.ofSeq
-        if SList.notEmpty lightProbeModels then
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { StaticModels = lightProbeModels
-                      StaticModel = Assets.Default.LightProbeModel
-                      RenderType = DeferredRenderType
-                      RenderPass = NormalPass })
-                world
+            // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
+            // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
+            if EntityPropertiesFocusRequested then
+                ImGui.SetWindowFocus "Entity Properties"
+                EntityPropertiesFocusRequested <- false
 
-        // render lights of the selected group in play
-        let entities = World.getLights3dInBox lightBox (HashSet ()) world
-        let lightModels =
-            entities |>
-            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-            SList.ofSeq
-        if SList.notEmpty lightModels then
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { StaticModels = lightModels
-                      StaticModel = Assets.Default.LightbulbModel
-                      RenderType = DeferredRenderType
-                      RenderPass = NormalPass })
-                world
-
-        // render selection highlights
-        match SelectedEntityOpt with
-        | Some entity when entity.GetExists world ->
-            if entity.GetIs2d world then
-                let absolute = entity.GetAbsolute world
-                let bounds = entity.GetBounds world
-                let elevation = Single.MaxValue
-                let transform = Transform.makePerimeter absolute bounds v3Zero elevation false
-                let image = Assets.Default.HighlightSprite
-                World.enqueueRenderMessage2d
-                    (LayeredOperation2d
-                        { Elevation = elevation
-                          Horizon = bounds.Bottom.Y
-                          AssetTag = image
-                          RenderOperation2d =
-                            RenderSprite
-                                { Transform = transform
-                                  InsetOpt = ValueNone
-                                  ClipOpt = ValueNone
-                                  Image = image
-                                  Color = Color.One
-                                  Blend = Transparent
-                                  Emission = Color.Zero
-                                  Flip = FlipNone }})
-                    world
-            else
-                let bounds = entity.GetBounds world
-                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                boundsMatrix.Translation <- bounds.Center
+            // render light probes of the selected group in light box and view frustum
+            let lightBox = World.getLight3dBox world
+            let viewFrustum = World.getEye3dFrustumView world
+            let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
+            let lightProbeModels =
+                entities |>
+                Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
+                Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+                SList.ofSeq
+            if SList.notEmpty lightProbeModels then
                 World.enqueueRenderMessage3d
-                    (RenderStaticModel
-                        { ModelMatrix = boundsMatrix
-                          CastShadow = false
-                          Presence = Omnipresent
-                          InsetOpt = None
-                          MaterialProperties = MaterialProperties.defaultProperties
-                          StaticModel = Assets.Default.HighlightModel
-                          RenderType = ForwardRenderType (0.0f, Single.MaxValue)
+                    (RenderStaticModels
+                        { StaticModels = lightProbeModels
+                          StaticModel = Assets.Default.LightProbeModel
+                          DepthTest = LessThanOrEqualTest
+                          RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
-        | Some _ | None -> ()
 
-        // fin
-        world
+            // render lights of the selected group in play
+            let entities = World.getLights3dInBox lightBox (HashSet ()) world
+            let lightModels =
+                entities |>
+                Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
+                Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+                SList.ofSeq
+            if SList.notEmpty lightModels then
+                World.enqueueRenderMessage3d
+                    (RenderStaticModels
+                        { StaticModels = lightModels
+                          StaticModel = Assets.Default.LightbulbModel
+                          DepthTest = LessThanOrEqualTest
+                          RenderType = DeferredRenderType
+                          RenderPass = NormalPass })
+                    world
+
+            // render selection highlights
+            match SelectedEntityOpt with
+            | Some entity when entity.GetExists world ->
+                if entity.GetIs2d world then
+                    let absolute = entity.GetAbsolute world
+                    let bounds = entity.GetBounds world
+                    let elevation = Single.MaxValue
+                    let transform = Transform.makePerimeter absolute bounds v3Zero elevation false
+                    let image = Assets.Default.HighlightSprite
+                    World.enqueueRenderMessage2d
+                        (LayeredOperation2d
+                            { Elevation = elevation
+                              Horizon = bounds.Bottom.Y
+                              AssetTag = image
+                              RenderOperation2d =
+                                RenderSprite
+                                    { Transform = transform
+                                      InsetOpt = ValueNone
+                                      ClipOpt = ValueNone
+                                      Image = image
+                                      Color = Color.One
+                                      Blend = Transparent
+                                      Emission = Color.Zero
+                                      Flip = FlipNone }})
+                        world
+                else
+                    let bounds = entity.GetBounds world
+                    let bounds = box3 (bounds.Min - v3Dup 0.005f) (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                    for i in 0 .. dec 6 do
+                        let (translation, rotation, scale) =
+                            match i with
+                            | 0 -> (v3Forward * bounds.Depth * 0.5f, quatIdentity, v3 bounds.Width bounds.Height 0.01f) // back face
+                            | 1 -> (v3Back * bounds.Depth * 0.5f, Quaternion.CreateFromAxisAngle (v3Up, MathF.PI), v3 bounds.Width bounds.Height 0.01f) // front face
+                            | 2 -> (v3Left * bounds.Width * 0.5f, Quaternion.CreateFromAxisAngle (v3Up, MathF.PI_OVER_2), v3 bounds.Depth bounds.Height 0.01f) // left face
+                            | 3 -> (v3Right * bounds.Width * 0.5f, Quaternion.CreateFromAxisAngle (v3Up, -MathF.PI_OVER_2), v3 bounds.Depth bounds.Height 0.01f) // right face
+                            | 5 -> (v3Down * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // bottom face
+                            | 4 -> (v3Up * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // top face
+                            | _ -> failwithumf ()
+                        let position = bounds.Center + translation
+                        let sort =
+                            let faceDistance = world.Eye3dCenter.Distance position
+                            let centerDistance = world.Eye3dCenter.Distance bounds.Center
+                            if faceDistance < centerDistance then Single.MaxValue else Single.MinValue
+                        let mutable boundsMatrix = Matrix4x4.CreateAffine (position, rotation, scale)
+                        World.enqueueRenderMessage3d
+                            (RenderStaticModel
+                                { ModelMatrix = boundsMatrix
+                                  CastShadow = false
+                                  Presence = Omnipresent
+                                  InsetOpt = None
+                                  MaterialProperties = MaterialProperties.defaultProperties
+                                  StaticModel = Assets.Default.HighlightModel
+                                  DepthTest = LessThanOrEqualTest
+                                  RenderType = ForwardRenderType (0.0f, sort)
+                                  RenderPass = NormalPass })
+                            world
+            | Some _ | None -> ()
+
+            // fin
+            world
+        else world
 
     let private imGuiPostProcess (wtemp : World) =
 
@@ -4452,6 +4553,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
                 let world = World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
+                let world = World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world
 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world

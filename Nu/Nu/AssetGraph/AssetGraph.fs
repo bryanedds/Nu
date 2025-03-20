@@ -189,7 +189,9 @@ module AssetGraph =
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
                 let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
                 Directory.CreateDirectory (PathF.GetDirectoryName outputFilePath) |> ignore
-                try File.Copy (intermediateFilePath, outputFilePath, true)
+                try if File.Exists outputFilePath then File.SetAttributes (outputFilePath, FileAttributes.None)
+                    File.Copy (intermediateFilePath, outputFilePath, true)
+                    File.SetAttributes (outputFilePath, FileAttributes.ReadOnly) // prevents errors when accidentally altering output .dds files and the like
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from package descriptor assets value.

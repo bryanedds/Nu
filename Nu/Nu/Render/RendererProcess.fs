@@ -12,6 +12,7 @@ open ImGuiNET
 open Prime
 
 /// A renderer process that may or may not be threaded.
+/// TODO: name all these abstract method parameters.
 type RendererProcess =
     interface
         /// Start the rendering process.
@@ -23,11 +24,11 @@ type RendererProcess =
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         /// Potential fast-path for rendering static models.
-        abstract RenderStaticModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * StaticModel AssetTag * RenderType * RenderPass -> unit
+        abstract RenderStaticModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * StaticModel AssetTag * DepthTest * RenderType * RenderPass -> unit
         /// Potential fast-path for rendering static model surfaces.
-        abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Material inref * StaticModel AssetTag * int * RenderType * RenderPass -> unit
+        abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Material inref * StaticModel AssetTag * int * DepthTest * RenderType * RenderPass -> unit
         /// Potential fast-path for rendering animated models.
-        abstract RenderAnimatedModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * RenderPass -> unit
+        abstract RenderAnimatedModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * Map<int, single> * int Set * DepthTest * RenderType * RenderPass -> unit
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
@@ -60,7 +61,7 @@ type RendererInline () =
 
     interface RendererProcess with
 
-        member this.Start fonts windowOpt_ geometryViewport rasterViewport outerViewport =
+        member ri.Start fonts windowOpt_ geometryViewport rasterViewport outerViewport =
 
             // assign windowOpt
             windowOpt <- windowOpt_
@@ -106,58 +107,58 @@ type RendererInline () =
             // fail on already created
             | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
 
-        member this.Renderer3dConfig =
+        member ri.Renderer3dConfig =
             match renderersOpt with
             | Some (renderer3d, _, _) -> renderer3d.RendererConfig
             | None -> Renderer3dConfig.defaultConfig
 
-        member this.TryGetImGuiTextureId assetTag =
+        member ri.TryGetImGuiTextureId assetTag =
             assetTextureRequests.[assetTag] <- ()
             match assetTextureOpts.TryGetValue assetTag with
             | (true, textureIdOpt) -> textureIdOpt
             | (false, _) -> ValueNone
 
-        member this.EnqueueMessage3d message =
+        member ri.EnqueueMessage3d message =
             match renderersOpt with
             | Some _ -> messages3d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, renderType, renderPass) =
+        member ri.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, depthTest, renderType, renderPass) =
             match renderersOpt with
-            | Some _ -> messages3d.Add (RenderStaticModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; StaticModel = staticModel; RenderType = renderType; RenderPass = renderPass })
+            | Some _ -> messages3d.Add (RenderStaticModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; StaticModel = staticModel; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, renderType, renderPass) =
+        member ri.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
             match renderersOpt with
-            | Some _ -> messages3d.Add (RenderStaticModelSurface { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; StaticModel = staticModel; SurfaceIndex = surfaceIndex; RenderType = renderType; RenderPass = renderPass })
+            | Some _ -> messages3d.Add (RenderStaticModelSurface { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; StaticModel = staticModel; SurfaceIndex = surfaceIndex; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
+        member ri.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
             match renderersOpt with
-            | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; RenderPass = renderPass })
+            | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualRenderedSurfaceIndices = drsIndices; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.EnqueueMessage2d message =
+        member ri.EnqueueMessage2d message =
             match renderersOpt with
             | Some _ -> messages2d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
+        member ri.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
             match renderersOpt with
             | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.EnqueueMessageImGui message =
+        member ri.EnqueueMessageImGui message =
             match renderersOpt with
             | Some _ -> messagesImGui.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.ClearMessages () =
+        member ri.ClearMessages () =
             messages3d.Clear ()
             messages2d.Clear ()
             messagesImGui.Clear ()
 
-        member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize geometryViewport rasterViewport outerViewport drawData =
+        member ri.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize geometryViewport rasterViewport outerViewport drawData =
             match renderersOpt with
             | Some (renderer3d, renderer2d, rendererImGui) ->
 
@@ -186,14 +187,14 @@ type RendererInline () =
 
             | None -> ()
 
-        member this.Swap () =
+        member ri.Swap () =
             match windowOpt with
             | Some (SglWindow window) ->
                 if glFinishRequired then OpenGL.Gl.Finish ()
                 SDL.SDL_GL_SwapWindow window.SglWindow
             | None -> ()
 
-        member this.Terminate () =
+        member ri.Terminate () =
             match renderersOpt with
             | Some (renderer3d, renderer2d, rendererImGui) ->
                 renderer3d.CleanUp ()
@@ -243,6 +244,7 @@ type RendererThread () =
                           CachedStaticModelInsetOpt = Unchecked.defaultof<_>
                           CachedStaticModelMaterialProperties = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_>
+                          CachedStaticModelDepthTest = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModelRenderPass = Unchecked.defaultof<_> }
                     let cachedStaticModelMessage = RenderCachedStaticModel staticModelDescriptor
@@ -264,6 +266,7 @@ type RendererThread () =
                           CachedStaticModelSurfaceMaterial = Unchecked.defaultof<_>
                           CachedStaticModelSurfaceModel = Unchecked.defaultof<_>
                           CachedStaticModelSurfaceIndex = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceDepthTest = Unchecked.defaultof<_>
                           CachedStaticModelSurfaceRenderType = Unchecked.defaultof<_>
                           CachedStaticModelSurfaceRenderPass = Unchecked.defaultof<_> }
                     let cachedStaticModelSurfaceMessage = RenderCachedStaticModelSurface staticModelSurfaceDescriptor
@@ -298,6 +301,10 @@ type RendererThread () =
                           CachedAnimatedModelMaterialProperties = Unchecked.defaultof<_>
                           CachedAnimatedModelBoneTransforms = Unchecked.defaultof<_>
                           CachedAnimatedModel = Unchecked.defaultof<_>
+                          CachedAnimatedModelSubsortOffsets = Unchecked.defaultof<_>
+                          CachedAnimatedModelDualRenderedSurfaceIndices = Unchecked.defaultof<_>
+                          CachedAnimatedModelDepthTest = Unchecked.defaultof<_>
+                          CachedAnimatedModelRenderType = Unchecked.defaultof<_>
                           CachedAnimatedModelRenderPass = Unchecked.defaultof<_> }
                     let cachedAnimatedModelMessage = RenderCachedAnimatedModel animatedModelDescriptor
                     cachedAnimatedModelMessages.Enqueue cachedAnimatedModelMessage
@@ -333,7 +340,7 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private this.Run fonts window geometryViewport rasterViewport outerViewport =
+    member private rt.Run fonts window geometryViewport rasterViewport outerViewport =
 
         // create gl context
         let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
@@ -417,7 +424,7 @@ type RendererThread () =
 
     interface RendererProcess with
 
-        member this.Start fonts windowOpt geometryViewport rasterViewport outerViewport =
+        member rt.Start fonts windowOpt geometryViewport rasterViewport outerViewport =
 
             // validate state
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
@@ -427,7 +434,7 @@ type RendererThread () =
             | Some window ->
 
                 // start real thread
-                let thread = Thread (ThreadStart (fun () -> this.Run fonts window geometryViewport rasterViewport outerViewport))
+                let thread = Thread (ThreadStart (fun () -> rt.Run fonts window geometryViewport rasterViewport outerViewport))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
@@ -452,16 +459,16 @@ type RendererThread () =
             // wait for thread to finish starting
             while not started do Thread.Yield () |> ignore<bool>
 
-        member this.Renderer3dConfig =
+        member rt.Renderer3dConfig =
             renderer3dConfig
 
-        member this.TryGetImGuiTextureId assetTag =
+        member rt.TryGetImGuiTextureId assetTag =
             assetTextureRequests.[assetTag] <- ()
             match assetTextureOpts.TryGetValue assetTag with
             | (true, textureIdOpt) -> textureIdOpt
             | (false, _) -> ValueNone
 
-        member this.EnqueueMessage3d message =
+        member rt.EnqueueMessage3d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
             | RenderStaticModel rsm ->
@@ -505,12 +512,13 @@ type RendererThread () =
                     cachedMessage.CachedAnimatedModelMaterialProperties <- ram.MaterialProperties
                     cachedMessage.CachedAnimatedModelBoneTransforms <- ram.BoneTransforms
                     cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
+                    cachedMessage.CachedAnimatedModelDepthTest <- ram.DepthTest
                     cachedMessage.CachedAnimatedModelRenderPass <- ram.RenderPass
                     messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message
 
-        member this.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, renderType, renderPass) =
+        member rt.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, depthTest, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let cachedStaticModelMessage = allocStaticModelMessage ()
             match cachedStaticModelMessage with
@@ -521,12 +529,13 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelInsetOpt <- insetOpt
                 cachedMessage.CachedStaticModelMaterialProperties <- materialProperties
                 cachedMessage.CachedStaticModel <- staticModel
+                cachedMessage.CachedStaticModelDepthTest <- depthTest
                 cachedMessage.CachedStaticModelRenderType <- renderType
                 cachedMessage.CachedStaticModelRenderPass <- renderPass
                 messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
             | _ -> failwithumf ()
 
-        member this.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, renderType, renderPass) =
+        member rt.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
             match cachedStaticModelSurfaceMessage with
@@ -539,12 +548,13 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelSurfaceMaterial <- material
                 cachedMessage.CachedStaticModelSurfaceModel <- staticModel
                 cachedMessage.CachedStaticModelSurfaceIndex <- surfaceIndex
+                cachedMessage.CachedStaticModelSurfaceDepthTest <- depthTest
                 cachedMessage.CachedStaticModelSurfaceRenderType <- renderType
                 cachedMessage.CachedStaticModelSurfaceRenderPass <- renderPass
                 messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
-        member this.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
+        member rt.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
             match cachedAnimatedModelMessage with
@@ -556,11 +566,15 @@ type RendererThread () =
                 cachedMessage.CachedAnimatedModelMaterialProperties <- materialProperties
                 cachedMessage.CachedAnimatedModelBoneTransforms <- boneTransforms
                 cachedMessage.CachedAnimatedModel <- animatedModel
+                cachedMessage.CachedAnimatedModelSubsortOffsets <- subsortOffsets
+                cachedMessage.CachedAnimatedModelDualRenderedSurfaceIndices <- drsIndices
+                cachedMessage.CachedAnimatedModelDepthTest <- depthTest
+                cachedMessage.CachedAnimatedModelRenderType <- renderType
                 cachedMessage.CachedAnimatedModelRenderPass <- renderPass
                 messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
             | _ -> failwithumf ()
 
-        member this.EnqueueMessage2d message =
+        member rt.EnqueueMessage2d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
             | LayeredOperation2d operation ->
@@ -588,7 +602,7 @@ type RendererThread () =
                 | _ -> messageBuffers2d.[messageBufferIndex].Add message
             | _ -> messageBuffers2d.[messageBufferIndex].Add message
 
-        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
+        member rt.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
             let cachedSpriteMessage = allocSpriteMessage ()
             match cachedSpriteMessage with
             | LayeredOperation2d cachedOperation ->
@@ -609,17 +623,17 @@ type RendererThread () =
                 | _ -> failwithumf ()
             | _ -> failwithumf ()
 
-        member this.EnqueueMessageImGui message =
+        member rt.EnqueueMessageImGui message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             messageBuffersImGui.[messageBufferIndex].Add message
 
-        member this.ClearMessages () =
+        member rt.ClearMessages () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
             messageBuffersImGui.[messageBufferIndex].Clear ()
 
-        member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin geometryViewport rasterViewport outerViewport drawData =
+        member rt.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin geometryViewport rasterViewport outerViewport drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
@@ -630,13 +644,13 @@ type RendererThread () =
             messageBuffersImGui.[messageBufferIndex].Clear ()
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, rasterViewport, outerViewport, drawData)
 
-        member this.Swap () =
+        member rt.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swapRequested <- true
             while not swapCompleted && not terminated do Thread.Yield () |> ignore<bool>
             swapCompleted <- false
 
-        member this.Terminate () =
+        member rt.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let thread = Option.get threadOpt
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")

@@ -6,6 +6,21 @@ open System
 open System.Numerics
 open Prime
 
+/// The data for a life-cycle event.
+type LifeCycleEventData =
+    | RegisterData of Simulant
+    | UnregisteringData of Simulant
+    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
+
+/// The data for a screen selection event.
+type SelectionEventData =
+    | Select
+    | IncomingStart
+    | IncomingFinish
+    | OutgoingStart
+    | OutgoingFinish
+    | Deselecting
+
 /// The data for a change in a simulant.
 type KeyedValueChangeData =
     { Key : string
@@ -88,17 +103,18 @@ type BodyTransformData =
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
 
+/// The data for a physics body event.
+type BodyEventData =
+    | BodyPenetrationData of BodyPenetrationData
+    | BodySeparationExplicitData of BodySeparationExplicitData
+    | BodySeparationImplicitData of BodySeparationImplicitData
+    | BodyTransformData of BodyTransformData
+
 /// The data of a body joint break event.
 type BodyJointBreakData =
     { BodyJointId : BodyJointId
       BreakingPoint : single
       BreakingOverflow : single }
-
-/// The data for a life cycle event.
-type LifeCycleData =
-    | RegisterData of Simulant
-    | UnregisteringData of Simulant
-    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
 
 /// The data for describing a mounting or unmounting event.
 type MountData =
@@ -119,7 +135,7 @@ module Events =
     let RegisterEvent = stoa<unit> "Register/Event"
     let UnregisteringEvent = stoa<unit> "Unregistering/Event"
     let ChangeEvent propertyName = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
-    let LifeCycleEvent simulantTypeName = rtoa<LifeCycleData> [|"LifeCycle"; simulantTypeName; "Event"|]
+    let LifeCycleEvent simulantTypeName = rtoa<LifeCycleEventData> [|"LifeCycle"; simulantTypeName; "Event"|]
     let PreUpdateEvent = stoa<unit> "PreUpdate/Event"
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
@@ -183,3 +199,4 @@ module Events =
     let GamepadButtonUpEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Up"; "Event"|]
     let TextInputEvent = stoa<TextInputData> "TextInput/Event"
     let AssetsReloadEvent = stoa<unit> "Assets/Reload/Event"
+    let ExitRequestEvent = stoa<unit> "ExitRequest/Event"

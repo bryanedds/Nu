@@ -27,17 +27,17 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
+![image](https://github.com/user-attachments/assets/e6f034a4-8561-4c44-8151-daeb4668001f)
+Our new soft-shadow, screen-space reflection, and volumetric fog systems.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
 ![image](https://github.com/user-attachments/assets/fa88a1a5-e793-44cb-8113-4a6bf8468d4c)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
-![image](https://github.com/user-attachments/assets/b9f9a7a5-e159-45e4-b220-984f24137b62)
+![image](https://github.com/user-attachments/assets/d8406232-2bb9-4b60-b7a0-4a49cfa29236)
 Rendering made efficient with instancing-by-default.
-
-![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
-Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
@@ -51,11 +51,11 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
+![image](https://github.com/user-attachments/assets/b1f31eab-f636-4579-8c6d-daeafb97a3c2)
+Screenshot from our current game in early development.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
-
-![image](https://github.com/bryanedds/Nu/assets/1625560/1d3ebe11-da94-46ad-bae1-22fc5f7c9b3e)
-Our little 3D dog-fooding demo, Terra Firma.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
@@ -69,9 +69,9 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 
 **[@arsmilitaris](https://github.com/arsmilitaris)** at **https://arsmilitaris.com**
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/1b8fe1bb-18c1-4a1e-9888-4f566204490a)
-
 **[@pauloud](https://github.com/pauloud)**
+
+**[@fswadling](https://github.com/fswadling)**
 
 **[@creynolds138](https://github.com/creynolds138)**
 

@@ -31,7 +31,6 @@ type GuiDispatcher () =
          define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
          define Entity.Elevation 1.0f
          define Entity.ElevationLocal 1.0f
-         define Entity.Presence Omnipresent
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault]
 
 /// A 3d entity dispatcher.
@@ -280,7 +279,7 @@ type Character2dDispatcher () =
         let compressedTime =
             match (time, delay) with
             | (UpdateTime time, UpdateTime delay) -> time / delay
-            | (ClockTime time, ClockTime delay) -> time / delay |> int64
+            | (TickTime time, TickTime delay) -> time / delay
             | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
         let frame = compressedTime % int64 celRun
         let i = single (frame % 3L)
@@ -386,6 +385,9 @@ type SpineSkeletonDispatcher () =
 type SkyBoxDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
+    override this.PresenceOverride =
+        ValueSome Omnipresent
+
     static member Facets =
         [typeof<SkyBoxFacet>]
 
@@ -398,16 +400,16 @@ module Lighting3dConfigDispatcherExtensions =
 
 type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
-
+    
     static member Properties =
-        [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig
-         define Entity.Presence Omnipresent
-         define Entity.AlwaysUpdate true]
+        [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig]
 
-    override this.Update (entity, world) =
+    override this.PresenceOverride =
+        ValueSome Omnipresent
+
+    override this.Render (_, entity, world) =
         let config = entity.GetLighting3dConfig world
         World.enqueueRenderMessage3d (ConfigureLighting3d config) world
-        world
 
 /// Gives an entity the base behavior of a 3d light probe.
 type LightProbe3dDispatcher () =
@@ -415,6 +417,9 @@ type LightProbe3dDispatcher () =
 
     static member Facets =
         [typeof<LightProbe3dFacet>]
+
+    override this.PresenceOverride =
+        ValueSome Omnipresent
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -436,6 +441,13 @@ type StaticBillboardDispatcher () =
     static member Facets =
         [typeof<StaticBillboardFacet>]
 
+/// Gives an entity the base behavior of an animated billboard.
+type AnimatedBillboardDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<AnimatedBillboardFacet>]
+
 /// Gives an entity the base behavior of a static model.
 type StaticModelDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
@@ -450,6 +462,43 @@ type AnimatedModelDispatcher () =
     static member Facets =
         [typeof<AnimatedModelFacet>]
 
+/// Gives an entity the base behavior of physics-driven sensor model.
+type SensorModelDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static let updateBodyShape evt world =
+        let entity = evt.Subscriber : Entity
+        let bodyShape = entity.GetBodyShape world
+        let staticModel = entity.GetStaticModel world
+        let world =
+            match bodyShape with
+            | StaticModelShape staticModelShape ->
+                if staticModelShape.StaticModel <> staticModel then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          Profile = staticModelShape.Profile
+                          TransformOpt = staticModelShape.TransformOpt
+                          PropertiesOpt = staticModelShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticModelFacet>]
+
+    static member Properties =
+        [define Entity.Visible false
+         define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Sensor true
+         define Entity.NavShape EmptyNavShape]
+
+    override this.Register (entity, world) =
+        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
+        world
+
 /// Gives an entity the base behavior of physics-driven rigid model.
 type RigidModelDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
@@ -458,11 +507,19 @@ type RigidModelDispatcher () =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
-        if (match bodyShape with StaticModelShape staticModelShape -> staticModelShape.StaticModel <> staticModel | _ -> false) then
-            let staticModelShape = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
-            let world = entity.SetBodyShape (StaticModelShape staticModelShape) world
-            (Cascade, world)
-        else (Cascade, world)
+        let world =
+            match bodyShape with
+            | StaticModelShape staticModelShape ->
+                if staticModelShape.StaticModel <> staticModel then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          Profile = staticModelShape.Profile
+                          TransformOpt = staticModelShape.TransformOpt
+                          PropertiesOpt = staticModelShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
 
     static let updateNavShape evt world =
         let entity = evt.Subscriber : Entity
@@ -478,7 +535,8 @@ type RigidModelDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+        [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.NavShape StaticModelNavShape]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -493,6 +551,45 @@ type StaticModelSurfaceDispatcher () =
     static member Facets =
         [typeof<StaticModelSurfaceFacet>]
 
+/// Gives an entity the base behavior of an indexed, physics-driven sensor model.
+type SensorModelSurfaceDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static let updateBodyShape evt world =
+        let entity = evt.Subscriber : Entity
+        let bodyShape = entity.GetBodyShape world
+        let staticModel = entity.GetStaticModel world
+        let surfaceIndex = entity.GetSurfaceIndex world
+        let world =
+            match bodyShape with
+            | StaticModelSurfaceShape staticModelSurfaceShape ->
+                if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          SurfaceIndex = surfaceIndex
+                          Profile = staticModelSurfaceShape.Profile
+                          TransformOpt = staticModelSurfaceShape.TransformOpt
+                          PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticModelSurfaceFacet>]
+
+    static member Properties =
+        [define Entity.Visible false
+         define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Sensor true
+         define Entity.NavShape EmptyNavShape]
+
+    override this.Register (entity, world) =
+        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
+        world
+
 /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
 type RigidModelSurfaceDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
@@ -502,11 +599,20 @@ type RigidModelSurfaceDispatcher () =
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
         let surfaceIndex = entity.GetSurfaceIndex world
-        if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex | _ -> false) then
-            let staticModelShape = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
-            let world = entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
-            (Cascade, world)
-        else (Cascade, world)
+        let world =
+            match bodyShape with
+            | StaticModelSurfaceShape staticModelSurfaceShape ->
+                if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
+                    let staticModelShape =
+                        { StaticModel = staticModel
+                          SurfaceIndex = surfaceIndex
+                          Profile = staticModelSurfaceShape.Profile
+                          TransformOpt = staticModelSurfaceShape.TransformOpt
+                          PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                    entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+                else world
+            | _ -> world
+        (Cascade, world)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -514,7 +620,8 @@ type RigidModelSurfaceDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })]
+        [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
+         define Entity.NavShape StaticModelSurfaceNavShape]
 
     override this.Register (entity, world) =
         let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -612,18 +719,18 @@ type Character3dDispatcher () =
         let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 0.5f else 0.0f
         let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 0.5f else 0.0f
         let animations =
-            [Animation.make GameTime.zero None "Armature|Idle" Loop 1.0f 1.0f None]
+            [Animation.make GameTime.zero None "Idle" Loop 1.0f 1.0f None]
         let animations =
-            if forwardness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkForward" Loop 1.0f (max 0.025f forwardness) None :: animations
-            elif backness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkBack" Loop 1.0f (max 0.025f backness) None :: animations
+            if forwardness >= 0.01f then Animation.make GameTime.zero None "WalkForward" Loop 1.0f (max 0.025f forwardness) None :: animations
+            elif backness >= 0.01f then Animation.make GameTime.zero None "WalkBack" Loop 1.0f (max 0.025f backness) None :: animations
             else animations
         let animations =
-            if rightness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkRight" Loop 1.0f (max 0.025f rightness) None :: animations
-            elif leftness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkLeft" Loop 1.0f (max 0.025f leftness) None :: animations
+            if rightness >= 0.01f then Animation.make GameTime.zero None "WalkRight" Loop 1.0f (max 0.025f rightness) None :: animations
+            elif leftness >= 0.01f then Animation.make GameTime.zero None "WalkLeft" Loop 1.0f (max 0.025f leftness) None :: animations
             else animations
         let animations =
-            if turnRightness >= 0.01f then Animation.make GameTime.zero None "Armature|TurnRight" Loop 1.0f (max 0.025f turnRightness) None :: animations
-            elif turnLeftness >= 0.01f then Animation.make GameTime.zero None "Armature|TurnLeft" Loop 1.0f (max 0.025f turnLeftness) None :: animations
+            if turnRightness >= 0.01f then Animation.make GameTime.zero None "TurnRight" Loop 1.0f (max 0.025f turnRightness) None :: animations
+            elif turnLeftness >= 0.01f then Animation.make GameTime.zero None "TurnLeft" Loop 1.0f (max 0.025f turnLeftness) None :: animations
             else animations
         let world = entity.SetAnimations (List.toArray animations) world
         world
@@ -649,6 +756,9 @@ type TerrainDispatcher () =
 
     static member Facets =
         [typeof<TerrainFacet>]
+
+    override this.PresenceOverride =
+        ValueSome Omnipresent
 
 [<AutoOpen>]
 module Nav3dConfigDispatcherExtensions =
@@ -684,15 +794,9 @@ type Nav3dConfigDispatcher () =
                     let height = Math.Lerp (0.0f, 1.0f, (middleY - nbrData.NavEdgesMinY) / (nbrData.NavEdgesMaxY - nbrData.NavEdgesMinY))
                     Color (1.0f, 1.0f - height, height, 1.0f)
 
-                // point color compute lambda
-                let computePointColor (point : Vector3) =
-                    let height = Math.Lerp (0.0f, 1.0f, (point.Y - nbrData.NavPointsMinY) / (nbrData.NavPointsMaxY - nbrData.NavPointsMinY))
-                    Color (1.0f, 1.0f - height, height, 1.0f)
-
                 // draw edges and points
                 World.imGuiSegments3dPlus nbrData.NavInteriorEdges 1.0f computeEdgeColor world
                 World.imGuiSegments3dPlus nbrData.NavExteriorEdges 1.0f computeEdgeColor world
-                World.imGuiCircles3dPlus nbrData.NavPoints 2.5f true computePointColor world
                 world
 
             | None -> world

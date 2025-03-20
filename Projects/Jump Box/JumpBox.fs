@@ -31,11 +31,11 @@ type JumpBoxDispatcher () =
         let (_, _, world) = World.doBlock2d "Block" [Entity.Position .= v3 128.0f -64.0f 0.0f] world
 
         // declare a box and then handle its body interactions for the frame
-        let (boxBodyId, results, world) = World.doBox2d "Box" [Entity.Position .= v3 128.0f 64.0f 0.0f; Entity.Observable .= true] world
+        let (boxBodyId, results, world) = World.doBox2d "Box" [Entity.Position .= v3 128.0f 64.0f 0.0f] world
         let world =
             FQueue.fold (fun world result ->
                 match result with
-                | BodyPenetration _ -> jumpBox.Collisions.Map inc world
+                | BodyPenetrationData _ -> jumpBox.Collisions.Map inc world
                 | _ -> world)
                 world results
 

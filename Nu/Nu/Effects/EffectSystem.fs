@@ -283,7 +283,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.Vector4) (keyFrame2.TweenValue.Vector4) progress algorithm
+                let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.V4) (keyFrame2.TweenValue.V4) progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (Nu.Color tweened) applicator
                 slice.Color <- applied
             slice
@@ -540,6 +540,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           ShadowOffset = effectSystem.EffectShadowOffset
+                          DepthTest = LessThanOrEqualTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken billboardToken effectSystem
             else effectSystem
@@ -578,6 +579,7 @@ module EffectSystem =
                           InsetOpt = insetOpt
                           MaterialProperties = properties
                           StaticModel = staticModel
+                          DepthTest = LessThanOrEqualTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem
             else effectSystem

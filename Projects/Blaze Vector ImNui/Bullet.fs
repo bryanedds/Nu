@@ -27,7 +27,6 @@ type BulletDispatcher () =
          define Entity.LinearDamping 0.0f
          define Entity.Substance (Density 0.1f)
          define Entity.GravityOverride (Some v3Zero)
-         define Entity.Observable true
          define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
          define Entity.CreationTime 0L]
 
@@ -35,7 +34,7 @@ type BulletDispatcher () =
 
         // process impact
         let localTime = world.UpdateTime - entity.GetCreationTime world
-        let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
+        let (penetrations, world) = World.doSubscription "Penetrations" entity.BodyPenetrationEvent world
         if localTime = Constants.Gameplay.BulletLifeTime || FQueue.notEmpty penetrations
         then World.destroyEntity entity world
         else world

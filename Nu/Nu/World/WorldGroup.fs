@@ -49,6 +49,10 @@ module WorldGroupModule =
         member this.GetProperty propertyName world =
             World.getGroupProperty propertyName this world
 
+        /// Try to get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a voption =
+            World.tryGetGroupXtensionValue<'a> propertyName this world
+
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getGroupXtensionValue<'a> propertyName this world
@@ -63,8 +67,7 @@ module WorldGroupModule =
 
         /// To try set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.trySetGroupXtensionProperty propertyName property this world
+            World.trySetGroupXtensionValue propertyName value this world
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
@@ -151,7 +154,7 @@ module WorldGroupModule =
             | (false, _) -> Seq.empty
 
         /// Create a group and add it to the world.
-        static member createGroup4 dispatcherName nameOpt (screen : Screen) world =
+        static member createGroup5 skipProcessing dispatcherName nameOpt (screen : Screen) world =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -168,8 +171,8 @@ module WorldGroupModule =
                 else world
             let world = World.addGroup false groupState group world
             let world =
-                if WorldModule.UpdatingSimulants && group.GetSelected world
-                then WorldModule.tryProcessGroup group world
+                if not skipProcessing && WorldModule.UpdatingSimulants && group.GetSelected world
+                then WorldModule.tryProcessGroup true group world
                 else world
             (group, world)
 
@@ -181,7 +184,7 @@ module WorldGroupModule =
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Group cannot have multiple names."
-                World.createGroup4 descriptor.SimulantDispatcherName groupNameOpt screen world
+                World.createGroup5 false descriptor.SimulantDispatcherName groupNameOpt screen world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setGroupProperty propertyName property group world |> snd')
@@ -197,7 +200,7 @@ module WorldGroupModule =
 
         /// Create a group and add it to the world.
         static member createGroup<'d when 'd :> GroupDispatcher> nameOpt screen world =
-            World.createGroup4 typeof<'d>.Name nameOpt screen world
+            World.createGroup5 false typeof<'d>.Name nameOpt screen world
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// group's existence. Consider using World.destroyGroup instead.
@@ -205,9 +208,10 @@ module WorldGroupModule =
             let world = World.tryRemoveSimulantFromDestruction group world
             EventGraph.cleanEventAddressCache group.GroupAddress
             if World.getGroupExists group world then
-                let entities = World.getEntitiesSovereign group world
+                let entities = World.getSovereignEntities group world
                 let world = World.unregisterGroup group world
                 let world = World.removeTasklets group world
+                let world = World.removeSimulantImNui group world
                 let world = World.destroyEntitiesImmediate entities world
                 World.removeGroupState group world
             else world
@@ -226,7 +230,7 @@ module WorldGroupModule =
 
         /// Destroy multiple groups from the world at the end of the current update.
         static member destroyGroups groups world =
-            World.frame (World.destroyGroupsImmediate groups) Game.Handle world
+            World.defer (World.destroyGroupsImmediate groups) Game.Handle world
 
         /// Rename a group. Note that since this destroys the renamed group immediately, you should not call this
         /// inside an event handler that involves the reassigned group itself. Note this also renames all of its
@@ -236,7 +240,7 @@ module WorldGroupModule =
             match groupStateOpt with
             | Some groupState ->
                 let groupState = { groupState with Id = Gen.id64; Name = destination.Name; Content = GroupContent.empty }
-                let children = World.getEntitiesSovereign source world
+                let children = World.getSovereignEntities source world
                 let world = World.addGroup false groupState destination world
                 let world =
                     Seq.fold (fun world (child : Entity) ->
@@ -246,14 +250,14 @@ module WorldGroupModule =
                 let world = World.destroyGroupImmediate source world
                 let world =
                     if WorldModule.UpdatingSimulants && source.GetSelected world
-                    then WorldModule.tryProcessGroup destination world
+                    then WorldModule.tryProcessGroup true destination world
                     else world
                 world
             | None -> world
 
         /// Rename a group.
         static member renameGroup source destination world =
-            World.frame (World.renameGroupImmediate source destination) Game.Handle world
+            World.defer (World.renameGroupImmediate source destination) Game.Handle world
 
         /// Write a group to a group descriptor.
         static member writeGroup (groupDescriptor : GroupDescriptor) group world =
@@ -262,7 +266,7 @@ module WorldGroupModule =
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
             let getGroupProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            let entities = World.getEntitiesSovereign group world
+            let entities = World.getSovereignEntities group world
             { groupDescriptor with EntityDescriptors = World.writeEntities false true entities world }
 
         /// Write multiple groups to a screen descriptor.
@@ -317,7 +321,7 @@ module WorldGroupModule =
             // try to process ImNui group first time if in the middle of simulant update phase
             let world =
                 if WorldModule.UpdatingSimulants && group.GetSelected world
-                then WorldModule.tryProcessGroup group world
+                then WorldModule.tryProcessGroup true group world
                 else world
             (group, world)
 

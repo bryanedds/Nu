@@ -19,7 +19,6 @@ void main()
 
 const float PI = 3.141592654;
 const uint SAMPLE_COUNT = 1024u;
-const float TONE_UNMAP_SCALAR = 1.6225;
 
 uniform float roughness;
 uniform float resolution; // resolution of cube map face
@@ -113,9 +112,7 @@ void main()
             vec3 sampleColor = textureLod(cubeMap, l, mipLevel).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
-                vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR;
-                vec3 sampleSquared = sampleScaled * sampleScaled;
-                filterColor += sampleSquared * nDotL;
+                filterColor += sampleColor * nDotL;
                 totalWeight += nDotL;
             }
         }

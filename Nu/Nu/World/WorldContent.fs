@@ -238,7 +238,7 @@ module Content =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
                             if not (entity.GetExists world) || entity.GetDestroying world
-                            then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                            then World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
@@ -270,7 +270,7 @@ module Content =
                             if not (entity.GetExists world) || entity.GetDestroying world then
                                 match entityContent.EntityFilePathOpt with
                                 | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> snd
-                                | None -> World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                                | None -> World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
@@ -321,7 +321,7 @@ module Content =
                             if not (group.GetExists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
                                 | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> snd
-                                | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
+                                | None -> World.createGroup5 false groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
                             else world
                         let world = World.setGroupProtected true group world |> snd'
                         synchronizeGroup true GroupContent.empty groupContent origin group world)
@@ -349,7 +349,7 @@ module Content =
                     List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
                             if not (screen.GetExists world) || screen.GetDestroying world
-                            then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
+                            then World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
                             else world
                         let world = World.setScreenProtected true screen world |> snd'
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
@@ -499,20 +499,29 @@ module Content =
     /// Describe a static billboard with the given definitions.
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
 
+    /// Describe an animated billboard with the given definitions.
+    let animatedBillboard entityName definitions = entity<AnimatedBillboardDispatcher> entityName definitions
+
     /// Describe a static model with the given definitions.
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
 
-    /// Describe a static model surface with the given definitions.
-    let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+    /// Describe an animated model with the given definitions.
+    let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
+
+    /// Describe a sensor model with the given definitions.
+    let sensorModel entityName definitions = entity<SensorModelDispatcher> entityName definitions
 
     /// Describe a rigid model with the given definitions.
     let rigidModel entityName definitions = entity<RigidModelDispatcher> entityName definitions
 
+    /// Describe a static model surface with the given definitions.
+    let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+
+    /// Describe a sensor model surface with the given definitions.
+    let sensorModelSurface entityName definitions = entity<SensorModelSurfaceDispatcher> entityName definitions
+
     /// Describe a rigid model surface with the given definitions.
     let rigidModelSurface entityName definitions = entity<RigidModelSurfaceDispatcher> entityName definitions
-
-    /// Describe an animated model with the given definitions.
-    let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
 
     /// Describe a 3d character with the given definitions.
     let character3d entityName definitions = entity<Character3dDispatcher> entityName definitions

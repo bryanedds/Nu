@@ -101,6 +101,12 @@ namespace Nu
         }
 
         /// <summary>
+        /// Returns a copy of internal corners array.
+        /// </summary>
+        /// <returns>The array of corners.</returns>
+        public Vector3[] Corners => (Vector3[])this._corners.Clone();
+
+        /// <summary>
         /// Constructs the frustum by extracting the view planes from a matrix.
         /// </summary>
         /// <param name="value">Combined matrix which usually is (View * Projection).</param>
@@ -292,15 +298,6 @@ namespace Nu
         public override bool Equals(object obj)
         {
             return (obj is Frustum) && this == ((Frustum)obj);
-        }
-
-        /// <summary>
-        /// Returns a copy of internal corners array.
-        /// </summary>
-        /// <returns>The array of corners.</returns>
-        public Vector3[] GetCorners()
-        {
-            return (Vector3[])this._corners.Clone();
         }
 
         /// <summary>

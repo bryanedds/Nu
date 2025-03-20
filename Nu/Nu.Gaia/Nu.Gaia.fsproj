@@ -69,14 +69,14 @@
 		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
-		<PackageReference Include="JoltPhysicsSharp" Version="2.13.0" />
+		<PackageReference Include="JoltPhysicsSharp" Version="2.16.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.10.0" />
 		<PackageReference Include="Pfim" Version="0.11.3" />
 		<PackageReference Include="Prime" Version="10.1.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
 		<PackageReference Include="FSharp.Compiler.Service" Version="43.9.100" />
 		<PackageReference Include="System.Drawing.Common" Version="9.0.0" />
-		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.1" />
+		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
 	</ItemGroup>
 
 	<ItemGroup>

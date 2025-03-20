@@ -17,6 +17,9 @@ module WorldPhysics =
         static member internal getPhysicsEngine3d world =
             world.Subsystems.PhysicsEngine3d
 
+        static member internal getRendererPhysics3d world =
+            world.Subsystems.RendererPhysics3d
+
         /// Localize a body shape to a specific size.
         static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) =
             Physics.localizeBodyShape size bodyShape
@@ -46,6 +49,12 @@ module WorldPhysics =
                         let world = World.publishPlus bodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
                         world)
                         world message.BodyIds
+                | SetBodyEnabledMessage message ->
+                    if not message.Enabled then
+                        let eventTrace = EventTrace.debug "World" "handlePhysicsMessage2d" "SetBodyEnabledMessage" EventTrace.empty
+                        let world = World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                        world
+                    else world
                 | _ -> world
             (World.getPhysicsEngine2d world).HandleMessage message
             world
@@ -162,13 +171,23 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        /// Check that the body with the given body id is a sensor.
+        static member getBodySensor bodyId world =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodySensor bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodySensor bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                false
+
         /// Ray cast against 3d physics bodies.
-        static member rayCast3dBodies segment collisionMask closestOnly world =
-            world.Subsystems.PhysicsEngine3d.RayCast (segment, collisionMask, closestOnly)
+        static member rayCast3dBodies ray collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
 
         /// Ray cast against 2d physics bodies.
-        static member rayCast2dBodies segment collisionMask closestOnly world =
-            world.Subsystems.PhysicsEngine2d.RayCast (segment, collisionMask, closestOnly)
+        static member rayCast2dBodies ray collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
 
         /// Send a physics message to create a physics body.
         static member createBody is2d bodyId (bodyProperties : BodyProperties) world =
@@ -281,11 +300,6 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage3d jumpBodyMessage world
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
-
-        /// Clear all the physics objects in the built-in physics subsystems.
-        static member internal clearPhysics world =
-            world.Subsystems.PhysicsEngine3d.ClearInternal ()
-            world.Subsystems.PhysicsEngine2d.ClearInternal ()
 
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =

@@ -510,7 +510,8 @@ module Octree =
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
         else
-            if not (Octnode.isIntersectingBox bounds tree.Node) then
+            if  not (Octnode.isIntersectingBox bounds tree.Node) ||
+                bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
             else
@@ -523,15 +524,24 @@ module Octree =
         elif presence.IsOmnipresent then 
             tree.Omnipresent.Remove element |> ignore
         else
-            if not (Octnode.isIntersectingBox bounds tree.Node) then
+            if  not (Octnode.isIntersectingBox bounds tree.Node) ||
+                bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
                 tree.Omnipresent.Remove element |> ignore
             else
                 Octnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
-        let wasInNode = not presenceOld.IsImposter && not presenceOld.IsOmnipresent && Octnode.isIntersectingBox boundsOld tree.Node
-        let isInNode = not presenceNew.IsImposter && not presenceNew.IsOmnipresent && Octnode.isIntersectingBox boundsNew tree.Node
+        let wasInNode =
+            not presenceOld.IsImposter &&
+            not presenceOld.IsOmnipresent &&
+            Octnode.isIntersectingBox boundsOld tree.Node &&
+            boundsOld.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
+        let isInNode =
+            not presenceNew.IsImposter &&
+            not presenceNew.IsOmnipresent &&
+            Octnode.isIntersectingBox boundsNew tree.Node &&
+            boundsNew.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with

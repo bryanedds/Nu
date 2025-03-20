@@ -45,6 +45,16 @@ type [<SymbolicExpansion; DefaultValue "[[StartTime 0] [LifeTimeOpt None] [Name 
     static member bounce startTime lifeTimeOpt name =
         Animation.make startTime lifeTimeOpt name Bounce 1.0f 1.0f None
 
+/// Specifies the type of desired fragment depth testing.
+type [<Struct>] DepthTest =
+    | LessThanTest
+    | LessThanOrEqualTest
+    | EqualTest
+    | GreaterThanOrEqualTest
+    | GreaterThanTest
+    | NeverPassTest
+    | AlwaysPassTest
+
 /// The type of rendering used on a surface (for use by the higher-level engine API).
 type RenderStyle =
     | Deferred
@@ -481,9 +491,8 @@ module AssimpExtensions =
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
                 let mutable animationChannel = Unchecked.defaultof<_>
                 if animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name, &animationChannel) then
-                    let localTime = time - animationStartTime
-                    if  localTime >= 0.0f &&
-                        (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
+                    let localTime = max 0.0f (time - animationStartTime)
+                    if  (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
                         (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
                         let localTimeScaled =
                             match animation.Playback with
@@ -559,7 +568,7 @@ module AssimpExtensions =
 
             // log if there are more bones than we currently support
             if mesh.Bones.Count >= Constants.Render.BonesMax then
-                Log.info ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
+                Log.warn ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []

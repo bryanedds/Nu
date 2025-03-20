@@ -55,7 +55,7 @@ type ChainBuilder () =
 module ChainBuilder =
 
     /// Builds chains.
-    let [<DebuggerHidden; DebuggerStepThrough>] chain = ChainBuilder ()
+    let [<DebuggerHidden>] chain = ChainBuilder ()
 
 [<RequireQualifiedAccess>]
 module Chain =
@@ -73,7 +73,7 @@ module Chain =
     let [<DebuggerHidden; DebuggerStepThrough>] inline bind c a = chain.Bind (c, a)
 
     /// Get the world.
-    let [<DebuggerHidden; DebuggerStepThrough>] get : Chain<'e, World> =
+    let [<DebuggerHidden>] get : Chain<'e, World> =
         Chain (fun world -> (Right world, world))
 
     /// Get the world as transformed via 'by'.
@@ -93,11 +93,11 @@ module Chain =
         Chain (fun world -> (Right (), expr world))
 
     /// Get the next event.
-    let [<DebuggerHidden; DebuggerStepThrough>] next : Chain<'e, 'e> =
+    let [<DebuggerHidden>] next : Chain<'e, 'e> =
         Chain (fun world -> (Left returnM, world))
 
     /// Pass over the next event.
-    let [<DebuggerHidden; DebuggerStepThrough>] pass : Chain<'e, unit> =
+    let [<DebuggerHidden>] pass : Chain<'e, unit> =
         Chain (fun world -> (Left (fun _ -> returnM ()), world))
 
     /// React to the next event, using the event's data in the reaction.

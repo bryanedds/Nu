@@ -22,6 +22,15 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
         | Imposter -> -Constants.Render.NearPlaneDistanceImposter
         | Exterior | Interior -> Constants.Render.FarPlaneDistanceExterior
 
+    static member highestOverride2 override_ (overrides : Presence voption array) =
+        let mutable highest = override_
+        for override_ in overrides do
+            if override_ > highest then highest <- override_
+        highest
+
+    static member highestOverride (overrides : Presence voption array) =
+        Presence.highestOverride2 ValueNone overrides
+
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
     static member intersects3d (frustumInteriorOpt : Frustum voption) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 voption) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
         if lightProbe then

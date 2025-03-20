@@ -41,17 +41,14 @@ module CoreOperators =
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
 
-    /// TODO: P1: remove this after updating Prime.
-    /// Convert an value to an value of the given type using symbolic conversion.
-    /// Thread-safe.
-    let objToObj (ty : Type) (value : obj) =
-        match value with
-        | null -> null
-        | _ ->
-            let ty2 = value.GetType ()
-            if not (ty.IsAssignableFrom ty2) then
-                let converter = SymbolicConverter ty
-                let converter2 = SymbolicConverter ty2
-                let symbol = converter2.ConvertTo (value, typeof<Symbol>)
-                converter.ConvertFrom symbol
-            else value
+    /// Attempt to cast an obj to type 'a, returning 'a option.
+    /// TODO: remove this after updating Prime.
+    let inline tryCast<'a> (obj : obj) = match obj with :? 'a as a -> Some a | _ -> None
+
+    /// Attempt to cast an obj to type 'a, returning 'a voption.
+    /// TODO: remove this after updating Prime.
+    let inline tryCast'<'a> (obj : obj) = match obj with :? 'a as a -> ValueSome a | _ -> ValueNone
+
+    /// Force a value to be in between zero and one.
+    /// TODO: remove this after updating Prime.
+    let inline saturate (a : 'a) = a |> min (one ()) |> max (zero ())

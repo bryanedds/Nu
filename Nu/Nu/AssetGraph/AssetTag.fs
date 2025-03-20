@@ -47,6 +47,7 @@ type AssetTagConverter (pointType : Type) =
         | _ -> failconv "Invalid AssetTagConverter conversion from source." None
 
 /// Describes a strongly-typed means for looking up an asset.
+/// TODO: P1: implement ('a AssetTag) IComparable as well as it might make it more efficient.
 and [<CustomEquality; CustomComparison; TypeConverter (typeof<AssetTagConverter>)>] 'a AssetTag =
     { PackageName : string
       AssetName : string }

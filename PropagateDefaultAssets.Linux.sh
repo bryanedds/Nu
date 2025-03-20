@@ -18,8 +18,11 @@ cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Template.Mmcc.Game/Assets/Default/
 rm -f Nu/Nu.Tests/Assets/Default/*
 cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Tests/Assets/Default/
 
-rm -f "Projects/Blaze Vector/Assets/Default/*"
-cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Blaze Vector/Assets/Default/"
+rm -f "Projects/Blaze Vector ImNui/Assets/Default/*"
+cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Blaze Vector ImNui/Assets/Default/"
+
+rm -f "Projects/Blaze Vector Mmcc/Assets/Default/*"
+cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Blaze Vector Mmcc/Assets/Default/"
 
 rm -f "Projects/Breakout ImNui/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Breakout ImNui/Assets/Default/"

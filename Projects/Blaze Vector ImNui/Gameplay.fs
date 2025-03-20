@@ -30,10 +30,10 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (screenResults, gameplay, world) =
+    override this.Process (selectionResults, screen, world) =
 
         // process initialization
-        let initializing = FQueue.contains Select screenResults
+        let initializing = FQueue.contains Select selectionResults
         let world =
             if initializing then
 
@@ -41,7 +41,7 @@ type GameplayDispatcher () =
                 let world = Simulants.Gameplay.SetScore 0 world
 
                 // create stage sections from random section files
-                (world, [0 .. dec Constants.Gameplay.SectionCount]) ||> List.fold (fun world sectionIndex ->
+                List.fold (fun world sectionIndex ->
 
                     // load a random section from file (except the first section which is always 0)
                     let section = Simulants.GameplaySection sectionIndex
@@ -55,21 +55,24 @@ type GameplayDispatcher () =
                         sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
                         world sectionEntities)
 
+                    world [0 .. dec Constants.Gameplay.SectionCount]
+
             else world
 
         // process clean-up
         let world =
-            if FQueue.contains Deselecting screenResults then
+            if FQueue.contains Deselecting selectionResults then
 
                 // destroy stage sections that were created from section files
-                (world, [0 .. dec Constants.Gameplay.SectionCount]) ||> List.fold (fun world sectionIndex ->
+                List.fold (fun world sectionIndex ->
                     let section = Simulants.GameplaySection sectionIndex
                     World.destroyGroup section world)
+                    world [0 .. dec Constants.Gameplay.SectionCount]
 
             else world
 
         // process gameplay when selected
-        if gameplay.GetSelected world then
+        if screen.GetSelected world then
 
             // declare scene group
             let world = World.beginGroup Simulants.Gameplay.Name [] world
@@ -77,7 +80,7 @@ type GameplayDispatcher () =
             // declare player
             let world =
                 World.doEntity<PlayerDispatcher> "Player"
-                    [if initializing then Entity.Position .= v3 -390.0f -50.0f 0.0f
+                    [if initializing then Entity.Position @= v3 -390.0f -50.0f 0.0f
                      Entity.Elevation .= 1.0f]
                     world
             let player = world.DeclaredEntity
@@ -85,16 +88,15 @@ type GameplayDispatcher () =
             // process scoring
             let world =
                 Seq.fold (fun world section ->
-                    let dieEventsAddress = Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard
-                    let (deaths, world) = World.doSubscription ("Die" + string section) dieEventsAddress world
-                    gameplay.Score.Map (fun score -> score + deaths.Length * 100) world)
+                    let (deaths, world) = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
+                    screen.Score.Map (fun score -> score + deaths.Length * 100) world)
                     world [0 .. dec Constants.Gameplay.SectionCount]
 
             // process player death
             let world =
-                let (deaths, world) = World.doSubscription "Die" player.DieEvent world
-                if gameplay.GetGameplayState world = Playing && FQueue.notEmpty deaths then
-                    let world = gameplay.SetGameplayState Quit world
+                let (deaths, world) = World.doSubscription "Deaths" player.DeathEvent world
+                if screen.GetGameplayState world = Playing && FQueue.notEmpty deaths then
+                    let world = screen.SetGameplayState Quit world
                     World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                     world
                 else world
@@ -110,20 +112,15 @@ type GameplayDispatcher () =
                     World.setEye2dCenter eyeCenter world
                 else world
 
-            // end scene declaration
-            let world = World.endGroup world
+            // declare score text
+            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
 
-            // declare gui group
-            let world = World.beginGroup "Gui" [] world
-            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (gameplay.GetScore world)] world
+            // declare quit button
             let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
-            let world = if clicked then gameplay.SetGameplayState Quit world else world
-            let world = World.endGroup world
-            world
+            let world = if clicked then screen.SetGameplayState Quit world else world
+
+            // end scene declaration
+            World.endGroup world
 
         // otherwise, no gameplay
         else world
-
-    // this is a semantic fix-up that allows the editor to avoid creating an unused group. This is specific to the
-    // ImNui API that is needed to patch a little semantic hole inherent in the immediate-mode programming idiom.
-    override this.CreateDefaultGroup (screen, world) = World.createGroup (Some "Gui") screen world

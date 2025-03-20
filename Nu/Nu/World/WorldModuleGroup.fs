@@ -91,9 +91,9 @@ module WorldModuleGroup =
         static member internal setGroupState groupState group world =
             World.groupStateSetter groupState group world
 
-        static member internal getGroupXtensionProperties group world =
+        static member internal getGroupXtension group world =
             let groupState = World.getGroupState group world
-            groupState.Xtension |> Xtension.toSeq |> Seq.toList
+            groupState.Xtension
 
         static member internal getGroupExists group world =
             Option.isSome (World.getGroupStateOpt group world)
@@ -224,12 +224,17 @@ module WorldModuleGroup =
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
                 | value ->
-                    let value' = value |> valueToSymbol |> symbolToValue
+                    let value =
+                        try value |> valueToSymbol |> symbolToValue
+                        with _ ->
+                            let value = typeof<'a>.GetDefaultValue ()
+                            Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                            value :?> 'a
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
-                    value'
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
+                    value
             else
                 let definitions = Reflection.getPropertyDefinitions (getType groupState.Dispatcher)
                 let value =
@@ -243,6 +248,12 @@ module WorldModuleGroup =
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
                 groupState.Xtension <- Xtension.attachProperty propertyName property groupState.Xtension
                 value
+
+        static member internal tryGetGroupXtensionValue<'a> propertyName group world : 'a voption =
+            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
+            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getGroupXtensionValue call.
+            try World.getGroupXtensionValue<'a> propertyName group world |> ValueSome
+            with _ -> ValueNone
 
         static member internal getGroupProperty propertyName group world =
             match GroupGetters.TryGetValue propertyName with
@@ -298,6 +309,10 @@ module WorldModuleGroup =
                     else world
                 struct (true, changed, world)
             | struct (false, changed, _, world) -> struct (false, changed, world)
+
+        static member internal trySetGroupXtensionValue<'a> propertyName (value : 'a) group world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGroupXtensionProperty propertyName property group world
 
         static member internal setGroupXtensionValue<'a> propertyName (value : 'a) group world =
             let groupState = World.getGroupState group world
@@ -372,20 +387,19 @@ module WorldModuleGroup =
             | (false, _) ->
                 World.setGroupXtensionProperty propertyName property group world
 
-        static member internal attachGroupProperty propertyName property group world =
-            if World.getGroupExists group world then
-                let groupState = World.getGroupState group world
-                let groupState = GroupState.attachProperty propertyName property groupState
-                let world = World.setGroupState groupState group world
-                World.publishGroupChange propertyName property.PropertyValue property.PropertyValue group world
-            else failwith ("Cannot attach group property '" + propertyName + "'; group '" + scstring group + "' is not found.")
-
-        static member internal detachGroupProperty propertyName group world =
-            if World.getGroupExists group world then
-                let groupState = World.getGroupState group world
-                let groupState = GroupState.detachProperty propertyName groupState
-                World.setGroupState groupState group world
-            else failwith ("Cannot detach group property '" + propertyName + "'; group '" + scstring group + "' is not found.")
+        static member internal attachGroupMissingProperties group world =
+            let groupState = World.getGroupState group world
+            let definitions = Reflection.getReflectivePropertyDefinitions groupState
+            let groupState =
+                Map.fold (fun groupState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetGroupProperty (propertyName, group, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        GroupState.attachProperty propertyName property groupState
+                    else groupState)
+                    groupState definitions
+            World.setGroupState groupState group world
 
         static member internal registerGroup group world =
             let dispatcher = World.getGroupDispatcher group world

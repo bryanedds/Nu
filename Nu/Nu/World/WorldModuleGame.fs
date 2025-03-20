@@ -34,9 +34,9 @@ module WorldModuleGame =
             ignore<Game> game
             World.choose { world with GameState = gameState }
 
-        static member internal getGameXtensionProperties game world =
+        static member internal getGameXtension game world =
             let gameState = World.getGameState game world
-            gameState.Xtension |> Xtension.toSeq |> Seq.toList
+            gameState.Xtension
 
         static member internal getGameId game world = (World.getGameState game world).Id
         static member internal getGameOrder game world = (World.getGameState game world).Order
@@ -510,12 +510,17 @@ module WorldModuleGame =
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
                 | value ->
-                    let value' = value |> valueToSymbol |> symbolToValue
+                    let value =
+                        try value |> valueToSymbol |> symbolToValue
+                        with _ ->
+                            let value = typeof<'a>.GetDefaultValue ()
+                            Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                            value :?> 'a
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
-                    value'
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
+                    value
             else
                 let definitions = Reflection.getPropertyDefinitions (getType gameState.Dispatcher)
                 let value =
@@ -529,6 +534,12 @@ module WorldModuleGame =
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
                 gameState.Xtension <- Xtension.attachProperty propertyName property gameState.Xtension
                 value
+
+        static member internal tryGetGameXtensionValue<'a> propertyName game world : 'a voption =
+            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
+            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getGameXtensionValue call.
+            try World.getGameXtensionValue<'a> propertyName game world |> ValueSome
+            with _ -> ValueNone
 
         static member internal getGameProperty propertyName game world =
             match GameGetters.TryGetValue propertyName with
@@ -584,6 +595,10 @@ module WorldModuleGame =
                     else world
                 struct (true, changed, world)
             | struct (false, changed, _, world) -> struct (false, changed, world)
+
+        static member internal trySetGameXtensionValue<'a> propertyName (value : 'a) game world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGameXtensionProperty propertyName property game world
 
         static member internal setGameXtensionValue<'a> propertyName (value : 'a) game world =
             let gameState = World.getGameState game world
@@ -648,15 +663,18 @@ module WorldModuleGame =
             | (true, setter) -> setter property game world
             | (false, _) -> World.setGameXtensionProperty propertyName property game world
 
-        static member internal attachGameProperty propertyName property game world =
+        static member internal attachGameMissingProperties game world =
             let gameState = World.getGameState game world
-            let gameState = GameState.attachProperty propertyName property gameState
-            let world = World.setGameState gameState game world
-            World.publishGameChange propertyName property.PropertyValue property.PropertyValue game world
-
-        static member internal detachGameProperty propertyName game world =
-            let gameState = World.getGameState game world
-            let gameState = GameState.detachProperty propertyName gameState
+            let definitions = Reflection.getReflectivePropertyDefinitions gameState
+            let gameState =
+                Map.fold (fun gameState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetGameProperty (propertyName, game, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        GameState.attachProperty propertyName property gameState
+                    else gameState)
+                    gameState definitions
             World.setGameState gameState game world
 
         static member internal viewGameProperties game world =

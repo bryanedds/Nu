@@ -35,11 +35,11 @@ type JobResult =
 type JobGraph =
 
     /// Add a job for processing with the given priority (low number is higher priority).
-    abstract Enqueue : single * Job -> unit
+    abstract Enqueue : priority : single * job : Job -> unit
 
     /// Await the completion of a job with the given timeout.
     /// Order of jobs with the same key is not guaranteed.
-    abstract TryAwait : DateTimeOffset * obj -> JobResult option
+    abstract TryAwait : deadLine : DateTimeOffset * jobId : obj -> JobResult option
 
     /// Terminate job processing gracefully.
     abstract CleanUp : unit -> unit

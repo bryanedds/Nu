@@ -20,7 +20,7 @@ type MetricsEntityDispatcher () =
         let castShadow = transform.CastShadow
         let presence = transform.Presence
         let properties = MaterialProperties.empty
-        World.renderStaticModelFast (&affineMatrix, castShadow, presence, ValueNone, &properties, staticModel, DeferredRenderType, renderPass, world)
+        World.renderStaticModelFast (&affineMatrix, castShadow, presence, ValueNone, &properties, staticModel, LessThanOrEqualTest, DeferredRenderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world
@@ -108,7 +108,7 @@ type MyGameDispatcher () =
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 16 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
-
+    
     override this.Register (_, world) =
         let (screen, world) = World.createScreen (Some "Screen") world
         let (group, world) = World.createGroup (Some "Group") screen world

@@ -294,7 +294,7 @@ module TmxMap =
         Seq.concat |>
         Seq.toList
 
-    let getBodyProperties enabled friction restitution collisionCategories collisionMask observable bodyIndex tileMapDescriptor =
+    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =
             { Enabled = enabled
               Center = v3Zero
@@ -317,7 +317,6 @@ module TmxMap =
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false
-              Observable = observable
               Awake = false
               BodyIndex = bodyIndex }
         bodyProperties
@@ -394,7 +393,7 @@ module TmxMap =
                                             let compressedTime =
                                                 match (time, xTileAnimationDescriptor.TileAnimationDelay) with
                                                 | (UpdateTime time, UpdateTime delay) -> time / delay
-                                                | (ClockTime time, ClockTime delay) -> time / delay |> int64
+                                                | (TickTime time, TickTime delay) -> time / delay
                                                 | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
                                             let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun * xTileAnimationDescriptor.TileAnimationStride
                                             makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip

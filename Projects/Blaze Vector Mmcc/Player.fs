@@ -122,6 +122,6 @@ type PlayerDispatcher () =
             just world
 
         | Die ->
-            let world = World.publish entity entity.DieEvent entity world
+            let world = World.publish entity entity.DeathEvent entity world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
             just world

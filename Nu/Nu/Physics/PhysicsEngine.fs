@@ -173,24 +173,39 @@ type [<StructuralEquality; NoComparison>] HeightMap =
         | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map
 
 /// Identifies a body that can be found in a physics engine.
-/// TODO: see if removing CustomEquality here doesn't increase GC pressure or causes other perf overhead.
-type [<CustomEquality; NoComparison>] BodyId =
+type [<CustomEquality; CustomComparison>] BodyId =
     { BodySource : Simulant
       BodyIndex : int }
 
     /// Hash a BodyId.
-    static member hash pid =
-        pid.BodySource.SimulantAddress.GetHashCode () ^^^
-        pid.BodyIndex.GetHashCode ()
+    static member hash bid =
+        bid.BodySource.SimulantAddress.GetHashCode () ^^^
+        bid.BodyIndex.GetHashCode ()
 
     /// Equate BodyIds.
-    static member equals pid pid2 =
-        String.equateMany pid.BodySource.SimulantAddress.Names pid2.BodySource.SimulantAddress.Names &&
-        pid.BodyIndex = pid2.BodyIndex
+    static member equals bid bid2 =
+        String.equateMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names &&
+        bid.BodyIndex = bid2.BodyIndex
+
+    /// Compare BodyIds.
+    static member compare bid bid2 =
+        let result = String.compareMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names
+        if result <> 0 then result
+        else bid.BodyIndex.CompareTo bid2.BodyIndex
 
     interface BodyId IEquatable with
         member this.Equals that =
             BodyId.equals this that
+
+    interface BodyId IComparable with
+        member this.CompareTo that =
+            BodyId.compare this that
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? BodyId as that -> BodyId.compare this that
+            | _ -> -1
 
     override this.Equals that =
         match that with
@@ -223,6 +238,13 @@ type BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+    static member validateUtilization3d properties =
+        properties.FrictionOpt.IsNone &&
+        properties.RestitutionOpt.IsNone &&
+        properties.CollisionCategoriesOpt.IsNone &&
+        properties.CollisionMaskOpt.IsNone &&
+        properties.SensorOpt.IsNone
+
 /// Internal object that carries interstitial information between Nu and a physics engine.
 type [<NoEquality; NoComparison>] BodyUserObject =
     { BodyId : BodyId
@@ -233,18 +255,20 @@ type [<NoEquality; NoComparison>] BodyUserObject =
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
-type [<Struct>] Substance =
+type Substance =
     | Mass of Mass : single
     | Density of Density : single
 
 /// Describe the form of collision detection to use.
-[<Syntax
-    ("", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax)>]
-type [<Struct>] CollisionDetection =
+type CollisionDetection =
     | Discontinuous
     | Continuous
+
+/// Describes the physical profile of a complex body.
+type [<Struct>] Profile =
+    | Convex
+    | Concave
+    | Bounds
 
 /// The shape of a physics body box.
 type BoxShape =
@@ -274,23 +298,24 @@ type BoxRoundedShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a convex physics body defined by body-relative points.
+/// The shape of a physics body defined by body-relative points.
 type PointsShape =
     { Points : Vector3 array
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of triangle faces.
 type GeometryShape =
     { Vertices : Vector3 array
-      Convex : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of a static model.
 type StaticModelShape =
     { StaticModel : StaticModel AssetTag
-      Convex : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -298,7 +323,7 @@ type StaticModelShape =
 type StaticModelSurfaceShape =
     { StaticModel : StaticModel AssetTag
       SurfaceIndex : int
-      Convex : bool
+      Profile : Profile
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -399,6 +424,12 @@ type BodyType =
     | Dynamic
     | DynamicCharacter
 
+    // Check that this body type is some sort of character.
+    member this.IsCharacter =
+        match this with
+        | Static | Kinematic | Dynamic -> false
+        | KinematicCharacter | DynamicCharacter -> true
+
 /// The way in which an entity's motion is driven by a corresponding body.
 type PhysicsMotion =
 
@@ -457,16 +488,12 @@ type BodyProperties =
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int
-      Sensor : bool // sensor is always inherently observable
-      Observable : bool
+      Sensor : bool
       Awake : bool
       BodyIndex : int }
 
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
-
-    member this.ShouldObserve =
-        Constants.Physics.AlwaysObserve || this.HasSensors || this.Observable
 
 /// Identifies a joint in a physics engine.
 type BodyJointId =
@@ -653,27 +680,31 @@ type PhysicsMessage =
 /// SList instead of List.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given body id.
-    abstract GetBodyExists : BodyId -> bool
+    abstract GetBodyExists : bodyId : BodyId -> bool
     /// Get the contact normals of the body with the given body id.
-    abstract GetBodyContactNormals : BodyId -> Vector3 array
+    abstract GetBodyContactNormals : bodyId : BodyId -> Vector3 array
     /// Get the linear velocity of the body with the given body id.
-    abstract GetBodyLinearVelocity : BodyId -> Vector3
+    abstract GetBodyLinearVelocity : bodyId : BodyId -> Vector3
     /// Get the angular velocity of the body with the given body id.
-    abstract GetBodyAngularVelocity : BodyId -> Vector3
+    abstract GetBodyAngularVelocity : bodyId : BodyId -> Vector3
     /// Get the contact normals where the body with the given body id is touching the ground.
-    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 array
+    abstract GetBodyToGroundContactNormals : bodyId : BodyId -> Vector3 array
     /// Get a contact normal where the body with the given body id is touching the ground (if one exists).
-    abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
+    abstract GetBodyToGroundContactNormalOpt : bodyId : BodyId -> Vector3 option
     /// Get a contact tangent where the body with the given body id is touching the ground (if one exists).
-    abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
+    abstract GetBodyToGroundContactTangentOpt : bodyId : BodyId -> Vector3 option
     /// Check that the body with the given body id is on the ground.
-    abstract GetBodyGrounded : BodyId -> bool
+    abstract GetBodyGrounded : bodyId : BodyId -> bool
+    /// Check that the body with the given body id is a sensor.
+    abstract GetBodySensor : bodyId : BodyId -> bool
     /// Cast a ray into the physics bodies.
-    abstract RayCast : Segment3 * int * bool -> BodyIntersection array
+    abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     /// Handle a physics message from an external source.
-    abstract HandleMessage : PhysicsMessage -> unit
+    abstract HandleMessage : message : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
-    abstract TryIntegrate : GameTime -> IntegrationMessage SArray option
+    abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
+    /// Attempt torender physics with the given settings and renderer objects.
+    abstract TryRender : eyeCenter : Vector3 * renderSettings : obj * rendererObj : obj -> unit
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
     /// Handle physics clean up by freeing all created resources.
@@ -692,9 +723,11 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodySensor _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
+        member physicsEngine.TryRender (_, _, _) = ()
         member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 

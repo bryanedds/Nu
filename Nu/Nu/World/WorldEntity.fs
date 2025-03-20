@@ -322,6 +322,10 @@ module WorldEntityModule =
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
+        /// Get the optional presence override.
+        member this.GetPresenceOverride world =
+            World.getEntityPresenceOverride this world
+
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform byref, world) =
             World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
@@ -350,6 +354,10 @@ module WorldEntityModule =
         member this.GetProperty propertyName world =
             World.getEntityProperty propertyName this world
 
+        /// Try to get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a voption =
+            World.tryGetEntityXtensionValue<'a> propertyName this world
+
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getEntityXtensionValue<'a> propertyName this world
@@ -364,8 +372,7 @@ module WorldEntityModule =
 
         /// To try set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.trySetEntityXtensionProperty propertyName property this world
+            World.trySetEntityXtensionValue propertyName value this world
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
@@ -404,7 +411,16 @@ module WorldEntityModule =
         /// Check that an entity is selected.
         member this.GetSelected world = World.getEntitySelected this world
 
-        /// Check if an entity is intersected by a ray.
+        /// Attempt to get an entity on which this entity is mounted.
+        member this.TryGetMountee world = Option.bind (tryResolve this) (this.GetMountOpt world)
+
+        /// Check that this entity is mounted on another entity.
+        member this.HasMountee world = Option.isSome (this.TryGetMountee world)
+
+        /// Check that this entity is mounted on another entity.
+        member this.IsMounter world = this.HasMountee world
+
+        /// Check that an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world
 
         /// Automatically change an entity's bounds using its inferred attributes.
@@ -414,13 +430,14 @@ module WorldEntityModule =
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
-                if mountOld.GetExists world && mountNew.GetExists world then
+                if mountOld <> mountNew && mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
-                    let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
-                    let rotationLocal = affineMatrixLocal.Rotation
-                    let scaleLocal = affineMatrixLocal.Scale
+                    let mutable positionLocal = Unchecked.defaultof<_>
+                    let mutable rotationLocal = Unchecked.defaultof<_>
+                    let mutable scaleLocal = Unchecked.defaultof<_>
+                    Matrix4x4.Decompose (affineMatrixLocal, &scaleLocal, &rotationLocal, &positionLocal) |> ignore<bool>
                     let world = this.SetPositionLocal positionLocal world
                     let world = this.SetRotationLocal rotationLocal world
                     let world = this.SetScaleLocal scaleLocal world
@@ -455,16 +472,17 @@ module WorldEntityModule =
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
-                    let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
-                    let rotationLocal = affineMatrixLocal.Rotation
-                    let scaleLocal = affineMatrixLocal.Scale
+                    let mutable positionLocal = Unchecked.defaultof<_>
+                    let mutable rotationLocal = Unchecked.defaultof<_>
+                    let mutable scaleLocal = Unchecked.defaultof<_>
+                    Matrix4x4.Decompose (affineMatrixLocal, &scaleLocal, &rotationLocal, &positionLocal) |> ignore<bool>
                     let world = this.SetPositionLocal positionLocal world
                     let world = this.SetRotationLocal rotationLocal world
                     let world = this.SetScaleLocal scaleLocal world
                     let elevationLocal = this.GetElevation world - mountNew.GetElevation world
                     let world = this.SetElevationLocal elevationLocal world
-                    let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
-                    let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
+                    let world = this.SetEnabledLocal (this.GetEnabled world && mountNew.GetEnabled world) world
+                    let world = this.SetVisibleLocal (this.GetVisible world && mountNew.GetVisible world) world
                     let world = this.SetMountOpt value world
                     world
                 else world
@@ -611,7 +629,7 @@ module WorldEntityModule =
             getEntitiesRec (group :> Simulant) world
 
         /// Get all the entities directly parented by the group.
-        static member getEntitiesSovereign (group : Group) world =
+        static member getSovereignEntities (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
             | (true, entitiesOpt) ->
@@ -634,7 +652,7 @@ module WorldEntityModule =
 
         /// Destroy multiple entities in the world at the end of the current update.
         static member destroyEntities entities world =
-            World.frame (World.destroyEntitiesImmediate entities) Game.Handle world
+            World.defer (World.destroyEntitiesImmediate entities) Game.Handle world
 
         /// Sort the given entities by 2d sorting priority.
         /// If there are a lot of entities, this may allocate in the LOH.
@@ -690,7 +708,7 @@ module WorldEntityModule =
                 Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntitiesSovereign parent world |>
+                World.getSovereignEntities parent world |>
                 Seq.map (fun child -> (child.GetOrder world, child)) |>
                 Array.ofSeq |>
                 Array.sortBy fst |>
@@ -712,7 +730,7 @@ module WorldEntityModule =
                 Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntitiesSovereign parent world |>
+                World.getSovereignEntities parent world |>
                 Seq.map (fun child -> (child.GetOrder world, child)) |>
                 Array.ofSeq |>
                 Array.sortBy fst |>
