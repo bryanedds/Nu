@@ -200,7 +200,7 @@ module Relation =
 
     /// Test relation equality.
     let equals<'a> (left : 'a Relation) (right : 'a Relation) =
-        Relation<'a>.equals left right
+        Relation<'a>.equals<'a> left right
 
     /// Get the links of a relation.
     let getLinks relation =

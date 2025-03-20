@@ -188,8 +188,8 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? ('a Address) as that -> Address<'a>.compare this that
-            | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
+            | :? ('a Address) as that -> Address.compare this that
+            | _ -> failwith "Cannot compare Address (comparee not of type Address)."
 
     interface 'a Address IEquatable with
         member this.Equals that =
@@ -197,7 +197,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     override this.Equals that =
         match that with
-        | :? ('a Address) as that -> Address<'a>.equals this that
+        | :? ('a Address) as that -> Address.equals this that
         | _ -> false
 
     override this.GetHashCode () =
@@ -215,7 +215,7 @@ module Address =
 
     /// Test address equality.
     let equals<'a> (left : 'a Address) (right : 'a Address) =
-        Address<'a>.equals left right
+        Address<'a>.equals<'a> left right
 
     /// Make an address from a sequence of names.
     let makeFromSeq<'a> names : 'a Address =
