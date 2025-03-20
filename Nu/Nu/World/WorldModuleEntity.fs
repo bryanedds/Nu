@@ -2144,7 +2144,10 @@ module WorldModuleEntity =
             let intersectionsFacets = facets |> Array.map (fun facet -> facet.RayCast (ray, entity, world)) |> Array.concat
             let intersectionsDispatcher = dispatcher.RayCast (ray, entity, world)
             let intersections = Array.append intersectionsFacets intersectionsDispatcher
-            Array.sort intersections
+            if Array.isEmpty intersections then
+                let intersectionOpt = ray.Intersects (World.getEntityBounds entity world)
+                [|Intersection.ofNullable intersectionOpt|]
+            else Array.sort intersections
 
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa (Events.UpdateEvent --> entity)) world
@@ -2791,6 +2794,7 @@ module WorldModuleEntity =
             let state = World.getEntityState entity world
             World.viewSimulantStateProperties state
 
+        /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         static member notifyEntityModelChange entity world =
             let entityState = World.getEntityState entity world
             let world = entityState.Dispatcher.TrySynchronize (false, entity, world)

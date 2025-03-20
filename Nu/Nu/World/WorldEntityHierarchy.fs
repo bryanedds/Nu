@@ -331,9 +331,8 @@ module FreezerFacetModule =
         override this.RayCast (ray, entity, world) =
             if entity.GetPickable world then
                 let intersectionOpt = ray.Intersects (entity.GetBounds world)
-                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-                else [||]
-            else [||]
+                [|Intersection.ofNullable intersectionOpt|]
+            else [|Miss|]
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =

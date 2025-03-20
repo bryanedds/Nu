@@ -698,7 +698,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
         else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Attempt to pick an entity with a ray.
-    abstract RayCast : ray : Ray3 * entity : Entity * world : World -> single array
+    abstract RayCast : ray : Ray3 * entity : Entity * world : World -> Intersection array
     default this.RayCast (_, _, _) = [||]
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
@@ -760,7 +760,7 @@ and Facet (physical, lightProbe, light) =
     default this.Render (_, _, _) = ()
 
     /// Participate in attempting to pick an entity with a ray.
-    abstract RayCast : ray : Ray3 * entity : Entity * world : World -> single array
+    abstract RayCast : ray : Ray3 * entity : Entity * world : World -> Intersection array
     default this.RayCast (_, _, _) = [||]
 
     /// Participate in getting the default size of an entity.

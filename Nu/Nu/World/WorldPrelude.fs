@@ -14,9 +14,20 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
 
-// The inferred attributes of an entity that are used to construct its bounds.
-// HACK: added Unimportant field to allow attributes to be marked as unimportant.
-// TODO: see if we can refactor this type to make its representation and algo less hacky.
+/// The result of an intersection-detecting operation.
+type [<Struct>] Intersection =
+    | Hit of single
+    | Miss
+
+    /// Convert from nullable intersection value.
+    static member ofNullable (intersection : single Nullable) =
+        if intersection.HasValue
+        then Hit intersection.Value
+        else Miss
+
+/// The inferred attributes of an entity that are used to construct its bounds.
+/// HACK: added Unimportant field to allow attributes to be marked as unimportant.
+/// TODO: see if we can refactor this type to make its representation and algo less hacky.
 type AttributesInferred =
     { Unimportant : bool
       SizeInferred : Vector3

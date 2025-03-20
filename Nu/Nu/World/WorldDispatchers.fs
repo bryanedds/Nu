@@ -35,13 +35,6 @@ type Entity3dDispatcher (physical, lightProbe, light) =
     static member Properties =
         [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
-    override this.RayCast (ray, entity, world) =
-        if Array.isEmpty (entity.GetFacets world) then
-            let intersectionOpt = ray.Intersects (entity.GetBounds world)
-            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-            else [||]
-        else base.RayCast (ray, entity, world)
-
 /// A vui dispatcher (gui in 3d).
 type VuiDispatcher () =
     inherit EntityDispatcher (false, false, false, false)
@@ -738,8 +731,7 @@ type BodyJoint3dDispatcher () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 /// Gives an entity the base behavior of a rigid 3d terrain.
 type TerrainDispatcher () =

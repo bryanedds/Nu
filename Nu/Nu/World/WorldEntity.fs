@@ -680,8 +680,10 @@ module WorldEntityModule =
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
-                            let intersections = entity.RayCast rayWorld world
-                            Array.map (fun intersection -> (intersection, entity)) intersections
+                            entity.RayCast rayWorld world |>
+                            Seq.filter _.IsHit |>
+                            Seq.map (function Hit intersection -> (intersection, entity) | _ -> failwithumf ()) |>
+                            Seq.toArray
                         else [||]
                     else [||])
                     entities

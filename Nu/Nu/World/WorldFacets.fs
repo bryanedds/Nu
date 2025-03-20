@@ -1320,8 +1320,7 @@ type EffectFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 [<AutoOpen>]
 module RigidBodyFacetExtensions =
@@ -2353,8 +2352,7 @@ type LightProbe3dFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -2447,8 +2445,7 @@ type Light3dFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -2522,8 +2519,7 @@ type StaticBillboardFacet () =
         // TODO: P1: intersect against oriented quad rather than bounds.
         let bounds = entity.GetBounds world
         let intersectionOpt = ray.Intersects bounds
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 /// Augments an entity with an animated billboard.
 type AnimatedBillboardFacet () =
@@ -2588,8 +2584,7 @@ type AnimatedBillboardFacet () =
         // TODO: P1: intersect against oriented quad rather than bounds.
         let bounds = entity.GetBounds world
         let intersectionOpt = ray.Intersects bounds
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetExtensions =
@@ -2860,8 +2855,7 @@ type BasicStaticBillboardEmitterFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 [<AutoOpen>]
 module StaticModelFacetExtensions =
@@ -2918,16 +2912,19 @@ type StaticModelFacet () =
                     let raySurface = rayEntity.Transform inverse
                     let boundsIntersectionOpt = raySurface.Intersects geometry.Bounds
                     if boundsIntersectionOpt.HasValue then
-                        raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
-                        Seq.map snd' |>
-                        Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                        Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
-                        Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
-                        Seq.toArray
-                    else [||])
+                        let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
+                        if Seq.notEmpty intersections then
+                            intersections |>
+                            Seq.map snd' |>
+                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
+                            Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
+                            Seq.map (fun point -> Hit (point - ray.Origin).Magnitude) |>
+                            Seq.toArray
+                        else [|Miss|]
+                    else [|Miss|])
                     staticModelMetadata.Surfaces
             Array.concat intersectionses
-        | ValueNone -> [||]
+        | ValueNone -> [|Miss|]
 
 [<AutoOpen>]
 module StaticModelSurfaceFacetExtensions =
@@ -2987,11 +2984,13 @@ type StaticModelSurfaceFacet () =
                 let geometry = surface.PhysicallyBasedGeometry
                 let boundsIntersectionOpt = rayEntity.Intersects geometry.Bounds
                 if boundsIntersectionOpt.HasValue then
-                    let intersections = rayEntity.Intersects (geometry.Indices, geometry.Vertices)
-                    intersections |> Seq.map snd' |> Seq.toArray
-                else [||]
-            else [||]
-        | ValueNone -> [||]
+                    let intersections = Array.ofSeq (rayEntity.Intersects (geometry.Indices, geometry.Vertices))
+                    if Array.notEmpty intersections
+                    then Array.map (snd' >> Hit) intersections
+                    else [|Miss|]
+                else [|Miss|]
+            else [|Miss|]
+        | ValueNone -> [|Miss|]
 
 [<AutoOpen>]
 module AnimatedModelFacetExtensions =
@@ -3172,16 +3171,19 @@ type AnimatedModelFacet () =
                     let raySurface = rayEntity.Transform inverse
                     let boundsIntersectionOpt = raySurface.Intersects geometry.Bounds
                     if boundsIntersectionOpt.HasValue then
-                        raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
-                        Seq.map snd' |>
-                        Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                        Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
-                        Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
-                        Seq.toArray
-                    else [||])
+                        let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
+                        if Seq.notEmpty intersections then
+                            intersections |>
+                            Seq.map snd' |>
+                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
+                            Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
+                            Seq.map (fun point -> Hit (point - ray.Origin).Magnitude) |>
+                            Seq.toArray
+                        else [|Miss|]
+                    else [|Miss|])
                     animatedModelMetadata.Surfaces
             Array.concat intersectionses
-        | ValueNone -> [||]
+        | ValueNone -> [|Miss|]
 
     override this.Edit (op, entity, world) =
         match op with
