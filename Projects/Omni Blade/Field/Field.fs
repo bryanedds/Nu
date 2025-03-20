@@ -69,6 +69,9 @@ type FieldMessage =
     | PromptLeft
     | PromptRight
     | Interact
+#if DEV
+    | ReloadProps
+#endif
     interface Message
 
 type FieldCommand =
@@ -86,9 +89,6 @@ type FieldCommand =
     | ScheduleSound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * uint option * single * Song AssetTag
     | FadeOutSong of int64
-#if DEV
-    | ClearFieldDataMemoized
-#endif
     | Nop
     interface Command
 
@@ -623,6 +623,11 @@ module Field =
 
     let untruncate current incoming =
         { incoming with Spirits_ = current.Spirits_ }
+
+    let reloadProps field =
+        FieldData.clearMemoized ()
+        let props = makeProps field.FieldTime_ field.FieldType_ field.OmniSeedState_
+        { field with Props_ = props }
 
     (* High-Level Operations (signal-producing) *)
 

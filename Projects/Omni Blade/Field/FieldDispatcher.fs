@@ -82,7 +82,7 @@ type FieldDispatcher () =
          Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
 #if DEV
-         Game.AssetsReloadEvent => ClearFieldDataMemoized
+         Game.CodeReloadEvent => ReloadProps
 #endif
          ]
 
@@ -696,6 +696,13 @@ type FieldDispatcher () =
             let (signals, field) = Field.interact field
             (signals, field)
 
+#if DEV
+        | ReloadProps ->
+            FieldData.clearMemoized ()
+            let field = Field.reloadProps field
+            just field
+#endif
+
     override this.Command (field, command, screen, world) =
 
         match command with
@@ -860,12 +867,6 @@ type FieldDispatcher () =
         | FadeOutSong fade ->
             World.fadeOutSong fade world
             just world
-
-#if DEV
-        | ClearFieldDataMemoized ->
-            FieldData.clearMemoized ()
-            just world
-#endif
 
         | Nop -> just world
 
