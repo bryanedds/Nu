@@ -82,7 +82,7 @@ type FieldDispatcher () =
          Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
 #if DEV
-         Game.CodeReloadEvent => ReloadProps
+         Game.AssetsReloadEvent => ReloadProps
 #endif
          ]
 
@@ -698,7 +698,6 @@ type FieldDispatcher () =
 
 #if DEV
         | ReloadProps ->
-            FieldData.clearMemoized ()
             let field = Field.reloadProps field
             just field
 #endif

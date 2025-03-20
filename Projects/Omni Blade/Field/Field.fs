@@ -624,10 +624,12 @@ module Field =
     let untruncate current incoming =
         { incoming with Spirits_ = current.Spirits_ }
 
+#if DEV
     let reloadProps field =
         FieldData.clearMemoized ()
         let props = makeProps field.FieldTime_ field.FieldType_ field.OmniSeedState_
         { field with Props_ = props }
+#endif
 
     (* High-Level Operations (signal-producing) *)
 
