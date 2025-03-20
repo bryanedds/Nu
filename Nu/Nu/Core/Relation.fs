@@ -151,7 +151,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
 
     interface 'a Relation IEquatable with
         member this.Equals that =
-            Relation<'a>.equals this that
+            Relation<'a>.equals<'a> this that
 
     override this.Equals that =
         match that with
