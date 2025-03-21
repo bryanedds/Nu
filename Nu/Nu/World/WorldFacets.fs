@@ -3363,7 +3363,7 @@ type TerrainFacet () =
         | Some resolution -> AttributesInferred.important (v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))) v3Zero
         | None -> AttributesInferred.important (v3 512.0f 128.0f 512.0f) v3Zero
 
-    override this.RayCast (ray, entity, world) =
+    override this.RayCast (_, _, _) =
         [|Miss|]
 
 [<AutoOpen>]
