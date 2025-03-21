@@ -3447,26 +3447,31 @@ type EditVolumeFacet () =
             world
 
         | ViewportOverlay viewportOverlay ->
-            if world.DateTime.Millisecond < 500 then
-                for intersected in getIntersectedEntities entity world do
-                    let bounds = intersected.GetBounds world
-                    World.imGuiCircle3d bounds.Center 5.0f false Color.Orange world
-            let (manipulationResult, bounds) =
-                World.imGuiEditBox3d viewportOverlay.EditContext.SnapDrag (entity.GetBounds world) world
-            match manipulationResult with
-            | ImGuiEditActive started ->
-                let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
-                match entity.TryGetMountee world with
-                | Some mountee ->
-                    let positionMountee = mountee.GetPosition world
-                    let world = entity.SetPositionLocal (positionMountee - bounds.Center) world
-                    let world = entity.SetSize (bounds.Size / entity.GetScale world) world
-                    world
-                | None ->
-                    let world = entity.SetPosition bounds.Center world
-                    let world = entity.SetSize (bounds.Size / entity.GetScale world) world
-                    world
-            | ImGuiEditInactive -> world
+            if entity.GetOffset world = v3Zero then
+                if world.DateTime.Millisecond < 500 then
+                    for intersected in getIntersectedEntities entity world do
+                        let bounds = intersected.GetBounds world
+                        World.imGuiCircle3d bounds.Center 5.0f false Color.Orange world
+                let (manipulationResult, bounds) =
+                    World.imGuiEditBox3d viewportOverlay.EditContext.SnapDrag (entity.GetBounds world) world
+                match manipulationResult with
+                | ImGuiEditActive started ->
+                    let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
+                    match entity.TryGetMountee world with
+                    | Some mountee ->
+                        let positionMountee = mountee.GetPosition world
+                        let world = entity.SetPositionLocal (positionMountee - bounds.Center) world
+                        let world = entity.SetSize (bounds.Size / entity.GetScale world) world
+                        world
+                    | None ->
+                        let world = entity.SetPosition bounds.Center world
+                        let world = entity.SetSize (bounds.Size / entity.GetScale world) world
+                        world
+                | ImGuiEditInactive -> world
+            else
+                // TODO: P1: see if we can implement this properly instead of schmoing out.
+                Log.warnOnce "Bounds adjustment currently not implemented for entities with non-zero offset."
+                world
 
         | _ -> world
 
