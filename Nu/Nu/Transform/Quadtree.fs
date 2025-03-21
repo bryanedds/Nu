@@ -383,7 +383,9 @@ module Quadtree =
     let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds bounds set tree.Node
         for omnipresent in tree.Ubiquitous do
-            set.Add omnipresent |> ignore<bool>
+            let presence = omnipresent.Presence
+            if presence.IsOmnipresent || bounds.Intersects omnipresent.Bounds then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView bounds set tree =
