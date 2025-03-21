@@ -406,6 +406,9 @@ module WorldEntityModule =
         /// Check that an entity is selected.
         member this.GetSelected world = World.getEntitySelected this world
 
+        /// Check that this entity is mounted by another entity.
+        member this.GetMounted world = World.getEntityMounted this world
+
         /// Attempt to get an entity on which this entity is mounted.
         member this.TryGetMountee world = Option.bind (tryResolve this) (this.GetMountOpt world)
 
