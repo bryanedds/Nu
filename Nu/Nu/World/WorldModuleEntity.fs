@@ -378,6 +378,7 @@ module WorldModuleEntity =
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Transform.Overflow
         static member internal getEntityPresence entity world = (World.getEntityState entity world).Presence
         static member internal getEntityPresenceOverride entity world = (World.getEntityState entity world).PresenceOverride
+        static member internal getEntityPresenceSpatial entity world = (World.getEntityState entity world).PresenceSpatial
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
         static member internal getEntityPropagationSourceOpt entity world = (World.getEntityState entity world).PropagationSourceOpt
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute

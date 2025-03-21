@@ -321,6 +321,10 @@ module WorldEntityModule =
         member this.GetPresenceOverride world =
             World.getEntityPresenceOverride this world
 
+        /// Get the spatial presence.
+        member this.GetPresenceSpatial world =
+            World.getEntityPresenceSpatial this world
+
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform byref, world) =
             World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
