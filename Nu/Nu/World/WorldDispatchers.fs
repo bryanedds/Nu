@@ -804,9 +804,10 @@ type VolumeEditDispatcher () =
                         world |>
                         World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) |>
                         Seq.filter (fun intersected ->
+                            let presenceSpatial = intersected.GetPresenceSpatial world
                             intersected <> entity &&
                             not (intersected.GetProtected world) &&
-                            not (intersected.GetPresenceSpatial world).IsOmnipresent) |>
+                            not presenceSpatial.IsOmnipresent) |>
                         Seq.toArray |>
                         Array.sortBy _.Names.Length
                     Array.fold (fun world (intersected : Entity) ->
