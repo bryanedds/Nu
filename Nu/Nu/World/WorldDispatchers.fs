@@ -806,7 +806,7 @@ type VolumeEditDispatcher () =
                         Seq.filter (fun intersected ->
                             intersected <> entity &&
                             not (intersected.GetProtected world) &&
-                            not (intersected.GetPresence world).IsOmnipresent) |>
+                            not (intersected.GetPresenceSpatial world).IsOmnipresent) |>
                         Seq.toArray |>
                         Array.sortBy _.Names.Length
                     Array.fold (fun world (intersected : Entity) ->
@@ -820,7 +820,7 @@ type VolumeEditDispatcher () =
                                 then entity / (intersected'.Name + Gen.name)
                                 else intersected'
                             let world = World.renameEntityImmediate intersected intersected' world
-                            let world = intersected'.SetMountOptWithAdjustment None world
+                            let world = intersected'.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince engine it's changing.
                             intersected'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
                         else world)
                         world intersecteds
