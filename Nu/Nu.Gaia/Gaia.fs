@@ -1845,10 +1845,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             let world = snapshot ReorderEntities world
                                             let world = World.insertEntityOrder sourceEntity previousOpt next world
                                             let world = World.renameEntityImmediate sourceEntity sourceEntity' world
-                                            let world =
-                                                if World.getEntityAllowedToMount sourceEntity' world
-                                                then sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                                else world
                                             if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
                                             selectEntityOpt (Some sourceEntity') world
                                             ShowSelectedEntity <- true
@@ -1864,10 +1860,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         else
                                             let world = snapshot RenameEntity world
                                             let world = World.renameEntityImmediate sourceEntity sourceEntity' world
-                                            let world =
-                                                if World.getEntityAllowedToMount sourceEntity' world
-                                                then sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                                                else world
                                             if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
                                             selectEntityOpt (Some sourceEntity') world
                                             ShowSelectedEntity <- true

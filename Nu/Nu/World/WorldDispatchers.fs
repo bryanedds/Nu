@@ -821,7 +821,7 @@ type VolumeEditDispatcher () =
                                 then entity / (intersected'.Name + Gen.name)
                                 else intersected'
                             let world = World.renameEntityImmediate intersected intersected' world
-                            let world = intersected'.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince engine it's changing.
+                            let world = intersected.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince engine it's changing.
                             intersected'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
                         else world)
                         world intersecteds

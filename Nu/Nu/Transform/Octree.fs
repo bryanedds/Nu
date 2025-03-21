@@ -558,10 +558,13 @@ module Octree =
     let getElementsAtPoint point (set : _ HashSet) tree =
         Octnode.getElementsAtPoint point set tree.Node
         for imposter in tree.Imposter do
-            if imposter.Bounds.Intersects point then
+            let bounds = imposter.Bounds
+            if bounds.Intersects point then
                 set.Add imposter |> ignore<bool>
         for omnipresent in tree.Omnipresent do
-            if (omnipresent.Presence).IsOmnipresent || omnipresent.Bounds.Intersects point then
+            let presence = omnipresent.Presence
+            let bounds = omnipresent.Bounds
+            if presence.IsOmnipresent || bounds.Intersects point then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
@@ -571,7 +574,8 @@ module Octree =
             if bounds.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
         for omnipresent in tree.Omnipresent do
-            if (omnipresent.Presence).IsOmnipresent || bounds.Intersects omnipresent.Bounds then
+            let presence = omnipresent.Presence
+            if presence.IsOmnipresent || bounds.Intersects omnipresent.Bounds then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given frustum.
@@ -581,7 +585,8 @@ module Octree =
             if frustum.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
         for omnipresent in tree.Omnipresent do
-            if (omnipresent.Presence).IsOmnipresent || frustum.Intersects omnipresent.Bounds then
+            let presence = omnipresent.Presence
+            if presence.IsOmnipresent || frustum.Intersects omnipresent.Bounds then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that satisfy the given query parameters.

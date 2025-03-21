@@ -566,6 +566,55 @@ module WorldEntityModule =
 
     type World with
 
+        /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
+        /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
+        /// descendents accordingly.
+        static member renameEntityImmediate source (destination : Entity) world =
+            let entityStateOpt = World.getEntityStateOpt source world
+            match entityStateOpt :> obj with
+            | null -> world
+            | _ ->
+                let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
+                let children = World.getEntityChildren source world
+                let order = World.getEntityOrder source world
+                let world = World.destroyEntityImmediateInternal false source world
+                let world = World.addEntity entityState destination world
+                let world = World.setEntityOrder order destination world |> snd'
+                let world =
+                    Seq.fold (fun world (child : Entity) ->
+                        let destination = destination / child.Name
+                        World.renameEntityImmediate child destination world)
+                        world children
+                let world =
+                    if WorldModule.UpdatingSimulants && World.getEntitySelected destination world
+                    then WorldModule.tryProcessEntity true destination world
+                    else world
+                let world =
+                    Seq.fold (fun world target ->
+                        if World.getEntityExists target world
+                        then World.setEntityPropagationSourceOpt (Some destination) target world |> snd'
+                        else world)
+                        world (World.getPropagationTargets source world)
+                let world =
+                    match World.getEntityPropagatedDescriptorOpt destination world with
+                    | None when World.hasPropagationTargets destination world ->
+                        let propagatedDescriptor = World.writeEntity false false EntityDescriptor.empty destination world
+                        World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
+                    | Some _ | None -> world
+                let world =
+                    let mountOpt = World.getEntityMountOpt destination world
+                    if  source.Parent <> destination.Parent &&
+                        Option.isSome mountOpt &&
+                        World.getEntityAllowedToMount destination world then
+                        let world = destination.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince the engine it's changing.
+                        destination.SetMountOptWithAdjustment mountOpt world
+                    else world
+                world
+
+        /// Rename an entity.
+        static member renameEntity source destination world =
+            World.defer (World.renameEntityImmediate source destination) Game.Handle world
+
         static member internal updateEntity (entity : Entity) world =
             let facets = entity.GetFacets world
             let mutable world = world // OPTIMIZATION: inlining fold for speed.

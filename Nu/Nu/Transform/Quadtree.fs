@@ -199,7 +199,8 @@ module internal Quadnode =
                     getElementsAtPoint point set node
         | ElementChildren elements ->
             for element in elements do
-                if element.Bounds.Intersects point then
+                let bounds = element.Bounds
+                if bounds.Intersects point then
                     set.Add element |> ignore
 
     let rec internal getElementsInBounds bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
@@ -373,7 +374,9 @@ module Quadtree =
     let getElementsAtPoint point set tree =
         Quadnode.getElementsAtPoint point set tree.Node
         for omnipresent in tree.Ubiquitous do
-            if omnipresent.PresenceInPlay.IsOmnipresent || omnipresent.Bounds.Intersects point then
+            let presence = omnipresent.Presence
+            let bounds = omnipresent.Bounds
+            if presence.IsOmnipresent || bounds.Intersects point then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
