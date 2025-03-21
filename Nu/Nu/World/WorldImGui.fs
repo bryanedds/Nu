@@ -109,6 +109,19 @@ module WorldImGui =
         static member imGuiSegment3d segment thickness color world =
             World.imGuiSegments3d (SArray.singleton segment) thickness color world
 
+        /// Edit a Box3 via ImGui in the current eye 3d space.
+        static member imGuiEditBox3d snap box (world : World) =
+            let mutable box = box
+            let manipulationResult =
+                ImGuizmo.ManipulateBox3
+                    (world.Eye3dCenter,
+                     world.Eye3dRotation,
+                     world.Eye3dFieldOfView,
+                     world.RasterViewport,
+                     snap,
+                     &box)
+            (manipulationResult, box)
+
         /// Edit an array value via ImGui.
         static member imGuiEditPropertyArray<'a> (editItem : string -> 'a -> bool * bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) context =
             let mutable promoted = false

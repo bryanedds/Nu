@@ -789,27 +789,36 @@ type Nav3dConfigDispatcher () =
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
 
-/// Enables common operations on entities that intersect this entity's bounds.
-type VolumeEditDispatcher () =
+/// Enables common operations on 3D entities that intersect this entity's bounds.
+/// TODO: P1: implement EditAreaDispatcher for 2D entities.
+type EditVolumeDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
+    static let getIntersectedEntities (entity : Entity) world =
+        let bounds = entity.GetBounds world
+        World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world |>
+        Seq.filter (fun intersected ->
+            let presence = intersected.GetPresence world
+            intersected <> entity &&
+            not (intersected.GetProtected world) &&
+            not presence.IsOmnipresent) |>
+        Seq.toArray |>
+        Array.sortBy _.Names.Length
+
     override this.Edit (op, entity, world) =
+
         match op with
         | AppendProperties append ->
+
+            // category and indentation
+            ImGui.Text "Volume Operations"
+            ImGui.Indent ()
+
+            // parent intersected
             let world =
                 if ImGui.Button "Parent Intersected" then
                     let world = append.EditContext.Snapshot (VolumeEdit "Parent Intersected") world
-                    let bounds = entity.GetBounds world
-                    let intersecteds =
-                        world |>
-                        World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) |>
-                        Seq.filter (fun intersected ->
-                            let presence = intersected.GetPresence world
-                            intersected <> entity &&
-                            not (intersected.GetProtected world) &&
-                            not presence.IsOmnipresent) |>
-                        Seq.toArray |>
-                        Array.sortBy _.Names.Length
+                    let intersecteds = getIntersectedEntities entity world
                     Array.fold (fun world (intersected : Entity) ->
                         if intersected.GetExists world then
                             let intersected' =
@@ -820,23 +829,53 @@ type VolumeEditDispatcher () =
                                 if intersected'.GetExists world
                                 then entity / (intersected'.Name + Gen.name)
                                 else intersected'
-                            let world = World.renameEntityImmediate intersected intersected' world
-                            let world = intersected.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince engine it's changing.
-                            intersected'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                            World.renameEntityImmediate intersected intersected' world
                         else world)
                         world intersecteds
                 else world
+
+            // unparent intersected
+            let world =
+                if ImGui.Button "Unparent Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Unparent Intersected") world
+                    let bounds = entity.GetBounds world
+                    let children =
+                        entity.GetChildren world |>
+                        Seq.filter (fun child -> bounds.Intersects (child.GetBounds world)) |>
+                        Array.ofSeq
+                    Array.fold (fun world (child : Entity) ->
+                        if child.GetExists world then
+                            let child' = child.Names |> Array.take (entity.Names.Length - 1) |> Array.add child.Name |> rtoa |> Nu.Entity
+                            let child' =
+                                if child'.GetExists world
+                                then entity / (child'.Name + Gen.name)
+                                else child'
+                            World.renameEntityImmediate child child' world
+                        else world)
+                        world children
+                else world
+
+            // delete intersected
+            let world =
+                if ImGui.Button "Delete Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Delete Intersected") world
+                    let intersecteds = getIntersectedEntities entity world
+                    Array.fold (fun world (intersected : Entity) ->
+                        if intersected.GetExists world then World.destroyEntity intersected world else world)
+                        world intersecteds
+                else world
+
+            // end of category
+            ImGui.Unindent ()
             world
+
         | ViewportOverlay viewportOverlay ->
-            let mutable bounds = entity.GetBounds world
-            let manipulationResult =
-                ImGuizmo.ManipulateBox3
-                    (world.Eye3dCenter,
-                     world.Eye3dRotation,
-                     world.Eye3dFieldOfView,
-                     world.RasterViewport,
-                     viewportOverlay.EditContext.SnapDrag,
-                     &bounds)
+            if world.ClockTime % 1.0f > 0.5f then
+                for intersected in getIntersectedEntities entity world do
+                    let bounds = intersected.GetBounds world
+                    World.imGuiCircle3d bounds.Center 5.0f false Color.Orange world
+            let (manipulationResult, bounds) =
+                World.imGuiEditBox3d viewportOverlay.EditContext.SnapDrag (entity.GetBounds world) world
             match manipulationResult with
             | ImGuiEditActive started ->
                 let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
@@ -849,4 +888,5 @@ type VolumeEditDispatcher () =
                     let world = entity.SetSize bounds.Size world
                     world
             | ImGuiEditInactive -> world
+
         | _ -> world
