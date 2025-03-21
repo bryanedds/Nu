@@ -192,11 +192,11 @@ module Relation =
 
     /// Make a current relation.
     let makeCurrent<'a> () =
-        Relation.makeFromArray<'a> [|Constants.Relation.CurrentName|]
+        Relation<'a>.makeFromArray<'a> [|Constants.Relation.CurrentName|]
 
     /// Make a parent relation.
     let makeParent<'a> () =
-        Relation.makeFromArray<'a> [|Constants.Relation.ParentName|]
+        Relation<'a>.makeFromArray<'a> [|Constants.Relation.ParentName|]
 
     /// Test relation equality.
     let equals<'a> (left : 'a Relation) (right : 'a Relation) =
