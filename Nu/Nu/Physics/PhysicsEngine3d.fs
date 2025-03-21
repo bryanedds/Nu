@@ -417,7 +417,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                         let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
-                        let geometryShape = { Vertices = geometry.Vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                        let vertices =
+                            [|for indices in Array.chunkBySize 3 geometry.Indices do
+                                geometry.Vertices.[indices.[0]]
+                                geometry.Vertices.[indices.[1]]
+                                geometry.Vertices.[indices.[2]]|]
+                        let geometryShape = { Vertices = vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                         PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
@@ -433,7 +438,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
-                let geometryShape = { Vertices = geometry.Vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                let vertices =
+                    [|for indices in Array.chunkBySize 3 geometry.Indices do
+                        geometry.Vertices.[indices.[0]]
+                        geometry.Vertices.[indices.[1]]
+                        geometry.Vertices.[indices.[2]]|]
+                let geometryShape = { Vertices = vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                 PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
             else masses
         | ValueNone -> masses
