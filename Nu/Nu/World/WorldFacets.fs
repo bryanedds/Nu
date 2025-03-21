@@ -3456,11 +3456,13 @@ type EditVolumeFacet () =
             match manipulationResult with
             | ImGuiEditActive started ->
                 let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
-                if entity.IsMounter world then
-                    let world = entity.SetPositionLocal (entity.GetPosition world - bounds.Center) world
+                match entity.TryGetMountee world with
+                | Some mountee ->
+                    let positionMountee = mountee.GetPosition world
+                    let world = entity.SetPositionLocal (positionMountee - bounds.Center) world
                     let world = entity.SetSize (bounds.Size / entity.GetScale world) world
                     world
-                else
+                | None ->
                     let world = entity.SetPosition bounds.Center world
                     let world = entity.SetSize (bounds.Size / entity.GetScale world) world
                     world
