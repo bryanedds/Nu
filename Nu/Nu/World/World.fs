@@ -209,6 +209,7 @@ module WorldModule3 =
                  StaticModelSurfaceFacet ()
                  AnimatedModelFacet ()
                  TerrainFacet ()
+                 EditVolumeFacet ()
                  TraversalInterpoledFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()

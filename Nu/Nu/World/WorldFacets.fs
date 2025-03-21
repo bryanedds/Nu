@@ -3366,6 +3366,111 @@ type TerrainFacet () =
     override this.RayCast (_, _, _) =
         [|Miss|]
 
+/// Enables common operations on 3D entities that intersect this entity's bounds.
+/// TODO: P1: implement EditAreaFacet for 2D entities.
+type EditVolumeFacet () =
+    inherit Facet (false, false, false)
+
+    static let getIntersectedEntities (entity : Entity) world =
+        let bounds = entity.GetBounds world
+        World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world |>
+        Seq.filter (fun intersected ->
+            let presence = intersected.GetPresence world
+            intersected <> entity &&
+            not (intersected.GetProtected world) &&
+            not presence.IsOmnipresent) |>
+        Seq.toArray |>
+        Array.sortBy _.Names.Length
+
+    override this.Edit (op, entity, world) =
+
+        match op with
+        | AppendProperties append ->
+
+            // category and indentation
+            ImGui.Text "Volume Operations"
+            ImGui.Indent ()
+
+            // parent intersected
+            let world =
+                if ImGui.Button "Parent Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Parent Intersected") world
+                    let intersecteds = getIntersectedEntities entity world
+                    Array.fold (fun world (intersected : Entity) ->
+                        if intersected.GetExists world then
+                            let intersected' =
+                                if intersected.Has<StaticModelSurfaceFacet> world && intersected.Name.StartsWith "Geometry"
+                                then entity / intersected.Parent.Name // probably generic geometry imported from another engine's scene, so use likely more descriptive parent name
+                                else entity / intersected.Name
+                            let intersected' =
+                                if intersected'.GetExists world
+                                then entity / (intersected'.Name + Gen.name)
+                                else intersected'
+                            World.renameEntityImmediate intersected intersected' world
+                        else world)
+                        world intersecteds
+                else world
+
+            // unparent intersected
+            let world =
+                if ImGui.Button "Unparent Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Unparent Intersected") world
+                    let bounds = entity.GetBounds world
+                    let children =
+                        entity.GetChildren world |>
+                        Seq.filter (fun child -> bounds.Intersects (child.GetBounds world)) |>
+                        Array.ofSeq
+                    Array.fold (fun world (child : Entity) ->
+                        if child.GetExists world then
+                            let child' = child.Names |> Array.take (entity.Names.Length - 1) |> Array.add child.Name |> rtoa |> Nu.Entity
+                            let child' =
+                                if child'.GetExists world
+                                then entity / (child'.Name + Gen.name)
+                                else child'
+                            World.renameEntityImmediate child child' world
+                        else world)
+                        world children
+                else world
+
+            // delete intersected
+            let world =
+                if ImGui.Button "Delete Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Delete Intersected") world
+                    let intersecteds = getIntersectedEntities entity world
+                    Array.fold (fun world (intersected : Entity) ->
+                        if intersected.GetExists world then World.destroyEntity intersected world else world)
+                        world intersecteds
+                else world
+
+            // end of category
+            ImGui.Unindent ()
+            world
+
+        | ViewportOverlay viewportOverlay ->
+            if world.DateTime.Millisecond < 500 then
+                for intersected in getIntersectedEntities entity world do
+                    let bounds = intersected.GetBounds world
+                    World.imGuiCircle3d bounds.Center 5.0f false Color.Orange world
+            let (manipulationResult, bounds) =
+                World.imGuiEditBox3d viewportOverlay.EditContext.SnapDrag (entity.GetBounds world) world
+            match manipulationResult with
+            | ImGuiEditActive started ->
+                let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
+                if entity.IsMounter world then
+                    let world = entity.SetPositionLocal (entity.GetPosition world - bounds.Center) world
+                    let world = entity.SetSize (bounds.Size / entity.GetScale world) world
+                    world
+                else
+                    let world = entity.SetPosition bounds.Center world
+                    let world = entity.SetSize (bounds.Size / entity.GetScale world) world
+                    world
+            | ImGuiEditInactive -> world
+
+        | _ -> world
+
+    override this.RayCast (_, _, _) =
+        [|Miss|]
+
 [<AutoOpen>]
 module TraversalInterpolatedFacetExtensions =
     type Entity with

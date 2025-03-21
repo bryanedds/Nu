@@ -95,8 +95,7 @@
      []]
     [Nav3dConfigDispatcher
      [[MountOpt [Some ^]]
-      [Name Nav3dConfig]
-      [Size [0 0 0]]]
+      [Name Nav3dConfig]]
      []]]]
   [Entity3dDispatcher
    [[Name Villa]
