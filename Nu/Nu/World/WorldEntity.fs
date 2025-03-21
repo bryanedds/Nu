@@ -325,6 +325,14 @@ module WorldEntityModule =
         member this.GetPresenceSpatial world =
             World.getEntityPresenceSpatial this world
 
+        /// Get the spatial visibility.
+        member this.GetVisibleSpatial world =
+            World.getEntityVisibleSpatial this world
+
+        /// Get the spatial static-ness.
+        member this.GetStaticSpatial world =
+            World.getEntityStaticSpatial this world
+
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform byref, world) =
             World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
