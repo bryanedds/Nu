@@ -4321,9 +4321,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 EntityPropertiesFocusRequested <- false
 
             // render light probes of the selected group in light box and view frustum
-            let lightBox = World.getLight3dBox world
+            let lightBox = World.getLight3dViewBox world
             let viewFrustum = World.getEye3dFrustumView world
-            let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
+            let entities = World.getLightProbes3dInViewBox lightBox (HashSet ()) world
             let lightProbeModels =
                 entities |>
                 Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
@@ -4340,7 +4340,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     world
 
             // render lights of the selected group in play
-            let entities = World.getLights3dInBox lightBox (HashSet ()) world
+            let entities = World.getLights3dInViewBox lightBox (HashSet ()) world
             let lightModels =
                 entities |>
                 Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
