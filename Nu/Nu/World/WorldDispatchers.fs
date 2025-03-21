@@ -870,7 +870,7 @@ type EditVolumeDispatcher () =
             world
 
         | ViewportOverlay viewportOverlay ->
-            if world.ClockTime % 1.0f > 0.5f then
+            if world.DateTime.Millisecond < 500 then
                 for intersected in getIntersectedEntities entity world do
                     let bounds = intersected.GetBounds world
                     World.imGuiCircle3d bounds.Center 5.0f false Color.Orange world
@@ -890,3 +890,6 @@ type EditVolumeDispatcher () =
             | ImGuiEditInactive -> world
 
         | _ -> world
+
+    override this.RayCast (_, _, _) =
+        [|Miss|]
