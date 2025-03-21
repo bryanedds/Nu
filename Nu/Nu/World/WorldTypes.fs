@@ -76,6 +76,7 @@ and SnapshotType =
     | NormalizeAttenuation
     | RencenterInProbeBounds
     | ResetProbeBounds
+    | VolumeEdit of string
     | FreezeEntities
     | ThawEntities
     | ReregisterPhysics
@@ -116,6 +117,7 @@ and SnapshotType =
         | NormalizeAttenuation -> (scstringMemo this).Spaced
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
         | ResetProbeBounds -> (scstringMemo this).Spaced
+        | VolumeEdit volumeEditType -> "Volume Edit " + volumeEditType
         | FreezeEntities -> (scstringMemo this).Spaced
         | ThawEntities -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced

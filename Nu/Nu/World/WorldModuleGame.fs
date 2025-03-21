@@ -462,6 +462,130 @@ module WorldModuleGame =
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
 
+        static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) world =
+            let quadtree = World.getQuadtree world
+            getElementsFromQuadree quadtree
+
+        static member internal getElements2dInView set world =
+            let viewBounds = World.getViewBounds2dRelative world
+            World.getElements2dBy (Quadtree.getElementsInView viewBounds set) world
+
+        static member internal getElements2dInPlay set world =
+            let playBounds = World.getPlayBounds2dRelative world
+            World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
+
+        /// Get all 2d entities in the given bounds, including all uncullable entities.
+        static member getEntities2dInBounds bounds set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsInBounds bounds set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities at the given point, including all uncullable entities.
+        static member getEntities2dAtPoint point set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsAtPoint point set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities in the current 2d view, including all uncullable entities.
+        static member getEntities2dInView set world =
+            let viewBounds = World.getViewBounds2dRelative world
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsInView viewBounds set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
+        static member getEntities2dInPlay set world =
+            let playBounds = World.getPlayBounds2dRelative world
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsInPlay playBounds set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities in the current selected screen, including all uncullable entities.
+        static member getEntities2d set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElements set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        static member internal getElements3dInPlay set world =
+            let struct (playBox, playFrustum) = World.getPlayBounds3d world
+            let octree = World.getOctree world
+            Octree.getElementsInPlay playBox playFrustum set octree
+
+        static member internal getElements3dInViewFrustum interior exterior frustum set world =
+            let octree = World.getOctree world
+            Octree.getElementsInViewFrustum interior exterior frustum set octree
+
+        static member internal getElements3dInViewBox box set world =
+            let octree = World.getOctree world
+            Octree.getElementsInViewBox box set octree
+
+        static member internal getElements3dInView set world =
+            let lightBox = World.getLight3dBox world
+            let octree = World.getOctree world
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
+
+        /// Get all 3d entities in the given bounds, including all uncullable entities.
+        static member getEntities3dInBounds bounds set world =
+            let octree = World.getOctree world
+            Octree.getElementsInBounds bounds set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities at the given point, including all uncullable entities.
+        static member getEntities3dAtPoint point set world =
+            let octree = World.getOctree world
+            Octree.getElementsAtPoint point set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
+        static member getEntities3dInPlay set world =
+            let struct (playBox, playFrustum) = World.getPlayBounds3d world
+            let octree = World.getOctree world
+            Octree.getElementsInPlay playBox playFrustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current 3d view, including all uncullable entities.
+        static member getEntities3dInView set world =
+            let lightBox = World.getLight3dBox world
+            let octree = World.getOctree world
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
+        static member getLightProbes3dInFrustum frustum set world =
+            let octree = World.getOctree world
+            Octree.getLightProbesInFrustum frustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        static member getLightProbes3dInBox box set world =
+            let octree = World.getOctree world
+            Octree.getLightProbesInBox box set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        static member getLightProbes3d set world =
+            let octree = World.getOctree world
+            Octree.getLightProbes set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        static member getLights3dInFrustum frustum set world =
+            let octree = World.getOctree world
+            Octree.getLightsInFrustum frustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        static member getLights3dInBox box set world =
+            let octree = World.getOctree world
+            Octree.getLightsInBox box set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current selected screen, including all uncullable entities.
+        static member getEntities3d set world =
+            let octree = World.getOctree world
+            Octree.getElements set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =
             match World.tryGetSymbol assetTag metadata world with

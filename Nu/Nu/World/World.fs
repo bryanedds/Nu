@@ -173,6 +173,7 @@ module WorldModule3 =
                  BodyJoint3dDispatcher ()
                  TerrainDispatcher ()
                  Nav3dConfigDispatcher ()
+                 VolumeEditDispatcher ()
                  StaticModelHierarchyDispatcher ()
                  RigidModelHierarchyDispatcher ()]
 

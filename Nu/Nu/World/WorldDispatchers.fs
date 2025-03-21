@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open ImGuiNET
 open Prime
 open Nu
 
@@ -787,3 +788,23 @@ type Nav3dConfigDispatcher () =
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
+
+/// Enables common operations on entities that intersect this entity's bounds.
+type VolumeEditDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
+
+    override this.Edit (op, entity, world) =
+        match op with
+        | AppendProperties append ->
+            let world =
+                if ImGui.Button "Parent Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Parent Intersected") world
+                    let bounds = entity.GetBounds world
+                    let intersecteds = World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world
+                    Seq.fold (fun world (intersected : Entity) ->
+                        let intersected' = entity / intersected.Name
+                        World.renameEntity intersected intersected' world)
+                        world intersecteds
+                else world
+            world
+        | _ -> world
