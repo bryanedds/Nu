@@ -1212,9 +1212,9 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Light = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized = this.Transform.Optimized
-    member internal this.VisibleSpatial = this.Visible || this.AlwaysRender
-    member internal this.StaticSpatial = this.Static && not this.AlwaysUpdate
-    member internal this.PresenceSpatial = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
+    member internal this.VisibleInView = this.Visible || this.AlwaysRender
+    member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
+    member internal this.PresenceInPlay = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.

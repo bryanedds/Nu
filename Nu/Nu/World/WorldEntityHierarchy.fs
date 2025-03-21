@@ -308,7 +308,7 @@ module FreezerFacetModule =
                 let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
                 let exterior = World.getGameEye3dFrustumExterior Game world
                 let imposter = World.getGameEye3dFrustumImposter Game world
-                let lightBoxOpt = ValueSome (World.getLight3dBox world)
+                let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
                 fun probe light presence bounds ->
                     match renderPass with
                     | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds

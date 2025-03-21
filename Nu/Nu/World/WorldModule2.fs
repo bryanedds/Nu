@@ -865,14 +865,14 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
-                let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
-                Quadtree.addElement entityState.PresenceSpatial entityState.Bounds.Box2 element quadtree
+                let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
+                Quadtree.addElement entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.PresenceSpatial entityState.Bounds entity
-                    Octree.addElement entityState.PresenceSpatial entityState.Bounds element octree
+                    let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
+                    Octree.addElement entityState.PresenceInPlay entityState.Bounds element octree
             world
                 
         static member internal evictScreenElements screen world =
@@ -881,14 +881,14 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
-                let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
-                Quadtree.removeElement entityState.PresenceSpatial entityState.Bounds.Box2 element quadtree
+                let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
+                Quadtree.removeElement entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.PresenceSpatial entityState.Bounds entity
-                    Octree.removeElement entityState.PresenceSpatial entityState.Bounds element octree
+                    let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
+                    Octree.removeElement entityState.PresenceInPlay entityState.Bounds element octree
             world
 
         static member internal registerScreenPhysics screen world =
@@ -1616,7 +1616,7 @@ module WorldModule2 =
                     let hashSet = HashSet ()
                     World.getElements3dInViewBox lightMapBounds hashSet world
                     for element in hashSet do
-                        if element.Static then
+                        if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
                 | ShadowPass (_, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
@@ -1649,19 +1649,19 @@ module WorldModule2 =
                 world.Timers.RenderEntityMessagesTimer.Restart ()
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
                     for element in HashSet3dNormalCached do
-                        if element.Visible then
+                        if element.VisibleInView then
                             World.renderEntity renderPass element.Entry world
                 else
                     for element in HashSet3dNormalCached do
-                        if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                        if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
                     for element in HashSet2dNormalCached do
-                        if element.Visible then
+                        if element.VisibleInView then
                             World.renderEntity renderPass element.Entry world
                 else
                     for element in HashSet2dNormalCached do
-                        if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                        if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
                 world.Timers.RenderEntityMessagesTimer.Stop ()
 
@@ -1681,7 +1681,7 @@ module WorldModule2 =
                 // render light maps
                 let world =
                     if lightMapRenderRequested then
-                        let lightProbes = World.getLightProbes3d (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
+                        let lightProbes = World.getLightProbes3dInView (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
                         let lightProbesStale = Seq.filter (fun (lightProbe : Entity) -> lightProbe.GetProbeStale world) lightProbes
                         Seq.fold (fun world (lightProbe : Entity) ->
                             let id = lightProbe.GetId world
@@ -1696,8 +1696,8 @@ module WorldModule2 =
 
                 // create shadow pass descriptors
                 let eyeCenter = World.getEye3dCenter world
-                let lightBox = World.getLight3dBox world
-                let lights = World.getLights3dInBox lightBox HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
+                let lightBox = World.getLight3dViewBox world
+                let lights = World.getLights3dInViewBox lightBox HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
                 let shadowPassDescriptorsSortable =
                     [|for light in lights do
                         if light.GetDesireShadows world then
@@ -1992,7 +1992,7 @@ module WorldModule2 =
                                                                     world.Eye3dFrustumInterior
                                                                     world.Eye3dFrustumExterior
                                                                     world.Eye3dFrustumImposter
-                                                                    (World.getLight3dBox world)
+                                                                    (World.getLight3dViewBox world)
                                                                     world.Eye3dCenter
                                                                     world.Eye3dRotation
                                                                     world.Eye3dFieldOfView
@@ -3170,11 +3170,12 @@ module WorldModule2' =
                 | :? Facet as facet ->
                     match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
                     | Some index ->
-                        let visibleOld = entityState.VisibleSpatial
-                        let staticOld = entityState.StaticSpatial
+                        let visibleInViewOld = entityState.VisibleInView
+                        let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
                         let lightOld = entityState.Light
                         let presenceOld = entityState.Presence
+                        let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
                         let world =
                             if entityState.Imperative
@@ -3184,17 +3185,18 @@ module WorldModule2' =
                                 facets.[index] <- facet
                                 let entityState = { entityState with Facets = facets }
                                 World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
+                        let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         let world = World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
-                        let visibleOld = entityState.VisibleSpatial
-                        let staticOld = entityState.StaticSpatial
+                        let visibleInViewOld = entityState.VisibleInView
+                        let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
                         let lightOld = entityState.Light
                         let presenceOld = entityState.Presence
+                        let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
                         let world =
@@ -3203,7 +3205,7 @@ module WorldModule2' =
                             else
                                 let entityState = { entityState with Dispatcher = entityDispatcher }
                                 World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
+                        let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         let entityState = World.getEntityState entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
                         let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
