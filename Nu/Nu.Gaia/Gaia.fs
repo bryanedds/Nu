@@ -1715,8 +1715,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
         if ShowSelectedEntity && Some entity = SelectedEntityOpt then
             ImGui.SetScrollHereY 0.5f
-        if ImGui.IsKeyPressed ImGuiKey.Space && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
-            selectEntityOpt (Some entity) world
+        // NOTE: dummied out until we can do something about #603.
+        //if ImGui.IsKeyPressed ImGuiKey.Space && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
+        //    selectEntityOpt (Some entity) world
         if ImGui.IsMouseReleased ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             selectEntityOpt (Some entity) world
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
