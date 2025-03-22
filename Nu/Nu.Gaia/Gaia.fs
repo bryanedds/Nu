@@ -2985,9 +2985,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
                                         DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
                             ImGui.SameLine ()
-                            ImGui.PushID ("##place" + scstringMemo entity)
+                            ImGui.PushID ("##create" + scstringMemo entity)
                             let world =
-                                if ImGui.SmallButton "Place" then
+                                if ImGui.SmallButton "Create" then
                                     let world = snapshot DuplicateEntity world
                                     let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
                                     let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
