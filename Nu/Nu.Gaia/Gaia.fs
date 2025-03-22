@@ -57,7 +57,7 @@ module Gaia =
     let mutable private RightClickPosition = v2Zero
     let mutable private PropertyFocusedOpt = Option<PropertyDescriptor * Simulant>.None
     let mutable private PropertyEditorFocusRequested = false
-    let mutable private RntityHierarchySearchRequested = false
+    let mutable private EntityHierarchySearchRequested = false
     let mutable private AssetViewerSearchRequested = false
     let mutable private PropertyValueStrPrevious = ""
     let mutable private DragDropPayloadOpt = None
@@ -105,7 +105,7 @@ module Gaia =
     let mutable private PhysicsDebugRendering = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
-    let mutable private EntityHierarchyFilterPropagationSources = false
+    let mutable private PropagationSourcesSearchStr = ""
     let mutable private AssetViewerSearchStr = ""
 
     (* Project States *)
@@ -733,7 +733,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private searchEntityHierarchy () =
         ImGui.SetWindowFocus "Entity Hierarchy"
-        RntityHierarchySearchRequested <- true
+        EntityHierarchySearchRequested <- true
 
     let private revertOpenProjectState (world : World) =
         OpenProjectFilePath <- ProjectDllPath
@@ -1454,7 +1454,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             let world = snapshot DuplicateEntity world
                                             let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
                                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
-                                            let parent = NewEntityParentOpt |> Option.map cast |> Option.defaultValue entity.Group
+                                            let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
                                             let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
                                             let world =
                                                 if ImGui.IsShiftDown () then
@@ -1898,8 +1898,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let hasPropagationTargets = entity.HasPropagationTargets world
             let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
             if hasPropagationTargets || hasPropagationDescriptorOpt then
-                ImGui.PushID ("##push" + scstringMemo entity)
                 ImGui.SameLine ()
+                ImGui.PushID ("##push" + scstringMemo entity)
                 let world =
                     if ImGui.SmallButton "Push"
                     then propagateEntityStructure entity world
@@ -1908,8 +1908,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Propagate entity structure to all targets, preserving propagation data."
                     ImGui.EndTooltip ()
-                ImGui.PushID ("##wipe" + scstringMemo entity)
                 ImGui.SameLine ()
+                ImGui.PushID ("##wipe" + scstringMemo entity)
                 let world =
                     if ImGui.SmallButton "Wipe" then
                         let world = snapshot WipePropagationTargets world
@@ -1928,14 +1928,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let rec private imGuiEntityHierarchy (entity : Entity) world =
         if entity.GetExists world then // NOTE: entity may have been moved during this process.
             let filtering =
-                not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) ||
-                EntityHierarchyFilterPropagationSources
+                not (String.IsNullOrWhiteSpace EntityHierarchySearchStr)
             let visible =
-                if EntityHierarchyFilterPropagationSources then
-                    if entity.HasPropagationTargets world
-                    then String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
-                    else false
-                else String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
+                String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
             let (expanded, world) =
                 if visible then
                     let branch = entity.HasChildren world
@@ -2767,15 +2762,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.SetWindowFocus "Viewport"
 
                 // entity search
-                if RntityHierarchySearchRequested then
+                if EntityHierarchySearchRequested then
                     ImGui.SetKeyboardFocusHere ()
                     EntityHierarchySearchStr <- ""
-                    RntityHierarchySearchRequested <- false
-                ImGui.SetNextItemWidth 165.0f
+                    EntityHierarchySearchRequested <- false
+                ImGui.SetNextItemWidth -1.0f
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
                 if ImGui.IsItemFocused () then entityHierarchyFocused <- false
-                ImGui.SameLine ()
-                ImGui.Checkbox ("Propagators", &EntityHierarchyFilterPropagationSources) |> ignore<bool>
 
                 // creation parent display
                 match NewEntityParentOpt with
@@ -2950,6 +2943,56 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world -> imGuiEditProperties entity world
                 | Some _ | None -> world
+            else world
+        ImGui.End ()
+        world
+
+    let private imGuiPropagationSourcesWindow world =
+        let world =
+            let windowName = "Propagation Sources"
+            if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
+                ImGui.SetNextItemWidth -1.0f
+                ImGui.InputTextWithHint ("##propagationSourcesSearchStr", "[enter search text]", &PropagationSourcesSearchStr, 4096u) |> ignore<bool>
+                let propagationSources =
+                    World.getPropagationSources world |>
+                    Seq.filter (fun entity ->
+                        String.IsNullOrWhiteSpace PropagationSourcesSearchStr ||
+                        entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ())) |>
+                    Seq.filter (fun entity -> not (entity.GetProtected world)) |>
+                    Array.ofSeq
+                let world =
+                    Array.fold (fun world (entity : Entity) ->
+                        if ImGui.TreeNodeEx (entity.Name, ImGuiTreeNodeFlags.Leaf) then
+                            if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                                if not (entity.GetAbsolute world) then
+                                    if entity.GetIs2d world then
+                                        DesiredEye2dCenter <- (entity.GetPerimeterCenter world).V2
+                                    else
+                                        let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
+                                        DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##place" + scstringMemo entity)
+                            let world =
+                                if ImGui.SmallButton "Place" then
+                                    let world = snapshot DuplicateEntity world
+                                    let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
+                                    let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
+                                    let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
+                                    let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
+                                    let world = duplicate.SetPropagationSourceOpt (Some entity) world
+                                    let world = inductEntity false duplicate world
+                                    selectEntityOpt (Some duplicate) world
+                                    world
+                                else world
+                            ImGui.PopID ()
+                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                ImGui.Text "Place a duplicate of this entity onto the scene."
+                                ImGui.EndTooltip ()
+                            ImGui.TreePop ()
+                            world
+                        else world)
+                        world propagationSources
+                world
             else world
         ImGui.End ()
         world
@@ -4240,6 +4283,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let world = imGuiScreenPropertiesWindow world 
                         let world = imGuiGroupPropertiesWindow world 
                         let world = imGuiEntityPropertiesWindow world 
+                        let world = imGuiPropagationSourcesWindow world
                         let world = imGuiOverlayerWindow world
                         let world = imGuiAssetGraphWindow world
                         let world = imGuiEditPropertyWindow world
