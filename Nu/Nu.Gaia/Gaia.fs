@@ -1682,10 +1682,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false world
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> snd
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
-                    if String.IsNullOrWhiteSpace EntityHierarchySearchStr then
+                    if not (String.IsNullOrWhiteSpace PropagationSourcesSearchStr) then
+                        PropagationSourcesSearchStr <- ""
+                    elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) then
+                        EntityHierarchySearchStr <- ""
+                    else
                         focusPropertyOpt None world
                         selectEntityOpt None world
-                    else EntityHierarchySearchStr <- ""
                     world
                 else world
             else world
