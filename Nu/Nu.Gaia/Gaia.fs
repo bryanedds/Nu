@@ -1730,8 +1730,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 else
                     let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
                     DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
-        let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         let mutable openPopupContextItemWhenUnselected = false
+        let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         let world =
             if ImGui.BeginPopupContextItem popupContextItemTitle then
                 if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
@@ -2971,10 +2971,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         String.IsNullOrWhiteSpace PropagationSourcesSearchStr ||
                         entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ())) |>
                     Seq.filter (fun entity -> not (entity.GetProtected world)) |>
-                    Array.ofSeq
+                    hashSetPlus HashIdentity.Structural
                 let world =
-                    Array.fold (fun world (entity : Entity) ->
-                        if ImGui.TreeNodeEx (entity.Name, ImGuiTreeNodeFlags.Leaf) then
+                    Seq.fold (fun world (entity : Entity) ->
+                        let treeNodeFlags = ImGuiTreeNodeFlags.Leaf ||| if Option.contains entity SelectedEntityOpt then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None
+                        if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
                             if ImGui.IsMouseReleased ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                                 selectEntityOpt (Some entity) world
                             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
@@ -2984,6 +2985,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     else
                                         let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
                                         DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
+                            let world =
+                                let propagationSourceItemTitle = "##propagationSourceItem" + scstring entity
+                                if ImGui.BeginPopupContextItem propagationSourceItemTitle then
+                                    let world =
+                                        if ImGui.MenuItem "Propagate Entity"
+                                        then propagateEntityStructure entity world
+                                        else world
+                                    let world =
+                                        if ImGui.MenuItem "Wipe Propagated Descriptor" then
+                                            let world = snapshot WipePropagationTargets world
+                                            let world = World.clearPropagationTargets entity world
+                                            let world = entity.SetPropagatedDescriptorOpt None world
+                                            world
+                                        else world
+                                    if ImGui.MenuItem "Show in Hierarchy" then
+                                        ShowSelectedEntity <- true
+                                        ShowEntityContextMenu <- false
+                                    ImGui.EndPopup ()
+                                    world
+                                else world
                             ImGui.SameLine ()
                             ImGui.PushID ("##create" + scstringMemo entity)
                             let world =
@@ -2995,30 +3016,54 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     selectEntityOpt (Some duplicate) world
                                     world
                                 else world
-                            ImGui.PopID ()
-                            ImGui.SameLine ()
-                            ImGui.PushID ("##push" + scstringMemo entity)
-                            let world =
-                                if ImGui.SmallButton "Push"
-                                then propagateEntityStructure entity world
-                                else world
-                            ImGui.PopID ()
                             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                                ImGui.Text "Propagate entity structure to all targets, preserving propagation data."
+                                ImGui.Text "Create a copy of the specified entity."
                                 ImGui.EndTooltip ()
-                            ImGui.SameLine ()
-                            ImGui.PushID ("##wipe" + scstringMemo entity)
+                            ImGui.PopID ()
                             let world =
-                                if ImGui.SmallButton "Wipe" then
-                                    let world = snapshot WipePropagationTargets world
-                                    let world = World.clearPropagationTargets entity world
-                                    let world = entity.SetPropagatedDescriptorOpt None world
+                                match SelectedEntityOpt with
+                                | Some selectedEntity when not (propagationSources.Contains selectedEntity) ->
+                                    ImGui.SameLine ()
+                                    ImGui.PushID ("##asChild" + scstringMemo entity)
+                                    let world =
+                                        if ImGui.SmallButton "as Child" then
+                                            let world = snapshot DuplicateEntity world
+                                            let parent =
+                                                SelectedEntityOpt |>
+                                                Option.map cast<Simulant> |>
+                                                Option.orElse (Option.map cast<Simulant> NewEntityParentOpt) |>
+                                                Option.defaultValue entity.Group
+                                            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+                                            let (duplicate, world) = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                                            selectEntityOpt (Some duplicate) world
+                                            world
+                                        else world
+                                    ImGui.PopID ()
+                                    if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                        ImGui.Text "Create a copy of the specified entity as a child of the selected entity."
+                                        ImGui.EndTooltip ()
+                                    ImGui.SameLine ()
+                                    ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
+                                    let world =
+                                        if ImGui.SmallButton "at Local Origin" then
+                                            let world = snapshot DuplicateEntity world
+                                            let parent =
+                                                SelectedEntityOpt |>
+                                                Option.map cast<Simulant> |>
+                                                Option.orElse (Option.map cast<Simulant> NewEntityParentOpt) |>
+                                                Option.defaultValue entity.Group
+                                            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+                                            let (duplicate, world) = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                                            let world = duplicate.SetPositionLocal v3Zero world
+                                            selectEntityOpt (Some duplicate) world
+                                            world
+                                        else world
+                                    ImGui.PopID ()
+                                    if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                        ImGui.Text "Create as copy of the specified entity as a child of the selected entity at local origin."
+                                        ImGui.EndTooltip ()
                                     world
-                                else world
-                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                                ImGui.Text "Place a duplicate of this entity onto the scene."
-                                ImGui.EndTooltip ()
-                            ImGui.PopID ()
+                                | Some _ | None -> world
                             ImGui.TreePop ()
                             world
                         else world)
@@ -4052,7 +4097,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiViewportContext world =
         ImGui.SetNextWindowPos RightClickPosition
-        ImGui.SetNextWindowSize (v2 280.0f 323.0f)
+        ImGui.SetNextWindowSize (v2 290.0f (if SelectedEntityOpt.IsSome then 369.0f else 323.0f))
         let world =
             if ImGui.Begin ("Context Menu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize ||| ImGuiWindowFlags.NoNav) then
                 let world =
@@ -4082,16 +4127,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         world
                     else world
                 let world =
-                    if SelectedEntityOpt.IsSome && ImGui.Button "Create as Child at Local Origin" then
-                        let world = createEntity true true world
-                        let world = tryMoveSelectedEntityToOrigin true world |> snd
-                        ShowEntityContextMenu <- false
-                        world
-                    else world
-                let world =
-                    if SelectedEntityOpt.IsSome && ImGui.Button "Create as Child" then
-                        let world = createEntity true true world
-                        ShowEntityContextMenu <- false
+                    if SelectedEntityOpt.IsSome then
+                        let world =
+                            if ImGui.Button "Create as Child" then
+                                let world = createEntity true true world
+                                ShowEntityContextMenu <- false
+                                world
+                            else world
+                        ImGui.SameLine ()
+                        let world =
+                            if ImGui.Button "at Local Origin" then
+                                let world = createEntity true true world
+                                let world = tryMoveSelectedEntityToOrigin true world |> snd
+                                ShowEntityContextMenu <- false
+                                world
+                            else world
                         world
                     else world
                 let world =
@@ -4123,16 +4173,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         world
                     else world
                 let world =
-                    if SelectedEntityOpt.IsSome && ImGui.Button "Paste Entity as Child at Local Origin" then
-                        let (pasted, world) = tryPaste PasteAtMouse (Option.map cast SelectedEntityOpt) world
-                        let world = if pasted then tryMoveSelectedEntityToOrigin true world |> snd else world
-                        ShowEntityContextMenu <- false
-                        world
-                    else world
-                let world =
-                    if SelectedEntityOpt.IsSome && ImGui.Button "Paste Entity as Child" then
-                        let (_, world) = tryPaste PasteAtMouse (Option.map cast SelectedEntityOpt) world
-                        ShowEntityContextMenu <- false
+                    if SelectedEntityOpt.IsSome then
+                        let world =
+                            if ImGui.Button "Paste Entity as Child" then
+                                let (_, world) = tryPaste PasteAtMouse (Option.map cast SelectedEntityOpt) world
+                                ShowEntityContextMenu <- false
+                                world
+                            else world
+                        ImGui.SameLine ()
+                        ImGui.PushID "##pasteAsChildLocalOrigin" // NOTE: needed to differentiate from same-named button above.
+                        let world =
+                            if ImGui.Button "at Local Origin" then
+                                let (pasted, world) = tryPaste PasteAtMouse (Option.map cast SelectedEntityOpt) world
+                                let world = if pasted then tryMoveSelectedEntityToOrigin true world |> snd else world
+                                ShowEntityContextMenu <- false
+                                world
+                            else world
+                        ImGui.PopID ()
                         world
                     else world
                 ImGui.Separator ()
