@@ -833,10 +833,9 @@ module WorldEntityModule =
         /// Check that there's an entity on the world's clipboard to paste.
         static member canPasteEntityFromClipboard (_ : World) =
             Clipboard.IsSome
-
         
         /// Paste an entity from the given entity descriptor.
-        static member pasteEntityFromDescriptor cut entityDescriptor (entitySource : Entity) (distance : single) rightClickPosition positionSnapEir pasteType (parent : Simulant) world =
+        static member pasteEntityFromDescriptor (distance : single) rightClickPosition positionSnapEir pasteType cut entityDescriptor (entitySource : Entity) (parent : Simulant) world =
             let nameOpt =
                 if cut then // try to preserve name only if cut
                     match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
@@ -906,11 +905,17 @@ module WorldEntityModule =
                     world
             let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
             let world = entity.SetMountOptWithAdjustment mountOpt world
-            (Some entity, world)
+            (entity, world)
+
+        /// Paste an entity.
+        static member pasteEntity (distance : single) rightClickPosition positionSnapEir pasteType entity (parent : Simulant) world =
+            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
+            World.pasteEntityFromDescriptor distance rightClickPosition positionSnapEir pasteType false entityDescriptor entity parent world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard distance rightClickPosition positionSnapEir pasteType parent world =
+        static member tryPasteEntityFromClipboard distance rightClickPosition positionSnapEir pasteType parent world =
             match Clipboard with
             | Some (cut, entityDescriptor, entitySource) ->
-                World.pasteEntityFromDescriptor cut entityDescriptor entitySource distance rightClickPosition positionSnapEir pasteType parent world
+                let (entity, world) = World.pasteEntityFromDescriptor distance rightClickPosition positionSnapEir pasteType cut entityDescriptor entitySource parent world
+                (Some entity, world)
             | None -> (None, world)

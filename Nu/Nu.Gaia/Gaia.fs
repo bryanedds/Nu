@@ -1093,7 +1093,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let world = snapshot PasteEntity world
             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
             let parent = match parentOpt with Some parent -> parent | None -> SelectedGroup :> Simulant
-            let (entityOpt, world) = World.pasteEntityFromClipboard NewEntityDistance RightClickPosition positionSnapEir atMouse parent world
+            let (entityOpt, world) = World.tryPasteEntityFromClipboard NewEntityDistance RightClickPosition positionSnapEir atMouse parent world
             match entityOpt with
             | Some entity ->
                 selectEntityOpt (Some entity) world
@@ -2989,12 +2989,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let world =
                                 if ImGui.SmallButton "Place" then
                                     let world = snapshot DuplicateEntity world
-                                    let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
                                     let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
                                     let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                                    match World.pasteEntityFromDescriptor false entityDescriptor entity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook parent world with
-                                    | (Some duplicate, world) -> selectEntityOpt (Some duplicate) world; world
-                                    | (None, world) -> world
+                                    let (duplicate, world) = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                                    selectEntityOpt (Some duplicate) world
+                                    world
                                 else world
                             ImGui.PopID ()
                             ImGui.SameLine ()
