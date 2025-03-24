@@ -3404,7 +3404,7 @@ type EditVolumeFacet () =
                         if intersected.GetExists world then
                             let intersected' =
                                 if intersected.Has<StaticModelSurfaceFacet> world && intersected.Name.StartsWith "Geometry"
-                                then entity / intersected.Parent.Name // probably generic geometry imported from another engine's scene, so use likely more descriptive parent name
+                                then entity / intersected.Parent.Name // probably generic geometry imported from another engine's scene, so using a likely more descriptive parent name
                                 else entity / intersected.Name
                             let intersected' =
                                 if intersected'.GetExists world
@@ -3574,6 +3574,9 @@ module NavBodyFacetExtensions =
         member this.GetNavShape world : NavShape = this.Get (nameof this.NavShape) world
         member this.SetNavShape (value : NavShape) world = this.Set (nameof this.NavShape) value world
         member this.NavShape = lens (nameof this.NavShape) this this.GetNavShape this.SetNavShape
+        member this.GetNavEnabled world : bool = this.Get (nameof this.NavEnabled) world
+        member this.SetNavEnabled (value : bool) world = this.Set (nameof this.NavEnabled) value world
+        member this.NavEnabled = lens (nameof this.NavEnabled) this this.GetNavEnabled this.SetNavEnabled
 
 /// Augments an entity with a 3d navigation body.
 type NavBodyFacet () =
@@ -3589,20 +3592,23 @@ type NavBodyFacet () =
             if entity.GetIs2d world
             then world // TODO: implement for 2d navigation when it's available.
             else
-                let bounds = entity.GetBounds world
-                let affineMatrix = entity.GetAffineMatrix world
-                let staticModel = entity.GetStaticModel world
-                let surfaceIndex = entity.GetSurfaceIndex world
-                World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
+                if entity.GetNavEnabled world then
+                    let bounds = entity.GetBounds world
+                    let affineMatrix = entity.GetAffineMatrix world
+                    let staticModel = entity.GetStaticModel world
+                    let surfaceIndex = entity.GetSurfaceIndex world
+                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
+                else World.setNav3dBodyOpt None entity world
 
     static member Properties =
         [define Entity.StaticModel Assets.Default.StaticModel
          define Entity.SurfaceIndex 0
-         define Entity.NavShape BoundsNavShape]
+         define Entity.NavShape BoundsNavShape
+         define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
 
-        // OPTIMIZATION: conditionally subscribe to transform change event.
+        // OPTIMIZATION: conditionally subscribe to bounds change event.
         let subId = Gen.id64
         let subscribe world =
             World.subscribePlus subId (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> snd
@@ -3611,21 +3617,32 @@ type NavBodyFacet () =
         let callback evt world =
             let entity = evt.Subscriber : Entity
             let previous = evt.Data.Previous :?> NavShape
-            let shape = evt.Data.Value :?> NavShape
-            let world = match previous with NavShape.EmptyNavShape -> world | _ -> unsubscribe world
-            let world = match shape with NavShape.EmptyNavShape -> world | _ -> subscribe world
+            let value = evt.Data.Value :?> NavShape
+            let navEnabled = entity.GetNavEnabled world
+            let world = if not previous.IsEmptyNavShape || navEnabled then unsubscribe world else world
+            let world = if not value.IsEmptyNavShape || navEnabled then subscribe world else world
             let world = propagateNavBody entity world
             (Cascade, world)
         let callback2 evt world =
+            let entity = evt.Subscriber : Entity
+            let previous = evt.Data.Previous :?> bool
+            let value = evt.Data.Value :?> bool
+            let navShape = entity.GetNavShape world
+            let world = if not navShape.IsEmptyNavShape || previous then unsubscribe world else world
+            let world = if not navShape.IsEmptyNavShape || value then subscribe world else world
+            let world = propagateNavBody entity world
+            (Cascade, world)
+        let callback3 evt world =
             if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
-                not (Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set)) then
+                Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set) |> not then
                 (Cascade, unsubscribe world)
             else (Cascade, world)
-        let callback3 _ world = (Cascade, unsubscribe world)
+        let callback4 _ world = (Cascade, unsubscribe world)
         let world = match entity.GetNavShape world with NavShape.EmptyNavShape -> world | _ -> subscribe world
         let world = World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
-        let world = World.sense callback2 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
-        let world = World.sense callback3 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
+        let world = World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
+        let world = World.sense callback3 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
+        let world = World.sense callback4 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
         let callbackPnb evt world = (Cascade, propagateNavBody evt.Subscriber world)
