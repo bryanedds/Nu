@@ -366,7 +366,7 @@ module WorldScreenModule =
                 setScreenSlide slideDescriptor destination screen world
 
         static member internal getNav3dDescriptors contents =
-            [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do
+            [for (bounds : Box3, affineMatrix, staticModel, surfaceIndex, content) in contents do
                 match content with
                 | NavShape.EmptyNavShape -> ()
                 | NavShape.BoundsNavShape -> Left bounds
@@ -374,13 +374,19 @@ module WorldScreenModule =
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | ValueSome physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                            Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                            if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
+                                Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                            else
+                                Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
                     | ValueNone -> ()
                 | NavShape.StaticModelNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | ValueSome physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
-                            Right (bounds, affineMatrix, surface)
+                            if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
+                                Right (bounds, affineMatrix, surface)
+                            else
+                                Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
                     | ValueNone -> ()]
 
         static member internal tryBuildNav3dMesh contents config =

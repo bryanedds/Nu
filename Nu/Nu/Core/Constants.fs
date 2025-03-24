@@ -234,6 +234,11 @@ module Physics =
     let [<Literal>] internal InternalIndex = -1
 
 [<RequireQualifiedAccess>]
+module Nav =
+    
+    let [<Literal>] Bounds3dMagnitudeMax = 256.0f
+
+[<RequireQualifiedAccess>]
 module Lens =
 
     let [<Literal>] ChangeName = "Change"

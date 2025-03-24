@@ -15,6 +15,7 @@ module WorldEntityHierarchy =
     type Entity with
 
         member internal this.GetSurfaceFreezable world =
+            this.GetIs3d world &&
             this.GetStatic world &&
             not (this.Has<LightProbe3dFacet> world) &&
             not (this.Has<Light3dFacet> world) &&
@@ -275,7 +276,7 @@ module WorldEntityHierarchy =
             world
 
 [<AutoOpen>]
-module FreezerFacetModule =
+module Freezer3dFacetModule =
 
     type Entity with
         member this.GetFrozenSurfaces world : StructPair<Box3, StaticModelSurfaceValue> array = this.Get (nameof this.FrozenSurfaces) world
@@ -383,8 +384,8 @@ module FreezerFacetModule =
                 else world)
                 world children
 
-    /// Gives an entity the base behavior of hierarchy of indexed static models.
-    type FreezerFacet () =
+    /// Gives an entity the ability to freeze hierarchies of 3D entities.
+    type Freezer3dFacet () =
         inherit Facet (false, false, false)
 
         static let handleUpdateFrozenHierarchy evt world =
@@ -484,7 +485,7 @@ module StaticModelHierarchyDispatcherModule =
             (Cascade, world)
 
         static member Facets =
-            [typeof<FreezerFacet>]
+            [typeof<Freezer3dFacet>]
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
@@ -540,7 +541,7 @@ module RigidModelHierarchyDispatcherModule =
             (Cascade, world)
 
         static member Facets =
-            [typeof<FreezerFacet>]
+            [typeof<Freezer3dFacet>]
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
