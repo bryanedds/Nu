@@ -348,19 +348,18 @@ module FreezerFacetModule =
                 let world = World.thawEntityHierarchy (this.GetPresenceConferred world) this world
                 world
 
-        /// Attempt to permanently freeze a frozen entity by destroying its frozen children.
-        member this.TryPermafreeze world =
-            if this.GetFrozen world then
-                let children =
-                    this.GetDescendants world |>
-                    Array.ofSeq |>
-                    Array.sortBy (fun descendant -> descendant.Names.Length)
-                Array.fold (fun world (child : Entity) ->
-                    if child.GetExists world && child.GetSurfaceFreezable world
-                    then World.destroyEntityImmediate child world
-                    else world)
-                    world children
-            else world
+        /// Permanently freeze a freezer entity's children by freezing and then destroying them.
+        member this.Permafreeze world =
+            let world = this.SetFrozen true world
+            let children =
+                this.GetDescendants world |>
+                Array.ofSeq |>
+                Array.sortBy (fun descendant -> descendant.Names.Length)
+            Array.fold (fun world (child : Entity) ->
+                if child.GetExists world && child.GetSurfaceFreezable world
+                then World.destroyEntityImmediate child world
+                else world)
+                world children
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type FreezerFacet () =
@@ -427,11 +426,7 @@ module FreezerFacetModule =
         override this.Edit (op, entity, world) =
             match op with
             | AppendProperties _ ->
-                if entity.GetFrozen world then
-                    if ImGui.Button "Permafreeze"
-                    then entity.TryPermafreeze world
-                    else world
-                else world
+                if ImGui.Button "Permafreeze" then entity.Permafreeze world else world
             | _ -> world
 
 [<AutoOpen>]
