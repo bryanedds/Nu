@@ -188,7 +188,7 @@ module WorldEntityHierarchy =
                                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                 let navShape = entity.GetNavShape world
                                 let bodyShape = entity.GetBodyShape world
-                                frozenShapes.Add struct (affine, navShape, bodyShape)
+                                frozenShapes.Add (affine, navShape, bodyShape)
                         elif
                             entity.Has<StaticModelFacet> world &&
                             (match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -233,7 +233,7 @@ module WorldEntityHierarchy =
                                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                 let navShape = entity.GetNavShape world
                                 let bodyShape = entity.GetBodyShape world
-                                frozenShapes.Add struct (affine, navShape, bodyShape)
+                                frozenShapes.Add (affine, navShape, bodyShape)
                 for child in entity.GetChildren world do
                     getFrozenArtifacts child
             getFrozenArtifacts parent
@@ -283,8 +283,8 @@ module FreezerFacetModule =
         member this.GetFrozenSurfaces world : StructPair<Box3, StaticModelSurfaceValue> array = this.Get (nameof this.FrozenSurfaces) world
         member this.SetFrozenSurfaces (value : StructPair<Box3, StaticModelSurfaceValue> array) world = this.Set (nameof this.FrozenSurfaces) value world
         member this.FrozenSurfaces = lens (nameof this.FrozenSurfaces) this this.GetFrozenSurfaces this.SetFrozenSurfaces
-        member this.GetFrozenShapes world : struct (Affine * NavShape * BodyShape) array = this.Get (nameof this.FrozenShapes) world
-        member this.SetFrozenShapes (value : struct (Affine * NavShape * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
+        member this.GetFrozenShapes world : (Affine * NavShape * BodyShape) array = this.Get (nameof this.FrozenShapes) world
+        member this.SetFrozenShapes (value : (Affine * NavShape * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
         member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
         member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
         member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
@@ -297,7 +297,7 @@ module FreezerFacetModule =
         member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
 
         member this.RegisterFrozenShapesPhysics world =
-            Array.foldi (fun bodyIndex world struct (affine : Affine, _, bodyShape) ->
+            Array.foldi (fun bodyIndex world (affine : Affine, _, bodyShape) ->
                 let bodyId = { BodySource = this; BodyIndex = bodyIndex }
                 let bodyProperties =
                     { Enabled = true
@@ -327,7 +327,7 @@ module FreezerFacetModule =
                 world (this.GetFrozenShapes world)
 
         member this.UnregisterFrozenShapesPhysics world =
-            Array.foldi (fun bodyIndex world struct (_, _, _) ->
+            Array.foldi (fun bodyIndex world (_, _, _) ->
                 let bodyId = { BodySource = this; BodyIndex = bodyIndex }
                 World.destroyBody false bodyId world)
                 world (this.GetFrozenShapes world)
