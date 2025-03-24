@@ -3440,6 +3440,7 @@ module PhysicallyBased =
                     use assimp = new Assimp.AssimpContext ()
                     try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
                         scene.IndexDatasToMetadata () // avoid polluting memory with face data
+                        scene.ClearColorData () // avoid polluting memory with unused color data
                         scenes.[filePath] <- scene
                         Right scene
                     with exn ->

@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open Prime
+open System.Reflection
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
@@ -454,8 +455,15 @@ module AssimpExtensions =
                 let mesh = this.Meshes.[i]
                 let indices = mesh.GetIndices ()
                 this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
-                mesh.Faces.Clear ()
-                mesh.Faces.Capacity <- 0
+
+        member this.ClearColorData () =
+            for i in 0 .. dec this.Meshes.Count do
+                let mesh = this.Meshes.[i]
+                let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
+                for attachment in mesh.MeshAnimationAttachments do
+                    let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
 
         member this.TryFindNode (meshIndex, node : Assimp.Node) =
             let nodes =
