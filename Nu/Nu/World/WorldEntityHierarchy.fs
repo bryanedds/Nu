@@ -14,20 +14,18 @@ module WorldEntityHierarchy =
 
     type Entity with
 
-        /// Check whether an entity can be frozen by an ancestor with a FreezerFacet.
-        member entity.GetSurfaceFreezable world =
-            entity.GetStatic world &&
-            not (entity.Has<LightProbe3dFacet> world) &&
-            not (entity.Has<Light3dFacet> world) &&
-            (entity.GetChildren world |> Seq.forall (fun child -> child.GetSurfaceFreezable world))
+        member internal this.GetSurfaceFreezable world =
+            this.GetStatic world &&
+            not (this.Has<LightProbe3dFacet> world) &&
+            not (this.Has<Light3dFacet> world) &&
+            (this.GetChildren world |> Seq.forall (fun child -> child.GetSurfaceFreezable world))
 
-        /// Check whether a freezable entity's physics body can be frozen by an ancestor with a FreezerFacet.
-        member entity.GetBodyFreezable world =
-            entity.Has<RigidBodyFacet> world &&
-            entity.GetBodyType world = Static &&
-            entity.GetFriction world = 0.5f &&
-            entity.GetRestitution world = 0.0f &&
-            not (entity.GetSensor world)
+        member internal this.GetBodyFreezable world =
+            this.Has<RigidBodyFacet> world &&
+            this.GetBodyType world = Static &&
+            this.GetFriction world = 0.5f &&
+            this.GetRestitution world = 0.0f &&
+            not (this.GetSensor world)
 
     type World with
 
@@ -296,7 +294,7 @@ module FreezerFacetModule =
         member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
         member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
 
-        member this.RegisterFrozenShapesPhysics world =
+        member internal this.RegisterFrozenShapesPhysics world =
             Array.foldi (fun bodyIndex world (affine : Affine, _, bodyShape) ->
                 let bodyId = { BodySource = this; BodyIndex = bodyIndex }
                 let bodyProperties =
@@ -326,13 +324,13 @@ module FreezerFacetModule =
                 World.createBody (this.GetIs2d world) bodyId bodyProperties world)
                 world (this.GetFrozenShapes world)
 
-        member this.UnregisterFrozenShapesPhysics world =
+        member internal this.UnregisterFrozenShapesPhysics world =
             Array.foldi (fun bodyIndex world (_, _, _) ->
                 let bodyId = { BodySource = this; BodyIndex = bodyIndex }
                 World.destroyBody false bodyId world)
                 world (this.GetFrozenShapes world)
 
-        member this.UpdateFrozenHierarchy world =
+        member internal this.UpdateFrozenHierarchy world =
             if this.GetFrozen world then
                 let surfaceMaterialsPopulated = this.GetSurfaceMaterialsPopulated world
                 let (frozenSurfaces, frozenShapes, world) = World.freezeEntityHierarchy surfaceMaterialsPopulated this world
@@ -349,6 +347,17 @@ module FreezerFacetModule =
                 let world = this.SetFrozenSurfaces [||] world
                 let world = World.thawEntityHierarchy (this.GetPresenceConferred world) this world
                 world
+
+        /// Attempt to permanently freeze a frozen entity by destroying its frozen children.
+        member this.TryPermafreeze world =
+            if this.GetFrozen world then
+                let children = Array.ofSeq (this.GetChildren world)
+                Array.fold (fun world (child : Entity) ->
+                    if child.GetSurfaceFreezable world
+                    then World.destroyEntityImmediate child world
+                    else world)
+                    world children
+            else world
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type FreezerFacet () =
@@ -416,9 +425,8 @@ module FreezerFacetModule =
             match op with
             | AppendProperties _ ->
                 if entity.GetFrozen world then
-                    if ImGui.Button "Destroy Children" then
-                        let children = Array.ofSeq (entity.GetChildren world)
-                        Array.fold (fun world child -> World.destroyEntityImmediate child world) world children
+                    if ImGui.Button "Permafreeze"
+                    then entity.TryPermafreeze world
                     else world
                 else world
             | _ -> world
