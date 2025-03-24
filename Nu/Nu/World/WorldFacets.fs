@@ -3371,14 +3371,18 @@ type TerrainFacet () =
 type EditVolumeFacet () =
     inherit Facet (false, false, false)
 
+    /// Check whether an entity can be frozen by an ancestor with a FreezerFacet.
+    static let rec getEntityParentable (entity : Entity) parent world =
+        let presence = entity.GetPresence world
+        entity <> parent &&
+        not (entity.GetProtected world) &&
+        not presence.IsOmnipresent &&
+        (entity.GetChildren world |> Seq.forall (fun child -> getEntityParentable child parent world))
+
     static let getIntersectedEntities (entity : Entity) world =
         let bounds = entity.GetBounds world
         World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world |>
-        Seq.filter (fun intersected ->
-            let presence = intersected.GetPresence world
-            intersected <> entity &&
-            not (intersected.GetProtected world) &&
-            not presence.IsOmnipresent) |>
+        Seq.filter (fun intersected -> getEntityParentable intersected entity world) |>
         Seq.toArray |>
         Array.sortBy _.Names.Length
 
