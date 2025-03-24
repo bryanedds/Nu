@@ -455,6 +455,8 @@ module AssimpExtensions =
                 let mesh = this.Meshes.[i]
                 let indices = mesh.GetIndices ()
                 this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
+                mesh.Faces.Clear ()
+                mesh.Faces.Capacity <- 0
 
         member this.ClearColorData () =
             for i in 0 .. dec this.Meshes.Count do
