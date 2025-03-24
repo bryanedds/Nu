@@ -700,16 +700,15 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
             else world
 
-        static member getPropagationTargets1 world =
-            world.WorldExtension.PropagationTargets
-
         static member getPropagationSources world =
             world.WorldExtension.PropagationTargets |>
             UMap.toSeq |>
             Seq.map snd |>
             Seq.concat |>
             Seq.choose (fun entity -> World.getEntityPropagationSourceOpt entity world) |>
-            hashSetPlus HashIdentity.Structural
+            hashSetPlus HashIdentity.Structural |>
+            Seq.filter (fun entity -> World.getEntityExists entity world) |>
+            Seq.toArray
 
         /// Check that entity has entities to propagate its structure to.
         static member hasPropagationTargets entity world =
