@@ -278,9 +278,9 @@ module WorldEntityHierarchy =
 module FreezerFacetModule =
 
     type Entity with
-        member this.GetFrozenRenderStaticModelSurfaces world : StructPair<Box3, StaticModelSurfaceValue> array = this.Get (nameof this.FrozenRenderStaticModelSurfaces) world
-        member this.SetFrozenRenderStaticModelSurfaces (value : StructPair<Box3, StaticModelSurfaceValue> array) world = this.Set (nameof this.FrozenRenderStaticModelSurfaces) value world
-        member this.FrozenRenderStaticModelSurfaces = lens (nameof this.FrozenRenderStaticModelSurfaces) this this.GetFrozenRenderStaticModelSurfaces this.SetFrozenRenderStaticModelSurfaces
+        member this.GetFrozenSurfaces world : StructPair<Box3, StaticModelSurfaceValue> array = this.Get (nameof this.FrozenSurfaces) world
+        member this.SetFrozenSurfaces (value : StructPair<Box3, StaticModelSurfaceValue> array) world = this.Set (nameof this.FrozenSurfaces) value world
+        member this.FrozenSurfaces = lens (nameof this.FrozenSurfaces) this this.GetFrozenSurfaces this.SetFrozenSurfaces
         member this.GetFrozenShapes world : struct (Matrix4x4 * NavShape * BodyShape) array = this.Get (nameof this.FrozenShapes) world
         member this.SetFrozenShapes (value : struct (Matrix4x4 * NavShape * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
         member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
@@ -333,7 +333,7 @@ module FreezerFacetModule =
             if this.GetFrozen world then
                 let surfaceMaterialsPopulated = this.GetSurfaceMaterialsPopulated world
                 let (frozenSurfaces, frozenShapes, world) = World.freezeEntityHierarchy surfaceMaterialsPopulated this world
-                let world = this.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
+                let world = this.SetFrozenSurfaces frozenSurfaces world
                 let world = this.SetStatic true world
                 let world = this.SetFrozenShapes frozenShapes world
                 let world =
@@ -348,7 +348,7 @@ module FreezerFacetModule =
                     else world
                 let world = this.SetFrozenShapes [||] world
                 let world = this.SetStatic false world
-                let world = this.SetFrozenRenderStaticModelSurfaces [||] world
+                let world = this.SetFrozenSurfaces [||] world
                 let world = World.thawEntityHierarchy (this.GetPresenceConferred world) this world
                 world
 
@@ -363,7 +363,8 @@ module FreezerFacetModule =
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
-             nonPersistent Entity.FrozenRenderStaticModelSurfaces [||]
+             nonPersistent Entity.FrozenSurfaces [||]
+             nonPersistent Entity.FrozenShapes [||]
              define Entity.Frozen false
              define Entity.PresenceConferred Exterior
              define Entity.SurfaceMaterialsPopulated false]
@@ -393,9 +394,9 @@ module FreezerFacetModule =
             let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
             if intersects false false presenceConferred bounds then
-                let staticModelSurfaces = entity.GetFrozenRenderStaticModelSurfaces world
-                for i in 0 .. dec staticModelSurfaces.Length do
-                    let boundsAndSurface = &staticModelSurfaces.[i]
+                let surfaces = entity.GetFrozenSurfaces world
+                for i in 0 .. dec surfaces.Length do
+                    let boundsAndSurface = &surfaces.[i]
                     let bounds = &boundsAndSurface.Fst
                     let surface = &boundsAndSurface.Snd
                     if (not renderPass.IsShadowPass || surface.CastShadow) && intersects false false surface.Presence bounds then
