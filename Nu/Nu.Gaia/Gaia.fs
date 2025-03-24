@@ -3737,6 +3737,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             List.take insertionIndex slnLines @
                             ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
                              "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.ActiveCfg = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.Build.0 = Debug|Any CPU"
                              "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
                              "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|Any CPU"] @
                             List.skip insertionIndex slnLines
