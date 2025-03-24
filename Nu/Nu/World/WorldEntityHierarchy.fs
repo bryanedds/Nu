@@ -447,8 +447,10 @@ module FreezerFacetModule =
 
         override this.Edit (op, entity, world) =
             match op with
-            | AppendProperties _ ->
-                if ImGui.Button "Permafreeze" then entity.Permafreeze world else world
+            | AppendProperties append ->
+                if ImGui.Button "Permafreeze" then
+                    let world = append.EditContext.Snapshot Permafreeze world
+                    entity.Permafreeze world else world
             | _ -> world
 
 [<AutoOpen>]

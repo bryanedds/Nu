@@ -79,6 +79,7 @@ and SnapshotType =
     | VolumeEdit of string
     | FreezeEntities
     | ThawEntities
+    | Permafreeze
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
