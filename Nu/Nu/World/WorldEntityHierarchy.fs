@@ -185,9 +185,10 @@ module WorldEntityHierarchy =
                             frozenEntities.Add entity
                             frozenSurfaces.Add frozenSurface
                             if entity.GetBodyFreezable world then
+                                let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                 let navShape = entity.GetNavShape world
                                 let bodyShape = entity.GetBodyShape world
-                                frozenShapes.Add struct (affineMatrix, navShape, bodyShape)
+                                frozenShapes.Add struct (affine, navShape, bodyShape)
                         elif
                             entity.Has<StaticModelFacet> world &&
                             (match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -229,9 +230,10 @@ module WorldEntityHierarchy =
                                 surfaceIndex <- inc surfaceIndex
                             frozenEntities.Add entity
                             if entity.GetBodyFreezable world then
+                                let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                 let navShape = entity.GetNavShape world
                                 let bodyShape = entity.GetBodyShape world
-                                frozenShapes.Add struct (affineMatrix, navShape, bodyShape)
+                                frozenShapes.Add struct (affine, navShape, bodyShape)
                 for child in entity.GetChildren world do
                     getFrozenArtifacts child
             getFrozenArtifacts parent
@@ -281,8 +283,8 @@ module FreezerFacetModule =
         member this.GetFrozenSurfaces world : StructPair<Box3, StaticModelSurfaceValue> array = this.Get (nameof this.FrozenSurfaces) world
         member this.SetFrozenSurfaces (value : StructPair<Box3, StaticModelSurfaceValue> array) world = this.Set (nameof this.FrozenSurfaces) value world
         member this.FrozenSurfaces = lens (nameof this.FrozenSurfaces) this this.GetFrozenSurfaces this.SetFrozenSurfaces
-        member this.GetFrozenShapes world : struct (Matrix4x4 * NavShape * BodyShape) array = this.Get (nameof this.FrozenShapes) world
-        member this.SetFrozenShapes (value : struct (Matrix4x4 * NavShape * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
+        member this.GetFrozenShapes world : struct (Affine * NavShape * BodyShape) array = this.Get (nameof this.FrozenShapes) world
+        member this.SetFrozenShapes (value : struct (Affine * NavShape * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
         member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
         member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
         member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
@@ -295,13 +297,13 @@ module FreezerFacetModule =
         member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
 
         member this.RegisterFrozenShapesPhysics world =
-            Array.foldi (fun bodyIndex world struct (affineMatrix : Matrix4x4, _, bodyShape) ->
+            Array.foldi (fun bodyIndex world struct (affine : Affine, _, bodyShape) ->
                 let bodyId = { BodySource = this; BodyIndex = bodyIndex }
                 let bodyProperties =
                     { Enabled = true
-                      Center = affineMatrix.Translation
-                      Rotation = affineMatrix.Rotation
-                      Scale = affineMatrix.Scale
+                      Center = affine.Translation
+                      Rotation = affine.Rotation
+                      Scale = affine.Scale
                       BodyShape = bodyShape
                       BodyType = Static
                       SleepingAllowed = true
