@@ -351,9 +351,12 @@ module FreezerFacetModule =
         /// Attempt to permanently freeze a frozen entity by destroying its frozen children.
         member this.TryPermafreeze world =
             if this.GetFrozen world then
-                let children = Array.ofSeq (this.GetChildren world)
+                let children =
+                    this.GetDescendants world |>
+                    Array.ofSeq |>
+                    Array.sortBy (fun descendant -> descendant.Names.Length)
                 Array.fold (fun world (child : Entity) ->
-                    if child.GetSurfaceFreezable world
+                    if child.GetExists world && child.GetSurfaceFreezable world
                     then World.destroyEntityImmediate child world
                     else world)
                     world children

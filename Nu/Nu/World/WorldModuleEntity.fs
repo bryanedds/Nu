@@ -566,6 +566,7 @@ module WorldModuleEntity =
         static member getEntityDescendants (entity : Entity) world =
             seq {
                 for child in World.getEntityChildren entity world do
+                    yield child
                     yield! World.getEntityDescendants child world }
 
         /// Get all of the entities parenting an entity.
