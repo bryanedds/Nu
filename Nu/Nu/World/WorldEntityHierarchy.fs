@@ -338,17 +338,12 @@ module FreezerFacetModule =
                 let (frozenSurfaces, frozenShapes, world) = World.freezeEntityHierarchy surfaceMaterialsPopulated this world
                 let world = this.SetFrozenSurfaces frozenSurfaces world
                 let world = this.SetStatic true world
+                let world = if this.GetSelected world then this.UnregisterFrozenShapesPhysics world else world
                 let world = this.SetFrozenShapes frozenShapes world
-                let world =
-                    if this.GetSelected world
-                    then this.RegisterFrozenShapesPhysics world
-                    else world
+                let world = if this.GetSelected world then this.RegisterFrozenShapesPhysics world else world
                 world
             else
-                let world =
-                    if this.GetSelected world
-                    then this.UnregisterFrozenShapesPhysics world
-                    else world
+                let world = if this.GetSelected world then this.UnregisterFrozenShapesPhysics world else world
                 let world = this.SetFrozenShapes [||] world
                 let world = this.SetStatic false world
                 let world = this.SetFrozenSurfaces [||] world
