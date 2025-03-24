@@ -3583,11 +3583,12 @@ type NavBodyFacet () =
     inherit Facet (false, false, false)
 
     static let propagateNavBody (entity : Entity) world =
+        let navId = { NavIndex = -1; NavEntity = entity }
         match entity.GetNavShape world with
         | NavShape.EmptyNavShape ->
             if entity.GetIs2d world
             then world // TODO: implement for 2d navigation when it's available.
-            else World.setNav3dBodyOpt None entity world
+            else World.setNav3dBodyOpt None navId world
         | shape ->
             if entity.GetIs2d world
             then world // TODO: implement for 2d navigation when it's available.
@@ -3597,8 +3598,8 @@ type NavBodyFacet () =
                     let affineMatrix = entity.GetAffineMatrix world
                     let staticModel = entity.GetStaticModel world
                     let surfaceIndex = entity.GetSurfaceIndex world
-                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
-                else World.setNav3dBodyOpt None entity world
+                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) navId world
+                else World.setNav3dBodyOpt None navId world
 
     static member Properties =
         [define Entity.StaticModel Assets.Default.StaticModel
@@ -3651,9 +3652,10 @@ type NavBodyFacet () =
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =
+        let navId = { NavIndex = -1; NavEntity = entity }
         if entity.GetIs2d world
         then world // TODO: implement for 2d navigation when it's available.
-        else World.setNav3dBodyOpt None entity world
+        else World.setNav3dBodyOpt None navId world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant

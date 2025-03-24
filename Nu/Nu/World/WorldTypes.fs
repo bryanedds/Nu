@@ -415,12 +415,17 @@ and Slide =
     { IdlingTime : GameTime
       Destination : Screen }
 
+/// Identifies a navigation entry.
+and NavId =
+    { NavEntity : Entity
+      NavIndex : int }
+
 /// Represents 3d navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
 and [<ReferenceEquality; NoComparison>] Nav3d =
     { Nav3dContext : RcContext
-      Nav3dBodies : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
-      Nav3dBodiesOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
+      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
+      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
       Nav3dConfig : Nav3dConfig
       Nav3dConfigOldOpt : Nav3dConfig option
       Nav3dMeshOpt : (NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }

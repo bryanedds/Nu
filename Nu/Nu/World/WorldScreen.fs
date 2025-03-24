@@ -490,20 +490,20 @@ module WorldScreenModule =
             // geometry not found
             | None -> None
 
-        static member internal setNav3dBodyOpt contentOpt (source : Entity) world =
-            let screen = source.Screen
+        static member internal setNav3dBodyOpt contentOpt (navId : NavId) world =
+            let screen = navId.NavEntity.Screen
             let nav3d = World.getScreenNav3d screen world
-            match (nav3d.Nav3dBodies.TryFind source, contentOpt) with
+            match (nav3d.Nav3dBodies.TryFind navId, contentOpt) with
             | (Some body, Some body') ->
                 if body' <> body then // OPTIMIZATION: preserve map reference if no content changes detected.
-                    let nav3d = { nav3d with Nav3dBodies = Map.add source body' nav3d.Nav3dBodies }
+                    let nav3d = { nav3d with Nav3dBodies = Map.add navId body' nav3d.Nav3dBodies }
                     World.setScreenNav3d nav3d screen world |> snd'
                 else world
             | (None, Some body) ->
-                let nav3d = { nav3d with Nav3dBodies = Map.add source body nav3d.Nav3dBodies }
+                let nav3d = { nav3d with Nav3dBodies = Map.add navId body nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> snd'
             | (Some _, None) ->
-                let nav3d = { nav3d with Nav3dBodies = Map.remove source nav3d.Nav3dBodies }
+                let nav3d = { nav3d with Nav3dBodies = Map.remove navId nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> snd'
             | (None, None) -> world
 
