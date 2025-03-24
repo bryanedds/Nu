@@ -296,6 +296,7 @@ module FreezerFacetModule =
 
         member this.RegisterFrozenShapesPhysics world =
             Array.foldi (fun bodyIndex world struct (affineMatrix : Matrix4x4, _, bodyShape) ->
+                let bodyId = { BodySource = this; BodyIndex = bodyIndex }
                 let bodyProperties =
                     { Enabled = true
                       Center = affineMatrix.Translation
@@ -320,7 +321,7 @@ module FreezerFacetModule =
                       Sensor = false
                       Awake = false
                       BodyIndex = bodyIndex }
-                World.createBody (this.GetIs2d world) (this.GetBodyId world) bodyProperties world)
+                World.createBody (this.GetIs2d world) bodyId bodyProperties world)
                 world (this.GetFrozenShapes world)
 
         member this.UnregisterFrozenShapesPhysics world =
