@@ -85,10 +85,25 @@ module PhysicallyBased =
           ElementCount : int
           Vertices : Vector3 array
           Indices : int array
+          mutable TrianglesCached : Vector3 array option
           VertexBuffer : uint
           InstanceBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
+
+        /// Lazily access triangles, building them from Vertices and Indices if needed.
+        member this.Triangles =
+            match this.TrianglesCached with
+            | None ->
+                assert (this.PrimitiveType = PrimitiveType.Triangles) // should hold since we use Assimp.PostProcessSteps.Triangulate
+                let triangles =
+                    [|for points in Array.chunkBySize 3 this.Indices do
+                        this.Vertices.[points.[0]]
+                        this.Vertices.[points.[1]]
+                        this.Vertices.[points.[2]]|]
+                this.TrianglesCached <- Some triangles
+                triangles
+            | Some triangles -> triangles
 
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
@@ -1228,6 +1243,7 @@ module PhysicallyBased =
               ElementCount = indexData.Length
               Vertices = vertices
               Indices = indices
+              TrianglesCached = None
               VertexBuffer = vertexBuffer
               InstanceBuffer = instanceBuffer
               IndexBuffer = indexBuffer
@@ -1353,6 +1369,7 @@ module PhysicallyBased =
               ElementCount = indexData.Length
               Vertices = vertices
               Indices = indices
+              TrianglesCached = None
               VertexBuffer = vertexBuffer
               InstanceBuffer = instanceBuffer
               IndexBuffer = indexBuffer
@@ -1481,6 +1498,7 @@ module PhysicallyBased =
               ElementCount = indexData.Length
               Vertices = vertices
               Indices = indices
+              TrianglesCached = None
               VertexBuffer = vertexBuffer
               InstanceBuffer = instanceBuffer
               IndexBuffer = indexBuffer
@@ -3457,6 +3475,7 @@ module PhysicallyBased =
                     let mutable bounds = box3Zero
                     let hierarchy =
                         scene.RootNode.Map ([||], m4Identity, fun node names transform ->
+
                             [|// collect node
                               yield PhysicallyBasedNode names
 

@@ -8,6 +8,7 @@
 //
 
 using System;
+using System.Drawing;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -309,23 +310,17 @@ namespace Nu
         /// Create a bounding box by enclosing two points.
         /// </summary>
         public static Box3 Enclose(Vector3 point, Vector3 point2)
-		{
-            var min = new Vector3(
-                System.Math.Min(point.X, point2.X),
-                System.Math.Min(point.Y, point2.Y),
-                System.Math.Min(point.Z, point2.Z));
-            var min2 = new Vector3(
-                System.Math.Max(point.X, point2.X),
-                System.Math.Max(point.Y, point2.Y),
-                System.Math.Max(point.Z, point2.Z));
-            return new Box3(min, min2 - min);
+        {
+            var min = Vector3.Min(point, point2);
+            var max = Vector3.Max(point, point2);
+            return new Box3(min, max - min);
         }
 
         /// <summary>
         /// Create a bounding box by enclosing multiple points.
         /// </summary>
         public static Box3 Enclose(Vector3[] points)
-		{
+        {
             if (points.Length == 0) return default(Box3);
             var bounds = new Box3(points[0], Vector3.Zero);
             foreach (var point in points) bounds = bounds.Combine(point);
@@ -385,7 +380,7 @@ namespace Nu
         /// </summary>
         /// <returns>An array of <see cref="Vector3"/> containing the corners of this <see cref="Box3"/>.</returns>
         public Vector3[] Corners
-		{
+        {
             get
             {
                 Vector3 min = this.Min, max = this.Min + this.Size;
@@ -407,7 +402,7 @@ namespace Nu
         /// </summary>
         /// <returns>An array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.</returns>
         public Vector3[] FaceCenters
-		{
+        {
             get
             {
                 Vector3 min = this.Min;
@@ -432,7 +427,7 @@ namespace Nu
         {
             Vector3 newSize = Size * scalar;
             Vector3 displacement = (newSize - Size) * 0.5f;
-            return new Box3 (Min - displacement, newSize);
+            return new Box3(Min - displacement, newSize);
         }
 
         /// <summary>
@@ -444,14 +439,8 @@ namespace Nu
         {
             var min = Min;
             var max = min + Size;
-            var min2 = new Vector3();
-            var max2 = new Vector3();
-            min2.X = System.Math.Min(min.X, point.X);
-            min2.Y = System.Math.Min(min.Y, point.Y);
-            min2.Z = System.Math.Min(min.Z, point.Z);
-            max2.X = System.Math.Max(max.X, point.X);
-            max2.Y = System.Math.Max(max.Y, point.Y);
-            max2.Z = System.Math.Max(max.Z, point.Z);
+            var min2 = Vector3.Min(min, point);
+            var max2 = Vector3.Max(max, point);
             return new Box3(min2, max2 - min2);
         }
 
@@ -466,14 +455,8 @@ namespace Nu
             var max = min + Size;
             var min2 = box.Min;
             var max2 = min2 + box.Size;
-            var min3 = new Vector3();
-            var max3 = new Vector3();
-            min3.X = System.Math.Min(min.X, min2.X);
-            min3.Y = System.Math.Min(min.Y, min2.Y);
-            min3.Z = System.Math.Min(min.Z, min2.Z);
-            max3.X = System.Math.Max(max.X, max2.X);
-            max3.Y = System.Math.Max(max.Y, max2.Y);
-            max3.Z = System.Math.Max(max.Z, max2.Z);
+            var min3 = Vector3.Min(min, min2);
+            var max3 = Vector3.Max(max, max2);
             return new Box3(min3, max3 - min3);
         }
 

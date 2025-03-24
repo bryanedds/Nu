@@ -397,7 +397,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
         | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
 
-    // TODO: add some error logging.
     static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         match Metadata.tryGetStaticModelMetadata staticModelShape.StaticModel with
         | ValueSome staticModel ->
@@ -417,20 +416,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                         let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
-                        let vertices =
-                            [|for indices in Array.chunkBySize 3 geometry.Indices do
-                                geometry.Vertices.[indices.[0]]
-                                geometry.Vertices.[indices.[1]]
-                                geometry.Vertices.[indices.[2]]|]
-                        let geometryShape = { Vertices = vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                        PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                        let transformOpt = staticModelSurfaceShape.TransformOpt
+                        let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
+                        match staticModelSurfaceShape.Profile with
+                        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
+                        | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
+                        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
                 masses
                 [0 .. dec staticModel.Surfaces.Length]
         | ValueNone -> masses
 
-    // TODO: add some error logging.
     static member private attachStaticModelShapeSurface (bodyProperties : BodyProperties) (staticModelSurfaceShape : StaticModelSurfaceShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
         | ValueSome staticModel ->
@@ -438,13 +435,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
-                let vertices =
-                    [|for indices in Array.chunkBySize 3 geometry.Indices do
-                        geometry.Vertices.[indices.[0]]
-                        geometry.Vertices.[indices.[1]]
-                        geometry.Vertices.[indices.[2]]|]
-                let geometryShape = { Vertices = vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                let transformOpt = staticModelSurfaceShape.TransformOpt
+                let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
+                match staticModelSurfaceShape.Profile with
+                | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
+                | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
+                | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
             else masses
         | ValueNone -> masses
 
