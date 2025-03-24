@@ -652,7 +652,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         groups |>
         Seq.map (fun group -> World.getEntities group world) |>
         Seq.concat |>
-        Seq.filter (fun entity -> entity.Has<FreezerFacet> world) |>
+        Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world) |>
         Seq.fold (fun world freezer -> freezer.SetFrozen true world) world
 
     let private thawEntities world =
@@ -661,7 +661,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         groups |>
         Seq.map (fun group -> World.getEntities group world) |>
         Seq.concat |>
-        Seq.filter (fun entity -> entity.Has<FreezerFacet> world) |>
+        Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world) |>
         Seq.fold (fun world freezer -> freezer.SetFrozen false world) world
 
     let private synchronizeNav world =
@@ -1890,7 +1890,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
             ImGui.EndDragDropSource ()
         let world =
-            if entity.GetExists world && entity.Has<FreezerFacet> world then // check for existence since entity may have been deleted just above
+            if entity.GetExists world && entity.Has<Freezer3dFacet> world then // check for existence since entity may have been deleted just above
                 let frozen = entity.GetFrozen world
                 let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
                 ImGui.SameLine ()
@@ -2361,7 +2361,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                                         else world
                                                     else world)
                                                     world (getDescendantPairs entity duplicate world)
-                                            let world = if duplicate.Has<FreezerFacet> world then duplicate.SetFrozen false world else world
+                                            let world = if duplicate.Has<Freezer3dFacet> world then duplicate.SetFrozen false world else world
                                             selectEntityOpt (Some duplicate) world
                                             ImGui.SetWindowFocus "Viewport"
                                             ShowSelectedEntity <- true
