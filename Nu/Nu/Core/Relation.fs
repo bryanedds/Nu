@@ -23,6 +23,9 @@ type Link =
     | Parent
     | Name of string
 
+// TODO: P1: create a RelationState algebra that provides a high-level description of a relationship, as well as a function
+// to compute it. Idea modelled after OverlayState.
+
 /// Converts Relation types.
 type RelationConverter (pointType : Type) =
     inherit TypeConverter ()
