@@ -629,15 +629,24 @@ module Hl =
             let validationLayerExists = Array.exists (fun x -> getLayerName x = validationLayer) layers
             if ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
 
-            // TODO: P1: DJL: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
+            // TODO: P1: DJL: complete VkApplicationInfo before merging to master
             // and check for available vulkan version as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
+            let mutable aInfo = VkApplicationInfo ()
+
+            // this is the *maximum* Vulkan version
+#if DEBUG
+            aInfo.apiVersion <- VkVersion.Version_1_1 // as conservative as possible for dev; 1.1 to enable features in Nsight Graphics
+#else
+            aInfo.apiVersion <- VkVersion.Version_1_4 // as unrestricted as possible for release
+#endif
 
             // must be assigned outside conditional to remain in scope until vkCreateInstance
             use layerWrap = new StringArrayWrap ([|validationLayer|])
 
             // create instance
             let mutable info = VkInstanceCreateInfo ()
+            info.pApplicationInfo <- asPointer &aInfo
             info.enabledExtensionCount <- sdlExtensionCount
             info.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
             if ValidationLayersEnabled && validationLayerExists then
