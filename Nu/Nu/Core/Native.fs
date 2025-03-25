@@ -64,6 +64,7 @@ module NativePtr =
         unmanagedToString ptr
 
     /// Convert a fixed-size buffer to an array of given length.
+    /// TODO: DJL: this function is broken.
     let fixedBufferToArray<'a when 'a : unmanaged> length fixedBuffer =
         let mutable fixedBuffer = fixedBuffer
         let voidPtr = Unsafe.AsPointer &fixedBuffer
