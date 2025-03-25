@@ -1443,12 +1443,12 @@ type RigidBodyFacet () =
          define Entity.BodyType Static
          define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
          define Entity.SleepingAllowed true
-         define Entity.Friction 0.5f
+         define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
          define Entity.LinearVelocity v3Zero
          define Entity.LinearDamping 0.0f
          define Entity.AngularVelocity v3Zero
-         define Entity.AngularDamping 0.2f
+         define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
          define Entity.GravityOverride None
@@ -3250,7 +3250,7 @@ type TerrainFacet () =
          define Entity.Static true
          define Entity.AlwaysRender true
          define Entity.BodyEnabled true
-         define Entity.Friction 0.5f
+         define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard

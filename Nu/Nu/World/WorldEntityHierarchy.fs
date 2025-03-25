@@ -24,7 +24,7 @@ module WorldEntityHierarchy =
         member internal this.GetBodyFreezableWhenSurfaceFreezable world =
             this.Has<RigidBodyFacet> world &&
             this.GetBodyType world = Static &&
-            this.GetFriction world = 0.5f &&
+            this.GetFriction world = Constants.Physics.FrictionDefault &&
             this.GetRestitution world = 0.0f &&
             not (this.GetSensor world)
 
@@ -312,7 +312,7 @@ module Freezer3dFacetModule =
                       BodyShape = bodyShape
                       BodyType = Static
                       SleepingAllowed = true
-                      Friction = 0.5f
+                      Friction = Constants.Physics.FrictionDefault
                       Restitution = 0.0f
                       LinearVelocity = v3Zero
                       LinearDamping = 0.0f

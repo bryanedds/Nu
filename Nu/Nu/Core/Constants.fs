@@ -215,6 +215,8 @@ module Audio =
 module Physics =
 
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
+    let [<Literal>] FrictionDefault = 0.5f
+    let [<Literal>] AngularDampingDefault = 0.2f
     let [<Literal>] BreakingPointDefault = 100000.0f
     let [<Literal>] CollisionWildcard = "*"
     let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings.["Collision3dBodiesMax"] with null -> 65536 | value -> scvalue value
