@@ -486,6 +486,14 @@ void main()
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
             vec4 positionBelow = texture(positionTexture, texCoordsBelow);
             computeSsr(positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+
+            // if hit failed, try again on the proper tex coord
+            if (specularScreenWeight == 0.0)
+            {
+                vec2 texCoords = texCoordsOut;
+                texCoords.y = max(0.0, texCoords.y);
+                computeSsr(position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+            }
         }
 
         // compute specular term
