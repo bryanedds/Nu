@@ -75,7 +75,7 @@
         [SsrEnabled True]
         [SsrDetail 0.21]
         [SsrRefinementsMax 24]
-        [SsrRayThickness 0.05]
+        [SsrRayThickness 0.025]
         [SsrTowardEyeCutoff 0.9]
         [SsrDepthCutoff 24]
         [SsrDepthCutoffMargin 0.2]
