@@ -152,6 +152,42 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+float geometryTrace(vec4 position, vec3 lightPosition, mat4 shadowMatrix, sampler2D shadowTexture)
+{
+    vec4 positionShadow = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        // compute z position in shadow space
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+        vec2 shadowTexelSize = 1.0 / shadowTextureSize;
+        float shadowZ = shadowTexCoordsProj.z;
+
+        // compute light distance travel through surface (not accounting for surface concavity)
+        float travel = 0.0;
+        for (int i = -1; i <= 1; ++i)
+        {
+            for (int j = -1; j <= 1; ++j)
+            {
+                float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
+                travel += shadowDepth - shadowZ;
+            }
+        }
+        travel /= 9.0;
+
+        // exponentiate travel with a constant to make its appearance visible, clamping to keep in range
+        travel = exp(-travel * 300.0); // TODO: expose this constant as global uniform.
+        travel = clamp(travel, 0.0, 1.0);
+        return travel;
+    }
+
+    // no trace available
+    return 0.0;
+}
+
 float depthViewToDepthBuffer(float depthView)
 {
     // compute near and far planes (these _should_ get baked down to fragment constants)

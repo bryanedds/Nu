@@ -76,6 +76,8 @@ type [<SymbolicExpansion>] MaterialProperties =
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
       HeightOpt : single voption
+      ThicknessOffsetOpt : single voption
+      ScatterTypeOpt : ScatterType voption
       IgnoreLightMapsOpt : bool voption
       OpaqueDistanceOpt : single voption }
 
@@ -85,6 +87,8 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
     member this.Emission = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
     member this.Height = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
+    member this.ThicknessOffset = ValueOption.defaultValue Constants.Render.ThicknessOffsetDefault this.ThicknessOffsetOpt
+    member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
     member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
 
@@ -99,6 +103,8 @@ module MaterialProperties =
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
           HeightOpt = ValueSome Constants.Render.HeightDefault
+          ThicknessOffsetOpt = ValueSome Constants.Render.ThicknessOffsetDefault
+          ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
           IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault }
 
@@ -110,6 +116,8 @@ module MaterialProperties =
           AmbientOcclusionOpt = ValueNone
           EmissionOpt = ValueNone
           HeightOpt = ValueNone
+          ThicknessOffsetOpt = ValueNone
+          ScatterTypeOpt = ValueNone
           IgnoreLightMapsOpt = ValueNone
           OpaqueDistanceOpt = ValueNone }
 
@@ -122,6 +130,9 @@ type [<SymbolicExpansion>] Material =
       EmissionImageOpt : Image AssetTag voption
       NormalImageOpt : Image AssetTag voption
       HeightImageOpt : Image AssetTag voption
+      ThicknessImageOpt : Image AssetTag voption
+      SubdermalImageOpt : Image AssetTag voption
+      ScatterImageOpt : Image AssetTag voption
       TwoSidedOpt : bool voption }
 
     member this.AlbedoImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName) this.AlbedoImageOpt
@@ -131,6 +142,9 @@ type [<SymbolicExpansion>] Material =
     member this.EmissionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName) this.EmissionImageOpt
     member this.NormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
     member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
+    member this.ThicknessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialThicknessName) this.ThicknessImageOpt
+    member this.SubdermalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName) this.SubdermalImageOpt
+    member this.ScatterImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialScatterName) this.ScatterImageOpt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
 
 [<RequireQualifiedAccess>]
@@ -145,6 +159,9 @@ module Material =
           EmissionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName)
           NormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
           HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
+          ThicknessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialThicknessName)
+          SubdermalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName)
+          ScatterImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialScatterName)
           TwoSidedOpt = ValueSome false }
 
     /// The empty material.
@@ -156,6 +173,9 @@ module Material =
           EmissionImageOpt = ValueNone
           NormalImageOpt = ValueNone
           HeightImageOpt = ValueNone
+          ThicknessImageOpt = ValueNone
+          SubdermalImageOpt = ValueNone
+          ScatterImageOpt = ValueNone
           TwoSidedOpt = ValueNone }
 
 /// A mutable 3d light probe value.
