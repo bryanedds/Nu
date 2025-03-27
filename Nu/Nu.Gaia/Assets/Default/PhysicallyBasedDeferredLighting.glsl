@@ -34,6 +34,7 @@ vec4[](
 uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
+uniform float thicknessOffset;
 uniform float lightCutoffMargin;
 uniform int lightShadowSamples;
 uniform float lightShadowBias;
@@ -65,6 +66,9 @@ uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
+uniform sampler2D thicknessTexture;
+uniform sampler2D subdermalTexture;
+uniform sampler2D scatterTexture;
 uniform sampler2D brdfTexture;
 uniform sampler2D ambientTexture;
 uniform sampler2D irradianceTexture;
@@ -100,6 +104,14 @@ float linstep(float low, float high, float v)
 vec3 rotate(vec3 axis, float angle, vec3 v)
 {
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
+}
+
+vec3 saturate(vec3 rgb, float adjustment)
+{
+    // NOTE: algorithm from Chapter 16 of OpenGL Shading Language
+    const vec3 w = vec3(0.2125, 0.7154, 0.0721);
+    vec3 intensity = vec3(dot(rgb, w));
+    return mix(intensity, rgb, adjustment);
 }
 
 float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
@@ -152,7 +164,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float geometryTrace(vec4 position, vec3 lightPosition, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
@@ -237,6 +249,44 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
         }
     }
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
+}
+
+vec3 computeSubsurfaceScattering(vec4 position, vec3 normal, vec3 lightOrigin, vec3 lightColor, float lightBrightness, int scatterType, vec3 albedo, mat4 shadowMatrix, sampler2D shadowTexture)
+{
+    float trace = geometryTrace(position, lightOrigin, shadowMatrix, shadowTexture);
+    float thickness = texture(thicknessTexture, texCoordsOut).x;
+    vec4 subdermal = texture(subdermalTexture, texCoordsOut);
+    vec4 scatter = texture(scatterTexture, texCoordsOut);
+    if (scatter.a == 0.0)
+        scatter.rgb =
+            scatterType == 1 ?
+            vec3(1, 0.25, 0.04) : // skin scatter
+            vec3(0.6, 1, 0.06); // foliage scatter
+    vec3 radii = clamp(thickness + thicknessOffset, 0.0, 1.5) * scatter.rgb * trace;
+    vec3 subcolor = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
+    subcolor *= lightColor * lightBrightness;
+    vec3 l = normalize(lightOrigin - position.xyz);
+    float nDotL = max(dot(normal, l), 0.0);
+    switch (scatterType)
+    {
+        case 1: // skin formula
+        {
+            float nDotLPos = clamp(nDotL, 0.0, 1.0);
+            float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
+            vec3 scalar =
+                0.2 *
+                pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
+                pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
+            return subcolor * radii * scalar;
+        }
+        default: // foliage formula
+        {
+            vec3 scalar =
+                0.2 *
+                exp(-3.0 * abs(nDotL) / (radii + 0.001));
+            return subcolor * radii * scalar;
+        }
+    }
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -497,6 +547,7 @@ void main()
         vec3 ambientLight = ambientColor * ambientBrightness * ambientOcclusion;
 
         // compute diffuse term
+        // TODO: conditional compute sss term based on scatter type.
         vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
         vec3 kS = f;
         vec3 kD = 1.0 - kS;
