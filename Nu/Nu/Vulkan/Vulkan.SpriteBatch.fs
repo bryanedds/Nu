@@ -69,11 +69,11 @@ module SpriteBatch =
                 [||] vkg.RenderPass vkg.Device
 
         // create sprite batch uniform buffers
-        let perimetersUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg
-        let pivotsUniform = Hl.FifBuffer.createUniform (sizeof<single> * 2 * Constants.Render.SpriteBatchSize) vkg
-        let rotationsUniform = Hl.FifBuffer.createUniform (sizeof<single> * 1 * Constants.Render.SpriteBatchSize) vkg
-        let texCoordsesUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg
-        let colorsUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg
+        let perimetersUniform = Hl.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
+        let pivotsUniform = Hl.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
+        let rotationsUniform = Hl.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
+        let texCoordsesUniform = Hl.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
+        let colorsUniform = Hl.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
         let viewProjectionUniform = Hl.FifBuffer.createUniform (sizeof<single> * 16) vkg
 
         // write sprite batch descriptor set
@@ -110,11 +110,11 @@ module SpriteBatch =
             use colorsPin = new ArrayPin<_> (env.Colors)
             
             // update uniform buffers
-            Hl.FifBuffer.upload 0 (sizeof<single> * 4 * env.SpriteIndex) perimetersPin.NativeInt env.PerimetersUniform vkg
-            Hl.FifBuffer.upload 0 (sizeof<single> * 2 * env.SpriteIndex) pivotsPin.NativeInt env.PivotsUniform vkg
-            Hl.FifBuffer.upload 0 (sizeof<single> * 1 * env.SpriteIndex) rotationsPin.NativeInt env.RotationsUniform vkg
-            Hl.FifBuffer.upload 0 (sizeof<single> * 4 * env.SpriteIndex) texCoordsesPin.NativeInt env.TexCoordsesUniform vkg
-            Hl.FifBuffer.upload 0 (sizeof<single> * 4 * env.SpriteIndex) colorsPin.NativeInt env.ColorsUniform vkg
+            Hl.FifBuffer.uploadStrided16 0 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkg
+            Hl.FifBuffer.uploadStrided16 0 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkg
+            Hl.FifBuffer.uploadStrided16 0 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkg
+            Hl.FifBuffer.uploadStrided16 0 16 env.SpriteIndex texCoordsesPin.NativeInt env.TexCoordsesUniform vkg
+            Hl.FifBuffer.uploadStrided16 0 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkg
             Hl.FifBuffer.uploadArray 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform vkg
 
             // write texture to descriptor set

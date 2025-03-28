@@ -1255,6 +1255,19 @@ module Hl =
                 Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 offset, uint64 size) |> check // may be necessary as memory may not be host-coherent
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
+        /// Upload data to buffer with a stride of 16 if upload is enabled.
+        static member uploadStrided16 offset typeSize count ptr buffer vkg =
+            if buffer.UploadEnabled then
+                if typeSize > 16 then Log.fail "'typeSize' must not exceed stride."
+                for i in 0 .. dec count do
+                    
+                    // TODO: DJL: good time to review our pointer conventions.
+                    let bytePtr = NativePtr.nativeintToBytePtr ptr
+                    let bytePtr = NativePtr.add bytePtr (i * typeSize)
+                    NativePtr.memCopy ((offset + i) * 16) typeSize (NativePtr.toVoidPtr bytePtr) buffer.AllocationInfo.pMappedData
+                Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 (offset * 16), uint64 (count * 16)) |> check // may be necessary as memory may not be host-coherent
+            else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+        
         /// Upload an array to buffer if upload is enabled.
         static member uploadArray offset (array : 'a array) buffer vkg =
             let size = array.Length * sizeof<'a>
@@ -1313,6 +1326,10 @@ module Hl =
             let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
             allocatedBuffer
 
+        /// Create an allocated uniform buffer for a stride of 16.
+        static member createUniformStrided16 length vkg =
+            AllocatedBuffer.createUniform (length * 16) vkg
+        
         /// Create an allocated staging buffer and stage the data.
         static member stageData size ptr vkg =
             let buffer = AllocatedBuffer.createStaging size vkg
@@ -1418,6 +1435,11 @@ module Hl =
         static member upload offset size ptr fifBuffer vkg =
             AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
 
+        /// Upload data to FifBuffer with a stride of 16.
+        static member uploadStrided16 offset typeSize count ptr fifBuffer vkg =
+            AllocatedBuffer.uploadStrided16 offset typeSize count ptr fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
+        
+        
         /// Upload an array to FifBuffer.
         static member uploadArray offset array fifBuffer vkg =
             AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
@@ -1437,6 +1459,10 @@ module Hl =
         /// Create a uniform FifBuffer.
         static member createUniform size vkg =
             FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT vkg
+
+        /// Create a uniform FifBuffer for a stride of 16.
+        static member createUniformStrided16 length vkg =
+            FifBuffer.createUniform (length * 16) vkg
 
         /// Destroy FifBuffer.
         static member destroy fifBuffer vkg =
