@@ -157,13 +157,13 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     vec4 positionShadow = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w; // ndc space
     //if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
     //    shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
     //    shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
     //{
         // compute z position in shadow space
-        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
         //vec2 shadowTextureSize = textureSize(shadowTexture, 0);
         //vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
@@ -175,7 +175,7 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
         //    for (int j = -1; j <= 1; ++j)
         //    {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords/* + vec2(i, j) * shadowTexelSize*/).x;
-                travel += /*shadowDepth -*/ shadowZ;
+                travel += shadowZ /* - shadowDepth*/;
         //    }
         //}
         //travel /= 9.0;
