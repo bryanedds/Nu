@@ -154,7 +154,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTraceDirectional(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w; // ndc space
@@ -250,7 +250,7 @@ vec3 computeSubsurfaceScatteringDirectional(
     vec2 texCoords, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     // compute geometry trace length
-    float trace = geometryTrace(position, lightOrigin, shadowMatrix, shadowTexture);
+    float trace = geometryTraceDirectional(position, lightOrigin, shadowMatrix, shadowTexture);
 
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
@@ -263,7 +263,6 @@ vec3 computeSubsurfaceScatteringDirectional(
     float nDotL = max(dot(normal, l), 0.0);
     if (scatterType == 1.0) // skin formula
     {
-        //return vec3(trace);
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
         float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
         vec3 scalar =
@@ -536,15 +535,12 @@ void main()
             // TODO: P0: make this work for non-directional lights!
             vec3 scattering = vec3(0.0);
             float scatterType = scatterPlus.a;
-            if (lightDirectional && scatterType != 0.0)
-            {
+            if (shadowIndex >= 0 && lightDirectional && scatterType != 0.0)
                 scattering =
                     computeSubsurfaceScatteringDirectional(
                         position, albedo, normal, subdermalPlus, scatterPlus,
                         lightOrigin, lightColors[i], lightBrightnesses[i],
                         texCoordsOut, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
-                //color = vec4(scattering, 1.0);
-            }
 
             // add to outgoing lightAccum
             lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
