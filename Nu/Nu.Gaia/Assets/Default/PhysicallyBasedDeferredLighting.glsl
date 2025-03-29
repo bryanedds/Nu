@@ -170,25 +170,20 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
 
         // compute light distance travel through surface (not accounting for incidental surface concavity)
         float travel = 0.0;
-        //float steps = 0.0001; // epsilon to avoid div by zero.
         for (int i = -1; i <= 1; ++i)
         {
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float delta = shadowZ - shadowDepth;
-                //if (abs(delta) < 0.5)
-                //{
-                    travel += delta;
-                //    ++steps;
-                //}
+                float travelMax = 0.005; // TODO: P0: since if we can make this unnecessary or expose as uniform.
+                float delta = min(shadowZ - shadowDepth, travelMax);
+                travel += delta;
             }
         }
-        //travel /= steps;
         travel /= 9.0;
 
         // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        travel = exp(-travel * 300.0); // TODO: expose this constant as global uniform?
+        travel = exp(-travel * lightShadowExponent * 8.0); // TODO: P0: maybe have a totally different uniform for this?
         travel = clamp(travel, 0.0, 1.0);
         return travel;
     //}
