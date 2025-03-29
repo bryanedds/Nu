@@ -158,10 +158,10 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w; // ndc space
-    //if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-    //    shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-    //    shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
-    //{
+    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
         // compute z position in shadow space
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
         vec2 shadowTextureSize = textureSize(shadowTexture, 0);
@@ -186,10 +186,10 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
         travel = exp(-travel * lightShadowExponent * 8.0); // TODO: P0: maybe have a totally different uniform for this?
         travel = clamp(travel, 0.0, 1.0);
         return travel;
-    //}
-    //
-    //// no trace available
-    //return 0.0;
+    }
+    
+    // no trace available
+    return 0.0;
 }
 
 float depthViewToDepthBuffer(float depthView)
@@ -262,14 +262,14 @@ vec3 computeSubsurfaceScatteringDirectional(
     float nDotL = max(dot(normal, l), 0.0);
     if (scatterType == 1.0) // skin formula
     {
-        return vec3(trace);
-        //float nDotLPos = clamp(nDotL, 0.0, 1.0);
-        //float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
-        //vec3 scalar =
-        //    0.2 *
-        //    pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
-        //    pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
-        //return subcolor * radii * scalar;
+        //return vec3(trace);
+        float nDotLPos = clamp(nDotL, 0.0, 1.0);
+        float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
+        vec3 scalar =
+            0.2 *
+            pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
+            pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
+        return subcolor * radii * scalar;
     }
     else if (scatterType == 2.0) // foliage formula
     {
@@ -542,7 +542,7 @@ void main()
                         position, albedo, normal, subdermalPlus, scatterPlus,
                         lightOrigin, lightColors[i], lightBrightnesses[i],
                         texCoordsOut, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
-                color = vec4(scattering, 1.0);
+                //color = vec4(scattering, 1.0);
             }
 
             // add to outgoing lightAccum
@@ -594,7 +594,7 @@ void main()
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
         // write lighting values
-        //color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+        color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
         fogAccum = ssvfEnabled == 1 ? vec4(computeFogAccumDirectional(position, 0), 1.0) : vec4(0.0);
         depth = depthViewToDepthBuffer(positionView.z);
     }
