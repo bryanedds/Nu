@@ -28,7 +28,7 @@ void main()
     // compute output values
     vec4 positionBlended = boneBlended * vec4(position, 1.0);
     positionOut = model * positionBlended;
-    positionOut.xyzw /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
+    positionOut /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
     gl_Position = projection * view * positionOut;
 }
 
