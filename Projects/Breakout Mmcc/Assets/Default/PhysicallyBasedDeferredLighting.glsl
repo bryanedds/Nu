@@ -175,7 +175,7 @@ float geometryTraceDirectional(vec4 position, vec3 lightOrigin, mat4 shadowMatri
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float travelMax = 0.01; // TODO: P0: since if we can make this unnecessary or expose as global uniform.
+                float travelMax = 0.01; // TODO: see if we can make this unnecessary or expose as a global uniform.
                 float delta = min(shadowZ - shadowDepth, travelMax);
                 travel += delta;
             }
@@ -183,7 +183,7 @@ float geometryTraceDirectional(vec4 position, vec3 lightOrigin, mat4 shadowMatri
         travel /= 9.0;
 
         // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        float sssShadowExponent = 192.0; // TODO: P0: have a global uniform for this?
+        float sssShadowExponent = 192.0; // TODO: expose a global uniform for this?
         travel = exp(-travel * sssShadowExponent);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
