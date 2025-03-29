@@ -175,7 +175,7 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float travelMax = 0.005; // TODO: P0: since if we can make this unnecessary or expose as uniform.
+                float travelMax = 0.01; // TODO: P0: since if we can make this unnecessary or expose as uniform.
                 float delta = min(shadowZ - shadowDepth, travelMax);
                 travel += delta;
             }
