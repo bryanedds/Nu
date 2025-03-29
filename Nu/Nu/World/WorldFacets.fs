@@ -3081,7 +3081,7 @@ type AnimatedModelFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.MaterialProperties MaterialProperties.empty
+         define Entity.MaterialProperties { MaterialProperties.empty with ScatterTypeOpt = ValueSome SkinScatter }
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty

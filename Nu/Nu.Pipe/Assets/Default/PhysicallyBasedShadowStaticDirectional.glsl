@@ -27,6 +27,6 @@ in float depthDirectionalOut;
 
 void main()
 {
-	depths.x = gl_FragCoord.z;
+	depths.x = gl_FragCoord.z; // clip space depth
 	depths.y = exp(lightShadowExponent * depthDirectionalOut);
 }

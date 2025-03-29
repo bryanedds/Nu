@@ -175,7 +175,7 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float travelMax = 0.01; // TODO: P0: since if we can make this unnecessary or expose as uniform.
+                float travelMax = 0.01; // TODO: P0: since if we can make this unnecessary or expose as global uniform.
                 float delta = min(shadowZ - shadowDepth, travelMax);
                 travel += delta;
             }
@@ -183,7 +183,8 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
         travel /= 9.0;
 
         // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        travel = exp(-travel * lightShadowExponent * 8.0); // TODO: P0: maybe have a totally different uniform for this?
+        float sssShadowExponent = 192.0; // TODO: P0: have a global uniform for this?
+        travel = exp(-travel * sssShadowExponent);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
     }
@@ -262,7 +263,6 @@ vec3 computeSubsurfaceScatteringDirectional(
     float nDotL = max(dot(normal, l), 0.0);
     if (scatterType == 1.0) // skin formula
     {
-        //return vec3(trace);
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
         float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
         vec3 scalar =
@@ -536,14 +536,11 @@ void main()
             vec3 scattering = vec3(0.0);
             float scatterType = scatterPlus.a;
             if (lightDirectional && scatterType != 0.0)
-            {
                 scattering =
                     computeSubsurfaceScatteringDirectional(
                         position, albedo, normal, subdermalPlus, scatterPlus,
                         lightOrigin, lightColors[i], lightBrightnesses[i],
                         texCoordsOut, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
-                //color = vec4(scattering, 1.0);
-            }
 
             // add to outgoing lightAccum
             lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
