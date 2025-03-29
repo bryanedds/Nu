@@ -164,25 +164,32 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
     //{
         // compute z position in shadow space
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-        //vec2 shadowTextureSize = textureSize(shadowTexture, 0);
-        //vec2 shadowTexelSize = 1.0 / shadowTextureSize;
+        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+        vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
 
         // compute light distance travel through surface (not accounting for incidental surface concavity)
         float travel = 0.0;
-        //for (int i = -1; i <= 1; ++i)
-        //{
-        //    for (int j = -1; j <= 1; ++j)
-        //    {
-                float shadowDepth = texture(shadowTexture, shadowTexCoords/* + vec2(i, j) * shadowTexelSize*/).x;
-                travel += shadowZ /* - shadowDepth*/;
-        //    }
-        //}
-        //travel /= 9.0;
+        //float steps = 0.0001; // epsilon to avoid div by zero.
+        for (int i = -1; i <= 1; ++i)
+        {
+            for (int j = -1; j <= 1; ++j)
+            {
+                float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
+                float delta = shadowZ - shadowDepth;
+                //if (abs(delta) < 0.5)
+                //{
+                    travel += delta;
+                //    ++steps;
+                //}
+            }
+        }
+        //travel /= steps;
+        travel /= 9.0;
 
-        // exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        //travel = exp(-travel * 300.0); // TODO: expose this constant as global uniform.
-        //travel = clamp(travel, 0.0, 1.0);
+        // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
+        travel = exp(-travel * 300.0); // TODO: expose this constant as global uniform?
+        travel = clamp(travel, 0.0, 1.0);
         return travel;
     //}
     //
