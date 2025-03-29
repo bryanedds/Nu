@@ -30,7 +30,8 @@ module Hl =
     let mutable private ImageIndex = 0u
 
     /// The current frame within MaxFramesInFlight.
-    let mutable internal CurrentFrame = 0
+    let mutable private _CurrentFrame = 0
+    let internal CurrentFrame = _CurrentFrame
 
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
@@ -292,7 +293,7 @@ module Hl =
         endCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence
 
     /// A physical device and associated data.
-    type PhysicalDevice =
+    type private PhysicalDevice =
         { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
           Extensions : VkExtensionProperties array
@@ -496,12 +497,10 @@ module Hl =
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
 
     /// A swapchain and its assets that may be refreshed for a given extent.
-    /// TODO: DJL: make type private.
-    type Swapchain =
-        private
-            { _SwapchainInternalOpts : SwapchainInternal option array
-              _SurfaceFormat : VkSurfaceFormatKHR
-              mutable _SwapchainIndex : int }
+    type private Swapchain =
+        { _SwapchainInternalOpts : SwapchainInternal option array
+          _SurfaceFormat : VkSurfaceFormatKHR
+          mutable _SwapchainIndex : int }
 
         /// The Vulkan swapchain itself.
         member this.VkSwapchain = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).VkSwapchain
@@ -558,47 +557,71 @@ module Hl =
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     /// TODO: maybe rename this to VulkanContext.
-    /// TODO: DJL: make props private.
     type [<ReferenceEquality>] VulkanGlobal =
-        { Window : nativeint
-          Instance : VkInstance
-          Surface : VkSurfaceKHR
-          PhysicalDevice : PhysicalDevice
-          Device : VkDevice
-          VmaAllocator : VmaAllocator
-          Swapchain : Swapchain
-          TransientCommandPool : VkCommandPool
-          MainCommandPool : VkCommandPool
-          RenderCommandBuffers : VkCommandBuffer array
-          TextureCommandBuffers : VkCommandBuffer array
-          GraphicsQueue : VkQueue
-          PresentQueue : VkQueue
-          ImageAvailableSemaphores : VkSemaphore array
-          RenderFinishedSemaphores : VkSemaphore array
-          InFlightFences : VkFence array
-          ResourceReadyFence : VkFence
-          RenderPass : VkRenderPass
-          ClearRenderPass : VkRenderPass
-          PresentRenderPass : VkRenderPass
-          mutable SwapExtent : VkExtent2D }
+        private
+            { _Window : nativeint
+              _Instance : VkInstance
+              _Surface : VkSurfaceKHR
+              _PhysicalDevice : PhysicalDevice
+              _Device : VkDevice
+              _VmaAllocator : VmaAllocator
+              _Swapchain : Swapchain
+              _TransientCommandPool : VkCommandPool
+              _MainCommandPool : VkCommandPool
+              _RenderCommandBuffers : VkCommandBuffer array
+              _TextureCommandBuffers : VkCommandBuffer array
+              _GraphicsQueue : VkQueue
+              _PresentQueue : VkQueue
+              _ImageAvailableSemaphores : VkSemaphore array
+              _RenderFinishedSemaphores : VkSemaphore array
+              _InFlightFences : VkFence array
+              _ResourceReadyFence : VkFence
+              _RenderPass : VkRenderPass
+              _ClearRenderPass : VkRenderPass
+              _PresentRenderPass : VkRenderPass
+              mutable _SwapExtent : VkExtent2D }
 
+        /// The physical device.
+        member this.PhysicalDevice = this._PhysicalDevice.VkPhysicalDevice
+        
+        /// The logical device.
+        member this.Device = this._Device
+
+        /// The VMA allocator.
+        member this.VmaAllocator = this._VmaAllocator
+
+        /// The command pool for transient command buffers.
+        member this.TransientCommandPool = this._TransientCommandPool
+        
         /// The render command buffer for the current frame.
-        member this.RenderCommandBuffer = this.RenderCommandBuffers.[CurrentFrame]
+        member this.RenderCommandBuffer = this._RenderCommandBuffers.[CurrentFrame]
 
         /// The texture command buffer for the current frame.
-        member this.TextureCommandBuffer = this.TextureCommandBuffers.[CurrentFrame]
+        member this.TextureCommandBuffer = this._TextureCommandBuffers.[CurrentFrame]
+
+        /// The graphics command queue.
+        member this.GraphicsQueue = this._GraphicsQueue
 
         /// The image available semaphore for the current frame.
-        member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores.[CurrentFrame]
+        member this.ImageAvailableSemaphore = this._ImageAvailableSemaphores.[CurrentFrame]
 
         /// The render finished semaphore for the current frame.
-        member this.RenderFinishedSemaphore = this.RenderFinishedSemaphores.[CurrentFrame]
+        member this.RenderFinishedSemaphore = this._RenderFinishedSemaphores.[CurrentFrame]
 
         /// The in flight fence for the current frame.
-        member this.InFlightFence = this.InFlightFences.[CurrentFrame]
+        member this.InFlightFence = this._InFlightFences.[CurrentFrame]
+
+        /// The resource ready fence.
+        member this.ResourceReadyFence = this._ResourceReadyFence
+
+        /// The render pass.
+        member this.RenderPass = this._RenderPass
+
+        /// The swap extent.
+        member this.SwapExtent = this._SwapExtent
         
         /// The current swapchain framebuffer.
-        member this.SwapchainFramebuffer = this.Swapchain.Framebuffer
+        member this.SwapchainFramebuffer = this._Swapchain.Framebuffer
 
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
@@ -866,7 +889,7 @@ module Hl =
 
         /// Update the swap extent.
         static member updateSwapExtent vkg =
-            vkg.SwapExtent <- VulkanGlobal.getSwapExtent vkg.PhysicalDevice.SurfaceCapabilities vkg.Window
+            vkg._SwapExtent <- VulkanGlobal.getSwapExtent vkg._PhysicalDevice.SurfaceCapabilities vkg._Window
         
         /// Begin the frame.
         static member beginFrame (vkg : VulkanGlobal) =
@@ -876,7 +899,7 @@ module Hl =
             Vulkan.vkWaitForFences (vkg.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
 
             // acquire image from swapchain to draw onto
-            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain.VkSwapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
+            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg._Swapchain.VkSwapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
             // swap extent is updated here
             //VulkanGlobal.updateSwapExtent vkg
@@ -896,7 +919,7 @@ module Hl =
             // TODO: DJL: clear viewport as well, as applicable.
             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            beginRenderBlock vkg.RenderCommandBuffer vkg.ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
+            beginRenderBlock vkg.RenderCommandBuffer vkg._ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
             endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] fence
 
         /// End the frame.
@@ -909,42 +932,42 @@ module Hl =
             // transition image layout for presentation
             let mutable renderFinished = vkg.RenderFinishedSemaphore
             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-            beginRenderBlock vkg.RenderCommandBuffer vkg.PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+            beginRenderBlock vkg.RenderCommandBuffer vkg._PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
             endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
             
             // present image
-            let mutable swapchain = vkg.Swapchain.VkSwapchain
+            let mutable swapchain = vkg._Swapchain.VkSwapchain
             let mutable info = VkPresentInfoKHR ()
             info.waitSemaphoreCount <- 1u
             info.pWaitSemaphores <- asPointer &renderFinished
             info.swapchainCount <- 1u
             info.pSwapchains <- asPointer &swapchain
             info.pImageIndices <- asPointer &ImageIndex
-            Vulkan.vkQueuePresentKHR (vkg.PresentQueue, asPointer &info) |> check
+            Vulkan.vkQueuePresentKHR (vkg._PresentQueue, asPointer &info) |> check
 
             // advance frame in flight
-            CurrentFrame <- (inc CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
+            _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
-        static member waitIdle vkg =
+        static member waitIdle (vkg : VulkanGlobal) =
             Vulkan.vkDeviceWaitIdle vkg.Device |> check
 
         /// Destroy the Vulkan handles.
         static member cleanup vkg =
-            Swapchain.destroy vkg.Swapchain vkg.Device
+            Swapchain.destroy vkg._Swapchain vkg.Device
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.RenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (vkg.Device, vkg.ClearRenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (vkg.Device, vkg.PresentRenderPass, nullPtr)
-            for i in 0 .. dec vkg.ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg.ImageAvailableSemaphores.[i], nullPtr)
-            for i in 0 .. dec vkg.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg.RenderFinishedSemaphores.[i], nullPtr)
-            for i in 0 .. dec vkg.InFlightFences.Length do Vulkan.vkDestroyFence (vkg.Device, vkg.InFlightFences.[i], nullPtr)
+            Vulkan.vkDestroyRenderPass (vkg.Device, vkg._ClearRenderPass, nullPtr)
+            Vulkan.vkDestroyRenderPass (vkg.Device, vkg._PresentRenderPass, nullPtr)
+            for i in 0 .. dec vkg._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg._ImageAvailableSemaphores.[i], nullPtr)
+            for i in 0 .. dec vkg._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg._RenderFinishedSemaphores.[i], nullPtr)
+            for i in 0 .. dec vkg._InFlightFences.Length do Vulkan.vkDestroyFence (vkg.Device, vkg._InFlightFences.[i], nullPtr)
             Vulkan.vkDestroyFence (vkg.Device, vkg.ResourceReadyFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.MainCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkg.Device, vkg._MainCommandPool, nullPtr)
             Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransientCommandPool, nullPtr)
             Vma.vmaDestroyAllocator vkg.VmaAllocator
             Vulkan.vkDestroyDevice (vkg.Device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (vkg.Instance, vkg.Surface, nullPtr)
-            Vulkan.vkDestroyInstance (vkg.Instance, nullPtr)
+            Vulkan.vkDestroySurfaceKHR (vkg._Instance, vkg._Surface, nullPtr)
+            Vulkan.vkDestroyInstance (vkg._Instance, nullPtr)
 
         /// Attempt to create a VulkanGlobal.
         static member tryCreate window =
@@ -1002,27 +1025,27 @@ module Hl =
 
                 // make VulkanGlobal
                 let vulkanGlobal =
-                    { Window = window
-                      Instance = instance
-                      Surface = surface
-                      PhysicalDevice = physicalDevice
-                      Device = device
-                      VmaAllocator = allocator
-                      Swapchain = swapchain
-                      TransientCommandPool = transientCommandPool
-                      MainCommandPool = mainCommandPool
-                      RenderCommandBuffers = renderCommandBuffers
-                      TextureCommandBuffers = textureCommandBuffers
-                      GraphicsQueue = graphicsQueue
-                      PresentQueue = presentQueue
-                      ImageAvailableSemaphores = imageAvailableSemaphores
-                      RenderFinishedSemaphores = renderFinishedSemaphores
-                      InFlightFences = inFlightFences
-                      ResourceReadyFence = resourceReadyFence
-                      RenderPass = renderPass
-                      ClearRenderPass = clearRenderPass
-                      PresentRenderPass = presentRenderPass
-                      SwapExtent = swapExtent }
+                    { _Window = window
+                      _Instance = instance
+                      _Surface = surface
+                      _PhysicalDevice = physicalDevice
+                      _Device = device
+                      _VmaAllocator = allocator
+                      _Swapchain = swapchain
+                      _TransientCommandPool = transientCommandPool
+                      _MainCommandPool = mainCommandPool
+                      _RenderCommandBuffers = renderCommandBuffers
+                      _TextureCommandBuffers = textureCommandBuffers
+                      _GraphicsQueue = graphicsQueue
+                      _PresentQueue = presentQueue
+                      _ImageAvailableSemaphores = imageAvailableSemaphores
+                      _RenderFinishedSemaphores = renderFinishedSemaphores
+                      _InFlightFences = inFlightFences
+                      _ResourceReadyFence = resourceReadyFence
+                      _RenderPass = renderPass
+                      _ClearRenderPass = clearRenderPass
+                      _PresentRenderPass = presentRenderPass
+                      _SwapExtent = swapExtent }
 
                 // fin
                 Some vulkanGlobal
@@ -1057,7 +1080,7 @@ module Hl =
             | Some memoryType -> memoryType
             | None -> Log.fail "Failed to find suitable memory type!"
         
-        static member private createInternal uploadEnabled bufferInfo vkg =
+        static member private createInternal uploadEnabled bufferInfo (vkg : VulkanGlobal) =
 
             // create buffer
             let mutable buffer = Unchecked.defaultof<VkBuffer>
@@ -1075,7 +1098,7 @@ module Hl =
             // allocate memory
             let mutable info = VkMemoryAllocateInfo ()
             info.allocationSize <- memRequirements.size
-            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice.VkPhysicalDevice
+            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice
             let mutable memory = Unchecked.defaultof<VkDeviceMemory>
             Vulkan.vkAllocateMemory (vkg.Device, asPointer &info, nullPtr, &memory) |> check
 
@@ -1118,7 +1141,7 @@ module Hl =
             allocatedBuffer
         
         /// Destroy a ManualAllocatedBuffer.
-        static member destroy buffer vkg =
+        static member destroy buffer (vkg : VulkanGlobal) =
             if buffer.Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkg.Device, buffer.Memory)
             Vulkan.vkDestroyBuffer (vkg.Device, buffer.Buffer, nullPtr)
             Vulkan.vkFreeMemory (vkg.Device, buffer.Memory, nullPtr)
@@ -1181,7 +1204,7 @@ module Hl =
           AllocationInfo : VmaAllocationInfo
           UploadEnabled : bool }
 
-        static member private createInternal uploadEnabled bufferInfo vkg =
+        static member private createInternal uploadEnabled bufferInfo (vkg : VulkanGlobal) =
 
             // allocation create info
             let mutable info = VmaAllocationCreateInfo ()
@@ -1205,7 +1228,7 @@ module Hl =
             allocatedBuffer
 
         /// Copy data from the source buffer to the destination buffer.
-        static member private copyData size source destination vkg =
+        static member private copyData size source destination (vkg : VulkanGlobal) =
 
             // create command buffer for transfer
             let mutable cb = allocateCommandBuffer vkg.TransientCommandPool vkg.Device
@@ -1248,14 +1271,14 @@ module Hl =
         *)
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer vkg =
+        static member upload offset size ptr buffer (vkg : VulkanGlobal) =
             if buffer.UploadEnabled then
                 NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.AllocationInfo.pMappedData
                 Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 offset, uint64 size) |> check // may be necessary as memory may not be host-coherent
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload data to buffer with a stride of 16 if upload is enabled.
-        static member uploadStrided16 offset typeSize count ptr buffer vkg =
+        static member uploadStrided16 offset typeSize count ptr buffer (vkg : VulkanGlobal) =
             if buffer.UploadEnabled then
                 if typeSize > 16 then Log.fail "'typeSize' must not exceed stride."
                 for i in 0 .. dec count do
@@ -1373,11 +1396,11 @@ module Hl =
           Allocation : VmaAllocation }
 
         /// Destroy image and allocation.
-        static member destroy allocatedImage vkg =
+        static member destroy allocatedImage (vkg : VulkanGlobal) =
             Vma.vmaDestroyImage (vkg.VmaAllocator, allocatedImage.Image, allocatedImage.Allocation)
 
         /// Create an AllocatedImage.
-        static member create imageInfo vkg =
+        static member create imageInfo (vkg : VulkanGlobal) =
             let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
