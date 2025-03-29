@@ -34,7 +34,6 @@ vec4[](
 uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
-uniform float thicknessOffset;
 uniform float lightCutoffMargin;
 uniform int lightShadowSamples;
 uniform float lightShadowBias;
@@ -66,9 +65,8 @@ uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
-uniform sampler2D thicknessTexture;
-uniform sampler2D subdermalTexture;
-uniform sampler2D scatterTexture;
+uniform sampler2D subdermalPlusTexture;
+uniform sampler2D scatterPlusTexture;
 uniform sampler2D brdfTexture;
 uniform sampler2D ambientTexture;
 uniform sampler2D irradianceTexture;
@@ -104,14 +102,6 @@ float linstep(float low, float high, float v)
 vec3 rotate(vec3 axis, float angle, vec3 v)
 {
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
-}
-
-vec3 saturate(vec3 rgb, float adjustment)
-{
-    // NOTE: algorithm from Chapter 16 of OpenGL Shading Language
-    const vec3 w = vec3(0.2125, 0.7154, 0.0721);
-    vec3 intensity = vec3(dot(rgb, w));
-    return mix(intensity, rgb, adjustment);
 }
 
 float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
@@ -168,36 +158,36 @@ float geometryTrace(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
-    {
+    //if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+    //    shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+    //    shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    //{
         // compute z position in shadow space
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
-        vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        float shadowZ = shadowTexCoordsProj.z;
+        //vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+        //vec2 shadowTexelSize = 1.0 / shadowTextureSize;
+        float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
 
-        // compute light distance travel through surface (not accounting for surface concavity)
+        // compute light distance travel through surface (not accounting for incidental surface concavity)
         float travel = 0.0;
-        for (int i = -1; i <= 1; ++i)
-        {
-            for (int j = -1; j <= 1; ++j)
-            {
-                float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                travel += shadowDepth - shadowZ;
-            }
-        }
-        travel /= 9.0;
+        //for (int i = -1; i <= 1; ++i)
+        //{
+        //    for (int j = -1; j <= 1; ++j)
+        //    {
+                float shadowDepth = texture(shadowTexture, shadowTexCoords/* + vec2(i, j) * shadowTexelSize*/).x;
+                travel += /*shadowDepth -*/ shadowZ;
+        //    }
+        //}
+        //travel /= 9.0;
 
         // exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        travel = exp(-travel * 300.0); // TODO: expose this constant as global uniform.
-        travel = clamp(travel, 0.0, 1.0);
+        //travel = exp(-travel * 300.0); // TODO: expose this constant as global uniform.
+        //travel = clamp(travel, 0.0, 1.0);
         return travel;
-    }
-
-    // no trace available
-    return 0.0;
+    //}
+    //
+    //// no trace available
+    //return 0.0;
 }
 
 float depthViewToDepthBuffer(float depthView)
@@ -251,42 +241,42 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScattering(vec4 position, vec3 normal, vec3 lightOrigin, vec3 lightColor, float lightBrightness, int scatterType, vec3 albedo, mat4 shadowMatrix, sampler2D shadowTexture)
+vec3 computeSubsurfaceScatteringDirectional(
+    vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus,
+    vec3 lightOrigin, vec3 lightColor, float lightBrightness,
+    vec2 texCoords, mat4 shadowMatrix, sampler2D shadowTexture)
 {
+    // compute geometry trace length
     float trace = geometryTrace(position, lightOrigin, shadowMatrix, shadowTexture);
-    float thickness = texture(thicknessTexture, texCoordsOut).x;
-    vec4 subdermal = texture(subdermalTexture, texCoordsOut);
-    vec4 scatter = texture(scatterTexture, texCoordsOut);
-    if (scatter.a == 0.0)
-        scatter.rgb =
-            scatterType == 1 ?
-            vec3(1, 0.25, 0.04) : // skin scatter
-            vec3(0.6, 1, 0.06); // foliage scatter
-    vec3 radii = clamp(thickness + thicknessOffset, 0.0, 1.5) * scatter.rgb * trace;
-    vec3 subcolor = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
-    subcolor *= lightColor * lightBrightness;
+
+    // compute scattered color
+    vec3 subdermal = subdermalPlus.rgb;
+    float thickness = subdermalPlus.a;
+    vec3 scatter = scatterPlus.rgb;
+    float scatterType = scatterPlus.a;
+    vec3 radii = thickness * scatter.rgb * trace;
+    vec3 subcolor = subdermal * lightColor * lightBrightness;
     vec3 l = normalize(lightOrigin - position.xyz);
     float nDotL = max(dot(normal, l), 0.0);
-    switch (scatterType)
+    if (scatterType == 1.0) // skin formula
     {
-        case 1: // skin formula
-        {
-            float nDotLPos = clamp(nDotL, 0.0, 1.0);
-            float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
-            vec3 scalar =
-                0.2 *
-                pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
-                pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
-            return subcolor * radii * scalar;
-        }
-        default: // foliage formula
-        {
-            vec3 scalar =
-                0.2 *
-                exp(-3.0 * abs(nDotL) / (radii + 0.001));
-            return subcolor * radii * scalar;
-        }
+        return vec3(trace);
+        //float nDotLPos = clamp(nDotL, 0.0, 1.0);
+        //float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
+        //vec3 scalar =
+        //    0.2 *
+        //    pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
+        //    pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
+        //return subcolor * radii * scalar;
     }
+    else if (scatterType == 2.0) // foliage formula
+    {
+        vec3 scalar =
+            0.2 *
+            exp(-3.0 * abs(nDotL) / (radii + 0.001));
+        return subcolor * radii * scalar;
+    }
+    return vec3(0.0); // nop formula
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -461,6 +451,8 @@ void main()
         vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
         vec4 material = texture(materialTexture, texCoordsOut);
         vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+        vec4 subdermalPlus = texture(subdermalPlusTexture, texCoordsOut);
+        vec4 scatterPlus = texture(scatterPlusTexture, texCoordsOut);
 
         // retrieve data from intermediate buffers
         vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
@@ -516,9 +508,9 @@ void main()
             float shadowScalar = 1.0f;
             if (shadowIndex >= 0)
                 shadowScalar =
-                shadowIndex < SHADOW_TEXTURES_MAX ?
-                computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
-                computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+                    shadowIndex < SHADOW_TEXTURES_MAX ?
+                    computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                    computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
 
             // cook-torrance brdf
             float hDotV = max(dot(h, v), 0.0);
@@ -537,8 +529,22 @@ void main()
             vec3 kD = vec3(1.0) - kS;
             kD *= 1.0 - metallic;
 
+            // compute subsurface scattering
+            // TODO: P0: make this work for non-directional lights!
+            vec3 scattering = vec3(0.0);
+            float scatterType = scatterPlus.a;
+            if (lightDirectional && scatterType != 0.0)
+            {
+                scattering =
+                    computeSubsurfaceScatteringDirectional(
+                        position, albedo, normal, subdermalPlus, scatterPlus,
+                        lightOrigin, lightColors[i], lightBrightnesses[i],
+                        texCoordsOut, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+                color = vec4(scattering, 1.0);
+            }
+
             // add to outgoing lightAccum
-            lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+            lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
         }
 
         // compute ambient light
@@ -586,7 +592,7 @@ void main()
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
         // write lighting values
-        color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+        //color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
         fogAccum = ssvfEnabled == 1 ? vec4(computeFogAccumDirectional(position, 0), 1.0) : vec4(0.0);
         depth = depthViewToDepthBuffer(positionView.z);
     }

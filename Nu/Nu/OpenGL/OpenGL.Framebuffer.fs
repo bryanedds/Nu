@@ -428,12 +428,38 @@ module Framebuffer =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
+        // create subdermal plus buffer
+        let subdermalPlusId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusId)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment4, TextureTarget.Texture2d, subdermalPlusId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // create scatter plus buffer
+        let scatterPlusId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, scatterPlusId)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment5, TextureTarget.Texture2d, scatterPlusId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
         // associate draw buffers
         Gl.DrawBuffers
             [|int FramebufferAttachment.ColorAttachment0
               int FramebufferAttachment.ColorAttachment1
               int FramebufferAttachment.ColorAttachment2
-              int FramebufferAttachment.ColorAttachment3|]
+              int FramebufferAttachment.ColorAttachment3
+              int FramebufferAttachment.ColorAttachment4
+              int FramebufferAttachment.ColorAttachment5|]
         Hl.Assert ()
 
         // create render buffer with depth and stencil
@@ -449,17 +475,21 @@ module Framebuffer =
             let albedo = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = albedoId }
             let material = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = materialId }
             let normalPlus = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = normalPlusId }
-            Right (position, albedo, material, normalPlus, renderbuffer, framebuffer)
+            let subdermalPlus = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = subdermalPlusId }
+            let scatterPlus = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = scatterPlusId }
+            Right (position, albedo, material, normalPlus, subdermalPlus, scatterPlus, renderbuffer, framebuffer)
         else Left "Could not create complete geometry framebuffer."
 
     /// Destroy geometry buffers.
-    let DestroyGeometryBuffers (position : Texture.Texture, albedo : Texture.Texture, material : Texture.Texture, normalPlus : Texture.Texture, renderbuffer, framebuffer) =
+    let DestroyGeometryBuffers (position : Texture.Texture, albedo : Texture.Texture, material : Texture.Texture, normalPlus : Texture.Texture, subdermalPlus : Texture.Texture, scatterPlus : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         position.Destroy ()
         albedo.Destroy ()
         material.Destroy ()
         normalPlus.Destroy ()
+        subdermalPlus.Destroy ()
+        scatterPlus.Destroy ()
 
     /// Create light mapping buffers.
     let TryCreateLightMappingBuffers (resolutionX, resolutionY) =

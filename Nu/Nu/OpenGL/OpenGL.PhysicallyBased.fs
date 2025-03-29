@@ -20,7 +20,7 @@ module PhysicallyBased =
         { ShadowTextureBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowTextureBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
-          GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
           AmbientBuffers : OpenGL.Texture.Texture * uint * uint
           IrradianceBuffers : OpenGL.Texture.Texture * uint * uint
@@ -43,7 +43,9 @@ module PhysicallyBased =
           Emission : single
           Height : single
           IgnoreLightMaps : bool
-          OpaqueDistance : single }
+          OpaqueDistance : single
+          ThicknessOffset : single
+          ScatterType : ScatterType }
 
         /// The empty material properties.
         static member empty =
@@ -54,7 +56,9 @@ module PhysicallyBased =
               Emission = 0.0f
               Height = 0.0f
               IgnoreLightMaps = false
-              OpaqueDistance = 0.0f }
+              OpaqueDistance = 0.0f
+              ThicknessOffset = 0.0f
+              ScatterType = NoScatter }
 
     /// Describes a physically-based material.
     type PhysicallyBasedMaterial =
@@ -65,6 +69,9 @@ module PhysicallyBased =
           EmissionTexture : Texture.Texture
           NormalTexture : Texture.Texture
           HeightTexture : Texture.Texture
+          SubdermalTexture : Texture.Texture
+          ThicknessTexture : Texture.Texture
+          ScatterTexture : Texture.Texture
           TwoSided : bool }
 
         /// The empty material.
@@ -76,6 +83,9 @@ module PhysicallyBased =
               EmissionTexture = Texture.EmptyTexture
               NormalTexture = Texture.EmptyTexture
               HeightTexture = Texture.EmptyTexture
+              SubdermalTexture = Texture.EmptyTexture
+              ThicknessTexture = Texture.EmptyTexture
+              ScatterTexture = Texture.EmptyTexture
               TwoSided = false }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
@@ -158,6 +168,26 @@ module PhysicallyBased =
                 | Some _ | None -> opaqueDistanceDefault
             | ValueSome opaqueDistance -> opaqueDistance
 
+        static member extractThicknessOffset thicknessOffsetDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.ThicknessOffsetOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue thicknessOffsetDefault material.ThicknessOffsetOpt
+                | Some _ | None -> thicknessOffsetDefault
+            | ValueSome thicknessOffset -> thicknessOffset
+
+        static member extractScatterType scatterTypeDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.ScatterTypeOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue scatterTypeDefault material.ScatterTypeOpt
+                | Some _ | None -> scatterTypeDefault
+            | ValueSome scatterType -> scatterType
+
         static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.NavShapeOpt with
             | ValueNone ->
@@ -181,6 +211,9 @@ module PhysicallyBased =
             left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
             left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
+            left.SurfaceMaterial.SubdermalTexture = right.SurfaceMaterial.SubdermalTexture &&
+            left.SurfaceMaterial.ThicknessTexture = right.SurfaceMaterial.ThicknessTexture &&
+            left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
@@ -194,9 +227,12 @@ module PhysicallyBased =
                 (hash material.EmissionTexture <<< 8) ^^^
                 (hash material.NormalTexture <<< 10) ^^^
                 (hash material.HeightTexture <<< 12) ^^^
-                (hash material.TwoSided <<< 14) ^^^
-                (int geometry.PrimitiveType <<< 16) ^^^
-                (int geometry.PhysicallyBasedVao <<< 18)
+                (hash material.SubdermalTexture <<< 14) ^^^
+                (hash material.ThicknessTexture <<< 16) ^^^
+                (hash material.ScatterTexture <<< 18) ^^^
+                (hash material.TwoSided <<< 20) ^^^
+                (int geometry.PrimitiveType <<< 22) ^^^
+                (int geometry.PhysicallyBasedVao <<< 24)
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
@@ -224,6 +260,8 @@ module PhysicallyBased =
         let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
         let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
         let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
+        let extractThicknessOffset = PhysicallyBasedSurface.extractThicknessOffset
+        let extractScatterType = PhysicallyBasedSurface.extractScatterType
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
@@ -291,6 +329,9 @@ module PhysicallyBased =
           EmissionTextureUniform : int
           NormalTextureUniform : int
           HeightTextureUniform : int
+          SubdermalTextureUniform : int
+          ThicknessTextureUniform : int
+          ScatterTextureUniform : int
           BrdfTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
@@ -432,6 +473,8 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
           NormalPlusTextureUniform : int
+          SubdermalPlusTextureUniform : int
+          ScatterPlusTextureUniform : int
           BrdfTextureUniform : int
           AmbientTextureUniform : int
           IrradianceTextureUniform : int
@@ -678,6 +721,9 @@ module PhysicallyBased =
         let eTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_e")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_e")                    else ""
         let nTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_n")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_n")                    else ""
         let hTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_h")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_h")                    else ""
+        let subdermalTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_subdermal")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_subdermal")            else ""
+        let thicknessTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_thickness")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_thickness")            else ""
+        let scatterTextureFilePath =            if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_scatter")                 elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_scatter")              else ""
         let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                else ""
         let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")              elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")               else ""
         let roughnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Roughness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Roughness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Roughness")         else ""
@@ -689,6 +735,9 @@ module PhysicallyBased =
         let normalTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Normal")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Normal")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Normal")            else ""
         let emissionTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emission")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emission")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emission")          else ""
         let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")            else ""
+        let subdermalTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Subdermal")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Subdermal")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Subdermal")         else ""
+        let thicknessTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Thickness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Thickness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Thickness")         else ""
+        let scatterTextureFilePath' =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Scatter")            elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Scatter")          elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Scatter")           else ""
 
         // attempt to load roughness info
         let roughness = Constants.Render.RoughnessDefault
@@ -859,6 +908,41 @@ module PhysicallyBased =
             | ValueSome opqaqueDistance -> opqaqueDistance
             | ValueNone -> Constants.Render.OpaqueDistanceDefault
 
+        // attempt to load subdermal info
+        let subdermalTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + subdermalTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + subdermalTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.SubdermalTexture
+            else defaultMaterial.SubdermalTexture
+
+        // attempt to load thickness info
+        let thicknessOffset = Constants.Render.ThicknessOffsetDefault
+        let thicknessTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + thicknessTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + thicknessTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.ThicknessTexture
+            else defaultMaterial.ThicknessTexture
+
+        // attempt to load scatter info
+        let scatterType = Constants.Render.ScatterTypeDefault
+        let scatterTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + scatterTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + scatterTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.ScatterTexture
+            else defaultMaterial.ScatterTexture
+
         // compute two-sidedness
         let twoSided =
             match material.TwoSidedOpt with
@@ -874,7 +958,9 @@ module PhysicallyBased =
               Emission = emission
               Height = height
               IgnoreLightMaps = ignoreLightMaps
-              OpaqueDistance = opaqueDistance }
+              OpaqueDistance = opaqueDistance
+              ThicknessOffset = thicknessOffset
+              ScatterType = scatterType }
 
         // make material
         let material =
@@ -885,6 +971,9 @@ module PhysicallyBased =
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
               HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              ThicknessTexture = thicknessTexture
+              ScatterTexture = scatterTexture
               TwoSided = twoSided }
 
         // fin
@@ -1201,6 +1290,9 @@ module PhysicallyBased =
                 Gl.EnableVertexAttribArray 10u
                 Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (10u, 1u)
+                Gl.EnableVertexAttribArray 11u
+                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
+                Gl.VertexAttribDivisor (11u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -1327,6 +1419,9 @@ module PhysicallyBased =
                 Gl.EnableVertexAttribArray 12u
                 Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (12u, 1u)
+                Gl.EnableVertexAttribArray 13u
+                Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
+                Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -1456,6 +1551,9 @@ module PhysicallyBased =
                 Gl.EnableVertexAttribArray 13u
                 Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (13u, 1u)
+                Gl.EnableVertexAttribArray 14u
+                Gl.VertexAttribPointer (14u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
+                Gl.VertexAttribDivisor (14u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -1614,6 +1712,9 @@ module PhysicallyBased =
         let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let heightTextureUniform = Gl.GetUniformLocation (shader, "heightTexture")
+        let subdermalTextureUniform = Gl.GetUniformLocation (shader, "subdermalTexture")
+        let thicknessTextureUniform = Gl.GetUniformLocation (shader, "thicknessTexture")
+        let scatterTextureUniform = Gl.GetUniformLocation (shader, "scatterTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
@@ -1675,6 +1776,9 @@ module PhysicallyBased =
           EmissionTextureUniform = emissionTextureUniform
           NormalTextureUniform = normalTextureUniform
           HeightTextureUniform = heightTextureUniform
+          SubdermalTextureUniform = subdermalTextureUniform
+          ThicknessTextureUniform = thicknessTextureUniform
+          ScatterTextureUniform = scatterTextureUniform
           BrdfTextureUniform = brdfTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
@@ -1935,6 +2039,8 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
+        let subdermalPlusTextureUniform = Gl.GetUniformLocation (shader, "subdermalPlusTexture")
+        let scatterPlusTextureUniform = Gl.GetUniformLocation (shader, "scatterPlusTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let ambientTextureUniform = Gl.GetUniformLocation (shader, "ambientTexture")
         let irradianceTextureUniform = Gl.GetUniformLocation (shader, "irradianceTexture")
@@ -1999,6 +2105,8 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
+          SubdermalPlusTextureUniform = subdermalPlusTextureUniform
+          ScatterPlusTextureUniform = scatterPlusTextureUniform
           BrdfTextureUniform = brdfTextureUniform
           AmbientTextureUniform = ambientTextureUniform
           IrradianceTextureUniform = irradianceTextureUniform
@@ -2420,6 +2528,9 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.EmissionTextureUniform, 4)
             Gl.Uniform1 (shader.NormalTextureUniform, 5)
             Gl.Uniform1 (shader.HeightTextureUniform, 6)
+            Gl.Uniform1 (shader.SubdermalTextureUniform, 7)
+            Gl.Uniform1 (shader.ThicknessTextureUniform, 8)
+            Gl.Uniform1 (shader.ScatterTextureUniform, 9)
             Hl.Assert ()
 
         // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
@@ -2440,6 +2551,12 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture.TextureId)
             Gl.ActiveTexture TextureUnit.Texture6
             Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture7
+            Gl.BindTexture (TextureTarget.Texture2d, material.SubdermalTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture8
+            Gl.BindTexture (TextureTarget.Texture2d, material.ThicknessTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture9
+            Gl.BindTexture (TextureTarget.Texture2d, material.ScatterTexture.TextureId)
             Hl.Assert ()
 
             // update instance buffer
@@ -2475,6 +2592,12 @@ module PhysicallyBased =
             Gl.ActiveTexture TextureUnit.Texture5
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Gl.ActiveTexture TextureUnit.Texture6
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Gl.ActiveTexture TextureUnit.Texture7
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Gl.ActiveTexture TextureUnit.Texture8
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Gl.ActiveTexture TextureUnit.Texture9
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
         // stop batch
@@ -3199,6 +3322,8 @@ module PhysicallyBased =
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
+         subdermalPlusTexture : Texture.Texture,
+         scatterPlusTexture : Texture.Texture,
          brdfTexture : Texture.Texture,
          ambientTexture : Texture.Texture,
          irradianceTexture : Texture.Texture,
@@ -3258,15 +3383,17 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 4)
-        Gl.Uniform1 (shader.AmbientTextureUniform, 5)
-        Gl.Uniform1 (shader.IrradianceTextureUniform, 6)
-        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 7)
-        Gl.Uniform1 (shader.SsaoTextureUniform, 8)
+        Gl.Uniform1 (shader.SubdermalPlusTextureUniform, 4)
+        Gl.Uniform1 (shader.ScatterPlusTextureUniform, 5)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 6)
+        Gl.Uniform1 (shader.AmbientTextureUniform, 7)
+        Gl.Uniform1 (shader.IrradianceTextureUniform, 8)
+        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 9)
+        Gl.Uniform1 (shader.SsaoTextureUniform, 10)
         for i in 0 .. dec Constants.Render.ShadowTexturesMax do
-            Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 9)
+            Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 11)
         for i in 0 .. dec Constants.Render.ShadowMapsMax do
-            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 9 + Constants.Render.ShadowTexturesMax)
+            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 11 + Constants.Render.ShadowTexturesMax)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -3293,20 +3420,24 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, ambientTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, ambientTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture10
         Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture.TextureId)
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i].TextureId)
         for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
         Hl.Assert ()
 
@@ -3344,11 +3475,15 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture8
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture10
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
         for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
