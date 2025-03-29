@@ -245,12 +245,19 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
 }
 
 vec3 computeSubsurfaceScatteringDirectional(
-    vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus,
-    vec3 lightOrigin, vec3 lightColor, float lightBrightness,
-    vec2 texCoords, mat4 shadowMatrix, sampler2D shadowTexture)
+    vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, vec2 texCoords, int lightIndex)
 {
-    // compute geometry trace length
-    float trace = geometryTraceDirectional(position, lightOrigin, shadowMatrix, shadowTexture);
+    // retrieve light and shadow values
+    vec3 lightOrigin = lightOrigins[lightIndex];
+    vec3 lightColor = lightColors[lightIndex];
+    float lightBrightness = lightBrightnesses[lightIndex];
+    int shadowIndex = lightShadowIndices[lightIndex];
+
+    // compute geometry trace length, defaulting to 1.0 when no shadow present for this light index
+    float trace = 1.0;
+    if (shadowIndex >= 0)
+        trace = geometryTraceDirectional(
+            position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
 
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
@@ -535,12 +542,9 @@ void main()
             // TODO: P0: make this work for non-directional lights!
             vec3 scattering = vec3(0.0);
             float scatterType = scatterPlus.a;
-            if (shadowIndex >= 0 && lightDirectional && scatterType != 0.0)
-                scattering =
-                    computeSubsurfaceScatteringDirectional(
-                        position, albedo, normal, subdermalPlus, scatterPlus,
-                        lightOrigin, lightColors[i], lightBrightnesses[i],
-                        texCoordsOut, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            if (lightDirectional && scatterType != 0.0)
+                scattering = computeSubsurfaceScatteringDirectional(
+                    position, albedo, normal, subdermalPlus, scatterPlus, texCoordsOut, i);
 
             // add to outgoing lightAccum
             lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
