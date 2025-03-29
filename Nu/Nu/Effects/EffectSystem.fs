@@ -474,6 +474,7 @@ module EffectSystem =
             if slice.Enabled then
                 let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z)
                 let direction = rotation.Down
+                let bounds = Box3 (slice.Position - v3Dup slice.LightCutoff, v3Dup slice.LightCutoff * 2.0f)
                 let lightToken =
                     Light3dToken
                         { LightId = 0UL
@@ -487,6 +488,7 @@ module EffectSystem =
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
+                          Bounds = bounds
                           DesireShadows = false }
                 addDataToken lightToken effectSystem
             else effectSystem

@@ -2427,6 +2427,7 @@ type Light3dFacet () =
         let lightCutoff = entity.GetLightCutoff world
         let lightType = entity.GetLightType world
         let desireShadows = entity.GetDesireShadows world
+        let bounds = entity.GetBounds world
         World.enqueueRenderMessage3d
             (RenderLight3d
                 { LightId = lightId
@@ -2440,6 +2441,7 @@ type Light3dFacet () =
                   LightCutoff = lightCutoff
                   LightType = lightType
                   DesireShadows = desireShadows
+                  Bounds = bounds
                   RenderPass = renderPass })
             world
 

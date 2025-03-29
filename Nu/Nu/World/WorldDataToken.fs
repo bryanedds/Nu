@@ -42,6 +42,7 @@ module WorldDataToken =
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
                       DesireShadows = false
+                      Bounds = light.Bounds
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world
 
