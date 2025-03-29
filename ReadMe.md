@@ -80,7 +80,8 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 
 **And a huge thank you to all of you who donate privately to keep this project going!**
 
-Please Become a Sponsor for Nu Today -
-======================================
+Please Become a Sponsor for Nu Today!
+=====================================
 
-https://github.com/sponsors/bryanedds
+Sponsor here - https://github.com/sponsors/bryanedds
+
