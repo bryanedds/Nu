@@ -292,9 +292,8 @@ module Hl =
         endCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence
 
     /// A physical device and associated data.
-    /// TODO: rename to PhysicalDeviceContext or something that doesn't imply this is mere dumb data.
-    type PhysicalDeviceData =
-        { PhysicalDevice : VkPhysicalDevice
+    type PhysicalDevice =
+        { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
           Extensions : VkExtensionProperties array
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR
@@ -303,44 +302,44 @@ module Hl =
           PresentQueueFamily : uint }
 
         /// Get properties.
-        static member private getProperties physicalDevice =
+        static member private getProperties vkPhysicalDevice =
             let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
-            Vulkan.vkGetPhysicalDeviceProperties (physicalDevice, &properties)
+            Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
             properties
 
         /// Get available extensions.
-        static member private getExtensions physicalDevice =
+        static member private getExtensions vkPhysicalDevice =
             let mutable extensionCount = 0u
-            Vulkan.vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> check
+            Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> check
             let extensions = Array.zeroCreate<VkExtensionProperties> (int extensionCount)
             use extensionsPin = new ArrayPin<_> (extensions)
-            Vulkan.vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> check
+            Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> check
             extensions
 
         /// Get surface capabilities.
-        static member private getSurfaceCapabilities physicalDevice surface =
+        static member private getSurfaceCapabilities vkPhysicalDevice surface =
             let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-            Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &capabilities) |> check
+            Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, surface, &capabilities) |> check
             capabilities
 
         /// Get available surface formats.
-        static member private getSurfaceFormats physicalDevice surface =
+        static member private getSurfaceFormats vkPhysicalDevice surface =
             let mutable formatCount = 0u
-            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, asPointer &formatCount, nullPtr) |> check
+            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, surface, asPointer &formatCount, nullPtr) |> check
             let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
             use formatsPin = new ArrayPin<_> (formats)
-            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, asPointer &formatCount, formatsPin.Pointer) |> check
+            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, surface, asPointer &formatCount, formatsPin.Pointer) |> check
             formats
 
         /// Attempt to get the queue families.
-        static member private tryGetQueueFamilies physicalDevice surface =
+        static member private tryGetQueueFamilies vkPhysicalDevice surface =
 
             // get queue families' properties
             let mutable queueFamilyCount = 0u
-            Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, asPointer &queueFamilyCount, nullPtr)
+            Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, nullPtr)
             let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
             use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
-            Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
+            Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
 
             // NOTE: DJL: It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
             // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
@@ -362,7 +361,7 @@ module Hl =
                 match presentQueueFamilyOpt with
                 | None ->
                     let mutable presentSupport = VkBool32.False
-                    Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, uint i, surface, &presentSupport) |> check
+                    Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (vkPhysicalDevice, uint i, surface, &presentSupport) |> check
                     if (presentSupport = VkBool32.True) then
                         presentQueueFamilyOpt <- Some (uint i)
                 | Some _ -> ()
@@ -370,23 +369,23 @@ module Hl =
             // fin
             (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
 
-        /// Attempt to construct PhysicalDeviceData.
-        static member tryCreate physicalDevice surface =
-            let properties = PhysicalDeviceData.getProperties physicalDevice
-            let extensions = PhysicalDeviceData.getExtensions physicalDevice
-            let surfaceCapabilities = PhysicalDeviceData.getSurfaceCapabilities physicalDevice surface
-            let surfaceFormats = PhysicalDeviceData.getSurfaceFormats physicalDevice surface
-            match PhysicalDeviceData.tryGetQueueFamilies physicalDevice surface with
+        /// Attempt to construct PhysicalDevice.
+        static member tryCreate vkPhysicalDevice surface =
+            let properties = PhysicalDevice.getProperties vkPhysicalDevice
+            let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
+            let surfaceCapabilities = PhysicalDevice.getSurfaceCapabilities vkPhysicalDevice surface
+            let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
+            match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice surface with
             | (Some graphicsQueueFamily, Some presentQueueFamily) ->
-                let physicalDeviceData =
-                    { PhysicalDevice = physicalDevice
+                let physicalDevice =
+                    { VkPhysicalDevice = vkPhysicalDevice
                       Properties = properties
                       Extensions = extensions
                       SurfaceCapabilities = surfaceCapabilities
                       Formats = surfaceFormats
                       GraphicsQueueFamily = graphicsQueueFamily
                       PresentQueueFamily = presentQueueFamily }
-                Some physicalDeviceData
+                Some physicalDevice
             | (_, _) -> None
     
     /// A single swapchain and its assets.
@@ -396,12 +395,12 @@ module Hl =
           Framebuffers : VkFramebuffer array }
 
         /// Create the Vulkan swapchain itself.
-        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchain physicalDeviceData surface device =
+        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchain physicalDevice surface device =
 
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
             // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-            let capabilities = physicalDeviceData.SurfaceCapabilities
+            let capabilities = physicalDevice.SurfaceCapabilities
             let minImageCount =
                 if capabilities.maxImageCount = 0u
                 then capabilities.minImageCount + 1u
@@ -409,7 +408,7 @@ module Hl =
 
             // in case graphics and present queue families differ
             // TODO: as part of optimization, the sharing mode in this case should probably be VK_SHARING_MODE_EXCLUSIVE (see below).
-            let indicesArray = [|physicalDeviceData.GraphicsQueueFamily; physicalDeviceData.PresentQueueFamily|]
+            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
             use indicesArrayPin = new ArrayPin<_> (indicesArray)
 
             // create swapchain
@@ -421,7 +420,7 @@ module Hl =
             info.imageExtent <- swapExtent
             info.imageArrayLayers <- 1u
             info.imageUsage <- Vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-            if (physicalDeviceData.GraphicsQueueFamily = physicalDeviceData.PresentQueueFamily) then
+            if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
                 info.imageSharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             else
                 info.imageSharingMode <- Vulkan.VK_SHARING_MODE_CONCURRENT
@@ -473,10 +472,10 @@ module Hl =
             framebuffers
         
         /// Create a SwapchainInternal.
-        static member create surfaceFormat swapExtent oldVkSwapchain physicalDeviceData renderPass surface device =
+        static member create surfaceFormat swapExtent oldVkSwapchain physicalDevice renderPass surface device =
             
             // create Vulkan swapchain and its assets
-            let vkSwapchain = SwapchainInternal.createVkSwapchain surfaceFormat swapExtent oldVkSwapchain physicalDeviceData surface device
+            let vkSwapchain = SwapchainInternal.createVkSwapchain surfaceFormat swapExtent oldVkSwapchain physicalDevice surface device
             let images = SwapchainInternal.getSwapchainImages vkSwapchain device
             let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
             let framebuffers = SwapchainInternal.createFramebuffers swapExtent renderPass imageViews device
@@ -511,7 +510,7 @@ module Hl =
         member this.Framebuffer = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
         
         /// Refresh the swapchain for a new swap extent.
-        static member refresh swapExtent physicalDeviceData renderPass surface swapchain device =
+        static member refresh swapExtent physicalDevice renderPass surface swapchain device =
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
             let oldVkSwapchain = if swapchain._SwapchainInternalOpts.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
@@ -525,11 +524,11 @@ module Hl =
             | None -> ()
             
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapExtent oldVkSwapchain physicalDeviceData renderPass surface device
+            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapExtent oldVkSwapchain physicalDevice renderPass surface device
             swapchain._SwapchainInternalOpts.[swapchain._SwapchainIndex] <- Some swapchainInternal
         
         /// Create a Swapchain.
-        static member create surfaceFormat swapExtent physicalDeviceData renderPass surface device =
+        static member create surfaceFormat swapExtent physicalDevice renderPass surface device =
             
             // init swapchain index
             let swapchainIndex = 0
@@ -538,7 +537,7 @@ module Hl =
             let swapchainInternalOpts = Array.create Constants.Vulkan.MaxFramesInFlight None
             
             // create first SwapchainInternal
-            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDeviceData renderPass surface device
+            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice renderPass surface device
             swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
 
             // make Swapchain
@@ -564,7 +563,7 @@ module Hl =
         { Window : nativeint
           Instance : VkInstance
           Surface : VkSurfaceKHR
-          PhysicalDeviceData : PhysicalDeviceData
+          PhysicalDevice : PhysicalDevice
           Device : VkDevice
           VmaAllocator : VmaAllocator
           Swapchain : Swapchain
@@ -676,19 +675,19 @@ module Hl =
             // gather devices together with relevant data for selection
             let candidates =
                 [for i in 0 .. dec devices.Length do
-                    match PhysicalDeviceData.tryCreate devices.[i] surface with
+                    match PhysicalDevice.tryCreate devices.[i] surface with
                     | Some pdd -> pdd
                     | None -> ()]
 
             // compatibility criteria: device must support essential rendering components
-            let isCompatible physicalDeviceData =
+            let isCompatible physicalDevice =
                 let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
-                let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDeviceData.Extensions
-                swapchainSupported && physicalDeviceData.Formats.Length > 0
+                let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
+                swapchainSupported && physicalDevice.Formats.Length > 0
 
             // preferability criteria: device ought to be discrete
-            let isPreferable physicalDeviceData =
-                physicalDeviceData.Properties.deviceType = Vulkan.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+            let isPreferable physicalDevice =
+                physicalDevice.Properties.deviceType = Vulkan.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
 
             // filter and order candidates according to criteria
             let candidatesFiltered = List.filter isCompatible candidates
@@ -705,12 +704,12 @@ module Hl =
             physicalDeviceOpt
         
         /// Create the logical device.
-        static member private createLogicalDevice (physicalDeviceData : PhysicalDeviceData) =
+        static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
             // get unique queue family array
             let uniqueQueueFamiliesSet = new HashSet<uint> ()
-            uniqueQueueFamiliesSet.Add physicalDeviceData.GraphicsQueueFamily |> ignore
-            uniqueQueueFamiliesSet.Add physicalDeviceData.PresentQueueFamily |> ignore
+            uniqueQueueFamiliesSet.Add physicalDevice.GraphicsQueueFamily |> ignore
+            uniqueQueueFamiliesSet.Add physicalDevice.PresentQueueFamily |> ignore
             let uniqueQueueFamilies = Array.zeroCreate<uint> uniqueQueueFamiliesSet.Count
             uniqueQueueFamiliesSet.CopyTo uniqueQueueFamilies
 
@@ -739,13 +738,13 @@ module Hl =
             info.enabledExtensionCount <- 1u
             info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
             let mutable device = Unchecked.defaultof<VkDevice>
-            Vulkan.vkCreateDevice (physicalDeviceData.PhysicalDevice, &info, nullPtr, &device) |> check
+            Vulkan.vkCreateDevice (physicalDevice.VkPhysicalDevice, &info, nullPtr, &device) |> check
             device
 
         /// Create the VMA allocator.
-        static member private createVmaAllocator (physicalDeviceData : PhysicalDeviceData) device instance =
+        static member private createVmaAllocator (physicalDevice : PhysicalDevice) device instance =
             let mutable info = VmaAllocatorCreateInfo ()
-            info.physicalDevice <- physicalDeviceData.PhysicalDevice
+            info.physicalDevice <- physicalDevice.VkPhysicalDevice
             info.device <- device
             info.instance <- instance
             let mutable allocator = Unchecked.defaultof<VmaAllocator>
@@ -867,7 +866,7 @@ module Hl =
 
         /// Update the swap extent.
         static member updateSwapExtent vkg =
-            vkg.SwapExtent <- VulkanGlobal.getSwapExtent vkg.PhysicalDeviceData.SurfaceCapabilities vkg.Window
+            vkg.SwapExtent <- VulkanGlobal.getSwapExtent vkg.PhysicalDevice.SurfaceCapabilities vkg.Window
         
         /// Begin the frame.
         static member beginFrame (vkg : VulkanGlobal) =
@@ -883,7 +882,7 @@ module Hl =
             //VulkanGlobal.updateSwapExtent vkg
             
             // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
-            //Swapchain.refresh vkg.SwapExtent vkg.PhysicalDeviceData vkg.RenderPass vkg.Surface vkg.Swapchain vkg.Device
+            //Swapchain.refresh vkg.SwapExtent vkg.PhysicalDevice vkg.RenderPass vkg.Surface vkg.Swapchain vkg.Device
 
             // TODO: DJL: find out what's going on with the image available semaphore
             
@@ -964,28 +963,28 @@ module Hl =
 
             // attempt to select physical device
             match VulkanGlobal.trySelectPhysicalDevice surface instance with
-            | Some physicalDeviceData ->
+            | Some physicalDevice ->
 
                 // create device
-                let device = VulkanGlobal.createLogicalDevice physicalDeviceData
+                let device = VulkanGlobal.createLogicalDevice physicalDevice
 
                 // load device commands; not vulkan function
                 Vulkan.vkLoadDevice device
 
                 // create vma allocator
-                let allocator = VulkanGlobal.createVmaAllocator physicalDeviceData device instance
+                let allocator = VulkanGlobal.createVmaAllocator physicalDevice device instance
 
                 // get surface format and swap extent
-                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
-                let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
+                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDevice.Formats
+                let swapExtent = VulkanGlobal.getSwapExtent physicalDevice.SurfaceCapabilities window
 
                 // setup command system
-                let transientCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
-                let mainCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
+                let transientCommandPool = VulkanGlobal.createCommandPool true physicalDevice.GraphicsQueueFamily device
+                let mainCommandPool = VulkanGlobal.createCommandPool false physicalDevice.GraphicsQueueFamily device
                 let renderCommandBuffers = VulkanGlobal.allocateFifCommandBuffers mainCommandPool device
                 let textureCommandBuffers = VulkanGlobal.allocateFifCommandBuffers mainCommandPool device
-                let graphicsQueue = VulkanGlobal.getQueue physicalDeviceData.GraphicsQueueFamily device
-                let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
+                let graphicsQueue = VulkanGlobal.getQueue physicalDevice.GraphicsQueueFamily device
+                let presentQueue = VulkanGlobal.getQueue physicalDevice.PresentQueueFamily device
 
                 // create sync objects
                 let imageAvailableSemaphores = VulkanGlobal.createSemaphores device
@@ -999,14 +998,14 @@ module Hl =
                 let presentRenderPass = VulkanGlobal.createRenderPass false true surfaceFormat.format device
 
                 // setup swapchain
-                let swapchain = Swapchain.create surfaceFormat swapExtent physicalDeviceData renderPass surface device
+                let swapchain = Swapchain.create surfaceFormat swapExtent physicalDevice renderPass surface device
 
                 // make VulkanGlobal
                 let vulkanGlobal =
                     { Window = window
                       Instance = instance
                       Surface = surface
-                      PhysicalDeviceData = physicalDeviceData
+                      PhysicalDevice = physicalDevice
                       Device = device
                       VmaAllocator = allocator
                       Swapchain = swapchain
@@ -1076,7 +1075,7 @@ module Hl =
             // allocate memory
             let mutable info = VkMemoryAllocateInfo ()
             info.allocationSize <- memRequirements.size
-            info.memoryTypeIndex <- 2u // ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDeviceData.PhysicalDevice
+            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice.VkPhysicalDevice
             let mutable memory = Unchecked.defaultof<VkDeviceMemory>
             Vulkan.vkAllocateMemory (vkg.Device, asPointer &info, nullPtr, &memory) |> check
 
