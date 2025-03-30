@@ -345,7 +345,7 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
         vec3 rayDirection = rayVector / rayLength;
 
         // compute step info
-        int steps = shadowIndex > 0 ? ssvfSteps * 2 : ssvfSteps; // double steps for non-filtered fog
+        int steps = shadowIndex > 0 ? ssvfSteps * 2 : ssvfSteps; // double steps for unfiltered fog
         float stepLength = rayLength / steps;
         vec3 step = rayDirection * stepLength;
 
@@ -357,7 +357,7 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
-        for (int i = 0; i < steps; i++)
+        for (int i = 0; i < steps; ++i)
         {
             // step through ray, accumulating fog light moment
             vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
@@ -615,8 +615,9 @@ void main()
             // add to outgoing lightAccum
             lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
 
-            // accumulate fog, sending directional light 0's fog to a special buffer for additional processing
-            if (ssvfEnabled == 1)
+            // accumulate fog
+            // TODO: support point lights!
+            if (ssvfEnabled == 1 && lightTypes[i] != 0)
             {
                 vec3 fog = computeFogAccum(position, i);
                 if (shadowIndex == 0) fogAccum = vec4(fog, 1.0);
