@@ -183,7 +183,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
         travel /= 9.0;
 
         // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        float sssShadowExponent = 192.0; // TODO: expose a global uniform for this?
+        float sssShadowExponent = 192.0; // TODO: expose a global uniform for this.
         travel = exp(-travel * sssShadowExponent);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
@@ -191,6 +191,34 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
     
     // tracing out of range, return default
     return 1.0;
+}
+
+float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
+{
+    vec3 positionShadow = position.xyz - lightOrigin;
+    float shadowZ = length(positionShadow);
+    float travel = 0.0;
+    for (int i = -1; i <= 1; i += 2)
+    {
+        for (int j = -1; j <= 1; j += 2)
+        {
+            for (int k = -1; k <= 1; k += 2)
+            {
+                vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
+                float shadowDepth = texture(shadowMap, positionShadow + offset).x;
+                float travelMax = 0.01; // TODO: see if we can make this unnecessary or expose as a global uniform.
+                float delta = min(shadowZ - shadowDepth, travelMax);
+                travel += delta;
+            }
+        }
+    }
+    travel /= 8.0;
+
+    // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
+    float sssShadowExponent = 192.0; // TODO: expose a global uniform for this.
+    travel = exp(-travel * sssShadowExponent);
+    travel = clamp(travel, 0.0, 1.0);
+    return travel;
 }
 
 float depthViewToDepthBuffer(float depthView)
@@ -244,10 +272,10 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScatteringFromShadowTexture(
-    vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, vec2 texCoords, int lightIndex)
+vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
+    int lightType = lightTypes[lightIndex];
     vec3 lightOrigin = lightOrigins[lightIndex];
     vec3 lightColor = lightColors[lightIndex];
     float lightBrightness = lightBrightnesses[lightIndex];
@@ -256,8 +284,10 @@ vec3 computeSubsurfaceScatteringFromShadowTexture(
     // compute geometry trace length, defaulting to 1.0 when no shadow present for this light index
     float trace = 1.0;
     if (shadowIndex >= 0)
-        trace = geometryTraceFromShadowTexture(
-            position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+        trace =
+            lightType == 0 ?
+            geometryTraceFromShadowMap(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
+            geometryTraceFromShadowTexture(position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
 
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
@@ -539,12 +569,11 @@ void main()
             kD *= 1.0 - metallic;
 
             // compute subsurface scattering
-            // TODO: P0: make this work for point lights!
-            vec3 scattering = vec3(0.0);
             float scatterType = scatterPlus.a;
-            if (scatterType != 0.0 && lightTypes[i] != 0)
-                scattering = computeSubsurfaceScatteringFromShadowTexture(
-                    position, albedo, normal, subdermalPlus, scatterPlus, texCoordsOut, i);
+            vec3 scattering =
+                scatterType != 0.0 ?
+                computeSubsurfaceScattering(position, albedo, normal, subdermalPlus, scatterPlus, texCoordsOut, i) :
+                vec3(0.0);
 
             // add to outgoing lightAccum
             lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
