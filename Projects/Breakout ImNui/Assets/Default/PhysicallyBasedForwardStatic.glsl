@@ -433,6 +433,13 @@ void main()
 
         // add to outgoing lightAccum
         lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * shadowScalar;
+
+        // accumulate fog
+        if (ssvfEnabled == 1 && lightDirectional)
+        {
+            vec3 fog = computeFogAccumDirectional(position, i);
+            lightAccum += fog;
+        }
     }
 
     // determine light map indices, including their validity
@@ -503,11 +510,8 @@ void main()
     vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
-    // compute directional fog accumulation from sun light when desired
-    vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-
     // compute color composition with tone mapping and gamma correction
-    vec3 color = lightAccum + diffuse + emission * albedo.rgb + specular + fogAccum;
+    vec3 color = lightAccum + diffuse + emission * albedo.rgb + specular;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
 
