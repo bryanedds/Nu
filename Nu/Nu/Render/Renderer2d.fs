@@ -156,8 +156,8 @@ type [<ReferenceEquality>] StubRenderer2d =
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
-          SpritePipeline : Hl.FifBuffer * Hl.FifBuffer * Hl.FifBuffer * Pipeline.Pipeline
-          TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
+          SpritePipeline : VulkanMemory.FifBuffer * VulkanMemory.FifBuffer * VulkanMemory.FifBuffer * Pipeline.Pipeline
+          TextQuad : VulkanMemory.AllocatedBuffer * VulkanMemory.AllocatedBuffer
           TextTexture : Texture.DynamicTexture
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -840,11 +840,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (vertices, indices) = renderer.TextQuad
             Texture.DynamicTexture.destroy renderer.TextTexture vkg
             Pipeline.Pipeline.destroy pipeline vkg.Device
-            Hl.FifBuffer.destroy modelViewProjectionUniform vkg
-            Hl.FifBuffer.destroy texCoords4Uniform vkg
-            Hl.FifBuffer.destroy colorUniform vkg
-            Hl.AllocatedBuffer.destroy vertices vkg
-            Hl.AllocatedBuffer.destroy indices vkg
+            VulkanMemory.FifBuffer.destroy modelViewProjectionUniform vkg
+            VulkanMemory.FifBuffer.destroy texCoords4Uniform vkg
+            VulkanMemory.FifBuffer.destroy colorUniform vkg
+            VulkanMemory.AllocatedBuffer.destroy vertices vkg
+            VulkanMemory.AllocatedBuffer.destroy indices vkg
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

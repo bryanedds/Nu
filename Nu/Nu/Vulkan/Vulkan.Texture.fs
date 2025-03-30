@@ -180,7 +180,7 @@ module Texture =
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
-        { Image : Hl.AllocatedImage
+        { Image : VulkanMemory.AllocatedImage
           ImageView : VkImageView
           Sampler : VkSampler }
 
@@ -208,7 +208,7 @@ module Texture =
             info.usage <- Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             info.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            let allocatedImage = Hl.AllocatedImage.create info vkg
+            let allocatedImage = VulkanMemory.AllocatedImage.create info vkg
             allocatedImage
         
         /// Create the sampler.
@@ -304,9 +304,9 @@ module Texture =
             match pixelsOpt with
             | Some pixels ->
                 let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
-                let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg
+                let stagingBuffer = VulkanMemory.AllocatedBuffer.stageData uploadSize pixels vkg
                 VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
-                Hl.AllocatedBuffer.destroy stagingBuffer vkg
+                VulkanMemory.AllocatedBuffer.destroy stagingBuffer vkg
             | None -> ()
 
             // make VulkanTexture
@@ -335,7 +335,7 @@ module Texture =
         static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
             Vulkan.vkDestroySampler (vkg.Device, vulkanTexture.Sampler, nullPtr)
             Vulkan.vkDestroyImageView (vkg.Device, vulkanTexture.ImageView, nullPtr)
-            Hl.AllocatedImage.destroy vulkanTexture.Image vkg
+            VulkanMemory.AllocatedImage.destroy vulkanTexture.Image vkg
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
@@ -348,7 +348,7 @@ module Texture =
     type DynamicTexture =
         private
             { VulkanTextures : VulkanTexture array
-              StagingBuffers : Hl.FifBuffer array
+              StagingBuffers : VulkanMemory.FifBuffer array
               mutable Extent : VkExtent3D
               mutable StagingBufferSize : int
               mutable TextureIndex : int }
@@ -367,10 +367,10 @@ module Texture =
             // enlarge staging buffer size if needed
             dynamicTexture.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             while dynamicTexture.ImageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
-            Hl.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkg
+            VulkanMemory.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkg
 
             // stage pixels
-            Hl.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkg
+            VulkanMemory.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkg
 
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkg
@@ -410,7 +410,7 @@ module Texture =
             let extent = VkExtent3D (32, 32, 1)
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let vulkanTextures = [|VulkanTexture.createEmpty vkg; VulkanTexture.createEmpty vkg|]
-            let stagingBuffers = [|Hl.FifBuffer.createStaging sbSize vkg; Hl.FifBuffer.createStaging sbSize vkg|]
+            let stagingBuffers = [|VulkanMemory.FifBuffer.createStaging sbSize vkg; VulkanMemory.FifBuffer.createStaging sbSize vkg|]
 
             // make DynamicTexture
             let dynamicTexture =
@@ -427,8 +427,8 @@ module Texture =
         static member destroy dynamicTexture vkg =
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[0] vkg
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[1] vkg
-            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[0] vkg
-            Hl.FifBuffer.destroy dynamicTexture.StagingBuffers.[1] vkg
+            VulkanMemory.FifBuffer.destroy dynamicTexture.StagingBuffers.[0] vkg
+            VulkanMemory.FifBuffer.destroy dynamicTexture.StagingBuffers.[1] vkg
     
     /// Describes data loaded from a texture.
     type TextureData =

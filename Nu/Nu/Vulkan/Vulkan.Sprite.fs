@@ -27,9 +27,9 @@ module Sprite =
                 [||] vkg.RenderPass vkg.Device
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Hl.FifBuffer.createUniform (sizeof<single> * 16) vkg
-        let texCoords4Uniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg
-        let colorUniform = Hl.FifBuffer.createUniform (sizeof<single> * 4) vkg
+        let modelViewProjectionUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 16) vkg
+        let texCoords4Uniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkg
+        let colorUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkg
 
         // write sprite descriptor set
         Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.PerFrameBuffers pipeline vkg.Device
@@ -59,16 +59,16 @@ module Sprite =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         
         // create buffers
-        let vertexBuffer = Hl.AllocatedBuffer.createVertexStagedFromArray vertexData vkg
-        let indexBuffer = Hl.AllocatedBuffer.createIndexStagedFromArray indexData vkg
+        let vertexBuffer = VulkanMemory.AllocatedBuffer.createVertexStagedFromArray vertexData vkg
+        let indexBuffer = VulkanMemory.AllocatedBuffer.createIndexStagedFromArray indexData vkg
         
         // fin
         (vertexBuffer, indexBuffer)
 
     /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad and whose uniforms and pipeline match those of CreateSpritePipeline.
     let DrawSprite
-        (vertices : Hl.AllocatedBuffer,
-         indices : Hl.AllocatedBuffer,
+        (vertices : VulkanMemory.AllocatedBuffer,
+         indices : VulkanMemory.AllocatedBuffer,
          modelViewProjection : single array,
          insetOpt : Box2 ValueOption,
          color : Color,
@@ -76,9 +76,9 @@ module Sprite =
          textureWidth,
          textureHeight,
          texture : Texture.VulkanTexture,
-         modelViewProjectionUniform : Hl.FifBuffer,
-         texCoords4Uniform : Hl.FifBuffer,
-         colorUniform : Hl.FifBuffer,
+         modelViewProjectionUniform : VulkanMemory.FifBuffer,
+         texCoords4Uniform : VulkanMemory.FifBuffer,
+         colorUniform : VulkanMemory.FifBuffer,
          pipeline : Pipeline.Pipeline,
          vkg : Hl.VulkanGlobal) =
 
@@ -121,9 +121,9 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        Hl.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkg
-        Hl.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkg
-        Hl.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkg
+        VulkanMemory.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkg
+        VulkanMemory.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkg
+        VulkanMemory.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkg
 
         // write texture to descriptor set
         Pipeline.Pipeline.writeDescriptorTextureSingleFrame 2 0 texture pipeline vkg.Device
