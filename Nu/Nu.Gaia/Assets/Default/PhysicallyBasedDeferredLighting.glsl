@@ -154,7 +154,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float geometryTraceDirectional(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w; // ndc space
@@ -244,7 +244,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScatteringDirectional(
+vec3 computeSubsurfaceScatteringFromShadowTexture(
     vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
@@ -256,7 +256,7 @@ vec3 computeSubsurfaceScatteringDirectional(
     // compute geometry trace length, defaulting to 1.0 when no shadow present for this light index
     float trace = 1.0;
     if (shadowIndex >= 0)
-        trace = geometryTraceDirectional(
+        trace = geometryTraceFromShadowTexture(
             position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
 
     // compute scattered color
@@ -539,11 +539,11 @@ void main()
             kD *= 1.0 - metallic;
 
             // compute subsurface scattering
-            // TODO: P0: make this work for non-directional lights!
+            // TODO: P0: make this work for point lights!
             vec3 scattering = vec3(0.0);
             float scatterType = scatterPlus.a;
-            if (lightDirectional && scatterType != 0.0)
-                scattering = computeSubsurfaceScatteringDirectional(
+            if (scatterType != 0.0 && lightTypes[i] != 0)
+                scattering = computeSubsurfaceScatteringFromShadowTexture(
                     position, albedo, normal, subdermalPlus, scatterPlus, texCoordsOut, i);
 
             // add to outgoing lightAccum
