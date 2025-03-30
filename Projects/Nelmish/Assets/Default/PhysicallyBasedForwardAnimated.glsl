@@ -291,7 +291,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     vec3 result = vec3(0.0);
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (lightsCount > 0 && lightTypes[lightIndex] == 2 && shadowIndex >= 0)
+    if (shadowIndex >= 0)
     {
         // compute shadow space
         mat4 shadowMatrix = shadowMatrices[shadowIndex];

@@ -272,7 +272,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, vec2 texCoords, int lightIndex)
+vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, float intensity, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
     int lightType = lightTypes[lightIndex];
@@ -306,14 +306,14 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 s
             0.2 *
             pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
             pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
-        return subcolor * radii * scalar;
+        return subcolor * radii * scalar * intensity;
     }
     else if (scatterType == 2.0) // foliage formula
     {
         vec3 scalar =
             0.2 *
             exp(-3.0 * abs(nDotL) / (radii + 0.001));
-        return subcolor * radii * scalar;
+        return subcolor * radii * scalar * intensity;
     }
     return vec3(0.0); // nop formula
 }
@@ -322,7 +322,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     vec3 result = vec3(0.0);
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (lightsCount > 0 && lightTypes[lightIndex] == 2 && shadowIndex >= 0)
+    if (shadowIndex >= 0)
     {
         // compute shadow space
         mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -516,6 +516,7 @@ void main()
             vec3 lightOrigin = lightOrigins[i];
             bool lightDirectional = lightTypes[i] == 2;
             vec3 l, h, radiance;
+            float intensity = 0.0;
             if (!lightDirectional)
             {
                 vec3 d = lightOrigin - position.xyz;
@@ -532,13 +533,14 @@ void main()
                 float halfConeDelta = halfConeOuter - halfConeInner;
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                float intensity = attenuation * halfConeScalar;
+                intensity = attenuation * halfConeScalar;
                 radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
             }
             else
             {
                 l = -lightDirections[i];
                 h = normalize(v + l);
+                intensity = 1.0;
                 radiance = lightColors[i] * lightBrightnesses[i];
             }
 
@@ -572,7 +574,7 @@ void main()
             float scatterType = scatterPlus.a;
             vec3 scattering =
                 scatterType != 0.0 ?
-                computeSubsurfaceScattering(position, albedo, normal, subdermalPlus, scatterPlus, texCoordsOut, i) :
+                computeSubsurfaceScattering(position, albedo, normal, subdermalPlus, scatterPlus, intensity, texCoordsOut, i) :
                 vec3(0.0);
 
             // add to outgoing lightAccum
