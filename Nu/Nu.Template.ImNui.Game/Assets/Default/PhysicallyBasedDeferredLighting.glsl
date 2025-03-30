@@ -189,8 +189,8 @@ float geometryTraceDirectional(vec4 position, vec3 lightOrigin, mat4 shadowMatri
         return travel;
     }
     
-    // no trace available
-    return 0.0;
+    // tracing out of range, return default
+    return 1.0;
 }
 
 float depthViewToDepthBuffer(float depthView)
