@@ -548,6 +548,14 @@ void main()
 
             // add to outgoing lightAccum
             lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
+
+            // accumulate fog, sending directional light 0's fog to a special buffer for additional processing
+            if (ssvfEnabled == 1 && lightDirectional)
+            {
+                vec3 fog = computeFogAccumDirectional(position, i);
+                if (i == 0) fogAccum = vec4(fog, 1.0);
+                else lightAccum += fog;
+            }
         }
 
         // compute ambient light
@@ -594,9 +602,8 @@ void main()
         vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
-        // write lighting values
+        // write remaining lighting values
         color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
-        fogAccum = ssvfEnabled == 1 ? vec4(computeFogAccumDirectional(position, 0), 1.0) : vec4(0.0);
         depth = depthViewToDepthBuffer(positionView.z);
     }
 }

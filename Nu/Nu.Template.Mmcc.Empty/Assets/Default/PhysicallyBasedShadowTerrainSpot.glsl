@@ -22,6 +22,6 @@ layout(location = 0) out vec2 depths;
 
 void main()
 {
-	depths.x = gl_FragCoord.z;
+	depths.x = gl_FragCoord.z; // clip space depth
 	depths.y = exp(lightShadowExponent * depths.x);
 }
