@@ -38,16 +38,19 @@ module Pipeline =
                     Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
 
     /// An abstraction of a rendering pipeline.
-    /// TODO: DJL: make private.
     type Pipeline =
-        { VkPipelines : Map<Blend, VkPipeline>
-          DescriptorPool : VkDescriptorPool
-          DescriptorSets : VkDescriptorSet array
-          PipelineLayout : VkPipelineLayout
-          DescriptorSetLayout : VkDescriptorSetLayout }
+        private
+            { _VkPipelines : Map<Blend, VkPipeline>
+              _DescriptorPool : VkDescriptorPool
+              _DescriptorSets : VkDescriptorSet array
+              _PipelineLayout : VkPipelineLayout
+              _DescriptorSetLayout : VkDescriptorSetLayout }
 
+        /// The pipeline layout.
+        member this.PipelineLayout = this._PipelineLayout
+        
         /// The descriptor set for the current frame.
-        member this.DescriptorSet = this.DescriptorSets.[Hl.CurrentFrame]
+        member this.DescriptorSet = this._DescriptorSets.[Hl.CurrentFrame]
         
         /// Create the descriptor set layout.
         static member private createDescriptorSetLayout resourceBindings device =
@@ -200,12 +203,12 @@ module Pipeline =
         
         /// Get the Vulkan Pipeline built for the given blend.
         static member getVkPipeline blend pipeline =
-            Map.find blend pipeline.VkPipelines
+            Map.find blend pipeline._VkPipelines
         
         /// Write a uniform to the descriptor set for each frame in flight.
         static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffers : VkBuffer array) (pipeline : Pipeline) device =
 
-            for i in 0 .. dec pipeline.DescriptorSets.Length do
+            for i in 0 .. dec pipeline._DescriptorSets.Length do
             
                 // buffer info
                 let mutable info = VkDescriptorBufferInfo ()
@@ -214,7 +217,7 @@ module Pipeline =
 
                 // write descriptor set
                 let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- pipeline.DescriptorSets.[i]
+                write.dstSet <- pipeline._DescriptorSets.[i]
                 write.dstBinding <- uint binding
                 write.dstArrayElement <- uint arrayIndex
                 write.descriptorCount <- 1u
@@ -225,7 +228,7 @@ module Pipeline =
         /// Write a texture to the descriptor set for each frame in flight.
         static member writeDescriptorTexture (binding : int) (arrayIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) device =
             
-            for i in 0 .. dec pipeline.DescriptorSets.Length do
+            for i in 0 .. dec pipeline._DescriptorSets.Length do
             
                 // image info
                 let mutable info = VkDescriptorImageInfo ()
@@ -235,7 +238,7 @@ module Pipeline =
 
                 // write descriptor set
                 let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- pipeline.DescriptorSets.[i]
+                write.dstSet <- pipeline._DescriptorSets.[i]
                 write.dstBinding <- uint binding
                 write.dstArrayElement <- uint arrayIndex
                 write.descriptorCount <- 1u
@@ -265,10 +268,10 @@ module Pipeline =
         
         /// Destroy a Pipeline.
         static member destroy pipeline device =
-            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (device, vkPipeline, nullPtr)) pipeline.VkPipelines
-            Vulkan.vkDestroyDescriptorPool (device, pipeline.DescriptorPool, nullPtr)
+            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (device, vkPipeline, nullPtr)) pipeline._VkPipelines
+            Vulkan.vkDestroyDescriptorPool (device, pipeline._DescriptorPool, nullPtr)
             Vulkan.vkDestroyPipelineLayout (device, pipeline.PipelineLayout, nullPtr)
-            Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
+            Vulkan.vkDestroyDescriptorSetLayout (device, pipeline._DescriptorSetLayout, nullPtr)
 
         /// Create a Pipeline.
         static member create shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
@@ -285,11 +288,11 @@ module Pipeline =
 
             // make Pipeline
             let pipeline =
-                { VkPipelines = vkPipelines
-                  DescriptorPool = descriptorPool
-                  DescriptorSets = descriptorSets
-                  PipelineLayout = pipelineLayout
-                  DescriptorSetLayout = descriptorSetLayout }
+                { _VkPipelines = vkPipelines
+                  _DescriptorPool = descriptorPool
+                  _DescriptorSets = descriptorSets
+                  _PipelineLayout = pipelineLayout
+                  _DescriptorSetLayout = descriptorSetLayout }
 
             // fin
             pipeline

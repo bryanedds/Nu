@@ -1250,26 +1250,6 @@ module Hl =
             Vulkan.vkQueueSubmit (vkg.GraphicsQueue, 1u, asPointer &sInfo, vkg.ResourceReadyFence) |> check
             awaitFence vkg.ResourceReadyFence vkg.Device
 
-        (*
-        TODO: DJL: *maybe* try and get vmaMapMemory by way of the vortice wrapper fixed to enable these methods.
-
-        /// Map pointer to buffer if upload is enabled.
-        static member tryMap buffer =
-            let mutable memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
-            if buffer.UploadEnabled then
-                Vma.vmaMapMemory (buffer.VmaAllocator, buffer.VmaAllocation, memoryPtrPtr) |> check
-                Vma.vmaInvalidateAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
-            else Log.info "Mapping to Vulkan buffer failed because upload was not enabled for that buffer."
-            memoryPtrPtr
-
-        /// Unmap buffer.
-        static member unmap buffer =
-
-            // no point checking UploadEnabled because success or failure simply depends on calling context
-            Vma.vmaFlushAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
-            Vma.vmaUnmapMemory (buffer.VmaAllocator, buffer.VmaAllocation)
-        *)
-
         /// Upload data to buffer if upload is enabled.
         static member upload offset size ptr buffer (vkg : VulkanGlobal) =
             if buffer.UploadEnabled then
