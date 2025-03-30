@@ -1120,9 +1120,9 @@ module Hl =
             manualAllocatedBuffer
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer _ =
+        static member upload offset size nint buffer _ =
             if buffer.Mapping <> Unchecked.defaultof<voidptr>
-            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.Mapping
+            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr nint) buffer.Mapping
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
@@ -1182,8 +1182,8 @@ module Hl =
             manualFifBuffer
         
         /// Upload data to ManualFifBuffer.
-        static member upload offset size ptr manualFifBuffer vkg =
-            ManualAllocatedBuffer.upload offset size ptr manualFifBuffer.ManualAllocatedBuffers.[CurrentFrame] vkg
+        static member upload offset size nint manualFifBuffer vkg =
+            ManualAllocatedBuffer.upload offset size nint manualFifBuffer.ManualAllocatedBuffers.[CurrentFrame] vkg
 
         /// Upload an array to ManualFifBuffer.
         static member uploadArray offset array manualFifBuffer vkg =
@@ -1251,22 +1251,19 @@ module Hl =
             awaitFence vkg.ResourceReadyFence vkg.Device
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer (vkg : VulkanGlobal) =
+        static member upload offset size nint buffer (vkg : VulkanGlobal) =
             if buffer.UploadEnabled then
-                NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.AllocationInfo.pMappedData
+                NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr nint) buffer.AllocationInfo.pMappedData
                 Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 offset, uint64 size) |> check // may be necessary as memory may not be host-coherent
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload data to buffer with a stride of 16 if upload is enabled.
-        static member uploadStrided16 offset typeSize count ptr buffer (vkg : VulkanGlobal) =
+        static member uploadStrided16 offset typeSize count nint buffer (vkg : VulkanGlobal) =
             if buffer.UploadEnabled then
                 if typeSize > 16 then Log.fail "'typeSize' must not exceed stride."
                 for i in 0 .. dec count do
-                    
-                    // TODO: DJL: good time to review our pointer conventions.
-                    let bytePtr = NativePtr.nativeintToBytePtr ptr
-                    let bytePtr = NativePtr.add bytePtr (i * typeSize)
-                    NativePtr.memCopy ((offset + i) * 16) typeSize (NativePtr.toVoidPtr bytePtr) buffer.AllocationInfo.pMappedData
+                    let ptr = NativePtr.add (NativePtr.nativeintToBytePtr nint) (i * typeSize)
+                    NativePtr.memCopy ((offset + i) * 16) typeSize (NativePtr.toVoidPtr ptr) buffer.AllocationInfo.pMappedData
                 Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 (offset * 16), uint64 (count * 16)) |> check // may be necessary as memory may not be host-coherent
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
         
@@ -1333,22 +1330,22 @@ module Hl =
             AllocatedBuffer.createUniform (length * 16) vkg
         
         /// Create an allocated staging buffer and stage the data.
-        static member stageData size ptr vkg =
+        static member stageData size nint vkg =
             let buffer = AllocatedBuffer.createStaging size vkg
-            AllocatedBuffer.upload 0 size ptr buffer vkg
+            AllocatedBuffer.upload 0 size nint buffer vkg
             buffer
 
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
-        static member createVertexStaged size ptr vkg =
-            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg
+        static member createVertexStaged size nint vkg =
+            let stagingBuffer = AllocatedBuffer.stageData size nint vkg
             let vertexBuffer = AllocatedBuffer.createVertex false size vkg
             AllocatedBuffer.copyData size stagingBuffer vertexBuffer vkg
             AllocatedBuffer.destroy stagingBuffer vkg
             vertexBuffer
 
         /// Create an allocated index buffer with data uploaded via staging buffer.
-        static member createIndexStaged size ptr vkg =
-            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg
+        static member createIndexStaged size nint vkg =
+            let stagingBuffer = AllocatedBuffer.stageData size nint vkg
             let indexBuffer = AllocatedBuffer.createIndex false size vkg
             AllocatedBuffer.copyData size stagingBuffer indexBuffer vkg
             AllocatedBuffer.destroy stagingBuffer vkg
@@ -1434,12 +1431,12 @@ module Hl =
                 fifBuffer.BufferSizes.[CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
-        static member upload offset size ptr fifBuffer vkg =
-            AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
+        static member upload offset size nint fifBuffer vkg =
+            AllocatedBuffer.upload offset size nint fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
 
         /// Upload data to FifBuffer with a stride of 16.
-        static member uploadStrided16 offset typeSize count ptr fifBuffer vkg =
-            AllocatedBuffer.uploadStrided16 offset typeSize count ptr fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
+        static member uploadStrided16 offset typeSize count nint fifBuffer vkg =
+            AllocatedBuffer.uploadStrided16 offset typeSize count nint fifBuffer.AllocatedBuffers.[CurrentFrame] vkg
         
         
         /// Upload an array to FifBuffer.

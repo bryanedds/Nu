@@ -48,13 +48,13 @@ module NativePtr =
         NativeMemory.Free voidPtr
 
     /// Convert nativeint to void pointer.
-    let nativeintToVoidPtr nativeint =
-        let ptr = NativePtr.ofNativeInt<byte> nativeint
+    let nativeintToVoidPtr nint =
+        let ptr = NativePtr.ofNativeInt<byte> nint
         NativePtr.toVoidPtr ptr
 
     /// Convert nativeint to byte pointer.
-    let nativeintToBytePtr nativeint =
-        NativePtr.ofNativeInt<byte> nativeint
+    let nativeintToBytePtr nint =
+        NativePtr.ofNativeInt<byte> nint
 
     /// Convert a fixed-size buffer to a string.
     let fixedBufferToString fixedBuffer =
@@ -118,19 +118,19 @@ type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, pt
             handle.Dispose ()
 
 /// Container for a single unmanaged string.
-type StringWrap private (strPtr : nativeptr<byte>) =
+type StringWrap private (ptr : nativeptr<byte>) =
 
     /// Create a StringWrap for a given string.
     new (str : string) =
-        let strPtr = NativePtr.stringToUnmanaged str
-        new StringWrap (strPtr)
+        let ptr = NativePtr.stringToUnmanaged str
+        new StringWrap (ptr)
 
     /// The native pointer to the unmanaged string.
-    member this.Pointer = strPtr
+    member this.Pointer = ptr
 
     interface IDisposable with
         member this.Dispose () =
-            NativePtr.freeUnmanagedString strPtr
+            NativePtr.freeUnmanagedString ptr
 
 /// Container for a pinned array of unmanaged strings.
 type StringArrayWrap private (array : nativeptr<byte> array) =
