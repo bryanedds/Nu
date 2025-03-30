@@ -352,7 +352,7 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
         // compute light view term
         float theta = dot(-rayDirection, lightDirection);
 
-        // compute dithering only for filtered fog
+        // compute dithering
         float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
 
         // march over ray, accumulating fog light value
