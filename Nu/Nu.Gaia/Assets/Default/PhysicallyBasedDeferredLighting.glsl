@@ -345,18 +345,19 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
         vec3 rayDirection = rayVector / rayLength;
 
         // compute step info
-        float stepLength = rayLength / ssvfSteps;
+        int steps = shadowIndex > 0 ? ssvfSteps * 2 : ssvfSteps; // double steps for non-filtered fog
+        float stepLength = rayLength / steps;
         vec3 step = rayDirection * stepLength;
 
         // compute light view term
         float theta = dot(-rayDirection, lightDirection);
 
-        // compute dithering
+        // compute dithering only for filtered fog
         float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
-        for (int i = 0; i < ssvfSteps; i++)
+        for (int i = 0; i < steps; i++)
         {
             // step through ray, accumulating fog light moment
             vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
@@ -365,7 +366,9 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
-            if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
+            if (lightDirectional ?
+                shadowZ <= shadowDepth || shadowZ >= 1.0f :
+                shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
@@ -396,7 +399,7 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
             }
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / steps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
@@ -616,7 +619,7 @@ void main()
             if (ssvfEnabled == 1)
             {
                 vec3 fog = computeFogAccum(position, i);
-                if (i == 0) fogAccum = vec4(fog, 1.0);
+                if (shadowIndex == 0) fogAccum = vec4(fog, 1.0);
                 else lightAccum += fog;
             }
         }
