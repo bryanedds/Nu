@@ -627,7 +627,8 @@ void main()
         {
             // per-light radiance
             vec3 lightOrigin = lightOrigins[i];
-            bool lightDirectional = lightTypes[i] == 2;
+            int lightType = lightTypes[i];
+            bool lightDirectional = lightType == 2;
             vec3 l, h, radiance;
             float intensity = 0.0;
             if (!lightDirectional)
@@ -696,7 +697,7 @@ void main()
             // accumulate fog
             if (ssvfEnabled == 1)
             {
-                vec3 fog = lightTypes[i] == 0 ? computeFogAccumFromShadowMap(position, i) : computeFogAccumFromShadowTexture(position, i);
+                vec3 fog = lightType == 0 ? computeFogAccumFromShadowMap(position, i) : computeFogAccumFromShadowTexture(position, i);
                 if (shadowIndex == 0) fogAccum = vec4(fog, 1.0);
                 else lightAccum += fog;
             }
