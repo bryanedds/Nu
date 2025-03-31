@@ -39,7 +39,7 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 ![image](https://github.com/user-attachments/assets/d8406232-2bb9-4b60-b7a0-4a49cfa29236)
 Rendering made efficient with instancing-by-default.
 
-![image](https://github.com/user-attachments/assets/8d579e7a-36b2-443e-9b73-c564290ab4bd)
+![image](https://github.com/user-attachments/assets/f2089586-54c1-4eed-90be-5535f1089ed3)
 Our new subsurface scattering functionality for skin and foliage.
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
