@@ -3293,7 +3293,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     MiscTimings.CopyTo (TimingsArray, 0)
                     ImPlot.PlotLine ("Misc Time", &TimingsArray.[0], TimingsArray.Length)
                     GcTimings.CopyTo (TimingsArray, 0)
-                    ImPlot.PlotShaded ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
+                    ImPlot.PlotShaded ("GC Time", &TimingsArray.[0], TimingsArray.Length)
                     ImPlot.EndPlot ()
 
                 // fin
