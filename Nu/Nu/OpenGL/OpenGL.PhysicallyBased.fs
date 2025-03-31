@@ -355,6 +355,7 @@ module PhysicallyBased =
           LightTypesUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
+          LightDesireFogsUniform : int
           LightShadowIndicesUniform : int
           LightsCountUniform : int
           ShadowMatricesUniforms : int array
@@ -492,6 +493,7 @@ module PhysicallyBased =
           LightTypesUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
+          LightDesireFogsUniform : int
           LightShadowIndicesUniform : int
           LightsCountUniform : int
           ShadowMatricesUniforms : int array
@@ -1746,6 +1748,7 @@ module PhysicallyBased =
         let lightTypesUniform = Gl.GetUniformLocation (shader, "lightTypes")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightDesireFogsUniform = Gl.GetUniformLocation (shader, "lightDesireFogs")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
         let shadowMatricesUniforms =
@@ -1802,6 +1805,7 @@ module PhysicallyBased =
           LightTypesUniform = lightTypesUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
+          LightDesireFogsUniform = lightDesireFogsUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
           ShadowMatricesUniforms = shadowMatricesUniforms
@@ -2062,6 +2066,7 @@ module PhysicallyBased =
         let lightTypesUniform = Gl.GetUniformLocation (shader, "lightTypes")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightDesireFogsUniform = Gl.GetUniformLocation (shader, "lightDesireFogs")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
         let shadowMatricesUniforms =
@@ -2124,6 +2129,7 @@ module PhysicallyBased =
           LightTypesUniform = lightTypesUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
+          LightDesireFogsUniform = lightDesireFogsUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
           ShadowMatricesUniforms = shadowMatricesUniforms
@@ -2662,6 +2668,7 @@ module PhysicallyBased =
          lightTypes : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
+         lightDesireFogs : int array,
          lightShadowIndices : int array,
          lightsCount : int,
          shadowMatrices : single array array,
@@ -2756,6 +2763,7 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightTypesUniform, lightTypes)
             Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
             Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+            Gl.Uniform1 (shader.LightDesireFogsUniform, lightDesireFogs)
             Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
             Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
             for i in 0 .. dec (min Constants.Render.ShadowTexturesMax shadowMatrices.Length) do
@@ -3341,6 +3349,7 @@ module PhysicallyBased =
          lightTypes : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
+         lightDesireFogs : int array,
          lightShadowIndices : int array,
          lightsCount : int,
          shadowMatrices : single array array,
@@ -3404,6 +3413,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightTypesUniform, lightTypes)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+        Gl.Uniform1 (shader.LightDesireFogsUniform, lightDesireFogs)
         Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         for i in 0 .. dec (min Constants.Render.ShadowTexturesMax shadowMatrices.Length) do

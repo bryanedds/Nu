@@ -488,8 +488,8 @@ module EffectSystem =
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
-                          Bounds = bounds
-                          DesireShadows = false }
+                          DesireShadows = false
+                          Bounds = bounds }
                 addDataToken lightToken effectSystem
             else effectSystem
 
