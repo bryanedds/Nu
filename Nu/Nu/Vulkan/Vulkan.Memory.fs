@@ -164,11 +164,15 @@ module VulkanMemory =
     
     /// Abstraction for vma allocated buffer.
     type AllocatedBuffer =
-        { Buffer : VkBuffer
-          Allocation : VmaAllocation
-          AllocationInfo : VmaAllocationInfo
-          UploadEnabled : bool }
+        private
+            { _Buffer : VkBuffer
+              _Allocation : VmaAllocation
+              _Mapping : voidptr
+              _UploadEnabled : bool }
 
+        /// The VkBuffer.
+        member this.Buffer = this._Buffer
+        
         static member private createInternal uploadEnabled bufferInfo (vkg : Hl.VulkanGlobal) =
 
             // allocation create info
@@ -184,16 +188,16 @@ module VulkanMemory =
 
             // make AllocatedBuffer
             let allocatedBuffer =
-                { Buffer = buffer
-                  Allocation = allocation
-                  AllocationInfo = allocationInfo
-                  UploadEnabled = uploadEnabled }
+                { _Buffer = buffer
+                  _Allocation = allocation
+                  _Mapping = allocationInfo.pMappedData
+                  _UploadEnabled = uploadEnabled }
 
             // fin
             allocatedBuffer
 
         /// Copy data from the source buffer to the destination buffer.
-        static member private copyData size source destination (vkg : Hl.VulkanGlobal) =
+        static member private copyData size (source : AllocatedBuffer) (destination : AllocatedBuffer) (vkg : Hl.VulkanGlobal) =
 
             // create command buffer for transfer
             let mutable cb = Hl.allocateCommandBuffer vkg.TransientCommandPool vkg.Device
@@ -217,13 +221,13 @@ module VulkanMemory =
 
         /// Upload data to buffer if upload is enabled.
         static member upload offset size data buffer (vkg : Hl.VulkanGlobal) =
-            upload buffer.UploadEnabled offset size data buffer.AllocationInfo.pMappedData
-            Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
+            upload buffer._UploadEnabled offset size data buffer._Mapping
+            Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer._Allocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
 
         /// Upload data to buffer with a stride of 16 if upload is enabled.
         static member uploadStrided16 offset typeSize count data buffer (vkg : Hl.VulkanGlobal) =
-            uploadStrided16 buffer.UploadEnabled offset typeSize count data buffer.AllocationInfo.pMappedData
-            Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer.Allocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
+            uploadStrided16 buffer._UploadEnabled offset typeSize count data buffer._Mapping
+            Vma.vmaFlushAllocation (vkg.VmaAllocator, buffer._Allocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
         
         /// Upload an array to buffer if upload is enabled.
         static member uploadArray offset (array : 'a array) buffer vkg =
@@ -291,16 +295,20 @@ module VulkanMemory =
         
         /// Destroy buffer and allocation.
         static member destroy buffer vkg =
-            Vma.vmaDestroyBuffer (vkg.VmaAllocator, buffer.Buffer, buffer.Allocation)
+            Vma.vmaDestroyBuffer (vkg.VmaAllocator, buffer.Buffer, buffer._Allocation)
 
     /// Abstraction for vma allocated image.
     type AllocatedImage =
-        { Image : VkImage
-          Allocation : VmaAllocation }
+        private
+            { _Image : VkImage
+              _Allocation : VmaAllocation }
 
+        /// The VkImage.
+        member this.Image = this._Image
+        
         /// Destroy image and allocation.
-        static member destroy allocatedImage (vkg : Hl.VulkanGlobal) =
-            Vma.vmaDestroyImage (vkg.VmaAllocator, allocatedImage.Image, allocatedImage.Allocation)
+        static member destroy (allocatedImage : AllocatedImage) (vkg : Hl.VulkanGlobal) =
+            Vma.vmaDestroyImage (vkg.VmaAllocator, allocatedImage.Image, allocatedImage._Allocation)
 
         /// Create an AllocatedImage.
         static member create imageInfo (vkg : Hl.VulkanGlobal) =
@@ -308,7 +316,7 @@ module VulkanMemory =
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
             Vma.vmaCreateImage (vkg.VmaAllocator, &imageInfo, &info, &image, &allocation, nullPtr) |> Hl.check
-            let allocatedImage = { Image = image; Allocation = allocation }
+            let allocatedImage = { _Image = image; _Allocation = allocation }
             allocatedImage
 
     /// A set of upload enabled allocated buffers for each frame in flight.
@@ -324,7 +332,7 @@ module VulkanMemory =
         member this.Buffer = this.Current.Buffer
 
         /// The VkBuffer for each frame in flight.
-        member this.PerFrameBuffers = Array.map (fun allocatedBuffer -> allocatedBuffer.Buffer) this.AllocatedBuffers
+        member this.PerFrameBuffers = Array.map (fun (allocatedBuffer : AllocatedBuffer) -> allocatedBuffer.Buffer) this.AllocatedBuffers
 
         /// Create an AllocatedBuffer based on usage.
         static member private createBuffer size bufferType vkg =
