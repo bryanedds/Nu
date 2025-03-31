@@ -116,6 +116,7 @@ uniform float lightAttenuationLinears[LIGHTS_MAX];
 uniform float lightAttenuationQuadratics[LIGHTS_MAX];
 uniform float lightCutoffs[LIGHTS_MAX];
 uniform int lightTypes[LIGHTS_MAX];
+uniform int lightDesires[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
@@ -595,7 +596,7 @@ void main()
         lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate fog
-        if (ssvfEnabled == 1)
+        if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
             vec3 fog = vec3(0.0);
             switch (lightType)
