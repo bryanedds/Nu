@@ -9,6 +9,7 @@
      [[AttenuationLinear 0.005050505]
       [AttenuationQuadratic 0.00028058363]
       [Brightness 10]
+      [DesireFog True]
       [DesireShadows True]
       [LightCutoff 32]
       [LightType DirectionalLight]
@@ -43,7 +44,7 @@
       [Static True]]
      []]
     [LightProbe3dDispatcher
-     [[AmbientBrightness 0.4]
+     [[AmbientBrightness 0.35]
       [AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]
       [Name LightProbe3d]
