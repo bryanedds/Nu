@@ -1618,12 +1618,12 @@ module WorldModule2 =
                     for element in hashSet do
                         if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
-                | ShadowPass (_, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
+                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
                 match renderPass with
                 | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 | LightMapPass (_, _) -> ()
-                | ShadowPass (_, _, _, _) -> ()
+                | ShadowPass (_, _, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
                 world.Timers.RenderGatherTimer.Stop ()
 
@@ -1757,13 +1757,43 @@ module WorldModule2 =
                         match lightType with
                         | PointLight ->
                             if shadowMapsCount < Constants.Render.ShadowMapsMax then
-                                let world = World.renderSimulantsInternal (ShadowPass (light.GetId world, lightType, light.GetRotation world, shadowFrustum)) world
+
+                                // grab light info
+                                let lightId = light.GetId world
+                                let lightOrigin = light.GetPosition world
+                                let lightCutoff = light.GetLightCutoff world
+
+                                // construct eye rotations
+                                let eyeRotations =
+                                    [|(v3Right, v3Down)     // (+x) right
+                                      (v3Left, v3Down)      // (-x) left
+                                      (v3Up, v3Back)        // (+y) top
+                                      (v3Down, v3Forward)   // (-y) bottom
+                                      (v3Back, v3Down)      // (+z) back
+                                      (v3Forward, v3Down)|] // (-z) front
+
+                                // construct projections
+                                let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, Constants.Render.NearPlaneDistanceInterior, lightCutoff)
+
+                                // render faces
+                                let world =
+                                    Array.fold (fun world i ->
+                                        let (eyeForward, eyeUp) = eyeRotations.[i]
+                                        let shadowRotation = Quaternion.CreateLookAt (lightOrigin, lightOrigin + eyeForward, eyeUp)
+                                        let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + eyeForward, eyeUp)
+                                        let shadowViewProjection = shadowView * lightProjection
+                                        let shadowFrustum = Frustum shadowViewProjection
+                                        World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, lightProjection), lightType, shadowRotation, shadowFrustum)) world)
+                                        world [|0 .. dec 6|]
+
+                                // fin
                                 shadowMapsCount <- inc shadowMapsCount
                                 world
+
                             else world
                         | SpotLight (_, _) | DirectionalLight ->
                             if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
-                                let world = World.renderSimulantsInternal (ShadowPass (light.GetId world, lightType, light.GetRotation world, shadowFrustum)) world
+                                let world = World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, shadowFrustum)) world
                                 shadowTexturesCount <- inc shadowTexturesCount
                                 world
                             else world)

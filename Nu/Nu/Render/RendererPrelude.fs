@@ -53,7 +53,7 @@ type [<Struct>] RenderType =
 type RenderPass =
     | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
-    | ShadowPass of LightId : uint64 * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
     /// Check that a render pass should displace another.
@@ -62,7 +62,12 @@ type RenderPass =
             match (renderPass, renderPass2) with
             | (NormalPass, NormalPass) -> failwithumf ()
             | (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
-            | (ShadowPass (lightId, _, _, _), ShadowPass (lightId2, _, _, _)) -> lightId = lightId2
+            | (ShadowPass (lightId, faceInfoOpt, _, _, _), ShadowPass (lightId2, faceInfoOpt2, _, _, _)) ->
+                lightId = lightId2 &&
+                match struct (faceInfoOpt, faceInfoOpt2) with
+                | struct (Some faceInfo, Some faceInfo2) -> Triple.fst faceInfo = Triple.fst faceInfo2
+                | struct (None, None) -> true
+                | struct (_, _) ->  false
             | (ReflectionPass (reflectorId, _), ReflectionPass (reflectorId2, _)) -> reflectorId = reflectorId2
             | (_, _) -> false
         else false
