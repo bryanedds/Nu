@@ -206,13 +206,13 @@ module Pipeline =
             Map.find blend pipeline._VkPipelines
         
         /// Write a uniform to the descriptor set for each frame in flight.
-        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffers : VkBuffer array) (pipeline : Pipeline) device =
+        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (vkBuffers : VkBuffer array) (pipeline : Pipeline) device =
 
             for i in 0 .. dec pipeline._DescriptorSets.Length do
             
                 // buffer info
                 let mutable info = VkDescriptorBufferInfo ()
-                info.buffer <- buffers.[i]
+                info.buffer <- vkBuffers.[i]
                 info.range <- Vulkan.VK_WHOLE_SIZE
 
                 // write descriptor set

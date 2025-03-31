@@ -180,19 +180,19 @@ module Texture =
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
-        { Image : VulkanMemory.AllocatedImage
+        { Image : VulkanMemory.Image
           ImageView : VkImageView
           Sampler : VkSampler }
 
         override this.Equals thatObj =
             match thatObj with
             | :? VulkanTexture as that ->
-                this.Image.Image.Handle = that.Image.Image.Handle &&
+                this.Image.VkImage.Handle = that.Image.VkImage.Handle &&
                 this.ImageView.Handle = that.ImageView.Handle
             | _ -> false
 
         override this.GetHashCode () = 
-            hash this.Image.Image.Handle ^^^
+            hash this.Image.VkImage.Handle ^^^
             hash this.ImageView.Handle
 
         /// Create the image.
@@ -208,8 +208,8 @@ module Texture =
             info.usage <- Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             info.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            let allocatedImage = VulkanMemory.AllocatedImage.create info vkg
-            allocatedImage
+            let image = VulkanMemory.Image.create info vkg
+            image
         
         /// Create the sampler.
         static member private createSampler minFilter magFilter device =
@@ -225,7 +225,7 @@ module Texture =
             sampler
         
         /// Record commands to copy from buffer to image.
-        static member recordBufferToImageCopy cb extent buffer image =
+        static member recordBufferToImageCopy cb extent vkBuffer vkImage =
             
             // transition image layout for data transfer
             let mutable copyBarrier = VkImageMemoryBarrier ()
@@ -235,7 +235,7 @@ module Texture =
             copyBarrier.dstAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
             copyBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
             copyBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            copyBarrier.image <- image
+            copyBarrier.image <- vkImage
             Vulkan.vkCmdPipelineBarrier
                 (cb,
                  Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
@@ -249,7 +249,7 @@ module Texture =
             region.imageSubresource <- Hl.makeSubresourceLayersColor ()
             region.imageExtent <- extent
             Vulkan.vkCmdCopyBufferToImage
-                (cb, buffer, image,
+                (cb, vkBuffer, vkImage,
                  Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                  1u, asPointer &region)
 
@@ -262,7 +262,7 @@ module Texture =
             useBarrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
             useBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            useBarrier.image <- image
+            useBarrier.image <- vkImage
             Vulkan.vkCmdPipelineBarrier
                 (cb,
                  Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -272,7 +272,7 @@ module Texture =
                  1u, asPointer &useBarrier)
         
         /// Copy the pixels from the staging buffer to the image.
-        static member private copyBufferToImage extent buffer image (vkg : Hl.VulkanGlobal) =
+        static member private copyBufferToImage extent vkBuffer vkImage (vkg : Hl.VulkanGlobal) =
             
             // setup command buffer for copy
             let mutable cb = Hl.allocateCommandBuffer vkg.TransientCommandPool vkg.Device
@@ -281,7 +281,7 @@ module Texture =
             Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
 
             // record copy
-            VulkanTexture.recordBufferToImageCopy cb extent buffer image
+            VulkanTexture.recordBufferToImageCopy cb extent vkBuffer vkImage
 
             // execute copy
             Vulkan.vkEndCommandBuffer cb |> Hl.check
@@ -297,16 +297,16 @@ module Texture =
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let image = VulkanTexture.createImage format extent vkg
-            let imageView = Hl.createImageView format 1u image.Image vkg.Device
+            let imageView = Hl.createImageView format 1u image.VkImage vkg.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter vkg.Device
             
             // upload pixels to image if provided
             match pixelsOpt with
             | Some pixels ->
                 let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
-                let stagingBuffer = VulkanMemory.AllocatedBuffer.stageData uploadSize pixels vkg
-                VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
-                VulkanMemory.AllocatedBuffer.destroy stagingBuffer vkg
+                let stagingBuffer = VulkanMemory.Buffer.stageData uploadSize pixels vkg
+                VulkanTexture.copyBufferToImage extent stagingBuffer.VkBuffer image.VkImage vkg
+                VulkanMemory.Buffer.destroy stagingBuffer vkg
             | None -> ()
 
             // make VulkanTexture
@@ -335,7 +335,7 @@ module Texture =
         static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
             Vulkan.vkDestroySampler (vkg.Device, vulkanTexture.Sampler, nullPtr)
             Vulkan.vkDestroyImageView (vkg.Device, vulkanTexture.ImageView, nullPtr)
-            VulkanMemory.AllocatedImage.destroy vulkanTexture.Image vkg
+            VulkanMemory.Image.destroy vulkanTexture.Image vkg
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
@@ -388,7 +388,7 @@ module Texture =
         /// Transfer pixels to texture.
         static member private loadTexture cb commandQueue fence dynamicTexture device =
             Hl.beginCommandBlock cb fence device
-            VulkanTexture.recordBufferToImageCopy cb dynamicTexture.Extent dynamicTexture.CurrentStagingBuffer.Buffer dynamicTexture.VulkanTexture.Image.Image
+            VulkanTexture.recordBufferToImageCopy cb dynamicTexture.Extent dynamicTexture.CurrentStagingBuffer.VkBuffer dynamicTexture.VulkanTexture.Image.VkImage
             Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
 
         /// Instantly stage a bgra image, then submit texture load once fence is ready.

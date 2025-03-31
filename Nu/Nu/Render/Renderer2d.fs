@@ -157,7 +157,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
           SpritePipeline : VulkanMemory.FifBuffer * VulkanMemory.FifBuffer * VulkanMemory.FifBuffer * Pipeline.Pipeline
-          TextQuad : VulkanMemory.AllocatedBuffer * VulkanMemory.AllocatedBuffer
+          TextQuad : VulkanMemory.Buffer * VulkanMemory.Buffer
           TextTexture : Texture.DynamicTexture
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -843,8 +843,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             VulkanMemory.FifBuffer.destroy modelViewProjectionUniform vkg
             VulkanMemory.FifBuffer.destroy texCoords4Uniform vkg
             VulkanMemory.FifBuffer.destroy colorUniform vkg
-            VulkanMemory.AllocatedBuffer.destroy vertices vkg
-            VulkanMemory.AllocatedBuffer.destroy indices vkg
+            VulkanMemory.Buffer.destroy vertices vkg
+            VulkanMemory.Buffer.destroy indices vkg
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

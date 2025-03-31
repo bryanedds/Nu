@@ -365,10 +365,10 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
 
                 // bind vertex and index buffer
                 if drawData.TotalVtxCount > 0 then
-                    let mutable vertexBuffer = vertexBuffer.Buffer
+                    let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
+                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
 
                 // set up viewport
                 let mutable viewport = Hl.makeViewport renderArea

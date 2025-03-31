@@ -59,16 +59,16 @@ module Sprite =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         
         // create buffers
-        let vertexBuffer = VulkanMemory.AllocatedBuffer.createVertexStagedFromArray vertexData vkg
-        let indexBuffer = VulkanMemory.AllocatedBuffer.createIndexStagedFromArray indexData vkg
+        let vertexBuffer = VulkanMemory.Buffer.createVertexStagedFromArray vertexData vkg
+        let indexBuffer = VulkanMemory.Buffer.createIndexStagedFromArray indexData vkg
         
         // fin
         (vertexBuffer, indexBuffer)
 
     /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad and whose uniforms and pipeline match those of CreateSpritePipeline.
     let DrawSprite
-        (vertices : VulkanMemory.AllocatedBuffer,
-         indices : VulkanMemory.AllocatedBuffer,
+        (vertices : VulkanMemory.Buffer,
+         indices : VulkanMemory.Buffer,
          modelViewProjection : single array,
          insetOpt : Box2 ValueOption,
          color : Color,
@@ -140,10 +140,10 @@ module Sprite =
         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
         
         // bind vertex and index buffer
-        let mutable vertexBuffer = vertices.Buffer
+        let mutable vertexBuffer = vertices.VkBuffer
         let mutable vertexOffset = 0UL
         Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-        Vulkan.vkCmdBindIndexBuffer (cb, indices.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT32)
+        Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT32)
 
         // bind descriptor set
         let mutable descriptorSet = pipeline.DescriptorSet

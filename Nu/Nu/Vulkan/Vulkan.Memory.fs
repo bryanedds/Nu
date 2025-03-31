@@ -53,8 +53,8 @@ module VulkanMemory =
         else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
     
     /// A manually allocated buffer for diagnostic purposes.
-    type ManualAllocatedBuffer =
-        { Buffer : VkBuffer 
+    type ManualBuffer =
+        { VkBuffer : VkBuffer 
           Memory : VkDeviceMemory
           Mapping : voidptr }
 
@@ -81,13 +81,13 @@ module VulkanMemory =
         
         static member private createInternal uploadEnabled bufferInfo (vkg : Hl.VulkanGlobal) =
 
-            // create buffer
-            let mutable buffer = Unchecked.defaultof<VkBuffer>
-            Vulkan.vkCreateBuffer (vkg.Device, &bufferInfo, nullPtr, asPointer &buffer) |> Hl.check
+            // create vkBuffer
+            let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
+            Vulkan.vkCreateBuffer (vkg.Device, &bufferInfo, nullPtr, asPointer &vkBuffer) |> Hl.check
 
-            // get buffer memory requirements
+            // get vkBuffer memory requirements
             let mutable memRequirements = Unchecked.defaultof<VkMemoryRequirements>
-            Vulkan.vkGetBufferMemoryRequirements (vkg.Device, buffer, &memRequirements)
+            Vulkan.vkGetBufferMemoryRequirements (vkg.Device, vkBuffer, &memRequirements)
 
             // choose appropriate memory properties
             let properties =
@@ -97,26 +97,26 @@ module VulkanMemory =
             // allocate memory
             let mutable info = VkMemoryAllocateInfo ()
             info.allocationSize <- memRequirements.size
-            info.memoryTypeIndex <- ManualAllocatedBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice
+            info.memoryTypeIndex <- ManualBuffer.findMemoryType memRequirements.memoryTypeBits properties vkg.PhysicalDevice
             let mutable memory = Unchecked.defaultof<VkDeviceMemory>
             Vulkan.vkAllocateMemory (vkg.Device, asPointer &info, nullPtr, &memory) |> Hl.check
 
-            // bind buffer to memory
-            Vulkan.vkBindBufferMemory (vkg.Device, buffer, memory, 0UL) |> Hl.check
+            // bind vkBuffer to memory
+            Vulkan.vkBindBufferMemory (vkg.Device, vkBuffer, memory, 0UL) |> Hl.check
 
             // map memory if upload enabled
             let mappingPtr = NativePtr.stackalloc<voidptr> 1 // must be allocated manually because managed allocation doesn't work
             if uploadEnabled then Vulkan.vkMapMemory (vkg.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mappingPtr) |> Hl.check
             let mapping = NativePtr.read mappingPtr // TODO: DJL: find out if this needs to be manually freed.
             
-            // make ManualAllocatedBuffer
-            let manualAllocatedBuffer = 
-                { Buffer = buffer
+            // make ManualBuffer
+            let manualBuffer = 
+                { VkBuffer = vkBuffer
                   Memory = memory
                   Mapping = mapping }
 
             // fin
-            manualAllocatedBuffer
+            manualBuffer
 
         /// Upload data to buffer if upload is enabled.
         static member upload offset size data buffer _ =
@@ -130,48 +130,48 @@ module VulkanMemory =
         static member uploadArray offset (array : 'a array) buffer vkg =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            ManualAllocatedBuffer.upload offset size arrayPin.NativeInt buffer vkg
+            ManualBuffer.upload offset size arrayPin.NativeInt buffer vkg
         
-        /// Create an allocated staging buffer.
+        /// Create a manually allocated staging buffer.
         static member createStaging size vkg =
             let info = BufferType.makeInfo size Staging
-            let allocatedBuffer = ManualAllocatedBuffer.createInternal true info vkg
-            allocatedBuffer
+            let manualBuffer = ManualBuffer.createInternal true info vkg
+            manualBuffer
 
-        /// Create an allocated vertex buffer.
+        /// Create a manually allocated vertex buffer.
         static member createVertex uploadEnabled size vkg =
             let info = BufferType.makeInfo size (Vertex uploadEnabled)
-            let allocatedBuffer = ManualAllocatedBuffer.createInternal uploadEnabled info vkg
-            allocatedBuffer
+            let manualBuffer = ManualBuffer.createInternal uploadEnabled info vkg
+            manualBuffer
 
-        /// Create an allocated index buffer.
+        /// Create a manually allocated index buffer.
         static member createIndex uploadEnabled size vkg =
             let info = BufferType.makeInfo size (Index uploadEnabled)
-            let allocatedBuffer = ManualAllocatedBuffer.createInternal uploadEnabled info vkg
-            allocatedBuffer
+            let manualBuffer = ManualBuffer.createInternal uploadEnabled info vkg
+            manualBuffer
         
         /// Create a manually allocated uniform buffer.
         static member createUniform size vkg =
             let info = BufferType.makeInfo size Uniform
-            let allocatedBuffer = ManualAllocatedBuffer.createInternal true info vkg
-            allocatedBuffer
+            let manualBuffer = ManualBuffer.createInternal true info vkg
+            manualBuffer
         
-        /// Destroy a ManualAllocatedBuffer.
+        /// Destroy a ManualBuffer.
         static member destroy buffer (vkg : Hl.VulkanGlobal) =
             if buffer.Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkg.Device, buffer.Memory)
-            Vulkan.vkDestroyBuffer (vkg.Device, buffer.Buffer, nullPtr)
+            Vulkan.vkDestroyBuffer (vkg.Device, buffer.VkBuffer, nullPtr)
             Vulkan.vkFreeMemory (vkg.Device, buffer.Memory, nullPtr)
     
     /// Abstraction for vma allocated buffer.
-    type AllocatedBuffer =
+    type Buffer =
         private
-            { _Buffer : VkBuffer
+            { _VkBuffer : VkBuffer
               _Allocation : VmaAllocation
               _Mapping : voidptr
               _UploadEnabled : bool }
 
         /// The VkBuffer.
-        member this.Buffer = this._Buffer
+        member this.VkBuffer = this._VkBuffer
         
         static member private createInternal uploadEnabled bufferInfo (vkg : Hl.VulkanGlobal) =
 
@@ -181,23 +181,23 @@ module VulkanMemory =
             if uploadEnabled then info.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite ||| VmaAllocationCreateFlags.Mapped
 
             // create vma buffer
-            let mutable buffer = Unchecked.defaultof<VkBuffer>
+            let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
             let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-            Vma.vmaCreateBuffer (vkg.VmaAllocator, &bufferInfo, &info, &buffer, &allocation, asPointer &allocationInfo) |> Hl.check
+            Vma.vmaCreateBuffer (vkg.VmaAllocator, &bufferInfo, &info, &vkBuffer, &allocation, asPointer &allocationInfo) |> Hl.check
 
-            // make AllocatedBuffer
-            let allocatedBuffer =
-                { _Buffer = buffer
+            // make Buffer
+            let buffer =
+                { _VkBuffer = vkBuffer
                   _Allocation = allocation
                   _Mapping = allocationInfo.pMappedData
                   _UploadEnabled = uploadEnabled }
 
             // fin
-            allocatedBuffer
+            buffer
 
         /// Copy data from the source buffer to the destination buffer.
-        static member private copyData size (source : AllocatedBuffer) (destination : AllocatedBuffer) (vkg : Hl.VulkanGlobal) =
+        static member private copyData size (source : Buffer) (destination : Buffer) (vkg : Hl.VulkanGlobal) =
 
             // create command buffer for transfer
             let mutable cb = Hl.allocateCommandBuffer vkg.TransientCommandPool vkg.Device
@@ -209,7 +209,7 @@ module VulkanMemory =
 
             // copy data
             let mutable region = VkBufferCopy (size = uint64 size)
-            Vulkan.vkCmdCopyBuffer (cb, source.Buffer, destination.Buffer, 1u, asPointer &region)
+            Vulkan.vkCmdCopyBuffer (cb, source.VkBuffer, destination.VkBuffer, 1u, asPointer &region)
 
             // execute command
             Vulkan.vkEndCommandBuffer cb |> Hl.check
@@ -233,126 +233,126 @@ module VulkanMemory =
         static member uploadArray offset (array : 'a array) buffer vkg =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer vkg
+            Buffer.upload offset size arrayPin.NativeInt buffer vkg
 
         /// Create an allocated staging buffer.
         static member createStaging size vkg =
             let info = BufferType.makeInfo size Staging
-            let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
-            allocatedBuffer
+            let buffer = Buffer.createInternal true info vkg
+            buffer
 
         /// Create an allocated vertex buffer.
         static member createVertex uploadEnabled size vkg =
             let info = BufferType.makeInfo size (Vertex uploadEnabled)
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info vkg
-            allocatedBuffer
+            let buffer = Buffer.createInternal uploadEnabled info vkg
+            buffer
 
         /// Create an allocated index buffer.
         static member createIndex uploadEnabled size vkg =
             let info = BufferType.makeInfo size (Index uploadEnabled)
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info vkg
-            allocatedBuffer
+            let buffer = Buffer.createInternal uploadEnabled info vkg
+            buffer
 
         /// Create an allocated uniform buffer.
         static member createUniform size vkg =
             let info = BufferType.makeInfo size Uniform
-            let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
-            allocatedBuffer
+            let buffer = Buffer.createInternal true info vkg
+            buffer
         
         /// Create an allocated staging buffer and stage the data.
         static member stageData size data vkg =
-            let buffer = AllocatedBuffer.createStaging size vkg
-            AllocatedBuffer.upload 0 size data buffer vkg
+            let buffer = Buffer.createStaging size vkg
+            Buffer.upload 0 size data buffer vkg
             buffer
 
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkg =
-            let stagingBuffer = AllocatedBuffer.stageData size data vkg
-            let vertexBuffer = AllocatedBuffer.createVertex false size vkg
-            AllocatedBuffer.copyData size stagingBuffer vertexBuffer vkg
-            AllocatedBuffer.destroy stagingBuffer vkg
+            let stagingBuffer = Buffer.stageData size data vkg
+            let vertexBuffer = Buffer.createVertex false size vkg
+            Buffer.copyData size stagingBuffer vertexBuffer vkg
+            Buffer.destroy stagingBuffer vkg
             vertexBuffer
 
         /// Create an allocated index buffer with data uploaded via staging buffer.
         static member createIndexStaged size data vkg =
-            let stagingBuffer = AllocatedBuffer.stageData size data vkg
-            let indexBuffer = AllocatedBuffer.createIndex false size vkg
-            AllocatedBuffer.copyData size stagingBuffer indexBuffer vkg
-            AllocatedBuffer.destroy stagingBuffer vkg
+            let stagingBuffer = Buffer.stageData size data vkg
+            let indexBuffer = Buffer.createIndex false size vkg
+            Buffer.copyData size stagingBuffer indexBuffer vkg
+            Buffer.destroy stagingBuffer vkg
             indexBuffer
 
         /// Create an allocated vertex buffer with data uploaded via staging buffer from an array.
         static member createVertexStagedFromArray (array : 'a array) vkg =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            AllocatedBuffer.createVertexStaged size arrayPin.NativeInt vkg
+            Buffer.createVertexStaged size arrayPin.NativeInt vkg
 
         /// Create an allocated index buffer with data uploaded via staging buffer from an array.
         static member createIndexStagedFromArray (array : 'a array) vkg =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            AllocatedBuffer.createIndexStaged size arrayPin.NativeInt vkg
+            Buffer.createIndexStaged size arrayPin.NativeInt vkg
         
         /// Destroy buffer and allocation.
         static member destroy buffer vkg =
-            Vma.vmaDestroyBuffer (vkg.VmaAllocator, buffer.Buffer, buffer._Allocation)
+            Vma.vmaDestroyBuffer (vkg.VmaAllocator, buffer.VkBuffer, buffer._Allocation)
 
     /// Abstraction for vma allocated image.
-    type AllocatedImage =
+    type Image =
         private
-            { _Image : VkImage
+            { _VkImage : VkImage
               _Allocation : VmaAllocation }
 
         /// The VkImage.
-        member this.Image = this._Image
+        member this.VkImage = this._VkImage
         
-        /// Destroy image and allocation.
-        static member destroy (allocatedImage : AllocatedImage) (vkg : Hl.VulkanGlobal) =
-            Vma.vmaDestroyImage (vkg.VmaAllocator, allocatedImage.Image, allocatedImage._Allocation)
+        /// Destroy vkImage and allocation.
+        static member destroy (image : Image) (vkg : Hl.VulkanGlobal) =
+            Vma.vmaDestroyImage (vkg.VmaAllocator, image.VkImage, image._Allocation)
 
-        /// Create an AllocatedImage.
+        /// Create an Image.
         static member create imageInfo (vkg : Hl.VulkanGlobal) =
             let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
-            let mutable image = Unchecked.defaultof<VkImage>
+            let mutable vkImage = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
-            Vma.vmaCreateImage (vkg.VmaAllocator, &imageInfo, &info, &image, &allocation, nullPtr) |> Hl.check
-            let allocatedImage = { _Image = image; _Allocation = allocation }
-            allocatedImage
+            Vma.vmaCreateImage (vkg.VmaAllocator, &imageInfo, &info, &vkImage, &allocation, nullPtr) |> Hl.check
+            let image = { _VkImage = vkImage; _Allocation = allocation }
+            image
 
-    /// A set of upload enabled allocated buffers for each frame in flight.
+    /// A set of upload enabled buffers for each frame in flight.
     type FifBuffer =
         private 
-            { AllocatedBuffers : AllocatedBuffer array
+            { Buffers : Buffer array
               BufferSizes : int array
               BufferType : BufferType }
 
-        member private this.Current = this.AllocatedBuffers.[Hl.CurrentFrame]
+        member private this.Current = this.Buffers.[Hl.CurrentFrame]
         
         /// The VkBuffer for the current frame.
-        member this.Buffer = this.Current.Buffer
+        member this.VkBuffer = this.Current.VkBuffer
 
         /// The VkBuffer for each frame in flight.
-        member this.PerFrameBuffers = Array.map (fun (allocatedBuffer : AllocatedBuffer) -> allocatedBuffer.Buffer) this.AllocatedBuffers
+        member this.PerFrameBuffers = Array.map (fun (buffer : Buffer) -> buffer.VkBuffer) this.Buffers
 
-        /// Create an AllocatedBuffer based on usage.
+        /// Create a Buffer based on usage.
         static member private createBuffer size bufferType vkg =
             match bufferType with
-            | Staging -> AllocatedBuffer.createStaging size vkg
-            | Vertex uploadEnabled -> AllocatedBuffer.createVertex uploadEnabled size vkg
-            | Index uploadEnabled -> AllocatedBuffer.createIndex uploadEnabled size vkg
-            | Uniform -> AllocatedBuffer.createUniform size vkg
+            | Staging -> Buffer.createStaging size vkg
+            | Vertex uploadEnabled -> Buffer.createVertex uploadEnabled size vkg
+            | Index uploadEnabled -> Buffer.createIndex uploadEnabled size vkg
+            | Uniform -> Buffer.createUniform size vkg
         
         /// Create a FifBuffer.
         static member private createInternal size bufferType vkg =
             
             // create buffers and sizes
             let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
-            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- FifBuffer.createBuffer size bufferType vkg
+            let buffers = Array.zeroCreate<Buffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec buffers.Length do buffers.[i] <- FifBuffer.createBuffer size bufferType vkg
 
             // make FifBuffer
             let fifBuffer =
-                { AllocatedBuffers = allocatedBuffers 
+                { Buffers = buffers 
                   BufferSizes = bufferSizes
                   BufferType = bufferType }
 
@@ -362,22 +362,22 @@ module VulkanMemory =
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
         static member updateSize size fifBuffer vkg =
             if size > fifBuffer.BufferSizes.[Hl.CurrentFrame] then
-                AllocatedBuffer.destroy fifBuffer.Current vkg
-                fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferType vkg
+                Buffer.destroy fifBuffer.Current vkg
+                fifBuffer.Buffers.[Hl.CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferType vkg
                 fifBuffer.BufferSizes.[Hl.CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
         static member upload offset size data (fifBuffer : FifBuffer) vkg =
-            AllocatedBuffer.upload offset size data fifBuffer.Current vkg
+            Buffer.upload offset size data fifBuffer.Current vkg
 
         /// Upload data to FifBuffer with a stride of 16.
         static member uploadStrided16 offset typeSize count data (fifBuffer : FifBuffer) vkg =
-            AllocatedBuffer.uploadStrided16 offset typeSize count data fifBuffer.Current vkg
+            Buffer.uploadStrided16 offset typeSize count data fifBuffer.Current vkg
         
         
         /// Upload an array to FifBuffer.
         static member uploadArray offset array (fifBuffer : FifBuffer) vkg =
-            AllocatedBuffer.uploadArray offset array fifBuffer.Current vkg
+            Buffer.uploadArray offset array fifBuffer.Current vkg
 
         /// Create a staging FifBuffer.
         static member createStaging size vkg =
@@ -401,4 +401,4 @@ module VulkanMemory =
 
         /// Destroy FifBuffer.
         static member destroy fifBuffer vkg =
-            for i in 0 .. dec fifBuffer.AllocatedBuffers.Length do AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[i] vkg
+            for i in 0 .. dec fifBuffer.Buffers.Length do Buffer.destroy fifBuffer.Buffers.[i] vkg
