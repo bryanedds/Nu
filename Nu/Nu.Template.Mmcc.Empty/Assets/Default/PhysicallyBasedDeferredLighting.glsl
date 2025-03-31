@@ -764,7 +764,6 @@ void main()
         vec3 ambientLight = ambientColor * ambientBrightness * ambientOcclusion;
 
         // compute diffuse term
-        // TODO: conditional compute sss term based on scatter type.
         vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
         vec3 kS = f;
         vec3 kD = 1.0 - kS;
