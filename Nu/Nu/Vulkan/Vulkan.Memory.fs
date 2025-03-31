@@ -9,6 +9,36 @@ open Nu
 [<RequireQualifiedAccess>]
 module VulkanMemory =
 
+    type private BufferType =
+        | Staging
+        | Vertex of bool
+        | Index of bool
+        | Uniform
+
+        static member private makeInfoInternal size usage =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- usage
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            info
+        
+        static member makeInfo size bufferType =
+            match bufferType with
+            | Staging -> BufferType.makeInfoInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+            | Vertex uploadEnabled ->
+                let usage =
+                    if uploadEnabled
+                    then Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+                    else Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                BufferType.makeInfoInternal size usage
+            | Index uploadEnabled ->
+                let usage =
+                    if uploadEnabled
+                    then Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+                    else Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                BufferType.makeInfoInternal size usage
+            | Uniform -> BufferType.makeInfoInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+    
     /// A manually allocated buffer for diagnostic purposes.
     type ManualAllocatedBuffer =
         { Buffer : VkBuffer 
@@ -89,10 +119,7 @@ module VulkanMemory =
         
         /// Create a manually allocated uniform buffer.
         static member createUniform size vkg =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let info = BufferType.makeInfo size Uniform
             let allocatedBuffer = ManualAllocatedBuffer.createInternal true info vkg
             allocatedBuffer
         
@@ -101,57 +128,6 @@ module VulkanMemory =
             if buffer.Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkg.Device, buffer.Memory)
             Vulkan.vkDestroyBuffer (vkg.Device, buffer.Buffer, nullPtr)
             Vulkan.vkFreeMemory (vkg.Device, buffer.Memory, nullPtr)
-    
-    /// A set of upload enabled manually allocated buffers for each frame in flight.
-    type ManualFifBuffer =
-        private { ManualAllocatedBuffers : ManualAllocatedBuffer array
-                  BufferSizes : int array
-                  BufferUsage : VkBufferUsageFlags }
-
-        /// The VkBuffer for the current frame.
-        member this.Buffer = this.ManualAllocatedBuffers.[Hl.CurrentFrame].Buffer
-
-        /// The VkBuffer for each frame in flight.
-        member this.PerFrameBuffers = Array.map (fun manualAllocatedBuffer -> manualAllocatedBuffer.Buffer) this.ManualAllocatedBuffers
-
-        /// Create a ManualAllocatedBuffer based on usage.
-        static member private createBuffer size usage vkg =
-            match usage with
-            | Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT -> ManualAllocatedBuffer.createUniform size vkg
-            | _ -> Log.fail "Invalid VkBufferUsageFlags value for ManualFifBuffer."
-        
-        /// Create a ManualFifBuffer.
-        static member private createInternal size (usage : VkBufferUsageFlags) vkg =
-            
-            // create buffers and sizes
-            let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
-            let manualAllocatedBuffers = Array.zeroCreate<ManualAllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec manualAllocatedBuffers.Length do manualAllocatedBuffers.[i] <- ManualFifBuffer.createBuffer size usage vkg
-
-            // make FifBuffer
-            let manualFifBuffer =
-                { ManualAllocatedBuffers = manualAllocatedBuffers
-                  BufferSizes = bufferSizes
-                  BufferUsage = usage }
-
-            // fin
-            manualFifBuffer
-        
-        /// Upload data to ManualFifBuffer.
-        static member upload offset size nint manualFifBuffer vkg =
-            ManualAllocatedBuffer.upload offset size nint manualFifBuffer.ManualAllocatedBuffers.[Hl.CurrentFrame] vkg
-
-        /// Upload an array to ManualFifBuffer.
-        static member uploadArray offset array manualFifBuffer vkg =
-            ManualAllocatedBuffer.uploadArray offset array manualFifBuffer.ManualAllocatedBuffers.[Hl.CurrentFrame] vkg
-
-        /// Create a uniform ManualFifBuffer.
-        static member createUniform size vkg =
-            ManualFifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT vkg
-
-        /// Destroy ManualFifBuffer.
-        static member destroy manualFifBuffer vkg =
-            for i in 0 .. dec manualFifBuffer.ManualAllocatedBuffers.Length do ManualAllocatedBuffer.destroy manualFifBuffer.ManualAllocatedBuffers.[i] vkg
     
     /// Abstraction for vma allocated buffer.
     type AllocatedBuffer =
@@ -231,59 +207,27 @@ module VulkanMemory =
 
         /// Create an allocated staging buffer.
         static member createStaging size vkg =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let info = BufferType.makeInfo size Staging
             let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
             allocatedBuffer
 
         /// Create an allocated vertex buffer.
         static member createVertex uploadEnabled size vkg =
-
-            // data can and must be transferred from a staging buffer if upload is not enabled
-            let usage =
-                if uploadEnabled
-                then Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-                else Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
-
-            // create buffer
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- usage
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let info = BufferType.makeInfo size (Vertex uploadEnabled)
             let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info vkg
             allocatedBuffer
 
         /// Create an allocated index buffer.
         static member createIndex uploadEnabled size vkg =
-
-            // data can and must be transferred from a staging buffer if upload is not enabled
-            let usage =
-                if uploadEnabled
-                then Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-                else Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
-
-            // create buffer
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- usage
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let info = BufferType.makeInfo size (Index uploadEnabled)
             let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info vkg
             allocatedBuffer
 
         /// Create an allocated uniform buffer.
         static member createUniform size vkg =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let info = BufferType.makeInfo size Uniform
             let allocatedBuffer = AllocatedBuffer.createInternal true info vkg
             allocatedBuffer
-
-        /// Create an allocated uniform buffer for a stride of 16.
-        static member createUniformStrided16 length vkg =
-            AllocatedBuffer.createUniform (length * 16) vkg
         
         /// Create an allocated staging buffer and stage the data.
         static member stageData size nint vkg =
@@ -345,36 +289,37 @@ module VulkanMemory =
     type FifBuffer =
         private { AllocatedBuffers : AllocatedBuffer array
                   BufferSizes : int array
-                  BufferUsage : VkBufferUsageFlags }
+                  BufferType : BufferType }
 
+        member private this.Current = this.AllocatedBuffers.[Hl.CurrentFrame]
+        
         /// The VkBuffer for the current frame.
-        member this.Buffer = this.AllocatedBuffers.[Hl.CurrentFrame].Buffer
+        member this.Buffer = this.Current.Buffer
 
         /// The VkBuffer for each frame in flight.
         member this.PerFrameBuffers = Array.map (fun allocatedBuffer -> allocatedBuffer.Buffer) this.AllocatedBuffers
 
         /// Create an AllocatedBuffer based on usage.
-        static member private createBuffer size usage vkg =
-            match usage with
-            | Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT -> AllocatedBuffer.createStaging size vkg
-            | Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT -> AllocatedBuffer.createVertex true size vkg
-            | Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT -> AllocatedBuffer.createIndex true size vkg
-            | Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT -> AllocatedBuffer.createUniform size vkg
-            | _ -> Log.fail "Invalid VkBufferUsageFlags value for FifBuffer."
+        static member private createBuffer size bufferType vkg =
+            match bufferType with
+            | Staging -> AllocatedBuffer.createStaging size vkg
+            | Vertex uploadEnabled -> AllocatedBuffer.createVertex uploadEnabled size vkg
+            | Index uploadEnabled -> AllocatedBuffer.createIndex uploadEnabled size vkg
+            | Uniform -> AllocatedBuffer.createUniform size vkg
         
         /// Create a FifBuffer.
-        static member private createInternal size (usage : VkBufferUsageFlags) vkg =
+        static member private createInternal size bufferType vkg =
             
             // create buffers and sizes
             let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
             let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- FifBuffer.createBuffer size usage vkg
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- FifBuffer.createBuffer size bufferType vkg
 
             // make FifBuffer
             let fifBuffer =
                 { AllocatedBuffers = allocatedBuffers 
                   BufferSizes = bufferSizes
-                  BufferUsage = usage }
+                  BufferType = bufferType }
 
             // fin
             fifBuffer
@@ -382,38 +327,38 @@ module VulkanMemory =
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
         static member updateSize size fifBuffer vkg =
             if size > fifBuffer.BufferSizes.[Hl.CurrentFrame] then
-                AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] vkg
-                fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferUsage vkg
+                AllocatedBuffer.destroy fifBuffer.Current vkg
+                fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferType vkg
                 fifBuffer.BufferSizes.[Hl.CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
-        static member upload offset size nint fifBuffer vkg =
-            AllocatedBuffer.upload offset size nint fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] vkg
+        static member upload offset size nint (fifBuffer : FifBuffer) vkg =
+            AllocatedBuffer.upload offset size nint fifBuffer.Current vkg
 
         /// Upload data to FifBuffer with a stride of 16.
-        static member uploadStrided16 offset typeSize count nint fifBuffer vkg =
-            AllocatedBuffer.uploadStrided16 offset typeSize count nint fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] vkg
+        static member uploadStrided16 offset typeSize count nint (fifBuffer : FifBuffer) vkg =
+            AllocatedBuffer.uploadStrided16 offset typeSize count nint fifBuffer.Current vkg
         
         
         /// Upload an array to FifBuffer.
-        static member uploadArray offset array fifBuffer vkg =
-            AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[Hl.CurrentFrame] vkg
+        static member uploadArray offset array (fifBuffer : FifBuffer) vkg =
+            AllocatedBuffer.uploadArray offset array fifBuffer.Current vkg
 
         /// Create a staging FifBuffer.
         static member createStaging size vkg =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT vkg
+            FifBuffer.createInternal size Staging vkg
         
         /// Create a vertex FifBuffer.
         static member createVertex size vkg =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT vkg
+            FifBuffer.createInternal size (Vertex true) vkg
 
         /// Create an index FifBuffer.
         static member createIndex size vkg =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT vkg
+            FifBuffer.createInternal size (Index true) vkg
 
         /// Create a uniform FifBuffer.
         static member createUniform size vkg =
-            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT vkg
+            FifBuffer.createInternal size Uniform vkg
 
         /// Create a uniform FifBuffer for a stride of 16.
         static member createUniformStrided16 length vkg =
