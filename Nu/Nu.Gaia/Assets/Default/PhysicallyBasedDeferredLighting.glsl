@@ -431,8 +431,7 @@ vec3 computeFogAccumFromShadowMap(vec4 position, int lightIndex)
         vec3 rayDirection = rayVector / rayLength;
 
         // compute step info
-        int steps = shadowIndex > 0 ? ssvfSteps * 2 : ssvfSteps; // double steps for unfiltered fog
-        float stepLength = rayLength / steps;
+        float stepLength = rayLength / ssvfSteps;
         vec3 step = rayDirection * stepLength;
 
         // compute light view term
@@ -443,13 +442,13 @@ vec3 computeFogAccumFromShadowMap(vec4 position, int lightIndex)
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
-        for (int i = 0; i < steps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
             float shadowDepth = texture(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], positionShadow).x;
-            if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
+            if (shadowZ <= shadowDepth)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
@@ -477,7 +476,7 @@ vec3 computeFogAccumFromShadowMap(vec4 position, int lightIndex)
             }
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / steps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
