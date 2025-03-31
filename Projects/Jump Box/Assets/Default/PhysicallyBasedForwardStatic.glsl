@@ -341,7 +341,7 @@ vec3 computeFogAccum(vec4 position, int lightIndex)
                     float halfConeDelta = halfConeOuter - halfConeInner;
                     float halfConeBetween = angle - halfConeInner;
                     float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                    intensity = attenuation * halfConeScalar;
+                    intensity = attenuation * halfConeScalar * cutoffScalar;
                 }
                 else intensity = 1.0;
                 result += fogMoment * intensity;
@@ -429,8 +429,8 @@ void main()
             float halfConeDelta = halfConeOuter - halfConeInner;
             float halfConeBetween = angle - halfConeInner;
             float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-            float intensity = attenuation * halfConeScalar;
-            radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
+            float intensity = attenuation * halfConeScalar * cutoffScalar;
+            radiance = lightColors[i] * lightBrightnesses[i] * intensity;
         }
         else
         {

@@ -392,7 +392,7 @@ vec3 computeFogAccumFromShadowTexture(vec4 position, int lightIndex)
                     float halfConeDelta = halfConeOuter - halfConeInner;
                     float halfConeBetween = angle - halfConeInner;
                     float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                    intensity = attenuation * halfConeScalar;
+                    intensity = attenuation * halfConeScalar * cutoffScalar;
                 }
                 else intensity = 1.0;
                 result += fogMoment * intensity;
@@ -448,7 +448,7 @@ vec3 computeFogAccumFromShadowMap(vec4 position, int lightIndex)
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
             float shadowDepth = texture(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], positionShadow).x;
-            if (shadowZ <= shadowDepth)
+            if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
@@ -469,7 +469,7 @@ vec3 computeFogAccumFromShadowMap(vec4 position, int lightIndex)
                 float halfConeDelta = halfConeOuter - halfConeInner;
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                float intensity = attenuation * halfConeScalar;
+                float intensity = attenuation * halfConeScalar * cutoffScalar;
 
                 // accumulate
                 result += fogMoment * intensity;
@@ -646,8 +646,8 @@ void main()
                 float halfConeDelta = halfConeOuter - halfConeInner;
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                intensity = attenuation * halfConeScalar;
-                radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
+                intensity = attenuation * halfConeScalar * cutoffScalar;
+                radiance = lightColors[i] * lightBrightnesses[i] * intensity;
             }
             else
             {
