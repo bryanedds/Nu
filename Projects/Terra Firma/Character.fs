@@ -34,7 +34,7 @@ type CharacterType =
 
     member this.CharacterProperties =
         match this with
-        | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
+        | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f } // NOTE: I think this is to make enemies able to climb stairs, but now I'm not sure I remember...
         | Player -> CharacterProperties.defaultProperties
 
 type AttackState =
