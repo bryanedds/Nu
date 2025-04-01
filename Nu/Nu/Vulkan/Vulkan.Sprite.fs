@@ -11,7 +11,7 @@ open Nu
 module Sprite =
 
     /// Create a sprite pipeline.
-    let CreateSpritePipeline (vkg : Hl.VulkanGlobal) =
+    let CreateSpritePipeline (vkc : Hl.VulkanContext) =
         
         // create sprite pipeline
         let pipeline =
@@ -24,23 +24,23 @@ module Sprite =
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
                   Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
-                [||] vkg.RenderPass vkg.Device
+                [||] vkc.RenderPass vkc.Device
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 16) vkg
-        let texCoords4Uniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkg
-        let colorUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkg
+        let modelViewProjectionUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 16) vkc
+        let texCoords4Uniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkc
+        let colorUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkc
 
         // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.PerFrameBuffers pipeline vkc.Device
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
     
     /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
-    let CreateSpriteQuad onlyUpperRightQuadrant vkg =
+    let CreateSpriteQuad onlyUpperRightQuadrant vkc =
 
         // build vertex data
         let vertexData =
@@ -59,8 +59,8 @@ module Sprite =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         
         // create buffers
-        let vertexBuffer = VulkanMemory.Buffer.createVertexStagedFromArray vertexData vkg
-        let indexBuffer = VulkanMemory.Buffer.createIndexStagedFromArray indexData vkg
+        let vertexBuffer = VulkanMemory.Buffer.createVertexStagedFromArray vertexData vkc
+        let indexBuffer = VulkanMemory.Buffer.createIndexStagedFromArray indexData vkc
         
         // fin
         (vertexBuffer, indexBuffer)
@@ -80,7 +80,7 @@ module Sprite =
          texCoords4Uniform : VulkanMemory.FifBuffer,
          colorUniform : VulkanMemory.FifBuffer,
          pipeline : Pipeline.Pipeline,
-         vkg : Hl.VulkanGlobal) =
+         vkc : Hl.VulkanContext) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -121,20 +121,20 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        VulkanMemory.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkg
-        VulkanMemory.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkg
-        VulkanMemory.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkg
+        VulkanMemory.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkc
+        VulkanMemory.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
+        VulkanMemory.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // write texture to descriptor set
-        Pipeline.Pipeline.writeDescriptorTextureSingleFrame 2 0 texture pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorTextureSingleFrame 2 0 texture pipeline vkc.Device
         
         // bind pipeline
-        let cb = vkg.RenderCommandBuffer
+        let cb = vkc.RenderCommandBuffer
         let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
         Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
         // set viewport and scissor
-        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
         let mutable viewport = Hl.makeViewport renderArea
         Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)

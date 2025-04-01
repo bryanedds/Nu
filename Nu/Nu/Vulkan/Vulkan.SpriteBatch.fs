@@ -36,7 +36,7 @@ module SpriteBatch =
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
-              VulkanGlobal : Hl.VulkanGlobal
+              VulkanGlobal : Hl.VulkanContext
               Pipeline : Pipeline.Pipeline
               PerimetersUniform : VulkanMemory.FifBuffer
               PivotsUniform : VulkanMemory.FifBuffer
@@ -52,7 +52,7 @@ module SpriteBatch =
               mutable State : SpriteBatchState }
 
     /// Create a sprite batch pipeline.
-    let CreateSpriteBatchPipeline (vkg : Hl.VulkanGlobal) =
+    let CreateSpriteBatchPipeline (vkc : Hl.VulkanContext) =
         
         // create sprite batch pipeline
         let pipeline =
@@ -66,23 +66,23 @@ module SpriteBatch =
                   Hl.makeDescriptorBindingVertex 4 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 5 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 6 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
-                [||] vkg.RenderPass vkg.Device
+                [||] vkc.RenderPass vkc.Device
 
         // create sprite batch uniform buffers
-        let perimetersUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
-        let pivotsUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
-        let rotationsUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
-        let texCoordsesUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
-        let colorsUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkg
-        let viewProjectionUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 16) vkg
+        let perimetersUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
+        let pivotsUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
+        let rotationsUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
+        let texCoordsesUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
+        let colorsUniform = VulkanMemory.FifBuffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
+        let viewProjectionUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 16) vkc
 
         // write sprite batch descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 perimetersUniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 pivotsUniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 2 0 rotationsUniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 texCoordsesUniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 4 0 colorsUniform.PerFrameBuffers pipeline vkg.Device
-        Pipeline.Pipeline.writeDescriptorUniform 5 0 viewProjectionUniform.PerFrameBuffers pipeline vkg.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 perimetersUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 pivotsUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 2 0 rotationsUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 texCoordsesUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 4 0 colorsUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 5 0 viewProjectionUniform.PerFrameBuffers pipeline vkc.Device
         
         // fin
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline)
@@ -97,10 +97,10 @@ module SpriteBatch =
         | ValueSome texture when env.SpriteIndex > 0 ->
 
             // init render
-            let vkg = env.VulkanGlobal
-            let cb = vkg.RenderCommandBuffer
-            let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-            Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+            let vkc = env.VulkanGlobal
+            let cb = vkc.RenderCommandBuffer
+            let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
+            Hl.beginRenderBlock cb vkc.RenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
 
             // pin uniform arrays
             use perimetersPin = new ArrayPin<_> (env.Perimeters)
@@ -110,15 +110,15 @@ module SpriteBatch =
             use colorsPin = new ArrayPin<_> (env.Colors)
             
             // update uniform buffers
-            VulkanMemory.FifBuffer.uploadStrided16 0 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkg
-            VulkanMemory.FifBuffer.uploadStrided16 0 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkg
-            VulkanMemory.FifBuffer.uploadStrided16 0 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkg
-            VulkanMemory.FifBuffer.uploadStrided16 0 16 env.SpriteIndex texCoordsesPin.NativeInt env.TexCoordsesUniform vkg
-            VulkanMemory.FifBuffer.uploadStrided16 0 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkg
-            VulkanMemory.FifBuffer.uploadArray 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform vkg
+            VulkanMemory.FifBuffer.uploadStrided16 0 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkc
+            VulkanMemory.FifBuffer.uploadStrided16 0 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkc
+            VulkanMemory.FifBuffer.uploadStrided16 0 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkc
+            VulkanMemory.FifBuffer.uploadStrided16 0 16 env.SpriteIndex texCoordsesPin.NativeInt env.TexCoordsesUniform vkc
+            VulkanMemory.FifBuffer.uploadStrided16 0 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkc
+            VulkanMemory.FifBuffer.uploadArray 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform vkc
 
             // write texture to descriptor set
-            Pipeline.Pipeline.writeDescriptorTextureSingleFrame 6 0 texture.VulkanTexture env.Pipeline vkg.Device
+            Pipeline.Pipeline.writeDescriptorTextureSingleFrame 6 0 texture.VulkanTexture env.Pipeline vkc.Device
 
             // bind pipeline
             let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
@@ -145,7 +145,7 @@ module SpriteBatch =
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
             
             // flush render commands
-            Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
+            Hl.endRenderBlock cb vkc.GraphicsQueue [||] [||] vkc.InFlightFence
             
             // next batch
             env.SpriteIndex <- 0
@@ -216,13 +216,13 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv vkg =
+    let CreateSpriteBatchEnv vkc =
         
         // create pipeline
-        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkg
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
-        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkg
+        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkc
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           Pipeline = pipeline
@@ -237,14 +237,14 @@ module SpriteBatch =
     let DestroySpriteBatchEnv env =
         
         // destroy Vulkan resources
-        let vkg = env.VulkanGlobal
-        Pipeline.Pipeline.destroy env.Pipeline vkg.Device
-        VulkanMemory.FifBuffer.destroy env.PerimetersUniform vkg
-        VulkanMemory.FifBuffer.destroy env.PivotsUniform vkg
-        VulkanMemory.FifBuffer.destroy env.RotationsUniform vkg
-        VulkanMemory.FifBuffer.destroy env.TexCoordsesUniform vkg
-        VulkanMemory.FifBuffer.destroy env.ColorsUniform vkg
-        VulkanMemory.FifBuffer.destroy env.ViewProjectionUniform vkg
+        let vkc = env.VulkanGlobal
+        Pipeline.Pipeline.destroy env.Pipeline vkc.Device
+        VulkanMemory.FifBuffer.destroy env.PerimetersUniform vkc
+        VulkanMemory.FifBuffer.destroy env.PivotsUniform vkc
+        VulkanMemory.FifBuffer.destroy env.RotationsUniform vkc
+        VulkanMemory.FifBuffer.destroy env.TexCoordsesUniform vkc
+        VulkanMemory.FifBuffer.destroy env.ColorsUniform vkc
+        VulkanMemory.FifBuffer.destroy env.ViewProjectionUniform vkc
         
         // reset sprite index
         env.SpriteIndex <- 0

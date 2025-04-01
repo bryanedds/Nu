@@ -555,8 +555,7 @@ module Hl =
                 | None -> ()
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
-    /// TODO: maybe rename this to VulkanContext.
-    type [<ReferenceEquality>] VulkanGlobal =
+    type [<ReferenceEquality>] VulkanContext =
         private
             { _Window : nativeint
               _Instance : VkInstance
@@ -887,143 +886,143 @@ module Hl =
             renderPass
 
         /// Update the swap extent.
-        static member updateSwapExtent vkg =
-            vkg._SwapExtent <- VulkanGlobal.getSwapExtent vkg._PhysicalDevice.SurfaceCapabilities vkg._Window
+        static member updateSwapExtent vkc =
+            vkc._SwapExtent <- VulkanContext.getSwapExtent vkc._PhysicalDevice.SurfaceCapabilities vkc._Window
         
         /// Begin the frame.
-        static member beginFrame (vkg : VulkanGlobal) =
+        static member beginFrame (vkc : VulkanContext) =
 
             // ensure current frame is ready
-            let mutable fence = vkg.InFlightFence
-            Vulkan.vkWaitForFences (vkg.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
+            let mutable fence = vkc.InFlightFence
+            Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
 
             // acquire image from swapchain to draw onto
-            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg._Swapchain.VkSwapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
+            Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
             // swap extent is updated here
-            //VulkanGlobal.updateSwapExtent vkg
+            //VulkanContext.updateSwapExtent vkc
             
             // swapchain refresh happens here so that vkAcquireNextImageKHR can detect screen size changes
-            //Swapchain.refresh vkg.SwapExtent vkg.PhysicalDevice vkg.RenderPass vkg.Surface vkg.Swapchain vkg.Device
+            //Swapchain.refresh vkc.SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
 
             // TODO: DJL: find out what's going on with the image available semaphore
             
             // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
-            Vulkan.vkResetFences (vkg.Device, 1u, asPointer &fence) |> check
+            Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
 
             // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
             // clear screen
             // TODO: DJL: clear viewport as well, as applicable.
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+            let renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            beginRenderBlock vkg.RenderCommandBuffer vkg._ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
-            endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] fence
+            beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
+            endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
 
         /// End the frame.
         static member endFrame () =
             () // nothing to do
 
         /// Present the image back to the swapchain to appear on screen.
-        static member present (vkg : VulkanGlobal) =
+        static member present (vkc : VulkanContext) =
 
             // transition image layout for presentation
-            let mutable renderFinished = vkg.RenderFinishedSemaphore
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-            beginRenderBlock vkg.RenderCommandBuffer vkg._PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
-            endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
+            let mutable renderFinished = vkc.RenderFinishedSemaphore
+            let renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
+            beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
+            endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
             
             // present image
-            let mutable swapchain = vkg._Swapchain.VkSwapchain
+            let mutable swapchain = vkc._Swapchain.VkSwapchain
             let mutable info = VkPresentInfoKHR ()
             info.waitSemaphoreCount <- 1u
             info.pWaitSemaphores <- asPointer &renderFinished
             info.swapchainCount <- 1u
             info.pSwapchains <- asPointer &swapchain
             info.pImageIndices <- asPointer &ImageIndex
-            Vulkan.vkQueuePresentKHR (vkg._PresentQueue, asPointer &info) |> check
+            Vulkan.vkQueuePresentKHR (vkc._PresentQueue, asPointer &info) |> check
 
             // advance frame in flight
             _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
-        static member waitIdle (vkg : VulkanGlobal) =
-            Vulkan.vkDeviceWaitIdle vkg.Device |> check
+        static member waitIdle (vkc : VulkanContext) =
+            Vulkan.vkDeviceWaitIdle vkc.Device |> check
 
         /// Destroy the Vulkan handles.
-        static member cleanup vkg =
-            Swapchain.destroy vkg._Swapchain vkg.Device
-            Vulkan.vkDestroyRenderPass (vkg.Device, vkg.RenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (vkg.Device, vkg._ClearRenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (vkg.Device, vkg._PresentRenderPass, nullPtr)
-            for i in 0 .. dec vkg._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg._ImageAvailableSemaphores.[i], nullPtr)
-            for i in 0 .. dec vkg._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg._RenderFinishedSemaphores.[i], nullPtr)
-            for i in 0 .. dec vkg._InFlightFences.Length do Vulkan.vkDestroyFence (vkg.Device, vkg._InFlightFences.[i], nullPtr)
-            Vulkan.vkDestroyFence (vkg.Device, vkg.ResourceReadyFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkg.Device, vkg._MainCommandPool, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransientCommandPool, nullPtr)
-            Vma.vmaDestroyAllocator vkg.VmaAllocator
-            Vulkan.vkDestroyDevice (vkg.Device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (vkg._Instance, vkg._Surface, nullPtr)
-            Vulkan.vkDestroyInstance (vkg._Instance, nullPtr)
+        static member cleanup vkc =
+            Swapchain.destroy vkc._Swapchain vkc.Device
+            Vulkan.vkDestroyRenderPass (vkc.Device, vkc.RenderPass, nullPtr)
+            Vulkan.vkDestroyRenderPass (vkc.Device, vkc._ClearRenderPass, nullPtr)
+            Vulkan.vkDestroyRenderPass (vkc.Device, vkc._PresentRenderPass, nullPtr)
+            for i in 0 .. dec vkc._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._ImageAvailableSemaphores.[i], nullPtr)
+            for i in 0 .. dec vkc._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._RenderFinishedSemaphores.[i], nullPtr)
+            for i in 0 .. dec vkc._InFlightFences.Length do Vulkan.vkDestroyFence (vkc.Device, vkc._InFlightFences.[i], nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.ResourceReadyFence, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc._MainCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
+            Vma.vmaDestroyAllocator vkc.VmaAllocator
+            Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
+            Vulkan.vkDestroySurfaceKHR (vkc._Instance, vkc._Surface, nullPtr)
+            Vulkan.vkDestroyInstance (vkc._Instance, nullPtr)
 
-        /// Attempt to create a VulkanGlobal.
+        /// Attempt to create a VulkanContext.
         static member tryCreate window =
 
             // load vulkan; not vulkan function
             Vulkan.vkInitialize () |> check
 
             // create instance
-            let instance = VulkanGlobal.createVulkanInstance window
+            let instance = VulkanContext.createVulkanInstance window
 
             // load instance commands; not vulkan function
             Vulkan.vkLoadInstanceOnly instance
 
             // create surface
-            let surface = VulkanGlobal.createVulkanSurface window instance
+            let surface = VulkanContext.createVulkanSurface window instance
 
             // attempt to select physical device
-            match VulkanGlobal.trySelectPhysicalDevice surface instance with
+            match VulkanContext.trySelectPhysicalDevice surface instance with
             | Some physicalDevice ->
 
                 // create device
-                let device = VulkanGlobal.createLogicalDevice physicalDevice
+                let device = VulkanContext.createLogicalDevice physicalDevice
 
                 // load device commands; not vulkan function
                 Vulkan.vkLoadDevice device
 
                 // create vma allocator
-                let allocator = VulkanGlobal.createVmaAllocator physicalDevice device instance
+                let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
 
                 // get surface format and swap extent
-                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDevice.Formats
-                let swapExtent = VulkanGlobal.getSwapExtent physicalDevice.SurfaceCapabilities window
+                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
+                let swapExtent = VulkanContext.getSwapExtent physicalDevice.SurfaceCapabilities window
 
                 // setup command system
-                let transientCommandPool = VulkanGlobal.createCommandPool true physicalDevice.GraphicsQueueFamily device
-                let mainCommandPool = VulkanGlobal.createCommandPool false physicalDevice.GraphicsQueueFamily device
-                let renderCommandBuffers = VulkanGlobal.allocateFifCommandBuffers mainCommandPool device
-                let textureCommandBuffers = VulkanGlobal.allocateFifCommandBuffers mainCommandPool device
-                let graphicsQueue = VulkanGlobal.getQueue physicalDevice.GraphicsQueueFamily device
-                let presentQueue = VulkanGlobal.getQueue physicalDevice.PresentQueueFamily device
+                let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
+                let mainCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
+                let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers mainCommandPool device
+                let textureCommandBuffers = VulkanContext.allocateFifCommandBuffers mainCommandPool device
+                let graphicsQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily device
+                let presentQueue = VulkanContext.getQueue physicalDevice.PresentQueueFamily device
 
                 // create sync objects
-                let imageAvailableSemaphores = VulkanGlobal.createSemaphores device
-                let renderFinishedSemaphores = VulkanGlobal.createSemaphores device
-                let inFlightFences = VulkanGlobal.createFences device
+                let imageAvailableSemaphores = VulkanContext.createSemaphores device
+                let renderFinishedSemaphores = VulkanContext.createSemaphores device
+                let inFlightFences = VulkanContext.createFences device
                 let resourceReadyFence = createFence false device
 
                 // render actual content; clear render area; transition layout for presentation
-                let renderPass = VulkanGlobal.createRenderPass false false surfaceFormat.format device
-                let clearRenderPass = VulkanGlobal.createRenderPass true false surfaceFormat.format device
-                let presentRenderPass = VulkanGlobal.createRenderPass false true surfaceFormat.format device
+                let renderPass = VulkanContext.createRenderPass false false surfaceFormat.format device
+                let clearRenderPass = VulkanContext.createRenderPass true false surfaceFormat.format device
+                let presentRenderPass = VulkanContext.createRenderPass false true surfaceFormat.format device
 
                 // setup swapchain
                 let swapchain = Swapchain.create surfaceFormat swapExtent physicalDevice renderPass surface device
 
-                // make VulkanGlobal
-                let vulkanGlobal =
+                // make VulkanContext
+                let vulkanContext =
                     { _Window = window
                       _Instance = instance
                       _Surface = surface
@@ -1047,7 +1046,7 @@ module Hl =
                       _SwapExtent = swapExtent }
 
                 // fin
-                Some vulkanGlobal
+                Some vulkanContext
 
             // failure
             | None -> None

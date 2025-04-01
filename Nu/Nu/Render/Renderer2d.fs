@@ -155,7 +155,7 @@ type [<ReferenceEquality>] StubRenderer2d =
 /// The Vulkan implementation of Renderer2d.
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
-        { VulkanGlobal : Hl.VulkanGlobal
+        { VulkanContext : Hl.VulkanContext
           SpritePipeline : VulkanMemory.FifBuffer * VulkanMemory.FifBuffer * VulkanMemory.FifBuffer * Pipeline.Pipeline
           TextQuad : VulkanMemory.Buffer * VulkanMemory.Buffer
           TextTexture : Texture.DynamicTexture
@@ -175,7 +175,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset -> ()
-        | TextureAsset texture -> texture.Destroy renderer.VulkanGlobal
+        | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -185,7 +185,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
-            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, renderer.VulkanGlobal) with
+            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, renderer.VulkanContext) with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->
@@ -263,7 +263,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         assetsToLoad.Add asset |> ignore<bool>
 
                 // preload assets in parallel
-                renderPackage.PackageState.PreloadAssets (true, assetsToLoad, renderer.VulkanGlobal)
+                renderPackage.PackageState.PreloadAssets (true, assetsToLoad, renderer.VulkanContext)
 
                 // load assets
                 let assetsLoaded = Dictionary ()
@@ -693,27 +693,27 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelViewProjection = modelMatrix * viewProjection
 
                             // load texture
-                            let vkg = renderer.VulkanGlobal
+                            let vkc = renderer.VulkanContext
                             Texture.DynamicTexture.loadBgra
-                                vkg.TextureCommandBuffer
-                                vkg.GraphicsQueue
+                                vkc.TextureCommandBuffer
+                                vkc.GraphicsQueue
                                 Vulkan.VK_FILTER_NEAREST
                                 Vulkan.VK_FILTER_NEAREST
                                 (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
                                 textSurface.pixels
-                                vkg.InFlightFence
+                                vkc.InFlightFence
                                 renderer.TextTexture
-                                vkg
+                                vkc
                             
                             // init render
                             Hl.beginRenderBlock
-                                vkg.RenderCommandBuffer
-                                vkg.RenderPass
-                                vkg.SwapchainFramebuffer
-                                (VkRect2D (VkOffset2D.Zero, vkg.SwapExtent))
+                                vkc.RenderCommandBuffer
+                                vkc.RenderPass
+                                vkc.SwapchainFramebuffer
+                                (VkRect2D (VkOffset2D.Zero, vkc.SwapExtent))
                                 [||]
                                 VkFence.Null
-                                vkg.Device
+                                vkc.Device
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
@@ -733,10 +733,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  texCoords4Uniform,
                                  colorUniform,
                                  pipeline,
-                                 vkg)
+                                 vkc)
 
                             // flush render commands
-                            Hl.endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [||] vkg.InFlightFence
+                            Hl.endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] vkc.InFlightFence
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
@@ -800,19 +800,19 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.ReloadAssetsRequested <- false
     
     /// Make a VulkanRenderer2d.
-    static member make (vkg : Hl.VulkanGlobal) =
+    static member make (vkc : Hl.VulkanContext) =
         
         // create text resources
-        let spritePipeline = Sprite.CreateSpritePipeline vkg
-        let textQuad = Sprite.CreateSpriteQuad true vkg
-        let textTexture = Texture.DynamicTexture.create vkg
+        let spritePipeline = Sprite.CreateSpritePipeline vkc
+        let textQuad = Sprite.CreateSpriteQuad true vkc
+        let textTexture = Texture.DynamicTexture.create vkc
         
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkg
+        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
         
         // make renderer
         let renderer =
-            { VulkanGlobal = vkg
+            { VulkanContext = vkc
               SpritePipeline = spritePipeline
               TextQuad = textQuad
               TextTexture = textTexture
@@ -835,16 +835,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         member renderer.CleanUp () =
             
             // destroy Vulkan resources
-            let vkg = renderer.VulkanGlobal
+            let vkc = renderer.VulkanContext
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Texture.DynamicTexture.destroy renderer.TextTexture vkg
-            Pipeline.Pipeline.destroy pipeline vkg.Device
-            VulkanMemory.FifBuffer.destroy modelViewProjectionUniform vkg
-            VulkanMemory.FifBuffer.destroy texCoords4Uniform vkg
-            VulkanMemory.FifBuffer.destroy colorUniform vkg
-            VulkanMemory.Buffer.destroy vertices vkg
-            VulkanMemory.Buffer.destroy indices vkg
+            Texture.DynamicTexture.destroy renderer.TextTexture vkc
+            Pipeline.Pipeline.destroy pipeline vkc.Device
+            VulkanMemory.FifBuffer.destroy modelViewProjectionUniform vkc
+            VulkanMemory.FifBuffer.destroy texCoords4Uniform vkc
+            VulkanMemory.FifBuffer.destroy colorUniform vkc
+            VulkanMemory.Buffer.destroy vertices vkc
+            VulkanMemory.Buffer.destroy indices vkc
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv
