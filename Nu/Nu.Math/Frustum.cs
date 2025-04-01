@@ -340,13 +340,12 @@ namespace Nu
         /// <param name="result"><c>true</c> if specified <see cref="Box3"/> intersects with this <see cref="Frustum"/>; <c>false</c> otherwise as an output parameter.</param>
         public void Intersects(in Box3 box, out bool result)
         {
-            if (this._bounds.Intersects(box))
+            this._bounds.Intersects(in box, out result);
+            if (result)
             {
-                var containment = default(ContainmentType);
-                this.Contains(in box, out containment);
+                this.Contains(in box, out var containment);
                 result = containment != ContainmentType.Disjoint;
             }
-            else result = false;
         }
 
         /// <summary>
@@ -463,7 +462,7 @@ namespace Nu
                 result = null;
                 return;
             }
-                
+
             result = null;
             return;
         }

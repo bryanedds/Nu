@@ -420,7 +420,7 @@ module TmxMap =
                             descriptors.Add
                                 { Elevation = transform.Elevation
                                   Horizon = transform.HorizonUnscaled // ignoring scale and orientation for tile map
-                                  AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
+                                  AssetTag = AssetTag.makeEmpty () // just disregard asset for render ordering
                                   RenderOperation2d =
                                     RenderTiles
                                         { Transform = transform
