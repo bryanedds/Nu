@@ -3372,7 +3372,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // update renderer values
                                 renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
 
-                                // next shadow
+                                // next shadow.
+                                // NOTE: this behavior completely DEPENDDS on shadow face messages for a shadow map
+                                // being received and processed in numerical order.
                                 if shadowFace = dec 6 then shadowMapBufferIndex <- inc shadowMapBufferIndex
 
                             | SpotLight (_, _) | DirectionalLight -> failwithumf ()
