@@ -2389,6 +2389,9 @@ module Light3dFacetExtensions =
         member this.GetAttenuationQuadratic world : single = this.Get (nameof this.AttenuationQuadratic) world
         member this.SetAttenuationQuadratic (value : single) world = this.Set (nameof this.AttenuationQuadratic) value world
         member this.AttenuationQuadratic = lens (nameof this.AttenuationQuadratic) this this.GetAttenuationQuadratic this.SetAttenuationQuadratic
+        member this.GetAutoAttenuate world : bool = this.Get (nameof this.AutoAttenuate) world
+        member this.SetAutoAttenuate (value : bool) world = this.Set (nameof this.AutoAttenuate) value world
+        member this.AutoAttenuate = lens (nameof this.AutoAttenuate) this this.GetAutoAttenuate this.SetAutoAttenuate
         member this.GetLightCutoff world : single = this.Get (nameof this.LightCutoff) world
         member this.SetLightCutoff (value : single) world = this.Set (nameof this.LightCutoff) value world
         member this.LightCutoff = lens (nameof this.LightCutoff) this this.GetLightCutoff this.SetLightCutoff
@@ -2406,6 +2409,20 @@ module Light3dFacetExtensions =
 type Light3dFacet () =
     inherit Facet (false, false, true)
 
+    static let handleLightingChange evt world =
+        let entity = evt.Subscriber : Entity
+        let brightness = entity.GetBrightness world
+        let lightCutoff = entity.GetLightCutoff world
+        let world =
+            if entity.GetAutoAttenuate world then
+                let world = entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
+                let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
+                world
+            else world
+        let size = v3Dup (lightCutoff * 2.0f)
+        let world = entity.SetSize size world
+        (Cascade, world)
+
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
          define Entity.Static true
@@ -2414,10 +2431,16 @@ type Light3dFacet () =
          define Entity.Brightness Constants.Render.BrightnessDefault
          define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
          define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
+         define Entity.AutoAttenuate true
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
          define Entity.LightType PointLight
          define Entity.DesireShadows false
          define Entity.DesireFog false]
+
+    override this.Register (entity, world) =
+        let world = World.sense handleLightingChange entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
+        let world = World.sense handleLightingChange entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
+        world
 
     override this.Render (renderPass, entity, world) =
         let lightId = entity.GetId world
@@ -2452,11 +2475,15 @@ type Light3dFacet () =
             world
 
     override this.RayCast (ray, entity, world) =
-        let intersectionOpt = ray.Intersects (entity.GetBounds world)
+        let boundsSize = v3Dup 0.25f
+        let bounds = box3 (entity.GetPosition world - boundsSize * 0.5f) boundsSize
+        let intersectionOpt = ray.Intersects bounds
         [|Intersection.ofNullable intersectionOpt|]
 
-    override this.GetAttributesInferred (_, _) =
-        AttributesInferred.important (v3Dup 0.25f) v3Zero
+    override this.GetAttributesInferred (entity, world) =
+        let lightCutoff = entity.GetLightCutoff world
+        let size = v3Dup (lightCutoff * 2.0f)
+        AttributesInferred.important size v3Zero
 
     override this.Edit (op, entity, world) =
         match op with
