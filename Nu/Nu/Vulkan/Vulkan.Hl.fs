@@ -17,7 +17,6 @@ module Hl =
     let mutable private DrawCallCount = 0
     let mutable private DrawInstanceCount = 0
 
-    /// Validation layers enabled.
     let private ValidationLayersEnabled =
 #if DEBUG
         true
@@ -25,6 +24,8 @@ module Hl =
         false
 #endif
 
+    let mutable private ValidationLayersActivated = false
+    
     /// Index of the current Swapchain image.
     let mutable private ImageIndex = 0u
 
@@ -630,17 +631,6 @@ module Hl =
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
 
-            // get sdl extensions
-            let mutable sdlExtensionCount = 0u
-            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null) |> checkSdl sdlGetInstanceExtensionsFail
-            let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut) |> checkSdl sdlGetInstanceExtensionsFail
-            let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
-            for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
-            use sdlExtensionsPin = new ArrayPin<_> (sdlExtensions)
-
-            // TODO: P0: DJL: setup message callback with debug utils.
-
             // get available instance layers
             let mutable layerCount = 0u
             Vulkan.vkEnumerateInstanceLayerProperties (asPointer &layerCount, nullPtr) |> check
@@ -652,7 +642,25 @@ module Hl =
             let validationLayer = "VK_LAYER_KHRONOS_validation"
             let validationLayerExists = Array.exists (fun x -> getLayerName x = validationLayer) layers
             if ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
+            ValidationLayersActivated <- ValidationLayersEnabled && validationLayerExists
+            use layerWrap = new StringArrayWrap ([|validationLayer|]) // must remain in scope until vkCreateInstance
 
+            // get sdl extensions
+            let mutable sdlExtensionCount = 0u
+            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null) |> checkSdl sdlGetInstanceExtensionsFail
+            let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
+            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut) |> checkSdl sdlGetInstanceExtensionsFail
+            let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
+            for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
+
+            // TODO: P0: DJL: setup message callback with debug utils.
+
+            // choose extensions
+            use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+            let debugUtilsArray = if ValidationLayersActivated then [|debugUtilsWrap.Pointer|] else [||]
+            let extensions = Array.append sdlExtensions debugUtilsArray
+            use extensionsPin = new ArrayPin<_> (extensions)
+            
             // TODO: P1: DJL: complete VkApplicationInfo before merging to master
             // and check for available vulkan version as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
@@ -665,15 +673,12 @@ module Hl =
             aInfo.apiVersion <- VkVersion.Version_1_4 // as unrestricted as possible for release
 #endif
 
-            // must be assigned outside conditional to remain in scope until vkCreateInstance
-            use layerWrap = new StringArrayWrap ([|validationLayer|])
-
             // create instance
             let mutable info = VkInstanceCreateInfo ()
             info.pApplicationInfo <- asPointer &aInfo
-            info.enabledExtensionCount <- sdlExtensionCount
-            info.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
-            if ValidationLayersEnabled && validationLayerExists then
+            info.enabledExtensionCount <- uint extensions.Length
+            info.ppEnabledExtensionNames <- extensionsPin.Pointer
+            if ValidationLayersActivated then
                 info.enabledLayerCount <- 1u
                 info.ppEnabledLayerNames <- layerWrap.Pointer
             let mutable instance = Unchecked.defaultof<VkInstance>

@@ -125,6 +125,12 @@ type StringWrap private (ptr : nativeptr<byte>) =
         let ptr = NativePtr.stringToUnmanaged str
         new StringWrap (ptr)
 
+    /// Create a StringWrap for a given span.
+    new (span : ReadOnlySpan<byte>) =
+        let str = NativePtr.spanToString span
+        let ptr = NativePtr.stringToUnmanaged str
+        new StringWrap (ptr)
+
     /// The native pointer to the unmanaged string.
     member this.Pointer = ptr
 
