@@ -59,7 +59,6 @@ module Gaia =
     let mutable private PropertyEditorFocusRequested = false
     let mutable private EntityHierarchySearchRequested = false
     let mutable private AssetViewerSearchRequested = false
-    let mutable private PropertyValueStrPrevious = ""
     let mutable private DragDropPayloadOpt = None
     let mutable private DragEntityState = DragEntityInactive
     let mutable private DragEyeState = DragEyeInactive
@@ -603,7 +602,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
              else (false, world)) with
         | (true, world) ->
             focusPropertyOpt None world
-            PropertyValueStrPrevious <- ""
             selectScreen false (World.getSelectedScreen world)
             if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
                 let group = Seq.head (World.getGroups SelectedScreen world)
@@ -632,7 +630,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
              else (false, world)) with
         | (true, world) ->
             focusPropertyOpt None world
-            PropertyValueStrPrevious <- ""
             selectScreen false (World.getSelectedScreen world)
             if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
                 let group = Seq.head (World.getGroups SelectedScreen world)
@@ -3165,7 +3162,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     propertyDescriptor.PropertyType = typeof<string Set> then
                                     ImGui.InputTextMultiline ("##propertyValueStr", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                                     world
-                                elif ImGui.InputTextMultiline ("##propertyValueStr", &propertyValueStr, 131072u, v2 -1.0f -1.0f) && propertyValueStr <> PropertyValueStrPrevious then
+                                elif ImGui.InputTextMultiline ("##propertyValueStr", &propertyValueStr, 131072u, v2 -1.0f -1.0f) then
                                     let pasts = Pasts
                                     let world =
                                         try let propertyValueEscaped = propertyValueStr
@@ -3181,7 +3178,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         with _ ->
                                             Pasts <- pasts
                                             world
-                                    PropertyValueStrPrevious <- propertyValueStr
                                     world
                                 else world
                             if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
