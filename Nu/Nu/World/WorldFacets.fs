@@ -2424,7 +2424,7 @@ type Light3dFacet () =
         (Cascade, world)
 
     static member Properties =
-        [define Entity.Size (v3Dup 0.25f)
+        [define Entity.Size (v3Dup (Constants.Render.LightCutoffDefault * 2.0f))
          define Entity.Static true
          define Entity.Light true
          define Entity.Color Color.White
