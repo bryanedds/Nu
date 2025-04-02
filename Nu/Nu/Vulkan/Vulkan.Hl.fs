@@ -137,6 +137,12 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan assertion failed due to: " + string result)
 
+    let private sdlGetInstanceExtensionsFail = "SDL_Vulkan_GetInstanceExtensions failed."
+    let private sdlCreateSurfaceFail = "SDL_Vulkan_CreateSurface failed."
+    
+    let private checkSdl errMsg result =
+        if int result = 0 then Log.error ("SDL error, " + errMsg)
+
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances =
         lock DrawReportLock (fun () ->
@@ -626,11 +632,9 @@ module Hl =
 
             // get sdl extensions
             let mutable sdlExtensionCount = 0u
-            let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
-            if int result = 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
+            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null) |> checkSdl sdlGetInstanceExtensionsFail
             let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-            let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
-            if int result = 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
+            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut) |> checkSdl sdlGetInstanceExtensionsFail
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
             use sdlExtensionsPin = new ArrayPin<_> (sdlExtensions)
@@ -679,8 +683,7 @@ module Hl =
         /// Create vulkan surface.
         static member private createVulkanSurface window instance =
             let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
-            let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(NativePtr.reinterpretRef<VkSurfaceKHR, uint64> &surface))
-            if int result = 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
+            SDL.SDL_Vulkan_CreateSurface (window, instance, &(NativePtr.reinterpretRef<VkSurfaceKHR, uint64> &surface)) |> checkSdl sdlCreateSurfaceFail
             surface
 
         /// Select compatible physical device if available.
