@@ -446,6 +446,7 @@ module Freezer3dFacetModule =
                                     let world = split.SetPresence presence world
                                     let world = split.SetPresenceConferred presenceConferred world
                                     let world = split.SetSurfaceMaterialsPopulated surfaceMaterialsPopulated world
+                                    let world = split.SetPickable false world
                                     splits.Add (splitKey, split)
                                     (split, world)
                             let descendent' =
@@ -456,7 +457,7 @@ module Freezer3dFacetModule =
                                 if descendent'.GetExists world
                                 then split / (descendent'.Name + Gen.name)
                                 else descendent'
-                            let world =  World.renameEntityImmediate descendent descendent' world
+                            let world = World.renameEntityImmediate descendent descendent' world
                             world
                         else world)
                         world descendents
