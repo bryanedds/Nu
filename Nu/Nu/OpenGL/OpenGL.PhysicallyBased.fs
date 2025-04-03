@@ -618,7 +618,7 @@ module PhysicallyBased =
 
         // create composition buffers
         let compositionBuffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right filterFogAccumBuffers -> filterFogAccumBuffers
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()

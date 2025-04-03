@@ -3292,8 +3292,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                             // draw shadow texture when not cached
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
-                                | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some shadowTextureBufferIndex ->
-                                    not (RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached)
+                                | (true, renderTasksCached) ->
+                                    if Option.contains shadowTextureBufferIndex renderTasksCached.ShadowBufferIndexOpt then
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached
+                                        not upToDate
+                                    else true
                                 | (_, _) -> true
                             if shouldDraw then
 
@@ -3358,8 +3361,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // once per face render here, but probably nothing worth caring about.
                                 let shouldDraw =
                                     match renderer.RenderPasses2.TryGetValue renderPass with
-                                    | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) ->
-                                        not (RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached)
+                                    | (true, renderTasksCached) ->
+                                        if Option.contains (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) renderTasksCached.ShadowBufferIndexOpt then
+                                            let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached
+                                            not upToDate
+                                        else true
                                     | (_, _) -> true
                                 if shouldDraw then
                                     let shadowResolution = renderer.GeometryViewport.ShadowResolution
