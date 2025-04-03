@@ -501,7 +501,13 @@ module PhysicallyBased =
 
     /// Describes the composition pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredCompositionShader =
-        { ColorTextureUniform : int
+        { EyeCenterUniform : int
+          FogEnabledUniform : int
+          FogStartUniform : int
+          FogFinishUniform : int
+          FogColorUniform : int
+          PositionTextureUniform : int
+          ColorTextureUniform : int
           FogAccumTextureUniform : int
           PhysicallyBasedDeferredCompositionShader : uint }
 
@@ -2143,11 +2149,23 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
+        let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
+        let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
+        let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
+        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
         let fogAccumTextureUniform = Gl.GetUniformLocation (shader, "fogAccumTexture")
 
         // make shader record
-        { ColorTextureUniform = colorTextureUniform
+        { EyeCenterUniform = eyeCenterUniform
+          FogEnabledUniform = fogEnabledUniform
+          FogStartUniform = fogStartUniform
+          FogFinishUniform = fogFinishUniform
+          FogColorUniform = fogColorUniform
+          PositionTextureUniform = positionTextureUniform
+          ColorTextureUniform = colorTextureUniform
           FogAccumTextureUniform = fogAccumTextureUniform
           PhysicallyBasedDeferredCompositionShader = shader }
 
@@ -3502,21 +3520,35 @@ module PhysicallyBased =
 
     /// Draw the bilateral up-sample pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredCompositionSurface
-        (colorTexture : Texture.Texture,
+        (eyeCenter : Vector3,
+         fogEnabled : int,
+         fogStart : single,
+         fogFinish : single,
+         fogColor : Color,
+         positionTexture : Texture.Texture,
+         colorTexture : Texture.Texture,
          fogAccumTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredCompositionShader) =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredCompositionShader
-        Gl.Uniform1 (shader.ColorTextureUniform, 0)
-        Gl.Uniform1 (shader.FogAccumTextureUniform, 1)
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
+        Gl.Uniform1 (shader.FogStartUniform, fogStart)
+        Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
+        Gl.Uniform3 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B)
+        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.ColorTextureUniform, 1)
+        Gl.Uniform1 (shader.FogAccumTextureUniform, 2)
         Hl.Assert ()
 
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, positionTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, fogAccumTexture.TextureId)
         Hl.Assert ()
 
@@ -3539,6 +3571,8 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 

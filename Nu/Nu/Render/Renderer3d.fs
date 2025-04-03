@@ -498,6 +498,11 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       LightShadowSampleScalar : single
       LightShadowExponent : single
       LightShadowDensity : single
+      FogEnabled : bool
+      FogStart : single
+      FogFinish : single
+      FogColor : Color
+      SsaoEnabled : bool
       SsaoIntensity : single
       SsaoBias : single
       SsaoRadius : single
@@ -531,6 +536,11 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           LightShadowSampleScalar = Constants.Render.LightShadowSampleScalarDefault
           LightShadowExponent = Constants.Render.LightShadowExponentDefault
           LightShadowDensity = Constants.Render.LightShadowDensityDefault
+          FogEnabled = Constants.Render.FogEnabledDefault
+          FogStart = Constants.Render.FogStartDefault
+          FogFinish = Constants.Render.FogFinishDefault
+          FogColor = Constants.Render.FogColorDefault
+          SsaoEnabled = Constants.Render.SsaoEnabledLocalDefault
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
@@ -567,7 +577,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
 
     static member defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
-          SsaoEnabled = Constants.Render.SsaoEnabledDefault
+          SsaoEnabled = Constants.Render.SsaoEnabledGlobalDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
           SsrEnabled = Constants.Render.SsrEnabledGlobalDefault }
@@ -2865,7 +2875,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssaoTextureFiltered =
 
             // but only if needed
-            if renderer.RendererConfig.SsaoEnabled then
+            if renderer.RendererConfig.SsaoEnabled && renderer.LightingConfig.SsaoEnabled then
 
                 // setup unfiltered ssao buffer and viewport
                 let ssaoResolution = renderer.GeometryViewport.SsaoResolution
@@ -2973,7 +2983,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render composition quad to composition buffers
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface (colorTexture, fogAccumTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredCompositionShader)
+        let fogEnabled = if renderer.LightingConfig.FogEnabled then 1 else 0
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface
+            (eyeCenter, fogEnabled, renderer.LightingConfig.FogStart, renderer.LightingConfig.FogFinish, renderer.LightingConfig.FogColor,
+             positionTexture, colorTexture, fogAccumTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredCompositionShader)
 
         // copy depths from geometry framebuffer to composition framebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)

@@ -17,6 +17,12 @@ void main()
 
 const float GAMMA = 2.2;
 
+uniform vec3 eyeCenter;
+uniform int fogEnabled;
+uniform float fogStart;
+uniform float fogFinish;
+uniform vec3 fogColor;
+uniform sampler2D positionTexture;
 uniform sampler2D colorTexture;
 uniform sampler2D fogAccumTexture;
 
@@ -29,10 +35,22 @@ void main()
     vec4 color = texture(colorTexture, texCoordsOut, 0);
     if (color.w == 1.0) // ensure fragment written
     {
+        // apply volumetric fog
         vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
         vec3 color = color.xyz + fogAccum;
         color = color / (color + vec3(1.0));
         color = pow(color, vec3(1.0 / GAMMA));
+
+        // compute and apply global fog when enabled
+        if (fogEnabled == 1)
+        {
+            vec4 position = texture(positionTexture, texCoordsOut, 0);
+            float depth = length(position.xyz - eyeCenter);
+            float fogFactor = 1.0 - smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish));
+            color = color * fogFactor + fogColor * (1.0 - fogFactor);
+        }
+
+        // write fragment
         frag = vec4(color, 1.0);
     }
 }
