@@ -42,7 +42,7 @@ module Framebuffer =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = colorId }
             Right (color, framebuffer, renderbuffer)
-        else Left "Could not create complete post-lighting framebuffer."
+        else Left "Could not create complete color framebuffer."
 
     /// Destroy color buffers.
     let DestroyColorBuffers (color : Texture.Texture, framebuffer, renderbuffer) =
