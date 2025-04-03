@@ -548,7 +548,7 @@ module PhysicallyBased =
 
         // create ambient buffers
         let ambientBuffers =
-            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right ambientBuffers -> ambientBuffers
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
@@ -597,7 +597,7 @@ module PhysicallyBased =
 
         // create specular screen up-sample buffers
         let specularScreenUpSampleBuffers =
-            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right specularScreenUpSampleBuffers -> specularScreenUpSampleBuffers
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
@@ -611,14 +611,14 @@ module PhysicallyBased =
 
         // create fog accum up-sample buffers
         let fogAccumUpSampleBuffers =
-            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right fogAccumUpSampleBuffers -> fogAccumUpSampleBuffers
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create composition buffers
         let compositionBuffers =
-            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right filterFogAccumBuffers -> filterFogAccumBuffers
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
@@ -647,15 +647,15 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyLightMappingBuffers buffers.LightMappingBuffers
         OpenGL.Framebuffer.DestroyIrradianceBuffers buffers.IrradianceBuffers
         OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers buffers.EnvironmentFilterBuffers
-        OpenGL.Framebuffer.DestroyHdrBuffers buffers.AmbientBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.AmbientBuffers
         OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersUnfiltered
         OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersFiltered
         OpenGL.Framebuffer.DestroyLightingBuffers buffers.LightingBuffers
         OpenGL.Framebuffer.DestroyFilterBilateralBuffers buffers.SpecularScreenDownSampleBuffers
-        OpenGL.Framebuffer.DestroyHdrBuffers buffers.SpecularScreenUpSampleBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.SpecularScreenUpSampleBuffers
         OpenGL.Framebuffer.DestroyFilterBilateralBuffers buffers.FogAccumDownSampleBuffers
-        OpenGL.Framebuffer.DestroyHdrBuffers buffers.FogAccumUpSampleBuffers
-        OpenGL.Framebuffer.DestroyHdrBuffers buffers.CompositionBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
         for shadowTextureBuffers in buffers.ShadowTextureBuffersArray do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers
         for shadowTextureBuffers2 in buffers.ShadowTextureBuffers2Array do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers2
         for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
