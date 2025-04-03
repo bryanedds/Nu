@@ -1416,10 +1416,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // error
         | Left error -> Left error
 
-    let private tryMakeSdlDeps windowSize =
+    let private tryMakeSdlDeps accompanied windowSize =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Gaia" }
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
-        match SdlDeps.tryMake sdlConfig windowSize with
+        match SdlDeps.tryMake sdlConfig accompanied windowSize with
         | Left msg -> Left msg
         | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
@@ -4655,7 +4655,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let outerViewport = Viewport.makeOuter windowSize
         let rasterViewport = Viewport.makeRaster outerViewport.Bounds
         let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
-        match tryMakeSdlDeps windowSize with
+        match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->
 
             // attempt to create the world

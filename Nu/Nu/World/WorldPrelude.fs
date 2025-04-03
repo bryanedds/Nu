@@ -660,7 +660,14 @@ module AmbientState =
 
     /// Attempt to check that the window is in a full screen state.
     let tryGetWindowFullScreen state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->            
+            let (width, height) = (ref 0, ref 0)
+            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
+            let mutable displayMode = Unchecked.defaultof<_>
+            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
+            Some (width.Value = displayMode.w || height.Value = displayMode.h)
+        | _ -> None
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =

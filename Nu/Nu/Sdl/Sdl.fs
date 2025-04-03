@@ -72,7 +72,11 @@ module SdlDeps =
         | Some (SglWindow window) ->
 
             // get a snapshot of whether screen was full
-            let wasFullScreen = SDL.SDL_GetWindowFlags window.SglWindow &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u
+            let (width, height) = (ref 0, ref 0)
+            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
+            let mutable displayMode = Unchecked.defaultof<_>
+            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
+            let wasFullScreen = width.Value = displayMode.w || height.Value = displayMode.h
 
             // change full screen status via flags
             let flags = if fullScreen then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP else 0u
@@ -111,7 +115,7 @@ module SdlDeps =
         else Left ("SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'.")
 
     /// Attempt to make an SdlDeps instance.
-    let tryMake sdlConfig (windowSize : Vector2i) =
+    let tryMake sdlConfig accompanied (windowSize : Vector2i) =
         match attemptPerformSdlInit
             (fun () ->
                 SDL.SDL_SetHint (SDL.SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1") |> ignore<SDL.SDL_bool>
@@ -135,6 +139,8 @@ module SdlDeps =
         | Right ((), destroy) ->
             match tryMakeSdlResource
                 (fun () ->
+                    
+                    // create window
                     let windowConfig = sdlConfig.WindowConfig
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<int>
@@ -145,7 +151,15 @@ module SdlDeps =
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
-                    SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, windowSize.X, windowSize.Y, windowConfig.WindowFlags))
+                    let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
+
+                    // set to full screen when window taking up entire screen and unaccompanied
+                    let mutable displayMode = Unchecked.defaultof<_>
+                    SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
+                    if windowSize.X = displayMode.w || windowSize.Y = displayMode.h && not accompanied then
+                        SDL.SDL_SetWindowFullscreen (window, uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) |> ignore
+                    window)
+
                 (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->
