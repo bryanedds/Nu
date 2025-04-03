@@ -156,7 +156,7 @@ module SdlDeps =
                     // set to full screen when window taking up entire screen and unaccompanied
                     let mutable displayMode = Unchecked.defaultof<_>
                     SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
-                    if windowSize.X = displayMode.w || windowSize.Y = displayMode.h && not accompanied then
+                    if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
                         SDL.SDL_SetWindowFullscreen (window, uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) |> ignore
                     window)
 
