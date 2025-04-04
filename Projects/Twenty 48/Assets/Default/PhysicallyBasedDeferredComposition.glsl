@@ -38,8 +38,6 @@ void main()
         // apply volumetric fog
         vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
         vec3 color = color.xyz + fogAccum;
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0 / GAMMA));
 
         // compute and apply global fog when enabled
         if (fogEnabled == 1)
@@ -49,6 +47,10 @@ void main()
             float fogFactor = 1.0 - smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish));
             color = color * fogFactor + fogColor * (1.0 - fogFactor);
         }
+
+        // apply tone mapping and gamma correction
+        color = color / (color + vec3(1.0));
+        color = pow(color, vec3(1.0 / GAMMA));
 
         // write fragment
         frag = vec4(color, 1.0);

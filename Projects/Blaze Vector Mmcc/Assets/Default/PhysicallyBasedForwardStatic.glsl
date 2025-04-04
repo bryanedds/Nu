@@ -84,6 +84,10 @@ uniform float lightShadowBias;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
 uniform float lightShadowSampleScalar;
+uniform int fogEnabled;
+uniform float fogStart;
+uniform float fogFinish;
+uniform vec3 fogColor;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -677,8 +681,18 @@ void main()
     vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
-    // compute color composition with tone mapping and gamma correction
+    // compute color composition
     vec3 color = lightAccum + diffuse + emission * albedo.rgb + specular;
+
+    // compute and apply global fog when enabled
+    if (fogEnabled == 1)
+    {
+        float depth = length(position.xyz - eyeCenter);
+        float fogFactor = 1.0 - smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish));
+        color = color * fogFactor + fogColor * (1.0 - fogFactor);
+    }
+
+    // apply tone mapping and gamma correction
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
 

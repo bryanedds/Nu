@@ -318,6 +318,10 @@ module PhysicallyBased =
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
+          FogEnabledUniform : int
+          FogStartUniform : int
+          FogFinishUniform : int
+          FogColorUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
@@ -1709,6 +1713,10 @@ module PhysicallyBased =
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
+        let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
+        let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
+        let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
+        let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
@@ -1774,6 +1782,10 @@ module PhysicallyBased =
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
+          FogEnabledUniform = fogEnabledUniform
+          FogStartUniform = fogStartUniform
+          FogFinishUniform = fogFinishUniform
+          FogColorUniform = fogColorUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -2659,6 +2671,10 @@ module PhysicallyBased =
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
+         fogEnabled : int,
+         fogStart : single,
+         fogFinish : single,
+         fogColor : Color,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
@@ -2743,6 +2759,10 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
+            Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
+            Gl.Uniform1 (shader.FogStartUniform, fogStart)
+            Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
+            Gl.Uniform3 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B)
             Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
             Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
             Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
