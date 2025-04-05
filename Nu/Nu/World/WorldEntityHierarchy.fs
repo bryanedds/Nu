@@ -441,6 +441,7 @@ module Freezer3dFacetModule =
                                     let dispatcher = this.GetDispatcher world
                                     let dispatacherName = getTypeName dispatcher
                                     let (split, world) = World.createEntity6 false dispatacherName DefaultOverlay (Some (Array.append splitParent.Surnames [|scstring splitKey|])) this.Group world
+                                    let world = split.SetMountOpt (Some (Relation.makeParent ())) world
                                     let world = split.SetStaticModel (AssetTag.makeEmpty ()) world
                                     let world = split.SetPositionLocal splitKey world
                                     let world = split.SetPresence presence world
@@ -485,7 +486,7 @@ module Freezer3dFacetModule =
         override this.Register (entity, world) =
             let world = entity.SetOffset v3Zero world
             let world = World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
-            let world = World.monitor handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity world
+            let world = World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
             world
 
         override this.Render (renderPass, entity, world) =
