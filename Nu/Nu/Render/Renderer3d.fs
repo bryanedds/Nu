@@ -1073,8 +1073,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         v2 (a / single samples) (b / single samples)
 
     static member private invalidateCaches renderer =
-        renderer.RenderPasses.Clear ()
-        renderer.RenderPasses2.Clear ()
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
@@ -1660,6 +1658,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private handleReloadRenderAssets renderer =
         GlRenderer3d.invalidateCaches renderer
+        renderer.RenderPasses.Clear (); renderer.RenderPasses2.Clear () // invalidate render task keys that now contain potentially stale data
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
