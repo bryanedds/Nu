@@ -1448,6 +1448,12 @@ type LightType =
         | SpotLight _ -> 1
         | DirectionalLight -> 2
 
+/// The type of subsurface scattering that a material utilizes.
+type ScatterType =
+    | NoScatter
+    | SkinScatter
+    | FoliageScatter
+
 [<RequireQualifiedAccess>]
 module Math =
 
