@@ -1066,6 +1066,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
+    static member private clearRenderPasses renderer =
+        renderer.RenderPasses.Clear ()
+        renderer.RenderPasses2.Clear ()
+
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match assetClient.TextureClient.TryCreateTextureFiltered (true, OpenGL.Texture.BlockCompressable asset.FilePath, asset.FilePath) with
@@ -1647,7 +1651,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private handleReloadRenderAssets renderer =
         GlRenderer3d.invalidateCaches renderer
-        renderer.RenderPasses.Clear (); renderer.RenderPasses2.Clear () // invalidate render task keys that now contain potentially stale data
+        GlRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
@@ -3049,6 +3053,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
             GlRenderer3d.invalidateCaches renderer
+            GlRenderer3d.clearRenderPasses renderer // force shadows to rerender
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
             renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
             renderer.GeometryViewport <- geometryViewport
