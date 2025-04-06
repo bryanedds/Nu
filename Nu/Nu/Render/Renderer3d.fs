@@ -685,18 +685,20 @@ type private SortableLight =
       SortableLightDesireShadows : int
       SortableLightDesireFog : int
       SortableLightBounds : Box3
-      mutable SortableLightDistanceSquared : single }
+      mutable SortableLightDistance : single }
 
     static member private project light =
         let directionalWeight = match light.SortableLightType with 2 -> -1 | _ -> 0
         let desiredShadowsWeight = -light.SortableLightDesireShadows
-        struct (directionalWeight, desiredShadowsWeight, light.SortableLightDistanceSquared)
+        struct (directionalWeight, light.SortableLightDistance, desiredShadowsWeight)
 
     /// Sort shadowing point lights.
     /// TODO: see if we can get rid of allocation here.
     static member sortShadowingPointLightsIntoArray lightsMax position lights =
         let lightsArray = Array.zeroCreate<_> lightsMax
-        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        for light in lights do
+            light.SortableLightDistance <-
+                (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
         let lightsSorted = lights |> Seq.toArray |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType = 0) |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
@@ -708,7 +710,9 @@ type private SortableLight =
     /// TODO: see if we can get rid of allocation here.
     static member sortShadowingSpotAndDirectionalLightsIntoArray lightsMax position lights =
         let lightsArray = Array.zeroCreate<_> lightsMax
-        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        for light in lights do
+            light.SortableLightDistance <-
+                (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
         let lightsSorted = lights |> Seq.toArray |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType <> 0) |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
@@ -731,7 +735,9 @@ type private SortableLight =
         let lightConeInners = Array.zeroCreate<single> lightsMax
         let lightConeOuters = Array.zeroCreate<single> lightsMax
         let lightDesireFogs = Array.zeroCreate<int> lightsMax
-        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        for light in lights do
+            light.SortableLightDistance <-
+                (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
@@ -1852,7 +1858,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                               SortableLightDesireShadows = 0
                               SortableLightDesireFog = 0
                               SortableLightBounds = lightBounds
-                              SortableLightDistanceSquared = Single.MaxValue }
+                              SortableLightDistance = Single.MaxValue }
                         renderTasks.Lights.Add light
                 for surface in modelAsset.Surfaces do
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then model else surface.SurfaceMatrix * model
@@ -3100,7 +3106,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
                       SortableLightDesireFog = if rl.DesireFog then 1 else 0
                       SortableLightBounds = rl.Bounds
-                      SortableLightDistanceSquared = Single.MaxValue }
+                      SortableLightDistance = Single.MaxValue }
                 renderTasks.Lights.Add light
                 if rl.DesireShadows then
                     renderer.LightsDesiringShadows.[rl.LightId] <- light

@@ -2099,9 +2099,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     | :? Screen as screen ->
                                         let mutable name = screen.Name
                                         ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                        ImGui.SameLine ()
+                                        ImGui.Text ("(" + string (screen.GetId world) + ")")
                                     | :? Group as group ->
                                         let mutable name = group.Name
                                         ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                        ImGui.SameLine ()
+                                        ImGui.Text ("(" + string (group.GetId world) + ")")
                                         ImGui.SameLine ()
                                         if not (group.GetProtected world) then
                                             if ImGui.Button "Rename" then
@@ -2115,6 +2119,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             if ImGui.Button "Rename" then
                                                 ShowRenameEntityDialog <- true
                                         else ImGui.Text "Name"
+                                        ImGui.SameLine ()
+                                        ImGui.Text ("(" + string (entity.GetId world) + ")")
                                     | _ -> ()
                                     if ImGui.IsItemFocused () then focusPropertyOpt None world
                                     world
