@@ -2953,6 +2953,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // deferred render fog accum quad to down-sample buffers
                 // NOTE: the depthTexture gets rendered redundantly here, but we're ignoring that inefficiency for now.
+                // TODO: P1: let's see if we can remember why we're rendering depth here and potentially avoid it for
+                // efficiency.
                 OpenGL.PhysicallyBased.DrawFilterBilateralDownSampleSurface (fogAccumTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterBilateralDownSample4dShader)
 
                 // setup fog accum up-sample buffers and viewport
