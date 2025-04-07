@@ -106,7 +106,7 @@ uniform float lightShadowSampleScalar;
 uniform int fogEnabled;
 uniform float fogStart;
 uniform float fogFinish;
-uniform vec3 fogColor;
+uniform vec4 fogColor;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -707,8 +707,8 @@ void main()
     if (fogEnabled == 1)
     {
         float depth = length(position.xyz - eyeCenter);
-        float fogFactor = 1.0 - smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish));
-        color = color * fogFactor + fogColor * (1.0 - fogFactor);
+        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish)) * fogColor.a;
+        color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
 
     // apply tone mapping and gamma correction
