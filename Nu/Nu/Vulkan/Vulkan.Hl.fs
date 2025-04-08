@@ -3,8 +3,11 @@
 
 namespace Vortice.Vulkan
 open System
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open System.Collections.Generic
 open System.IO
+open FSharp.NativeInterop
 open SDL2
 open Vortice.ShaderCompiler
 open Prime
@@ -628,6 +631,30 @@ module Hl =
         /// The current swapchain framebuffer.
         member this.SwapchainFramebuffer = this._Swapchain.Framebuffer
 
+        [<UnmanagedCallersOnly>]
+        static member private debugCallback
+            (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT,
+             messageTypes : VkDebugUtilsMessageTypeFlagsEXT,
+             callbackData : nativeint,
+             userData : nativeint) : uint =
+            
+            Vulkan.VK_FALSE
+        
+        static member private makeDebugMessengerInfo () =
+            let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
+            info.messageSeverity <-
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |||
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |||
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |||
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+            info.messageType <-
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |||
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |||
+                Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+            info.pfnUserCallback // TODO: DJL: put pointer to debugCallback here!
+            info.pUserData <- nullVoidPtr
+            info
+        
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
 
@@ -685,6 +712,13 @@ module Hl =
             Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> check
             instance
 
+        static member private tryCreateDebugMessenger info instance =
+            if ValidationLayersActivated then
+                let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
+                Vulkan.vkCreateDebugUtilsMessengerEXT (instance, &info, nullPtr, &debugMessenger) |> check
+                Some debugMessenger
+            else None
+        
         /// Create vulkan surface.
         static member private createVulkanSurface window instance =
             let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
@@ -981,12 +1015,18 @@ module Hl =
             // load vulkan; not vulkan function
             Vulkan.vkInitialize () |> check
 
+            // make debug info
+            let debugInfo = VulkanContext.makeDebugMessengerInfo ()
+            
             // create instance
             let instance = VulkanContext.createVulkanInstance window
 
             // load instance commands; not vulkan function
             Vulkan.vkLoadInstanceOnly instance
 
+            // create debug messenger if validation activated
+            let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
+            
             // create surface
             let surface = VulkanContext.createVulkanSurface window instance
 

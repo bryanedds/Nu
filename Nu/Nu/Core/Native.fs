@@ -87,10 +87,14 @@ module NativePtr =
 [<AutoOpen>]
 module NativePtrOperators =
 
-    /// Null Pointer.
+    /// Null pointer.
     let nullPtr =
         NativePtr.nullPtr
 
+    /// Null void pointer.
+    let nullVoidPtr =
+        IntPtr.Zero.ToPointer()
+    
     /// Convert a managed pointer to a typed native pointer.
     let inline asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         NativePtr.asPointer<'a> &managedPtr
