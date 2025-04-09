@@ -8477,7 +8477,7 @@
         <member name="M:Assimp.Scene.FreeUnmanagedScene(System.IntPtr)">
             <summary>
             Frees unmanaged memory allocated -ONLY- in <see cref="M:Assimp.Scene.ToUnmanagedScene(Assimp.Scene)"/>. To free an unmanaged scene allocated by the unmanaged Assimp library,
-            call the appropiate <see cref="M:Assimp.Unmanaged.AssimpLibrary.ReleaseImport(System.IntPtr)"/> function.
+            call the appropriate <see cref="M:Assimp.Unmanaged.AssimpLibrary.ReleaseImport(System.IntPtr)"/> function.
             </summary>
             <param name="scenePtr">Pointer to unmanaged scene data.</param>
         </member>
@@ -9763,7 +9763,7 @@
             Exports the given scene to a chosen file format and writes the result file(s) to disk.
             </summary>
             <param name="scene">The scene to export, which needs to be freed by the caller. The scene is expected to conform to Assimp's Importer output format. In short,
-            this means the model data should use a right handed coordinate system, face winding should be counter clockwise, and the UV coordinate origin assumed to be upper left. If the input is different, specify the pre processing flags appropiately.</param>
+            this means the model data should use a right handed coordinate system, face winding should be counter clockwise, and the UV coordinate origin assumed to be upper left. If the input is different, specify the pre processing flags appropriately.</param>
             <param name="formatId">Format id describing which format to export to.</param>
             <param name="fileName">Output filename to write to</param>
             <param name="preProcessing">Pre processing flags - accepts any post processing step flag. In reality only a small subset are actually supported, e.g. to ensure the input
@@ -9775,7 +9775,7 @@
             Exports the given scene to a chosen file format and writes the result file(s) to disk.
             </summary>
             <param name="scene">The scene to export, which needs to be freed by the caller. The scene is expected to conform to Assimp's Importer output format. In short,
-            this means the model data should use a right handed coordinate system, face winding should be counter clockwise, and the UV coordinate origin assumed to be upper left. If the input is different, specify the pre processing flags appropiately.</param>
+            this means the model data should use a right handed coordinate system, face winding should be counter clockwise, and the UV coordinate origin assumed to be upper left. If the input is different, specify the pre processing flags appropriately.</param>
             <param name="formatId">Format id describing which format to export to.</param>
             <param name="fileName">Output filename to write to</param>
             <param name="fileIO">Pointer to an instance of AiFileIO, a custom file IO system used to open the model and 
