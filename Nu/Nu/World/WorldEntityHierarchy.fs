@@ -462,6 +462,7 @@ module Freezer3dFacetModule =
                             world
                         else world)
                         world descendents
+                let world = Seq.fold (fun world (split : Entity) -> split.SetFrozen frozen world) world splits.Values
                 let world = World.destroyEntityImmediate this world
                 let world = World.renameEntityImmediate splitParent this world
                 world
