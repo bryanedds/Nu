@@ -1225,15 +1225,10 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
     member internal this.PresenceInPlay = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
 
-    /// Copy an entity state.
-    /// This is used when we want to retain an old version of an entity state in face of mutation.
-    static member inline copy (entityState : EntityState) =
-        { entityState with EntityState.Dispatcher = entityState.Dispatcher }
-
     /// Copy an entity state, invalidating the incoming reference.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
-    static member inline diverge (entityState : EntityState) =
-        let entityState' = EntityState.copy entityState
+    static member inline copy (entityState : EntityState) =
+        let entityState' = { entityState with EntityState.Dispatcher = entityState.Dispatcher }
         Transform.invalidateFastInternal &entityState.Transform // OPTIMIZATION: invalidate fast.
         entityState'
 
@@ -1251,7 +1246,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
         match Xtension.trySetProperty propertyName property entityState.Xtension with
         | struct (true, xtension) ->
             entityState.Xtension <- xtension // redundant if xtension is imperative
@@ -1260,21 +1255,21 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
         let xtension = Xtension.setProperty propertyName property entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
 
     /// Attach an xtension property.
     static member attachProperty name property (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
         let xtension = Xtension.attachProperty name property entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
 
     /// Detach an xtension property.
     static member detachProperty name (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
         let xtension = Xtension.detachProperty name entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState

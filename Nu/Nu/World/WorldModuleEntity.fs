@@ -273,7 +273,7 @@ module WorldModuleEntity =
                     else
                         let properties = UMap.makeFromSeq StringComparer.Ordinal Functional (Xtension.toSeq entityState.Xtension)
                         let xtension = Xtension.make false properties
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Xtension <- xtension
                         entityState.Imperative <- false
                         struct (entityState, World.setEntityState entityState entity world)
@@ -419,7 +419,7 @@ module WorldModuleEntity =
                         entityState.PublishChangeEvents <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.PublishChangeEvents <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.PublishChangeEvents) previous value entityState.PublishChangeEvents entity world
@@ -435,7 +435,7 @@ module WorldModuleEntity =
                         entityState.PublishUpdates <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.PublishUpdates <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.PublishUpdates) previous value entityState.PublishChangeEvents entity world
@@ -450,7 +450,7 @@ module WorldModuleEntity =
                     entityState.Protected <- value
                     struct (true, world)
                 else
-                    let entityState = EntityState.diverge entityState
+                    let entityState = EntityState.copy entityState
                     entityState.Protected <- value
                     struct (true, World.setEntityState entityState entity world)
             else struct (false, world)
@@ -464,7 +464,7 @@ module WorldModuleEntity =
                         entityState.Persistent <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Persistent <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.Persistent) previous value entityState.PublishChangeEvents entity world
@@ -480,7 +480,7 @@ module WorldModuleEntity =
                         entityState.Mounted <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Mounted <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.Mounted) previous value entityState.PublishChangeEvents entity world
@@ -496,7 +496,7 @@ module WorldModuleEntity =
                         entityState.PropagatedDescriptorOpt <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.PropagatedDescriptorOpt <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.PropagatedDescriptorOpt) previous value entityState.PublishChangeEvents entity world
@@ -695,7 +695,7 @@ module WorldModuleEntity =
                         entityState.PresenceOverride <- value
                         world
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.PresenceOverride <- value
                         World.setEntityState entityState entity world
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
@@ -817,7 +817,7 @@ module WorldModuleEntity =
                         entityState.PropagationSourceOpt <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.PropagationSourceOpt <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInPropagationTargets previous value entity world
@@ -841,7 +841,7 @@ module WorldModuleEntity =
                         entityState.Absolute <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Absolute <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
@@ -866,7 +866,7 @@ module WorldModuleEntity =
                         entityState.Static <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Static <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
@@ -890,7 +890,7 @@ module WorldModuleEntity =
                         entityState.AlwaysUpdate <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.AlwaysUpdate <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
@@ -914,7 +914,7 @@ module WorldModuleEntity =
                         entityState.AlwaysRender <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.AlwaysRender <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
@@ -938,7 +938,7 @@ module WorldModuleEntity =
                         entityState.Presence <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Presence <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
@@ -1463,7 +1463,7 @@ module WorldModuleEntity =
                         entityState.Enabled <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Enabled <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
@@ -1481,7 +1481,7 @@ module WorldModuleEntity =
                         entityState.EnabledLocal <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.EnabledLocal <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
@@ -1522,7 +1522,7 @@ module WorldModuleEntity =
                         entityState.Visible <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.Visible <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
@@ -1541,7 +1541,7 @@ module WorldModuleEntity =
                         entityState.VisibleLocal <- value
                         struct (entityState, world)
                     else
-                        let entityState = EntityState.diverge entityState
+                        let entityState = EntityState.copy entityState
                         entityState.VisibleLocal <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
@@ -1564,7 +1564,7 @@ module WorldModuleEntity =
                     entityState.CastShadow <- value
                     struct (true, world)
                 else
-                    let entityState = EntityState.diverge entityState
+                    let entityState = EntityState.copy entityState
                     entityState.CastShadow <- value
                     struct (true, World.setEntityState entityState entity world)
             else struct (false, world)
@@ -1577,7 +1577,7 @@ module WorldModuleEntity =
                     entityState.Pickable <- value
                     struct (true, world)
                 else
-                    let entityState = EntityState.diverge entityState
+                    let entityState = EntityState.copy entityState
                     entityState.Pickable <- value
                     struct (true, World.setEntityState entityState entity world)
             else struct (false, world)
@@ -1718,11 +1718,11 @@ module WorldModuleEntity =
                         struct (entityState, world)
                     | None -> struct (entityState, world)
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
-                let entityState = Reflection.detachPropertiesViaNames EntityState.diverge propertyNames entityState
+                let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
                 let entityState =
                     let facetNames = Set.remove facetName entityState.FacetNames
                     let facets = Array.remove ((=) facet) entityState.Facets
-                    let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                    let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
                     entityState.FacetNames <- facetNames
                     entityState.Facets <- facets
                     entityState
@@ -1749,11 +1749,11 @@ module WorldModuleEntity =
                     let entityState =
                         let facetNames = Set.add facetName entityState.FacetNames
                         let facets = Array.add facet entityState.Facets
-                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
                         entityState.FacetNames <- facetNames
                         entityState.Facets <- facets
                         entityState
-                    let entityState = Reflection.attachProperties EntityState.diverge facet entityState world
+                    let entityState = Reflection.attachProperties EntityState.copy facet entityState world
                     match entityOpt with
                     | Some entity ->
                         let world = World.setEntityState entityState entity world
@@ -1806,7 +1806,7 @@ module WorldModuleEntity =
         static member internal attachIntrinsicFacetsViaNames entityState world =
             let entityDispatchers = World.getEntityDispatchers world
             let facets = World.getFacets world
-            Reflection.attachIntrinsicFacets EntityState.diverge entityDispatchers facets entityState.Dispatcher entityState world
+            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.Dispatcher entityState world
 
         static member internal applyEntityOverlay overlayerOld overlayer world entity =
             let entityState = World.getEntityState entity world
@@ -1820,11 +1820,11 @@ module WorldModuleEntity =
                 let presenceInPlayOld = entityState.PresenceInPlay
                 let boundsOld = entityState.Bounds
                 let facetNamesOld = entityState.FacetNames
-                let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayName overlayName entityState overlayerOld overlayer
+                let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayName overlayName entityState overlayerOld overlayer
                 match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
                 | Right (entityState, world) ->
                     let facetNames = World.getEntityFacetNamesReflectively entityState
-                    let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState overlayerOld overlayer
+                    let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState overlayerOld overlayer
                     let world = World.setEntityState entityState entity world
                     World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
@@ -2177,7 +2177,7 @@ module WorldModuleEntity =
 
         static member internal divergeEntity entity world =
             let entityState = World.getEntityState entity world
-            let entityState = EntityState.diverge entityState
+            let entityState = EntityState.copy entityState
             World.setEntityState entityState entity world
 
         static member internal registerEntity entity world =
@@ -2700,7 +2700,7 @@ module WorldModuleEntity =
                 let overlayer = World.getOverlayer world
                 let (entityState, world) =
                     let facetNamesOld = entityState.FacetNames
-                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayerNameOld overlayName entityState overlayer overlayer
+                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayerNameOld overlayName entityState overlayer overlayer
                     match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.error error; (entityState, world)
