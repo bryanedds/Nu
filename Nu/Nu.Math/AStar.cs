@@ -10,8 +10,7 @@ namespace Nu
     // If this implementation turns out to work poorly, there's also this one -
     // http://ffogd.blogspot.com/2011/02/f-a-star-algorithm-with-priority-queue.html
     //
-    // I was considering using QuickGraph, but it hasn't been maintained in years and doesn't work
-    // on the Mono runtime, apparently due to strong-naming issues -
+    // I was considering using QuickGraph, but it hasn't been maintained in years -
     // http://quickgraph.codeplex.com/workitem/25587
 
     public class Path<Node> : IEnumerable<Node>

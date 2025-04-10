@@ -68,7 +68,7 @@ type TextEditData =
 /// The data for a physics integration event.
 type IntegrationData =
     { /// The integration messages sourced from a physics engine.
-      /// Do NOT change the content of this collection as it is exposed as a SArray for speed.
+      /// Do NOT change the content of this collection as it is exposed as an SArray for speed.
       IntegrationMessages : IntegrationMessage SArray }
 
 /// The data of a body transform event.
@@ -83,14 +83,14 @@ type BodyPenetrationData =
       BodyShapePenetratee : BodyShapeIndex
       Normal : Vector3 }
 
-/// The explicit data for a separation event.
+/// The data for an explicit separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationExplicitData =
     { BodyShapeSeparator : BodyShapeIndex
       BodyShapeSeparatee : BodyShapeIndex }
 
-/// The implicit data for a separation event.
+/// The data for an implicit separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationImplicitData =
