@@ -17,6 +17,12 @@ namespace Nu
     /// </summary>
     public static class Math
     {
+        unsafe public static void* GetFunctionAddress<T>(object fn)
+        {
+            var fnAsT = (T)fn;
+            return &fnAsT;
+        }
+
         /// <summary>
         /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView.
         /// </summary>

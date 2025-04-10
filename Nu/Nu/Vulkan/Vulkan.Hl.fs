@@ -563,6 +563,9 @@ module Hl =
                 match swapchain._SwapchainInternalOpts.[i] with
                 | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
                 | None -> ()
+
+    type DebugCallbackType =
+        (VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint) -> uint
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
@@ -641,6 +644,7 @@ module Hl =
             Vulkan.VK_FALSE
         
         static member private makeDebugMessengerInfo () =
+            let userCallback = Math.GetFunctionAddress<DebugCallbackType> VulkanContext.debugCallback |> Branchless.reinterpret
             let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
             info.messageSeverity <-
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |||
@@ -651,7 +655,7 @@ module Hl =
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |||
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |||
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
-            info.pfnUserCallback // TODO: DJL: put pointer to debugCallback here!
+            info.pfnUserCallback <- userCallback
             info.pUserData <- nullVoidPtr
             info
         
