@@ -314,7 +314,7 @@ module WorldEntityModule =
         member this.MountEvent = Events.MountEvent --> this
         member this.UnmountEvent = Events.UnmountEvent --> this
         member this.BodyPenetrationEvent = Events.BodyPenetrationEvent --> this
-        member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
+        member this.BodySeparationEvent = Events.BodySeparationEvent --> this
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
         /// Get the optional presence override.

@@ -104,10 +104,9 @@ module WorldImNui =
         /// ImGui subscribe to the given entity's body events.
         static member doSubscriptionToBodyEvents name (entity : Entity) (world : World) : BodyEventData FQueue * World =
             let (penetrations, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyPenetrationData data)) name entity.BodyPenetrationEvent world
-            let (separationExplicits, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationExplicitData data)) name entity.BodySeparationExplicitEvent world
-            let (separationImplicits, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationImplicitData data)) name entity.BodySeparationImplicitEvent world
+            let (separations, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationData data)) name entity.BodySeparationEvent world
             let (bodyTransforms, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyTransformData data)) name entity.BodyTransformEvent world
-            let results = penetrations |> Seq.append separationExplicits |> Seq.append separationImplicits |> Seq.append bodyTransforms |> List
+            let results = penetrations |> Seq.append separations |> Seq.append bodyTransforms |> List
             results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
             let results = results |> Seq.map snd |> FQueue.ofSeq
             (results, world)
@@ -115,8 +114,7 @@ module WorldImNui =
         /// TODO: document this!
         static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetrationData event.Data) world)) entity.BodyPenetrationEvent entity world
-            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicitData event.Data) world)) entity.BodySeparationExplicitEvent entity world
-            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicitData event.Data) world)) entity.BodySeparationImplicitEvent entity world
+            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationData event.Data) world)) entity.BodySeparationEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransformData event.Data) world)) entity.BodyTransformEvent entity world
             world
 

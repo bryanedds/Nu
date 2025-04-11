@@ -1271,10 +1271,11 @@ module WorldModule2 =
                     | :? Entity as entity ->
                         if entity.GetExists world && entity.GetSelected world then
                             let separationData =
-                                { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
-                                  BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
+                                BodySeparationExplicitData
+                                    { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
+                                      BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus separationData entity.BodySeparationExplicitEvent eventTrace entity false false world
+                            World.publishPlus separationData entity.BodySeparationEvent eventTrace entity false false world
                         else world
                     | _ -> world
                 | BodyTransformMessage bodyTransformMessage ->
