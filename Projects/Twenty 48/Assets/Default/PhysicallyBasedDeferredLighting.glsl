@@ -184,7 +184,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, float ligh
         travel /= 9.0;
 
         // negatively exponentiate travel, clamping to keep in range
-        travel = exp(-travel * lightCutoff);
+        travel = exp(-travel * lightCutoff * 10.0);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
     }
@@ -215,7 +215,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, float lightCut
     travel /= 8.0;
 
     // negatively exponentiate travel, clamping to keep in range
-    travel = exp(-travel * lightCutoff);
+    travel = exp(-travel * lightCutoff * 10.0);
     travel = clamp(travel, 0.0, 1.0);
     return travel;
 }
