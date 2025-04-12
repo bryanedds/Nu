@@ -183,7 +183,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, float ligh
         }
         travel /= 9.0;
 
-        // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
+        // negatively exponentiate travel, clamping to keep in range
         travel = exp(-travel * lightCutoff);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
@@ -214,7 +214,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, float lightCut
     }
     travel /= 8.0;
 
-    // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
+    // negatively exponentiate travel, clamping to keep in range
     travel = exp(-travel * lightCutoff);
     travel = clamp(travel, 0.0, 1.0);
     return travel;
@@ -732,7 +732,7 @@ void main()
             // accumulate subsurface scattering
             float scatterType = scatterPlus.a;
             vec3 scattering = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
-            scatterAccum += kD * scattering * radiance * (nDotL > 0.0 ? nDotL * shadowScalar : max(dot(-normal, l), 0.0));
+            scatterAccum += kD * scattering * radiance;
 
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
