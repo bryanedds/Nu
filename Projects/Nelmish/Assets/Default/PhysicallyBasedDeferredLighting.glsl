@@ -176,7 +176,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float travelMax = 0.01; // TODO: see if we can make this unnecessary or expose as a global uniform.
+                float travelMax = 0.05; // TODO: see if we can make this unnecessary or expose as a global uniform.
                 float delta = min(shadowZ - shadowDepth, travelMax);
                 travel += delta;
             }
@@ -207,7 +207,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, samplerCube sh
             {
                 vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
                 float shadowDepth = texture(shadowMap, positionShadow + offset).x;
-                float travelMax = 0.01; // TODO: see if we can make this unnecessary or expose as a global uniform.
+                float travelMax = 0.05; // TODO: see if we can make this unnecessary or expose as a global uniform.
                 float delta = min(shadowZ - shadowDepth, travelMax);
                 travel += delta;
             }
