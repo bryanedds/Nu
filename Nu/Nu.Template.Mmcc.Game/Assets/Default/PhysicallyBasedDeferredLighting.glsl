@@ -185,7 +185,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
         travel /= 9.0;
 
         // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        float sssShadowExponent = 192.0; // TODO: expose a global uniform for this.
+        float sssShadowExponent = 300.0; // TODO: expose a global uniform for this.
         travel = exp(-travel * sssShadowExponent);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
@@ -217,7 +217,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, samplerCube sh
     travel /= 8.0;
 
     // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-    float sssShadowExponent = 192.0; // TODO: expose a global uniform for this.
+    float sssShadowExponent = 300.0; // TODO: expose a global uniform for this.
     travel = exp(-travel * sssShadowExponent);
     travel = clamp(travel, 0.0, 1.0);
     return travel;
@@ -285,9 +285,9 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec4 subdermalPlus,
     float trace = 1.0;
     if (shadowIndex >= 0)
         trace =
-        lightType == 0 ?
-        geometryTraceFromShadowMap(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
-        geometryTraceFromShadowTexture(position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            lightType == 0 ?
+            geometryTraceFromShadowMap(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
+            geometryTraceFromShadowTexture(position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
 
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
