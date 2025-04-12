@@ -23,6 +23,7 @@ const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const float GEOMETRY_TRACE_DELTA_MAX = 0.01; // NOTE: this keeps surfaces hovering over an infinite distance background from adding unusable samples into their sample set.
 
 const vec4 SSVF_DITHERING[4] =
 vec4[](
@@ -176,15 +177,14 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, float ligh
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float travelMax = 0.05; // TODO: see if we can make this unnecessary or expose as a global uniform.
-                float delta = min(shadowZ - shadowDepth, travelMax);
+                float delta = min(shadowZ - shadowDepth, GEOMETRY_TRACE_DELTA_MAX);
                 travel += delta;
             }
         }
         travel /= 9.0;
 
         // negatively exponentiate travel, clamping to keep in range
-        travel = exp(-travel * lightCutoff * 10.0);
+        travel = exp(-travel * lightCutoff);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
     }
@@ -206,8 +206,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, float lightCut
             {
                 vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
                 float shadowDepth = texture(shadowMap, positionShadow + offset).x;
-                float travelMax = 0.05; // TODO: see if we can make this unnecessary or expose as a global uniform.
-                float delta = min(shadowZ - shadowDepth, travelMax);
+                float delta = min(shadowZ - shadowDepth, GEOMETRY_TRACE_DELTA_MAX);
                 travel += delta;
             }
         }
@@ -215,7 +214,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, float lightCut
     travel /= 8.0;
 
     // negatively exponentiate travel, clamping to keep in range
-    travel = exp(-travel * lightCutoff * 10.0);
+    travel = exp(-travel * lightCutoff);
     travel = clamp(travel, 0.0, 1.0);
     return travel;
 }
@@ -731,8 +730,9 @@ void main()
 
             // accumulate subsurface scattering
             float scatterType = scatterPlus.a;
-            vec3 scattering = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
-            scatterAccum += kD * scattering * radiance * max(0.25, shadowScalar); // HACK: maxing shadowScalar is a visual hack here to help blend forward scattering with back scattering.
+            vec3 scatter = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
+            float shadowScalarScatter = shadowScalar * (nDotL > 0.0 ? 1.0 : 1.0 - max(dot(normal, -l), 0.0)); // HACK: we blend shadow toward the backfaces in order to blend with backscattering on the forward faces.
+            scatterAccum += kD * scatter * radiance * shadowScalarScatter;
 
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
