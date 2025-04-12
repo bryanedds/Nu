@@ -732,7 +732,7 @@ void main()
             // accumulate subsurface scattering
             float scatterType = scatterPlus.a;
             vec3 scattering = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
-            scatterAccum += kD * scattering * radiance * max(0.5, shadowScalar); // HACK: maxing shadowScalar is a visual hack here to help blend forward scattering with back scattering.
+            scatterAccum += kD * scattering * radiance * max(0.25, shadowScalar); // HACK: maxing shadowScalar is a visual hack here to help blend forward scattering with back scattering.
 
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
