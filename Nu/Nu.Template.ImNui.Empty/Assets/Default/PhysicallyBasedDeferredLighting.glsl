@@ -273,13 +273,11 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, float intensity, vec2 texCoords, int lightIndex)
+vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
     int lightType = lightTypes[lightIndex];
     vec3 lightOrigin = lightOrigins[lightIndex];
-    vec3 lightColor = lightColors[lightIndex];
-    float lightBrightness = lightBrightnesses[lightIndex];
     int shadowIndex = lightShadowIndices[lightIndex];
 
     // compute geometry trace length, defaulting to 1.0 when no shadow present for this light index
@@ -296,9 +294,6 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 s
     vec3 scatter = scatterPlus.rgb;
     float scatterType = scatterPlus.a;
     vec3 radii = thickness * scatter.rgb * trace;
-    vec3 subcolor = subdermal * lightColor * lightBrightness;
-    vec3 l = normalize(lightOrigin - position.xyz);
-    float nDotL = max(dot(normal, l), 0.0);
     if (scatterType == 1.0) // skin formula
     {
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
@@ -307,14 +302,14 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 s
             0.2 *
             pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
             pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
-        return subcolor * radii * scalar * intensity;
+        return subdermal * radii * scalar;
     }
     else if (scatterType == 2.0) // foliage formula
     {
         vec3 scalar =
             0.2 *
             exp(-3.0 * abs(nDotL) / (radii + 0.001));
-        return subcolor * radii * scalar * intensity;
+        return subdermal * radii * scalar;
     }
     return vec3(0.0); // nop formula
 }
@@ -735,7 +730,7 @@ void main()
             float scatterType = scatterPlus.a;
             vec3 scattering =
                 scatterType != 0.0 ?
-                computeSubsurfaceScattering(position, albedo, normal, subdermalPlus, scatterPlus, intensity, texCoordsOut, i) :
+                computeSubsurfaceScattering(position, albedo, normal, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) :
                 vec3(0.0);
 
             // add to outgoing lightAccum
