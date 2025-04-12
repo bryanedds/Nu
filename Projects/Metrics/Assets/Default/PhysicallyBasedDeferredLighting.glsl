@@ -23,7 +23,6 @@ const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
-const float FORWARD_SCATTERING_SCALAR = 0.1; // NOTE: this value is a total contrivance to make forward-scattering look more proportionate with back-scattering in the skin case.
 
 const vec4 SSVF_DITHERING[4] =
 vec4[](
@@ -666,6 +665,7 @@ void main()
         float nDotV = max(dot(normal, v), 0.0);
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         vec3 lightAccum = vec3(0.0);
+        vec3 scatterAccum = vec3(0.0);
         for (int i = 0; i < lightsCount; ++i)
         {
             // per-light radiance
@@ -727,14 +727,13 @@ void main()
             vec3 kD = vec3(1.0) - kS;
             kD *= 1.0 - metallic;
 
-            // compute subsurface scattering
+            // accumulate light
+            lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+
+            // accumulate subsurface scattering
             float scatterType = scatterPlus.a;
             vec3 scattering = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
-            vec3 backScattering = kD * scattering * radiance * nDotL * shadowScalar;
-            vec3 forwardScattering = scattering * radiance * (1.0 - nDotL) * FORWARD_SCATTERING_SCALAR;
-
-            // accumulate light
-            lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar + backScattering + forwardScattering;
+            scatterAccum += kD * scattering * radiance * (nDotL > 0.0 ? nDotL * shadowScalar : max(dot(-normal, l), 0.0));
 
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
@@ -794,7 +793,7 @@ void main()
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
         // write remaining lighting values
-        color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+        color = vec4(lightAccum + scatterAccum + diffuse + emission * albedo + specular, 1.0);
         depth = depthViewToDepthBuffer(positionView.z);
     }
 }
