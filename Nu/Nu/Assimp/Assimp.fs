@@ -337,8 +337,8 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
-        member this.ThicknessOffsetOpt =
-            match this.TryGetMaterialProperty Constants.Assimp.ThicknessOffsetPropertyName with
+        member this.FinenessOffsetOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.FinenessOffsetPropertyName with
             | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
@@ -455,9 +455,9 @@ module AssimpExtensions =
                 | _ -> ValueNone
             else ValueNone
 
-        member this.ThicknessOffsetOpt =
+        member this.FinenessOffsetOpt =
             let mutable entry = Unchecked.defaultof<_>
-            if this.Metadata.TryGetValue (Constants.Render.ThicknessOffsetName, &entry) then
+            if this.Metadata.TryGetValue (Constants.Render.FinenessOffsetName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<single> |> ValueSome

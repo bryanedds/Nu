@@ -116,7 +116,7 @@ module WorldEntityHierarchy =
                             let renderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
                             let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps Constants.Render.IgnoreLightMapsDefault staticModelMetadata.SceneOpt surface
                             let opaqueDistance = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
-                            let thicknessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractThicknessOffset Constants.Render.ThicknessOffsetDefault staticModelMetadata.SceneOpt surface
+                            let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
                             let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
@@ -135,7 +135,7 @@ module WorldEntityHierarchy =
                                   HeightOpt = ValueSome surface.SurfaceMaterialProperties.Height
                                   IgnoreLightMapsOpt = ValueSome ignoreLightMaps
                                   OpaqueDistanceOpt = ValueSome opaqueDistance
-                                  ThicknessOffsetOpt = ValueSome thicknessOffset
+                                  FinenessOffsetOpt = ValueSome finenessOffset
                                   ScatterTypeOpt = ValueSome scatterType }
                             let world = child.SetMaterialProperties properties world
                             let material =
@@ -148,7 +148,7 @@ module WorldEntityHierarchy =
                                       NormalImageOpt = Metadata.tryGetStaticModelNormalImage surface.SurfaceMaterialIndex staticModel
                                       HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
                                       SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
-                                      ThicknessImageOpt = Metadata.tryGetStaticModelThicknessImage surface.SurfaceMaterialIndex staticModel
+                                      FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                       ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
                                       TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
@@ -218,8 +218,8 @@ module WorldEntityHierarchy =
                                 let renderType = match renderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                                 let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps metadata.SceneOpt surface
                                 let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } else properties
-                                let thicknessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractThicknessOffset properties.ThicknessOffset metadata.SceneOpt surface
-                                let properties = if thicknessOffset <> properties.ThicknessOffset then { properties with ThicknessOffsetOpt = ValueSome thicknessOffset } else properties
+                                let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset metadata.SceneOpt surface
+                                let properties = if finenessOffset <> properties.FinenessOffset then { properties with FinenessOffsetOpt = ValueSome finenessOffset } else properties
                                 let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType metadata.SceneOpt surface
                                 let properties = if scatterType <> properties.ScatterType then { properties with ScatterTypeOpt = ValueSome scatterType } else properties
                                 let material =
@@ -232,7 +232,7 @@ module WorldEntityHierarchy =
                                           NormalImageOpt = Metadata.tryGetStaticModelNormalImage surface.SurfaceMaterialIndex staticModel
                                           HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
                                           SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
-                                          ThicknessImageOpt = Metadata.tryGetStaticModelThicknessImage surface.SurfaceMaterialIndex staticModel
+                                          FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                           ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty

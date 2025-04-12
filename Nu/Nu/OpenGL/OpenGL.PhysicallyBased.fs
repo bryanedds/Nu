@@ -44,7 +44,7 @@ module PhysicallyBased =
           Height : single
           IgnoreLightMaps : bool
           OpaqueDistance : single
-          ThicknessOffset : single
+          FinenessOffset : single
           ScatterType : ScatterType }
 
         /// The empty material properties.
@@ -57,7 +57,7 @@ module PhysicallyBased =
               Height = 0.0f
               IgnoreLightMaps = false
               OpaqueDistance = 0.0f
-              ThicknessOffset = 0.0f
+              FinenessOffset = 0.0f
               ScatterType = NoScatter }
 
     /// Describes a physically-based material.
@@ -70,7 +70,7 @@ module PhysicallyBased =
           NormalTexture : Texture.Texture
           HeightTexture : Texture.Texture
           SubdermalTexture : Texture.Texture
-          ThicknessTexture : Texture.Texture
+          FinenessTexture : Texture.Texture
           ScatterTexture : Texture.Texture
           TwoSided : bool }
 
@@ -84,7 +84,7 @@ module PhysicallyBased =
               NormalTexture = Texture.EmptyTexture
               HeightTexture = Texture.EmptyTexture
               SubdermalTexture = Texture.EmptyTexture
-              ThicknessTexture = Texture.EmptyTexture
+              FinenessTexture = Texture.EmptyTexture
               ScatterTexture = Texture.EmptyTexture
               TwoSided = false }
 
@@ -168,15 +168,15 @@ module PhysicallyBased =
                 | Some _ | None -> opaqueDistanceDefault
             | ValueSome opaqueDistance -> opaqueDistance
 
-        static member extractThicknessOffset thicknessOffsetDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.ThicknessOffsetOpt with
+        static member extractFinenessOffset finenessOffsetDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.FinenessOffsetOpt with
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue thicknessOffsetDefault material.ThicknessOffsetOpt
-                | Some _ | None -> thicknessOffsetDefault
-            | ValueSome thicknessOffset -> thicknessOffset
+                    ValueOption.defaultValue finenessOffsetDefault material.FinenessOffsetOpt
+                | Some _ | None -> finenessOffsetDefault
+            | ValueSome finenessOffset -> finenessOffset
 
         static member extractScatterType scatterTypeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.ScatterTypeOpt with
@@ -212,7 +212,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
             left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
             left.SurfaceMaterial.SubdermalTexture = right.SurfaceMaterial.SubdermalTexture &&
-            left.SurfaceMaterial.ThicknessTexture = right.SurfaceMaterial.ThicknessTexture &&
+            left.SurfaceMaterial.FinenessTexture = right.SurfaceMaterial.FinenessTexture &&
             left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
@@ -228,7 +228,7 @@ module PhysicallyBased =
                 (hash material.NormalTexture <<< 10) ^^^
                 (hash material.HeightTexture <<< 12) ^^^
                 (hash material.SubdermalTexture <<< 14) ^^^
-                (hash material.ThicknessTexture <<< 16) ^^^
+                (hash material.FinenessTexture <<< 16) ^^^
                 (hash material.ScatterTexture <<< 18) ^^^
                 (hash material.TwoSided <<< 20) ^^^
                 (int geometry.PrimitiveType <<< 22) ^^^
@@ -260,7 +260,7 @@ module PhysicallyBased =
         let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
         let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
         let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
-        let extractThicknessOffset = PhysicallyBasedSurface.extractThicknessOffset
+        let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
@@ -334,7 +334,7 @@ module PhysicallyBased =
           NormalTextureUniform : int
           HeightTextureUniform : int
           SubdermalTextureUniform : int
-          ThicknessTextureUniform : int
+          FinenessTextureUniform : int
           ScatterTextureUniform : int
           BrdfTextureUniform : int
           IrradianceMapUniform : int
@@ -734,7 +734,7 @@ module PhysicallyBased =
         let nTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_n")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_n")                    else ""
         let hTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_h")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_h")                    else ""
         let subdermalTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_subdermal")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_subdermal")            else ""
-        let thicknessTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_thickness")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_thickness")            else ""
+        let finenessTextureFilePath =           if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_fineness")                elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_fineness")             else ""
         let scatterTextureFilePath =            if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_scatter")                 elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_scatter")              else ""
         let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                else ""
         let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")              elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")               else ""
@@ -748,7 +748,7 @@ module PhysicallyBased =
         let emissionTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emission")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emission")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emission")          else ""
         let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")            else ""
         let subdermalTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Subdermal")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Subdermal")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Subdermal")         else ""
-        let thicknessTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Thickness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Thickness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Thickness")         else ""
+        let finenessTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Fineness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Fineness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Fineness")         else ""
         let scatterTextureFilePath' =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Scatter")            elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Scatter")          elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Scatter")           else ""
 
         // attempt to load roughness info
@@ -931,17 +931,17 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.SubdermalTexture
             else defaultMaterial.SubdermalTexture
 
-        // attempt to load thickness info
-        let thicknessOffset = Constants.Render.ThicknessOffsetDefault
-        let thicknessTexture =
+        // attempt to load fineness info
+        let finenessOffset = Constants.Render.FinenessOffsetDefault
+        let finenessTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + thicknessTextureFilePath) with
+                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + finenessTextureFilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + thicknessTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + finenessTextureFilePath') with
                     | Right texture -> texture
-                    | Left _ -> defaultMaterial.ThicknessTexture
-            else defaultMaterial.ThicknessTexture
+                    | Left _ -> defaultMaterial.FinenessTexture
+            else defaultMaterial.FinenessTexture
 
         // attempt to load scatter info
         let scatterType = Constants.Render.ScatterTypeDefault
@@ -971,7 +971,7 @@ module PhysicallyBased =
               Height = height
               IgnoreLightMaps = ignoreLightMaps
               OpaqueDistance = opaqueDistance
-              ThicknessOffset = thicknessOffset
+              FinenessOffset = finenessOffset
               ScatterType = scatterType }
 
         // make material
@@ -984,7 +984,7 @@ module PhysicallyBased =
               NormalTexture = normalTexture
               HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
-              ThicknessTexture = thicknessTexture
+              FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
               TwoSided = twoSided }
 
@@ -1729,7 +1729,7 @@ module PhysicallyBased =
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let heightTextureUniform = Gl.GetUniformLocation (shader, "heightTexture")
         let subdermalTextureUniform = Gl.GetUniformLocation (shader, "subdermalTexture")
-        let thicknessTextureUniform = Gl.GetUniformLocation (shader, "thicknessTexture")
+        let finenessTextureUniform = Gl.GetUniformLocation (shader, "finenessTexture")
         let scatterTextureUniform = Gl.GetUniformLocation (shader, "scatterTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
@@ -1798,7 +1798,7 @@ module PhysicallyBased =
           NormalTextureUniform = normalTextureUniform
           HeightTextureUniform = heightTextureUniform
           SubdermalTextureUniform = subdermalTextureUniform
-          ThicknessTextureUniform = thicknessTextureUniform
+          FinenessTextureUniform = finenessTextureUniform
           ScatterTextureUniform = scatterTextureUniform
           BrdfTextureUniform = brdfTextureUniform
           IrradianceMapUniform = irradianceMapUniform
@@ -2565,7 +2565,7 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.NormalTextureUniform, 5)
             Gl.Uniform1 (shader.HeightTextureUniform, 6)
             Gl.Uniform1 (shader.SubdermalTextureUniform, 7)
-            Gl.Uniform1 (shader.ThicknessTextureUniform, 8)
+            Gl.Uniform1 (shader.FinenessTextureUniform, 8)
             Gl.Uniform1 (shader.ScatterTextureUniform, 9)
             Hl.Assert ()
 
@@ -2590,7 +2590,7 @@ module PhysicallyBased =
             Gl.ActiveTexture TextureUnit.Texture7
             Gl.BindTexture (TextureTarget.Texture2d, material.SubdermalTexture.TextureId)
             Gl.ActiveTexture TextureUnit.Texture8
-            Gl.BindTexture (TextureTarget.Texture2d, material.ThicknessTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, material.FinenessTexture.TextureId)
             Gl.ActiveTexture TextureUnit.Texture9
             Gl.BindTexture (TextureTarget.Texture2d, material.ScatterTexture.TextureId)
             Hl.Assert ()

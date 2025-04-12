@@ -71,7 +71,7 @@ uniform sampler2D emissionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D heightTexture;
 uniform sampler2D subdermalTexture;
-uniform sampler2D thicknessTexture;
+uniform sampler2D finenessTexture;
 uniform sampler2D scatterTexture;
 
 in vec4 positionOut;
@@ -146,10 +146,10 @@ void main()
 
     // compute subsurface scattering properties
     vec4 subdermal = texture(subdermalTexture, texCoords);
-    float thickness = texture(thicknessTexture, texCoords).r;
-    float thicknessOffset = subsurfacePlusOut.r;
+    float fineness = texture(finenessTexture, texCoords).r;
+    float finenessOffset = subsurfacePlusOut.r;
     subdermalPlus.rgb = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
-    subdermalPlus.a = clamp(thickness + thicknessOffset, 0.0, 1.5);
+    subdermalPlus.a = clamp(fineness + finenessOffset, 0.0, 1.5);
     vec4 scatter = texture(scatterTexture, texCoords);
     float scatterType = subsurfacePlusOut.g;
     if (scatter.a == 0.0)

@@ -78,7 +78,7 @@ type [<SymbolicExpansion>] MaterialProperties =
       HeightOpt : single voption
       IgnoreLightMapsOpt : bool voption
       OpaqueDistanceOpt : single voption
-      ThicknessOffsetOpt : single voption
+      FinenessOffsetOpt : single voption
       ScatterTypeOpt : ScatterType voption }
 
     member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
@@ -89,7 +89,7 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.Height = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
     member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
-    member this.ThicknessOffset = ValueOption.defaultValue Constants.Render.ThicknessOffsetDefault this.ThicknessOffsetOpt
+    member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
 
 [<RequireQualifiedAccess>]
@@ -105,7 +105,7 @@ module MaterialProperties =
           HeightOpt = ValueSome Constants.Render.HeightDefault
           IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
-          ThicknessOffsetOpt = ValueSome Constants.Render.ThicknessOffsetDefault
+          FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
           ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault }
 
     /// Empty material properties.
@@ -118,7 +118,7 @@ module MaterialProperties =
           HeightOpt = ValueNone
           IgnoreLightMapsOpt = ValueNone
           OpaqueDistanceOpt = ValueNone
-          ThicknessOffsetOpt = ValueNone
+          FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone }
 
 /// Material description for surfaces.
@@ -131,7 +131,7 @@ type [<SymbolicExpansion>] Material =
       NormalImageOpt : Image AssetTag voption
       HeightImageOpt : Image AssetTag voption
       SubdermalImageOpt : Image AssetTag voption
-      ThicknessImageOpt : Image AssetTag voption
+      FinenessImageOpt : Image AssetTag voption
       ScatterImageOpt : Image AssetTag voption
       TwoSidedOpt : bool voption }
 
@@ -143,7 +143,7 @@ type [<SymbolicExpansion>] Material =
     member this.NormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
     member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
     member this.SubdermalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName) this.SubdermalImageOpt
-    member this.ThicknessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialThicknessName) this.ThicknessImageOpt
+    member this.FinenessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName) this.FinenessImageOpt
     member this.ScatterImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialScatterName) this.ScatterImageOpt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
 
@@ -160,7 +160,7 @@ module Material =
           NormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
           HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
           SubdermalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName)
-          ThicknessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialThicknessName)
+          FinenessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName)
           ScatterImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialScatterName)
           TwoSidedOpt = ValueSome false }
 
@@ -174,7 +174,7 @@ module Material =
           NormalImageOpt = ValueNone
           HeightImageOpt = ValueNone
           SubdermalImageOpt = ValueNone
-          ThicknessImageOpt = ValueNone
+          FinenessImageOpt = ValueNone
           ScatterImageOpt = ValueNone
           TwoSidedOpt = ValueNone }
 
@@ -337,7 +337,7 @@ type StaticModelSurfaceDescriptor =
       NormalImage : Image AssetTag
       HeightImage : Image AssetTag
       SubdermalImage : Image AssetTag
-      ThicknessImage : Image AssetTag
+      FinenessImage : Image AssetTag
       ScatterImage : Image AssetTag
       TwoSided : bool }
 
@@ -1400,7 +1400,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       Height = surfaceDescriptor.MaterialProperties.Height
                       IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
-                      ThicknessOffset = surfaceDescriptor.MaterialProperties.ThicknessOffset
+                      FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
                       ScatterType = surfaceDescriptor.MaterialProperties.ScatterType }
 
                 // make material
@@ -1413,7 +1413,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       NormalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.NormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
                       HeightTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.HeightImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
                       SubdermalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.SubdermalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
-                      ThicknessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ThicknessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ThicknessTexture
+                      FinenessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.FinenessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
                       ScatterTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ScatterImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
                       TwoSided = surfaceDescriptor.TwoSided }
 
@@ -1868,8 +1868,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let renderType = match renderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                     let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps modelAsset.SceneOpt surface
                     let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } else properties
-                    let thicknessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractThicknessOffset properties.ThicknessOffset modelAsset.SceneOpt surface
-                    let properties = if thicknessOffset <> properties.ThicknessOffset then { properties with ThicknessOffsetOpt = ValueSome thicknessOffset } else properties
+                    let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset modelAsset.SceneOpt surface
+                    let properties = if finenessOffset <> properties.FinenessOffset then { properties with FinenessOffsetOpt = ValueSome finenessOffset } else properties
                     let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType modelAsset.SceneOpt surface
                     let properties = if scatterType <> properties.ScatterType then { properties with ScatterTypeOpt = ValueSome scatterType } else properties
                     let unculled =
@@ -2116,7 +2116,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
-            let thicknessOffset = match properties.ThicknessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ThicknessOffset
+            let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
@@ -2130,7 +2130,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- thicknessOffset
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- match scatterType with NoScatter -> 0.0f | SkinScatter -> 1.0f | FoliageScatter -> 2.0f
 
         // draw deferred surfaces
@@ -2167,7 +2167,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
-            let thicknessOffset = match properties.ThicknessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ThicknessOffset
+            let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
@@ -2181,7 +2181,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- thicknessOffset
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- match scatterType with NoScatter -> 0.0f | SkinScatter -> 1.0f | FoliageScatter -> 2.0f
 
         // draw forward surfaces
@@ -2207,7 +2207,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               Height = Option.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
               IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
-              ThicknessOffset = Constants.Render.ThicknessOffsetDefault
+              FinenessOffset = Constants.Render.FinenessOffsetDefault
               ScatterType = Constants.Render.ScatterTypeDefault }
         let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
@@ -2338,10 +2338,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             match GlRenderer3d.tryGetRenderAsset material.SubdermalImage renderer with
             | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
-        let thicknessTexture =
-            match GlRenderer3d.tryGetRenderAsset material.ThicknessImage renderer with
+        let finenessTexture =
+            match GlRenderer3d.tryGetRenderAsset material.FinenessImage renderer with
             | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.ThicknessTexture
+            | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
         let scatterTexture =
             match GlRenderer3d.tryGetRenderAsset material.ScatterImage renderer with
             | ValueSome (TextureAsset texture) -> texture
@@ -2355,7 +2355,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               Height = properties.Height
               IgnoreLightMaps = properties.IgnoreLightMaps
               OpaqueDistance = properties.OpaqueDistance
-              ThicknessOffset = properties.ThicknessOffset
+              FinenessOffset = properties.FinenessOffset
               ScatterType = properties.ScatterType }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
@@ -2366,7 +2366,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               NormalTexture = normalTexture
               HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
-              ThicknessTexture = thicknessTexture
+              FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
               TwoSided = true }
         struct (properties, material)
@@ -2421,13 +2421,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.HeightTexture
             | ValueNone -> surfaceMaterial.HeightTexture
-        let thicknessTexture =
-            match material.ThicknessImageOpt with
+        let finenessTexture =
+            match material.FinenessImageOpt with
             | ValueSome image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.ThicknessTexture
-            | ValueNone -> surfaceMaterial.ThicknessTexture
+                | _ -> surfaceMaterial.FinenessTexture
+            | ValueNone -> surfaceMaterial.FinenessTexture
         let subdermalTexture =
             match material.SubdermalImageOpt with
             | ValueSome image ->
@@ -2455,7 +2455,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               NormalTexture = normalTexture
               HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
-              ThicknessTexture = thicknessTexture
+              FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
               TwoSided = twoSided }
         surfaceMaterial
@@ -3639,10 +3639,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, true, "Assets/Default/MaterialSubdermal.dds") with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
-            let thicknessTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, true, "Assets/Default/MaterialThickness.dds") with
+            let finenessTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, true, "Assets/Default/MaterialFineness.dds") with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
-                | Left error -> failwith ("Could not load material thickness texture due to: " + error)
+                | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, true, "Assets/Default/MaterialSubdermal.dds") with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
@@ -3655,7 +3655,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               NormalTexture = normalTexture
               HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
-              ThicknessTexture = thicknessTexture
+              FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
               TwoSided = false }
 

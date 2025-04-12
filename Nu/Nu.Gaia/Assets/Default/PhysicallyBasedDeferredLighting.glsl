@@ -23,6 +23,7 @@ const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const float FORWARD_SCATTERING_SCALAR = 0.1; // NOTE: this value is a total contrivance to make forward-scattering look more proportionate with back-scattering in the skin case.
 
 const vec4 SSVF_DITHERING[4] =
 vec4[](
@@ -189,7 +190,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
         travel = clamp(travel, 0.0, 1.0);
         return travel;
     }
-    
+
     // tracing out of range, return default
     return 1.0;
 }
@@ -273,7 +274,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
+vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
     int lightType = lightTypes[lightIndex];
@@ -284,16 +285,16 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec3 normal, vec4 s
     float trace = 1.0;
     if (shadowIndex >= 0)
         trace =
-            lightType == 0 ?
-            geometryTraceFromShadowMap(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
-            geometryTraceFromShadowTexture(position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+        lightType == 0 ?
+        geometryTraceFromShadowMap(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
+        geometryTraceFromShadowTexture(position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
 
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
-    float thickness = subdermalPlus.a;
+    float fineness = subdermalPlus.a;
     vec3 scatter = scatterPlus.rgb;
     float scatterType = scatterPlus.a;
-    vec3 radii = thickness * scatter.rgb * trace;
+    vec3 radii = fineness * scatter.rgb * trace;
     if (scatterType == 1.0) // skin formula
     {
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
@@ -705,9 +706,9 @@ void main()
             float shadowScalar = 1.0f;
             if (shadowIndex >= 0)
                 shadowScalar =
-                    shadowIndex < SHADOW_TEXTURES_MAX ?
-                    computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
-                    computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+                shadowIndex < SHADOW_TEXTURES_MAX ?
+                computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
 
             // cook-torrance brdf
             float hDotV = max(dot(h, v), 0.0);
@@ -728,13 +729,12 @@ void main()
 
             // compute subsurface scattering
             float scatterType = scatterPlus.a;
-            vec3 scattering =
-                scatterType != 0.0 ?
-                computeSubsurfaceScattering(position, albedo, normal, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) :
-                vec3(0.0);
+            vec3 scattering = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
+            vec3 backScattering = kD * scattering * radiance * nDotL * shadowScalar;
+            vec3 forwardScattering = scattering * radiance * (1.0 - nDotL) * FORWARD_SCATTERING_SCALAR;
 
-            // add to outgoing lightAccum
-            lightAccum += (kD * (albedo / PI + scattering) + specular) * radiance * nDotL * shadowScalar;
+            // accumulate light
+            lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar + backScattering + forwardScattering;
 
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
@@ -742,9 +742,9 @@ void main()
                 vec3 fog = vec3(0.0);
                 switch (lightType)
                 {
-                    case 0: { fog = computeFogAccumPoint(position, i); break; } // point
-                    case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
-                    default: { fog = computeFogAccumDirectional(position, i); break; } // directional
+                case 0: { fog = computeFogAccumPoint(position, i); break; } // point
+                case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
+                default: { fog = computeFogAccumDirectional(position, i); break; } // directional
                 }
                 fogAccum += vec4(fog, 0.0);
             }

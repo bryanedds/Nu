@@ -656,7 +656,7 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelThicknessImage materialIndex model =
+    let private tryGetModelFinenessImage materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
@@ -669,10 +669,10 @@ module Metadata =
                     let hasBaseColor =      albedoAssetName.Contains "BaseColor"
                     let hasDiffuse =        albedoAssetName.Contains "Diffuse"
                     let hasAlbedo =         albedoAssetName.Contains "Albedo"
-                    let thicknessAsset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_thickness")             elif has_d then albedoAssetName.Replace ("_d", "_thickness")            else "")
-                    let thicknessAsset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Thickness")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Thickness")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Thickness") else "")
-                    if getMetadataExists thicknessAsset then ValueSome thicknessAsset
-                    elif getMetadataExists thicknessAsset' then ValueSome thicknessAsset'
+                    let finenessAsset =     asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_fineness")              elif has_d then albedoAssetName.Replace ("_d", "_fineness")             else "")
+                    let finenessAsset' =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Fineness")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Fineness")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Fineness") else "")
+                    if getMetadataExists finenessAsset then ValueSome finenessAsset
+                    elif getMetadataExists finenessAsset' then ValueSome finenessAsset'
                     else ValueNone
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
@@ -780,10 +780,10 @@ module Metadata =
     let tryGetStaticModelSubdermalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelSubdermalImage materialIndex staticModel
 
-    /// Attempt to get the thickness image asset for the given material index and static model.
+    /// Attempt to get the fineness image asset for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelThicknessImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelThicknessImage materialIndex staticModel
+    let tryGetStaticModelFinenessImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelFinenessImage materialIndex staticModel
 
     /// Attempt to get the scatter image asset for the given material index and static model.
     /// Thread-safe.
@@ -852,10 +852,10 @@ module Metadata =
     let tryGetAnimatedModelSubdermalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelSubdermalImage materialIndex animatedModel
 
-    /// Attempt to get the thickness image asset for the given material index and animated model.
+    /// Attempt to get the fineness image asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelThicknessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelThicknessImage materialIndex animatedModel
+    let tryGetAnimatedModelFinenessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelFinenessImage materialIndex animatedModel
 
     /// Attempt to get the scatter image asset for the given material index and animated model.
     /// Thread-safe.
