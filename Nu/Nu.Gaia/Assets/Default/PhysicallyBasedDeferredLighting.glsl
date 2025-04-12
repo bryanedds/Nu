@@ -155,7 +155,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, float lightCutoff, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w; // ndc space
@@ -183,9 +183,8 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
         }
         travel /= 9.0;
 
-        // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-        float sssShadowExponent = 300.0; // TODO: expose a global uniform for this.
-        travel = exp(-travel * sssShadowExponent);
+        // negatively exponentiate travel, clamping to keep in range
+        travel = exp(-travel * lightCutoff);
         travel = clamp(travel, 0.0, 1.0);
         return travel;
     }
@@ -194,7 +193,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, mat4 shado
     return 1.0;
 }
 
-float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
+float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, float lightCutoff, samplerCube shadowMap)
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
@@ -215,9 +214,8 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, samplerCube sh
     }
     travel /= 8.0;
 
-    // negatively exponentiate travel with a constant to make its appearance visible, clamping to keep in range
-    float sssShadowExponent = 300.0; // TODO: expose a global uniform for this.
-    travel = exp(-travel * sssShadowExponent);
+    // negatively exponentiate travel, clamping to keep in range
+    travel = exp(-travel * lightCutoff);
     travel = clamp(travel, 0.0, 1.0);
     return travel;
 }
@@ -278,6 +276,7 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec4 subdermalPlus,
     // retrieve light and shadow values
     int lightType = lightTypes[lightIndex];
     vec3 lightOrigin = lightOrigins[lightIndex];
+    float lightCutoff = lightCutoffs[lightIndex];
     int shadowIndex = lightShadowIndices[lightIndex];
 
     // compute geometry trace length, defaulting to 1.0 when no shadow present for this light index
@@ -285,8 +284,8 @@ vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec4 subdermalPlus,
     if (shadowIndex >= 0)
         trace =
             lightType == 0 ?
-            geometryTraceFromShadowMap(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
-            geometryTraceFromShadowTexture(position, lightOrigin, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            geometryTraceFromShadowMap(position, lightOrigin, lightCutoff, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]) :
+            geometryTraceFromShadowTexture(position, lightOrigin, lightCutoff, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
 
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
