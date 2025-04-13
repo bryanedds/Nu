@@ -23,7 +23,6 @@ const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
-const float GEOMETRY_TRACE_DELTA_MAX = 0.01; // NOTE: this keeps surfaces hovering over an infinite distance background from adding unusable samples into their sample set.
 
 const vec4 SSVF_DITHERING[4] =
 vec4[](
@@ -177,7 +176,7 @@ float geometryTraceFromShadowTexture(vec4 position, vec3 lightOrigin, float ligh
             for (int j = -1; j <= 1; ++j)
             {
                 float shadowDepth = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float delta = min(shadowZ - shadowDepth, GEOMETRY_TRACE_DELTA_MAX);
+                float delta = shadowZ - shadowDepth;
                 travel += delta;
             }
         }
@@ -206,7 +205,7 @@ float geometryTraceFromShadowMap(vec4 position, vec3 lightOrigin, float lightCut
             {
                 vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
                 float shadowDepth = texture(shadowMap, positionShadow + offset).x;
-                float delta = min(shadowZ - shadowDepth, GEOMETRY_TRACE_DELTA_MAX);
+                float delta = shadowZ - shadowDepth;
                 travel += delta;
             }
         }
@@ -270,7 +269,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-vec3 computeSubsurfaceScattering(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
+vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
     int lightType = lightTypes[lightIndex];
@@ -704,9 +703,9 @@ void main()
             float shadowScalar = 1.0f;
             if (shadowIndex >= 0)
                 shadowScalar =
-                shadowIndex < SHADOW_TEXTURES_MAX ?
-                computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
-                computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+                    shadowIndex < SHADOW_TEXTURES_MAX ?
+                    computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                    computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
 
             // cook-torrance brdf
             float hDotV = max(dot(h, v), 0.0);
@@ -730,9 +729,12 @@ void main()
 
             // accumulate subsurface scattering
             float scatterType = scatterPlus.a;
-            vec3 scatter = scatterType != 0.0 ? computeSubsurfaceScattering(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i) : vec3(0.0);
-            float shadowScalarScatter = shadowScalar * (nDotL > 0.0 ? 1.0 : 1.0 - max(dot(normal, -l), 0.0)); // HACK: we blend shadow toward the backfaces in order to blend with backscattering on the forward faces.
-            scatterAccum += kD * scatter * radiance * shadowScalarScatter;
+            if (scatterType != 0.0)
+            {
+                vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
+                float shadowScalarScatter = shadowScalar * (nDotL > 0.0 ? 1.0 : 1.0 - max(dot(normal, -l), 0.0)); // HACK: we blend shadow toward the backfaces in order to blend with backscattering on the forward faces.
+                scatterAccum += kD * scatter * radiance * shadowScalarScatter;
+            }
 
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
