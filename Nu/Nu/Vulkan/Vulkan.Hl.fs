@@ -1016,7 +1016,7 @@ module Hl =
             Vulkan.vkInitialize () |> check
 
             // make debug info
-            let debugInfo = VulkanContext.makeDebugMessengerInfo ()
+            //let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
             let instance = VulkanContext.createVulkanInstance window
@@ -1025,7 +1025,7 @@ module Hl =
             Vulkan.vkLoadInstanceOnly instance
 
             // create debug messenger if validation activated
-            let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
+            //let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
             
             // create surface
             let surface = VulkanContext.createVulkanSurface window instance
