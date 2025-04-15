@@ -911,6 +911,14 @@ module WorldModule2 =
                 World.unregisterEntityPhysics entity world)
                 world entities
 
+        static member private synchronizeViewports world =
+            let windowSize = World.getWindowSize world
+            let outerViewport = Viewport.makeOuter windowSize
+            let world = World.setOuterViewport outerViewport world
+            let world = World.setRasterViewport (Viewport.makeRaster outerViewport.Bounds) world
+            let world = World.setGeometryViewport (Viewport.makeGeometry windowSize) world
+            world
+
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
             
@@ -1000,6 +1008,9 @@ module WorldModule2 =
 
             // sync tick watch state to advancing
             let world = World.switchAmbientState world
+
+            // synchronize viewports in case they get out of sync, such as during an undo operation
+            let world = World.synchronizeViewports world
 
             // rebuild spatial trees
             let octree = World.getOctree world in Octree.clear octree
@@ -1119,17 +1130,14 @@ module WorldModule2 =
                             then World.trySetWindowFullScreen true world
                             else world
 
-                        // update display virtual scalar
+                        // synchronize display virtual scalar
                         let windowSize'' = World.getWindowSize world
                         let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
                         let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
                         Globals.Render.DisplayScalar <- min xScalar yScalar
 
-                        // update view ports
-                        let world = World.setOuterViewport (Viewport.makeOuter windowSize'') world
-                        let world = World.setRasterViewport (Viewport.makeRaster world.OuterViewport.Bounds) world
-                        let world = World.setGeometryViewport (Viewport.makeGeometry windowSize'') world
-                        world
+                        // synchronize view ports
+                        World.synchronizeViewports world
 
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
