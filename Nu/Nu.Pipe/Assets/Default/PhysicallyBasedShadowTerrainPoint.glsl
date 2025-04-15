@@ -26,5 +26,5 @@ in vec4 positionOut;
 
 void main()
 {
-	depth = length(positionOut.xyz - eyeCenter);
+	depth = length(positionOut.xyz - eyeCenter); // linear, world space depth
 }
