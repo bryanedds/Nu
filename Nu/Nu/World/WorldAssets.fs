@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -32,6 +32,7 @@ module Assets =
         let [<Uniform>] Paddle = asset<Image> PackageName Assets.Default.PaddleName
         let [<Uniform>] StaticSprite = asset<Image> PackageName Assets.Default.StaticSpriteName
         let [<Uniform>] AnimatedSprite = asset<Image> PackageName Assets.Default.AnimatedSpriteName
+        let [<Uniform>] SpineSkeleton = asset<SpineSkeleton> PackageName Assets.Default.SpineSkeletonName
         let [<Uniform>] NuSlide = asset<Image> PackageName Assets.Default.NuSlideName
         let [<Uniform>] Character2dIdle = asset<Image> PackageName Assets.Default.Character2dIdleName
         let [<Uniform>] Character2dJump = asset<Image> PackageName Assets.Default.Character2dJumpName
@@ -48,6 +49,9 @@ module Assets =
         let [<Uniform>] MaterialEmission = asset<Image> PackageName Assets.Default.MaterialEmissionName
         let [<Uniform>] MaterialNormal = asset<Image> PackageName Assets.Default.MaterialNormalName
         let [<Uniform>] MaterialHeight = asset<Image> PackageName Assets.Default.MaterialHeightName
+        let [<Uniform>] MaterialSubdermal = asset<Image> PackageName Assets.Default.MaterialSubdermalName
+        let [<Uniform>] MaterialFineness = asset<Image> PackageName Assets.Default.MaterialFinenessName
+        let [<Uniform>] MaterialScatter = asset<Image> PackageName Assets.Default.MaterialScatterName
         let [<Uniform>] TerrainLayer0Albedo = asset<Image> PackageName Assets.Default.TerrainLayer0AlbedoName
         let [<Uniform>] TerrainLayer0Roughness = asset<Image> PackageName Assets.Default.TerrainLayer0RoughnessName
         let [<Uniform>] TerrainLayer0AmbientOcclusion = asset<Image> PackageName Assets.Default.TerrainLayer0AmbientOcclusionName
@@ -63,6 +67,7 @@ module Assets =
         let [<Uniform>] TerrainTint = asset<Image> PackageName Assets.Default.TerrainTintName
         let [<Uniform>] SkyBoxMap = asset<CubeMap> PackageName Assets.Default.SkyBoxMapName
         let [<Uniform>] StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
+        let [<Uniform>] BallModel = asset<StaticModel> PackageName Assets.Default.BallModelName
         let [<Uniform>] HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName
         let [<Uniform>] LightbulbModel = asset<StaticModel> PackageName Assets.Default.LightbulbModelName
         let [<Uniform>] LightProbeModel = asset<StaticModel> PackageName Assets.Default.LightProbeModelName

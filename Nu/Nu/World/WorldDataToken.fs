@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -11,25 +11,24 @@ module WorldDataToken =
     type World with
 
         static member internal renderDataToken renderPass dataToken world =
+
             match dataToken with
-
-            // render sprite
             | SpriteToken (elevation, horizon, assetTag, sprite) ->
-                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
+                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
 
-            // render text
             | TextToken (elevation, horizon, assetTag, text) ->
                 let renderText =
                     { Transform = text.Transform
+                      ClipOpt = text.ClipOpt
                       Text = text.Text
                       Font = text.Font
                       FontSizing = text.FontSizing
                       FontStyling = text.FontStyling
                       Color = text.Color
-                      Justification = text.Justification }
+                      Justification = text.Justification
+                      CursorOpt = None }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
 
-            // render 3d light
             | Light3dToken light ->
                 let renderLight =
                     { LightId = light.LightId
@@ -43,61 +42,62 @@ module WorldDataToken =
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
                       DesireShadows = false
+                      DesireFog = false
+                      Bounds = light.Bounds
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world
 
-            // render billboard
             | BillboardToken billboard ->
                 let renderBillboard =
-                    { Absolute = billboard.Absolute
+                    { ModelMatrix = billboard.ModelMatrix
+                      CastShadow = billboard.CastShadow
                       Presence = billboard.Presence
-                      ModelMatrix = billboard.ModelMatrix
                       InsetOpt = billboard.InsetOpt
                       MaterialProperties = billboard.MaterialProperties
                       Material = billboard.Material
                       ShadowOffset = billboard.ShadowOffset
+                      DepthTest =  LessThanOrEqualTest
                       RenderType = billboard.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderBillboard renderBillboard) world
 
-            // render static model
             | StaticModelToken staticModel ->
                 let renderStaticModel =
-                    { Absolute = staticModel.Absolute
-                      ModelMatrix = staticModel.ModelMatrix
+                    { ModelMatrix = staticModel.ModelMatrix
+                      CastShadow = staticModel.CastShadow
                       Presence = staticModel.Presence
                       InsetOpt = staticModel.InsetOpt
                       MaterialProperties = staticModel.MaterialProperties
                       StaticModel = staticModel.StaticModel
+                      DepthTest =  LessThanOrEqualTest
                       RenderType = staticModel.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderStaticModel renderStaticModel) world
 
-            // render static model surface
             | StaticModelSurfaceToken staticModelSurface ->
                 let renderStaticModelSurface =
-                    { Absolute = staticModelSurface.Absolute
-                      ModelMatrix = staticModelSurface.ModelMatrix
+                    { ModelMatrix = staticModelSurface.ModelMatrix
+                      CastShadow = staticModelSurface.CastShadow
                       Presence = staticModelSurface.Presence
                       InsetOpt = staticModelSurface.InsetOpt
                       MaterialProperties = staticModelSurface.MaterialProperties
                       Material = staticModelSurface.Material
                       StaticModel = staticModelSurface.StaticModel
                       SurfaceIndex = staticModelSurface.SurfaceIndex
+                      DepthTest =  LessThanOrEqualTest
                       RenderType = staticModelSurface.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderStaticModelSurface renderStaticModelSurface) world
 
-            // nothing to do
-            | EffectToken (_, _, _) -> ()
+            | EffectToken (_, _, _) ->
+                () // nothing to do
 
-            // nothing to do
-            | EmitterToken (_, _) -> ()
+            | EmitterToken (_, _) ->
+                () // nothing to do
 
-            // nothing to do
-            | TagToken (_, _) -> ()
+            | TagToken (_, _) ->
+                () // nothing to do
 
-            // recur
             | DataTokens dataTokens ->
                 for dataToken in dataTokens do
                     World.renderDataToken renderPass dataToken world

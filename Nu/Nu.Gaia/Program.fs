@@ -1,11 +1,12 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu.Gaia
 open System
 open System.IO
 open Prime
 open Nu
+open Nu.Gaia
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =

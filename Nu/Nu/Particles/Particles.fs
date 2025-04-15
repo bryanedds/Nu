@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu.Particles
 open System
@@ -178,16 +178,16 @@ type [<ReferenceEquality>] Output =
 and Emitter =
 
     /// Determine liveness of emitter.
-    abstract GetLiveness : GameTime -> Liveness
+    abstract GetLiveness : time : GameTime -> Liveness
 
     /// Run the emitter.
-    abstract Run : GameTime -> GameTime -> Output * Emitter
+    abstract Run : delta : GameTime -> time : GameTime -> Output * Emitter
 
     /// Convert the emitted particles to a ParticlesDescriptor.
-    abstract ToParticlesDescriptor : GameTime -> ParticlesDescriptor
+    abstract ToParticlesDescriptor : time : GameTime -> ParticlesDescriptor
 
     /// Change the maximum number of allowable particles.
-    abstract Resize : int -> Emitter
+    abstract Resize : particleMax : int -> Emitter
 
 /// Transforms a constrained value.
 type 'a Transformer =
@@ -546,10 +546,10 @@ module Scope =
 type Behavior =
 
     /// Run the behavior over a single target.
-    abstract Run : GameTime -> GameTime -> Constraint -> obj -> (Output * obj)
+    abstract Run : delta : GameTime -> time : GameTime -> constrain : Constraint -> targetObj : obj -> (Output * obj)
 
     /// Run the behavior over multiple targets.
-    abstract RunMany : GameTime -> GameTime -> Constraint -> obj -> Output
+    abstract RunMany : delta : GameTime -> time : GameTime -> constrain : Constraint -> targetObj : obj -> Output
 
 /// Defines a generic behavior.
 type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
@@ -878,6 +878,7 @@ module BasicStaticSpriteEmitter =
         { Absolute = emitter.Absolute
           Elevation = emitter.Elevation
           Horizon = emitter.Body.Position.Y
+          ClipOpt = ValueNone // TODO: implement clip support for particles.
           Blend = emitter.Blend
           Image = emitter.Image
           Particles = particles' }
@@ -958,6 +959,9 @@ module BasicStaticSpriteEmitter =
             time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
+/// A tag interface for emitter descriptors.
+type EmitterDescriptor = interface end
+
 /// Describes a sprite emitter.
 type [<ReferenceEquality>] SpriteEmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
     { Body : Body
@@ -970,6 +974,7 @@ type [<ReferenceEquality>] SpriteEmitterDescriptor<'a when 'a :> Particle and 'a
       ParticleSeed : 'a
       Constraint : Constraint
       Style : string }
+    interface EmitterDescriptor
 
 /// A map of basic sprite emitters.
 type SpriteEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
@@ -1129,8 +1134,7 @@ module BasicStaticBillboardEmitter =
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         let descriptor =
-            { BillboardParticlesDescriptor.Absolute = emitter.Absolute
-              MaterialProperties = emitter.MaterialProperties
+            { MaterialProperties = emitter.MaterialProperties
               Material = emitter.Material
               Particles = particles'
               ShadowOffset = emitter.ShadowOffset
@@ -1226,6 +1230,7 @@ type [<ReferenceEquality>] BillboardEmitterDescriptor<'a when 'a :> Particle and
       ParticleSeed : 'a
       Constraint : Constraint
       Style : string }
+    interface EmitterDescriptor
 
 /// A map of basic billboard emitters.
 type BillboardEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =

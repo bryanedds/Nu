@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -11,8 +11,8 @@ open Prime
 module QuadelementMasks =
 
     // OPTIMIZATION: Quadelement flag bit-masks for performance.
-    let [<Literal>] VisibleMask =   0b0001u
-    let [<Literal>] StaticMask =    0b0010u
+    let [<Literal>] VisibleInViewMask = 0b0001u
+    let [<Literal>] StaticInPlayMask =  0b0010u
 
 // NOTE: opening this in order to make the Quadelement property implementations reasonably succinct.
 open QuadelementMasks
@@ -26,18 +26,24 @@ module Quadelement =
         private
             { HashCode_ : int // OPTIMIZATION: cache hash code to increase look-up speed.
               Flags_ : uint
+              Presence_ : Presence
+              PresenceInPlay_ : Presence
+              Bounds_ : Box2
               Entry_ : 'e }
-        member this.Visible = this.Flags_ &&& VisibleMask <> 0u
-        member this.Static = this.Flags_ &&& StaticMask <> 0u
+        member this.VisibleInView = this.Flags_ &&& VisibleInViewMask <> 0u
+        member this.StaticInPlay = this.Flags_ &&& StaticInPlayMask <> 0u
+        member this.Presence = this.Presence_
+        member this.PresenceInPlay = this.PresenceInPlay_
+        member this.Bounds = this.Bounds_
         member this.Entry = this.Entry_
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Quadelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
-        static member make visible static_ (entry : 'e) =
+        static member make visibleInView staticInPlay presence presenceInPlay bounds (entry : 'e) =
             let hashCode = entry.GetHashCode ()
             let flags =
-                (if visible then VisibleMask else 0u) |||
-                (if static_ then StaticMask else 0u)
-            { HashCode_ = hashCode; Flags_ = flags; Entry_ = entry }
+                (if visibleInView then VisibleInViewMask else 0u) |||
+                (if staticInPlay then StaticInPlayMask else 0u)
+            { HashCode_ = hashCode; Flags_ = flags; Presence_ = presence; PresenceInPlay_ = presenceInPlay; Bounds_ = bounds; Entry_ = entry }
 
 /// An element in a quadree.
 type Quadelement<'e when 'e : equality> = Quadelement.Quadelement<'e>
@@ -66,9 +72,7 @@ module internal Quadnode =
               Comparer_ : 'e QuadelementEqualityComparer
               Leaves_ : Dictionary<Vector2, 'e Quadnode> }
 
-        override this.ToString () =
-            ""
-
+        override this.ToString () = ""
         member this.Id = this.Id_
 
     let internal makeChildren<'e when 'e : equality> node =
@@ -81,7 +85,7 @@ module internal Quadnode =
                     let childBounds = box2 childPosition childSize
                     let child =
                         { ElementsCount_ = 0
-                          Id_ = Gen.idForInternal
+                          Id_ = Gen.id64
                           Depth_ = childDepth
                           Bounds_ = childBounds
                           Children_ = NoChildren
@@ -195,7 +199,9 @@ module internal Quadnode =
                     getElementsAtPoint point set node
         | ElementChildren elements ->
             for element in elements do
-                set.Add element |> ignore
+                let bounds = element.Bounds
+                if bounds.Intersects point then
+                    set.Add element |> ignore
 
     let rec internal getElementsInBounds bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -208,7 +214,8 @@ module internal Quadnode =
                     getElementsInBounds bounds set node
         | ElementChildren elements ->
             for element in elements do
-                set.Add element |> ignore
+                if bounds.Intersects element.Bounds then
+                    set.Add element |> ignore
 
     let rec internal getElementsInView bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -221,7 +228,7 @@ module internal Quadnode =
                     getElementsInView bounds set node
         | ElementChildren elements ->
             for element in elements do
-                if element.Visible then
+                if bounds.Intersects element.Bounds && element.VisibleInView then
                     set.Add element |> ignore
 
     let rec internal getElementsInPlay bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
@@ -232,10 +239,10 @@ module internal Quadnode =
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
-                    getElementsInView bounds set node
+                    getElementsInPlay bounds set node
         | ElementChildren elements ->
             for element in elements do
-                if not element.Static then
+                if bounds.Intersects element.Bounds && not element.StaticInPlay then
                     set.Add element |> ignore
 
     let rec internal getElements (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
@@ -267,7 +274,7 @@ module internal Quadnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
         let node =
             { ElementsCount_ = 0
-              Id_ = Gen.idForInternal
+              Id_ = Gen.id64
               Depth_ = depth
               Bounds_ = bounds
               Children_ = NoChildren
@@ -300,31 +307,41 @@ module Quadtree =
         | (_, _) -> None
 
     /// Add an element with the given presence and bounds to the tree.
-    let addElement (presence : Presence) bounds element tree =
-        if presence.ImposterType || presence.OmnipresentType then
+    let addElement (presenceInPlay : Presence) bounds element tree =
+        if presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent then
             tree.Ubiquitous.Remove element |> ignore
             tree.Ubiquitous.Add element |> ignore
         else
-            if not (Quadnode.isIntersectingBounds bounds tree.Node) then
+            if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
+                bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
                 tree.Ubiquitous.Remove element |> ignore
                 tree.Ubiquitous.Add element |> ignore
             else
                 Quadnode.addElement bounds &element tree.Node |> ignore
 
     /// Remove an element with the given presence and bounds from the tree.
-    let removeElement (presence : Presence) bounds element tree =
-        if presence.ImposterType || presence.OmnipresentType then 
+    let removeElement (presenceInPlay : Presence) bounds element tree =
+        if presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent then 
             tree.Ubiquitous.Remove element |> ignore
         else
-            if not (Quadnode.isIntersectingBounds bounds tree.Node) then
+            if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
+                bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
                 tree.Ubiquitous.Remove element |> ignore
             else
                 Quadnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
-    let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
-        let wasInNode = not presenceOld.ImposterType && not presenceOld.OmnipresentType && Quadnode.isIntersectingBounds boundsOld tree.Node
-        let isInNode = not presenceNew.ImposterType && not presenceNew.OmnipresentType && Quadnode.isIntersectingBounds boundsNew tree.Node
+    let updateElement (presenceInPlayOld : Presence) boundsOld (presenceInPlayNew : Presence) boundsNew element tree =
+        let wasInNode =
+            not presenceInPlayOld.IsImposter &&
+            not presenceInPlayOld.IsOmnipresent &&
+            Quadnode.isIntersectingBounds boundsOld tree.Node &&
+            boundsOld.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
+        let isInNode =
+            not presenceInPlayNew.IsImposter &&
+            not presenceInPlayNew.IsOmnipresent &&
+            Quadnode.isIntersectingBounds boundsNew tree.Node &&
+            boundsNew.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with
@@ -357,13 +374,18 @@ module Quadtree =
     let getElementsAtPoint point set tree =
         Quadnode.getElementsAtPoint point set tree.Node
         for omnipresent in tree.Ubiquitous do
-            set.Add omnipresent |> ignore<bool>
+            let presence = omnipresent.Presence
+            let bounds = omnipresent.Bounds
+            if presence.IsOmnipresent || bounds.Intersects point then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds bounds set tree.Node
         for omnipresent in tree.Ubiquitous do
-            set.Add omnipresent |> ignore<bool>
+            let presence = omnipresent.Presence
+            if presence.IsOmnipresent || bounds.Intersects omnipresent.Bounds then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView bounds set tree =

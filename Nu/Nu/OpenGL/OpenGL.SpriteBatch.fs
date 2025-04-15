@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -12,13 +12,19 @@ module SpriteBatch =
 
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
+          ClipOpt : Box2 voption
           BlendingFactorSrc : BlendingFactor
           BlendingFactorDst : BlendingFactor
           BlendingEquation : BlendEquationMode
-          TextureOpt : Texture.Texture ValueOption }
+          TextureOpt : Texture.Texture voption }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
+            (match struct (state.ClipOpt, state2.ClipOpt) with
+             | struct (ValueSome _, ValueNone) -> true
+             | struct (ValueNone, ValueSome _) -> true
+             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
@@ -26,13 +32,13 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
-             | struct (ValueSome t, ValueSome t2) -> t.TextureId <> t2.TextureId) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
+             | struct (ValueSome t, ValueSome t2) -> t <> t2)
 
-        static member make absolute bfs bfd beq texture =
-            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }
+        static member inline make absolute clipOpt bfs bfd beq texture =
+            { Absolute = absolute; ClipOpt = clipOpt; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }
 
         static member defaultState =
-            { Absolute = false; BlendingFactorSrc = BlendingFactor.SrcAlpha; BlendingFactorDst = BlendingFactor.OneMinusSrcAlpha; BlendingEquation = BlendEquationMode.FuncAdd; TextureOpt = ValueNone }
+            { Absolute = false; ClipOpt = ValueNone; BlendingFactorSrc = BlendingFactor.SrcAlpha; BlendingFactorDst = BlendingFactor.OneMinusSrcAlpha; BlendingEquation = BlendEquationMode.FuncAdd; TextureOpt = ValueNone }
 
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
@@ -79,7 +85,7 @@ module SpriteBatch =
     let private BeginSpriteBatch state env =
         env.State <- state
 
-    let private EndSpriteBatch env =
+    let private EndSpriteBatch (viewport : Viewport) env =
 
         // ensure something to draw
         match env.State.TextureOpt with
@@ -90,6 +96,21 @@ module SpriteBatch =
             Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
             Gl.Enable EnableCap.Blend
             Gl.Enable EnableCap.CullFace
+            match env.State.ClipOpt with
+            | ValueSome clip ->
+                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
+                let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
+                let minNdc = minClip / minClip.W * single viewport.DisplayScalar
+                let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+                let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+                let offset = viewport.Bounds.Min
+                Gl.Enable EnableCap.ScissorTest
+                Gl.Scissor
+                    ((minScissor.X |> round |> int) + offset.X,
+                     (minScissor.Y |> round |> int) + offset.Y,
+                     int sizeScissor.X,
+                     int sizeScissor.Y)
+            | ValueNone -> ()
             Hl.Assert ()
 
             // setup vao
@@ -128,6 +149,7 @@ module SpriteBatch =
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.Disable EnableCap.Blend
             Gl.Disable EnableCap.CullFace
+            Gl.Disable EnableCap.ScissorTest
 
             // next batch
             env.SpriteIndex <- 0
@@ -135,8 +157,8 @@ module SpriteBatch =
         // not ready
         | ValueSome _ | ValueNone -> ()
 
-    let private RestartSpriteBatch state env =
-        Hl.Assert (EndSpriteBatch env)
+    let private RestartSpriteBatch state viewport env =
+        Hl.Assert (EndSpriteBatch viewport env)
         BeginSpriteBatch state env
 
     /// Beging a new sprite batch frame3.
@@ -150,9 +172,9 @@ module SpriteBatch =
         EndSpriteBatch env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
-    let InterruptSpriteBatchFrame fn env =
+    let InterruptSpriteBatchFrame fn viewport env =
         let state = env.State
-        Hl.Assert (EndSpriteBatch env)
+        Hl.Assert (EndSpriteBatch viewport env)
         Hl.Assert (fn ())
         BeginSpriteBatch state env
 
@@ -183,12 +205,12 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
-        let state = SpriteBatchState.make absolute bfs bfd beq texture
+        let state = SpriteBatchState.make absolute clipOpt bfs bfd beq texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            RestartSpriteBatch state env
+            RestartSpriteBatch state viewport env
             Hl.Assert ()
 
         // populate vertices

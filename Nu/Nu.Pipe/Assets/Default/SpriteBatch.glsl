@@ -3,7 +3,6 @@
 
 const int VERTS = 6;
 const int SPRITE_BATCH_SIZE = 192;
-
 const vec4 FILTERS[VERTS] =
     vec4[VERTS](
         vec4(1.0, 1.0, 0.0, 0.0),
@@ -19,6 +18,7 @@ uniform float rotations[SPRITE_BATCH_SIZE];
 uniform vec4 texCoordses[SPRITE_BATCH_SIZE];
 uniform vec4 colors[SPRITE_BATCH_SIZE];
 uniform mat4 viewProjection;
+
 out vec2 texCoords;
 out vec4 color;
 
@@ -54,10 +54,14 @@ void main()
 
 #shader fragment
 #version 410
+
 uniform sampler2D tex;
+
 in vec2 texCoords;
 in vec4 color;
-layout (location = 0) out vec4 frag;
+
+layout(location = 0) out vec4 frag;
+
 void main()
 {
     frag = color * texture(tex, texCoords);

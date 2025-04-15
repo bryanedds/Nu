@@ -90,7 +90,7 @@ module SpriteBatch =
     let private BeginSpriteBatch state env =
         env.State <- state
 
-    let private EndSpriteBatch env =
+    let private EndSpriteBatch (viewport : Viewport) env =
 
         // ensure something to draw
         match env.State.TextureOpt with
@@ -153,8 +153,8 @@ module SpriteBatch =
         // not ready
         | ValueSome _ | ValueNone -> ()
 
-    let private RestartSpriteBatch state env =
-        EndSpriteBatch env
+    let private RestartSpriteBatch state viewport env =
+        EndSpriteBatch viewport env
         BeginSpriteBatch state env
 
     /// Begin a new sprite batch frame.
@@ -164,13 +164,13 @@ module SpriteBatch =
         BeginSpriteBatch SpriteBatchState.defaultState env
 
     /// End the current sprite batch frame, if any.
-    let EndSpriteBatchFrame env =
-        EndSpriteBatch env
+    let EndSpriteBatchFrame viewport env =
+        EndSpriteBatch viewport env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
-    let InterruptSpriteBatchFrame fn env =
+    let InterruptSpriteBatchFrame fn viewport env =
         let state = env.State
-        EndSpriteBatch env
+        EndSpriteBatch viewport env
         fn ()
         BeginSpriteBatch state env
 
@@ -201,12 +201,12 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, blend, texture : Texture.Texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, blend, texture : Texture.Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute blend texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            RestartSpriteBatch state env
+            RestartSpriteBatch state viewport env
 
         // populate vertices
         let perimeter = box2 min size

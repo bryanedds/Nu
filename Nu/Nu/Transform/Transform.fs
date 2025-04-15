@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -10,29 +10,30 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b00000000000000000001u
-    let [<Literal>] DirtyMask =                     0b00000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b00000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b00000000000000001000u
-    let [<Literal>] ImperativeMask =                0b00000000000000010000u
-    let [<Literal>] EnabledMask =                   0b00000000000000100000u
-    let [<Literal>] VisibleMask =                   0b00000000000001000000u
-    let [<Literal>] PickableMask =                  0b00000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b00000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b00000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b00000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b00000000100000000000u
-    let [<Literal>] ProtectedMask =                 0b00000001000000000000u
-    let [<Literal>] PersistentMask =                0b00000010000000000000u
-    let [<Literal>] MountedMask =                   0b00000100000000000000u
-    let [<Literal>] EnabledLocalMask =              0b00001000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b00010000000000000000u
-    let [<Literal>] StaticMask =                    0b00100000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b01000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b10000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b10011010000011110001u
+    let [<Literal>] ActiveMask =                    0b000000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b000000000000000000010u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b000000000000000010000u
+    let [<Literal>] EnabledMask =                   0b000000000000000100000u
+    let [<Literal>] VisibleMask =                   0b000000000000001000000u
+    let [<Literal>] CastShadowMask =                0b000000000000010000000u
+    let [<Literal>] PickableMask =                  0b000000000000100000000u
+    let [<Literal>] AlwaysUpdateMask =              0b000000000001000000000u
+    let [<Literal>] AlwaysRenderMask =              0b000000000010000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b000000000100000000000u
+    let [<Literal>] PublishUpdatesMask =            0b000000001000000000000u
+    let [<Literal>] ProtectedMask =                 0b000000010000000000000u
+    let [<Literal>] PersistentMask =                0b000000100000000000000u
+    let [<Literal>] MountedMask =                   0b000001000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b000010000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
+    let [<Literal>] StaticMask =                    0b001000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b010000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b100000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b100110100000111110001u
 
-// opening masks for succintness
+// opening masks for succinctness
 open TransformMasks
 
 /// Carries transformation data specific to an Entity.
@@ -49,15 +50,18 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private Elevation_ : single
         val mutable private Overflow_ : single
         val mutable private Presence_ : Presence
+        val mutable private PresenceOverride_ : Presence voption
         end
 
     member this.Active                  with get () = this.Flags_ &&& ActiveMask <> 0u                  and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
     member this.Dirty                   with get () = this.Flags_ &&& DirtyMask <> 0u                   and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
     member this.Invalidated             with get () = this.Flags_ &&& InvalidatedMask <> 0u             and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
+    member this.Absolute                with get () = this.Flags_ &&& AbsoluteMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
     member this.Imperative              with get () = this.Flags_ &&& ImperativeMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
     member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
     member this.Enabled                 with get () = this.Flags_ &&& EnabledMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
     member this.Visible                 with get () = this.Flags_ &&& VisibleMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
+    member this.CastShadow              with get () = this.Flags_ &&& CastShadowMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| CastShadowMask else this.Flags_ &&& ~~~CastShadowMask
     member this.Pickable                with get () = this.Flags_ &&& PickableMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| PickableMask else this.Flags_ &&& ~~~PickableMask
     member this.AlwaysUpdate            with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
     member this.AlwaysRender            with get () = this.Flags_ &&& AlwaysRenderMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
@@ -76,25 +80,14 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Size                    with get () = this.Size_                                        and set value = this.Size_ <- value
     member this.Elevation               with get () = this.Elevation_                                   and set value = this.Elevation_ <- value
     member this.Overflow                with get () = this.Overflow_                                    and set value = this.Overflow_ <- value
-
-    member this.Absolute
-        with get () = this.Flags_ &&& AbsoluteMask <> 0u
-        and set value =
-            this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
-            if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
-                this.Presence_ <- Omnipresent
+    member this.Presence                with get () = this.Presence_                                    and set value = this.Presence_ <- value
+    member this.PresenceOverride        with get () = this.PresenceOverride_                            and set value = this.PresenceOverride_ <- value
 
     member this.Optimized =
+        let presence = ValueOption.defaultValue this.Presence_ this.PresenceOverride
         this.Imperative &&
-        this.Presence_.OmnipresentType &&
+        presence.IsOmnipresent &&
         not this.PublishChangeEvents
-
-    member this.Presence
-        with get () = this.Presence_
-        and set (value : Presence) =
-            let omnipresent = value.OmnipresentType
-            if omnipresent || not this.Absolute then // a transform that is Absolute must remain Omnipresent
-                this.Presence_ <- if omnipresent then Omnipresent else value
 
     member this.Rotation
         with get () = this.Rotation_
@@ -105,7 +98,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Angles
         with get () =
-            this.CleanAngles ()
+            Transform.cleanAngles &this
             this.Angles_
         and set (value : Vector3) =
             this.Angles_ <- value
@@ -120,7 +113,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles <- Math.DegreesToRadians3d value
 
     member this.RotationMatrix =
-        this.CleanRotationMatrix ()
+        Transform.cleanRotationMatrixInternal &this
         this.RotationMatrixOpt_
 
     member this.AffineMatrix =
@@ -289,7 +282,7 @@ type [<NoEquality; NoComparison>] Transform =
         let perimeter = this.Perimeter
         -perimeter.Center + perimeter.Size * this.Offset_
 
-    member this.CleanAngles () =
+    static member private cleanAngles (this : Transform byref) =
         if this.AnglesDirty then
             let rollPitchYaw = this.Rotation_.RollPitchYaw
             this.Angles_.X <- rollPitchYaw.X
@@ -297,16 +290,16 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles_.Z <- rollPitchYaw.Z
             this.AnglesDirty <- false
 
-    member this.CleanRotationMatrix () =
+    static member cleanRotationMatrixInternal (this : Transform byref) =
         if this.RotationMatrixDirty || this.RotationMatrixOpt_.IsZero then
             this.RotationMatrixOpt_ <- Matrix4x4.CreateFromQuaternion this.Rotation_
             this.RotationMatrixDirty <- false
 
-    member this.SnapPosition positionSnap =
-        this.Position <- Math.SnapF3d positionSnap this.Position
-
-    member this.InvalidateFast () =
+    static member invalidateFastInternal (this : Transform byref) =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
+
+    static member snapPosition (positionSnap, transform : Transform byref) =
+        transform.Position <- Math.SnapF3d (positionSnap, transform.Position)
 
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
@@ -355,7 +348,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform
 
     /// Make a transform based on a perimeter.
-    static member makePerimeter (perimeter : Box3) offset elevation absolute =
+    static member makePerimeter absolute (perimeter : Box3) offset elevation =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- perimeter.Center
@@ -365,10 +358,11 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
+        transform.Overflow_ <- 1.0f
         transform
 
-    /// Make a transform based on human-intuited values.
-    static member makeIntuitive position scale offset size angles elevation absolute =
+    /// Make a transform based on human-intuitive values.
+    static member makeIntuitive absolute position scale offset size angles elevation =
         let mutable transform = Transform.makeDefault ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position
@@ -377,4 +371,5 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Size_ <- size
         transform.Elevation_ <- elevation
         transform.Angles <- angles
+        transform.Overflow_ <- 1.0f
         transform

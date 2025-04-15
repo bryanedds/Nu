@@ -1,8 +1,9 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
+open System.Numerics
 open System.Runtime.InteropServices
 open Prime
 open Nu
@@ -77,7 +78,25 @@ module Sprite =
         (vertexBuffer, indexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by Gl.CreateSpriteQuad and whose uniforms and shader match those of CreateSpriteShader.
-    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture : Texture.Texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) =
+    let DrawSprite
+        (vertices,
+         indices,
+         vao,
+         viewProjection : Matrix4x4 inref,
+         modelViewProjection : single array,
+         insetOpt : Box2 voption inref,
+         clipOpt : Box2 voption inref,
+         color : Color inref,
+         flip,
+         textureWidth,
+         textureHeight,
+         texture : Texture.Texture,
+         viewport : Viewport,
+         modelViewProjectionUniform,
+         texCoords4Uniform,
+         colorUniform,
+         textureUniform,
+         shader) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -87,11 +106,11 @@ module Sprite =
             let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
             match insetOpt with
             | ValueSome inset ->
-                let px = inset.Min.X * texelWidth + borderWidth
-                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
+                let mx = inset.Min.X * texelWidth + borderWidth
+                let my = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
-                Box2 (px, py, sx, sy)
+                Box2 (mx, my, sx, sy)
             | ValueNone ->
                 let mx = borderWidth
                 let my = 1.0f - borderHeight
@@ -122,6 +141,20 @@ module Sprite =
         Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
         Gl.Enable EnableCap.Blend
         Gl.Enable EnableCap.CullFace
+        match clipOpt with
+        | ValueSome clip ->
+            let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
+            let minNdc = minClip / minClip.W * single viewport.DisplayScalar
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+            let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+            let offset = viewport.Bounds.Min
+            Gl.Enable EnableCap.ScissorTest
+            Gl.Scissor
+                ((minScissor.X |> round |> int) + offset.X,
+                 (minScissor.Y |> round |> int) + offset.Y,
+                 int sizeScissor.X,
+                 int sizeScissor.Y)
+        | ValueNone -> ()
         Hl.Assert ()
 
         // setup shader
@@ -165,3 +198,4 @@ module Sprite =
         Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
         Gl.Disable EnableCap.Blend
         Gl.Disable EnableCap.CullFace
+        Gl.Disable EnableCap.ScissorTest

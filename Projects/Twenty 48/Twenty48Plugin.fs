@@ -1,6 +1,7 @@
 ﻿namespace Twenty48
 open System
 open Nu
+open Twenty48
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
 type Twenty48Plugin () =

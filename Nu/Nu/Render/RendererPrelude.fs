@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -50,38 +50,27 @@ type [<Struct>] RenderType =
     | ForwardRenderType of Subsort : single * Sort : single
 
 /// Desribes the render pass at play.
-/// OPTIMIZATION: uses partial hashing for speed.
-type [<CustomEquality; NoComparison>] RenderPass =
+type RenderPass =
     | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
-    | ShadowPass of LightId : uint64 * ShadowDirectional : bool * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
-    static member hash renderPass =
-        match renderPass with
-        | NormalPass -> 0
-        | LightMapPass (lightProbeId, _) -> hash lightProbeId
-        | ShadowPass (lightId, _, _, _) -> hash lightId
-        | ReflectionPass (reflectorId, _) -> hash reflectorId
-
-    static member equals left right =
-        match struct (left, right) with
-        | struct (NormalPass, NormalPass) -> true
-        | struct (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
-        | struct (ShadowPass (lightId, _, _, _), ShadowPass (lightId2, _, _, _)) -> lightId = lightId2
-        | struct (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
-        | struct (_, _) -> false
-
-    static member comparer =
-        HashIdentity.FromFunctions RenderPass.hash RenderPass.equals
-
-    override this.Equals thatObj =
-        match thatObj with
-        | :? RenderPass as that -> RenderPass.equals this that
-        | _ -> false
-
-    override this.GetHashCode () =
-        RenderPass.hash this
+    /// Check that a render pass should displace another.
+    static member displaces renderPass renderPass2 =
+        if renderPass <> renderPass2 then
+            match (renderPass, renderPass2) with
+            | (NormalPass, NormalPass) -> failwithumf ()
+            | (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
+            | (ShadowPass (lightId, faceInfoOpt, _, _, _), ShadowPass (lightId2, faceInfoOpt2, _, _, _)) ->
+                lightId = lightId2 &&
+                match struct (faceInfoOpt, faceInfoOpt2) with
+                | struct (Some faceInfo, Some faceInfo2) -> Triple.fst faceInfo = Triple.fst faceInfo2
+                | struct (None, None) -> true
+                | struct (_, _) ->  false
+            | (ReflectionPass (reflectorId, _), ReflectionPass (reflectorId2, _)) -> reflectorId = reflectorId2
+            | (_, _) -> false
+        else false
 
 /// An asset that is used for rendering.
 type RenderAsset =

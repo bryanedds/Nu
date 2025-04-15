@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu.Math": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

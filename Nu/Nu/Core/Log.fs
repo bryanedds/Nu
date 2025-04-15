@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -11,17 +11,15 @@ open Prime
 module Log =
 
     let mutable private Initialized = false
-#if DEBUG
     let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private WarnOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private ErrorOnceMessages = ConcurrentDictionary StringComparer.Ordinal
-#endif
 
     let private getDateTimeNowStr () =
         let now = DateTimeOffset.Now
         now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
 
-    /// Log a purely informational message with Trace.TraceInformation.
+    /// Log a purely informational message with Trace.WriteLine.
     /// Thread-safe.
     let info message =
         Trace.WriteLine (getDateTimeNowStr () + "|Info|" + message)
@@ -29,13 +27,9 @@ module Log =
     /// Log a purely informational message once with Trace.WriteLine.
     /// Thread-safe.
     let infoOnce (message : string) =
-#if DEBUG
         if InfoOnceMessages.TryAdd (message, 0) then info message
-#else
-        ignore message
-#endif
 
-    /// Log a warning message with Trace.TraceWarning.
+    /// Log a warning message with Trace.WriteLine.
     /// Thread-safe.
     let warn message =
         Trace.WriteLine (getDateTimeNowStr () + "|Warning|" + message)
@@ -43,11 +37,7 @@ module Log =
     /// Log a warning message once with Trace.WriteLine.
     /// Thread-safe.
     let warnOnce (message : string) =
-#if DEBUG
         if WarnOnceMessages.TryAdd (message, 0) then warn message
-#else
-        ignore message
-#endif
 
     /// Log an error message with Trace.WriteLine.
     /// Thread-safe.
@@ -58,11 +48,7 @@ module Log =
     /// Log an error message once with Trace.WriteLine.
     /// Thread-safe.
     let errorOnce (message : string) =
-#if DEBUG
-        if ErrorOnceMessages.TryAdd (message, 0) then warn message
-#else
-        ignore message
-#endif
+        if ErrorOnceMessages.TryAdd (message, 0) then error message
 
     /// Log a failure message using Trace.Fail.
     /// Thread-safe.
@@ -70,7 +56,7 @@ module Log =
         Trace.Fail (getDateTimeNowStr () + "|Fatal|" + message)
         failwith "Log.fail exception."
 
-    /// Log an custom log type with Trace.TraceInformation.
+    /// Log an custom log type with Trace.WriteLine.
     /// Thread-safe.
     let custom header message =
         Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)

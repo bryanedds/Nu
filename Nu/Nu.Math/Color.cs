@@ -51,11 +51,11 @@ namespace Nu
         public byte A8 => (byte)(A * 255.0f);
 
         /// <summary>
-        /// Instantiates a new <see cref="Vector4"/> from the R, G, B and A components of a <see cref="Color"/>.
+        /// Instantiates a new <see cref="V4"/> from the R, G, B and A components of a <see cref="Color"/>.
         /// </summary>
         /// <param name="col">The color which the instantiated vector will use the X,Y,Z and W from, in that order.</param>
         /// <returns>The vector that was instantiated.</returns>
-        public Vector4 Vector4 => new Vector4(R, G, B, A);
+        public Vector4 V4 => new Vector4(R, G, B, A);
 
         /// <summary>
         /// The packed value in RGBA order.
@@ -314,6 +314,14 @@ namespace Nu
         public static bool operator !=(Color left, Color right)
         {
             return !left.Equals(right);
+        }
+
+        /// <summary>
+        /// Linearly interpolate two colors.
+        /// </summary>
+        public static Color Lerp(Color left, Color right, float progress)
+        {
+            return new Color(Vector4.Lerp(left.V4, right.V4, progress));
         }
 
         /// <summary>

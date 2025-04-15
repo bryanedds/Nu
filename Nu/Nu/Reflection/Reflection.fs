@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -38,7 +38,6 @@ module Reflection =
              ("Dispatcher", true)
              ("Content", true)
              ("Protected", true)
-             ("Order", true)
              ("Id", true)
 
              // game properties
@@ -73,6 +72,7 @@ module Reflection =
              ("Perimeter", true)
              ("Bounds", true)
              ("Imperative", true)
+             ("PresenceOverride", true)
              ("PublishChangeEvents", true)
              ("PublishPreUpdates", true)
              ("PublishUpdates", true)
@@ -403,7 +403,7 @@ module Reflection =
     /// Write a member property value to a property descriptors.
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
         if  not (isPropertyNonPersistent property target) &&
-            shouldWriteProperty property.Name property.PropertyType propertyValue then // HACK: never write degrees as those are only intended for the editor.
+            shouldWriteProperty property.Name property.PropertyType propertyValue then
             if  property.Name = Constants.Engine.TransformPropertyName &&
                 property.PropertyType = typeof<Transform> then
                 propertyDescriptors // nothing to do here since the custom .NET properties will take care of this...
@@ -557,8 +557,7 @@ module Reflection =
                     then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
                     else ())
                     facets
-                let facets = Array.append facetsExisting facets
-                facetsProperty.SetValue (target, facets)
+                facetsProperty.SetValue (target, Array.append facetsExisting facets)
                 Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
 
     /// Attach source's intrinsic facets to a target.
@@ -582,6 +581,29 @@ module Reflection =
             // process existing assemblies
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
                 AssembliesLoaded.[assembly.FullName] <- assembly
+
+[<AutoOpen>]
+module ReflectionOperators =
+
+    /// Convert an value to an value of the given type using symbolic conversion.
+    /// Thread-safe.
+    let objToObj (ty : Type) (value : obj) =
+        match value with
+        | null -> null
+        | _ ->
+            let ty2 = value.GetType ()
+            if not (ty.IsAssignableFrom ty2) then
+                let converter = SymbolicConverter ty
+                let converter2 = SymbolicConverter ty2
+                let symbol = converter2.ConvertTo (value, typeof<Symbol>)
+                try converter.ConvertFrom symbol
+                with _ ->
+                    match ty.TryGetDefaultValue () with
+                    | Some value ->
+                        Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                        value
+                    | None -> failconv "Could not promote or automatically construct a default value to the required type."
+            else value
 
 namespace Prime
 open Nu

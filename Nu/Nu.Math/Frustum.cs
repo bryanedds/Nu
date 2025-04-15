@@ -3,6 +3,8 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Nu
@@ -97,6 +99,12 @@ namespace Nu
         {
             get { return this._planes[5]; }
         }
+
+        /// <summary>
+        /// Returns a copy of internal corners array.
+        /// </summary>
+        /// <returns>The array of corners.</returns>
+        public Vector3[] Corners => (Vector3[])this._corners.Clone();
 
         /// <summary>
         /// Constructs the frustum by extracting the view planes from a matrix.
@@ -295,15 +303,6 @@ namespace Nu
         /// <summary>
         /// Returns a copy of internal corners array.
         /// </summary>
-        /// <returns>The array of corners.</returns>
-        public Vector3[] GetCorners()
-        {
-            return (Vector3[])this._corners.Clone();
-        }
-
-        /// <summary>
-        /// Returns a copy of internal corners array.
-        /// </summary>
         /// <param name="corners">The array which values will be replaced to corner values of this instance. It must have size of <see cref="Frustum.CornerCount"/>.</param>
 		public void GetCorners(Vector3[] corners)
         {
@@ -341,13 +340,12 @@ namespace Nu
         /// <param name="result"><c>true</c> if specified <see cref="Box3"/> intersects with this <see cref="Frustum"/>; <c>false</c> otherwise as an output parameter.</param>
         public void Intersects(in Box3 box, out bool result)
         {
-            if (this._bounds.Intersects(box))
+            this._bounds.Intersects(in box, out result);
+            if (result)
             {
-                var containment = default(ContainmentType);
-                this.Contains(in box, out containment);
+                this.Contains(in box, out var containment);
                 result = containment != ContainmentType.Disjoint;
             }
-            else result = false;
         }
 
         /// <summary>
@@ -431,22 +429,42 @@ namespace Nu
         /// <param name="result">Distance at which ray intersects with this <see cref="Frustum"/> or null if no intersection happens as an output parameter.</param>
         public void Intersects(in Ray3 ray, out float? result)
         {
-            ContainmentType ctype;
-            this.Contains(in ray.Origin, out ctype);
+            // Start by finding intersection t with each plane
+            Near.Intersects(ray, out float? tNear);
+            Far.Intersects(ray, out float? tFar);
+            Left.Intersects(ray, out float? tLeft);
+            Right.Intersects(ray, out float? tRight);
+            Top.Intersects(ray, out float? tTop);
+            Bottom.Intersects(ray, out float? tBottom);
 
-            switch (ctype)
+            // Initialize a list to store all valid intersection t values
+            List<float> validTs = new List<float>();
+
+            // Check the intersection t values for each plane
+            if (tNear.HasValue && tNear.Value >= 0) validTs.Add(tNear.Value);
+            if (tFar.HasValue && tFar.Value >= 0) validTs.Add(tFar.Value);
+            if (tLeft.HasValue && tLeft.Value >= 0) validTs.Add(tLeft.Value);
+            if (tRight.HasValue && tRight.Value >= 0) validTs.Add(tRight.Value);
+            if (tTop.HasValue && tTop.Value >= 0) validTs.Add(tTop.Value);
+            if (tBottom.HasValue && tBottom.Value >= 0) validTs.Add(tBottom.Value);
+
+            // Attempt to find nearest intersection point inside the frustum.
+            if (validTs.Count > 0)
             {
-                case ContainmentType.Disjoint:
-                    result = null;
+                var nearest = validTs.Min();
+                var point = ray.Origin + ray.Direction * nearest;
+                if (Contains(point) != ContainmentType.Disjoint)
+                {
+                    result = nearest;
                     return;
-                case ContainmentType.Contains:
-                    result = 0.0f;
-                    return;
-                case ContainmentType.Intersects:
-                    throw new NotImplementedException();
-                default:
-                    throw new ArgumentOutOfRangeException();
+                }
+
+                result = null;
+                return;
             }
+
+            result = null;
+            return;
         }
 
         /// <summary>

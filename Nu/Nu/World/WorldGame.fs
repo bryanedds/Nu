@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -36,6 +36,9 @@ module WorldGameModule =
         member this.GetEye3dRotation world = World.getGameEye3dRotation this world
         member this.SetEye3dRotation value world = World.setGameEye3dRotation value this world |> snd'
         member this.Eye3dRotation = lens (nameof this.Eye3dRotation) this this.GetEye3dRotation this.SetEye3dRotation
+        member this.GetEye3dFieldOfView world = World.getGameEye3dFieldOfView this world
+        member this.SetEye3dFieldOfView value world = World.setGameEye3dFieldOfView value this world |> snd'
+        member this.Eye3dFieldOfView = lens (nameof this.Eye3dFieldOfView) this this.GetEye3dFieldOfView this.SetEye3dFieldOfView
         member this.GetOrder world = World.getGameOrder this world
         member this.Order = lensReadOnly (nameof this.Order) this this.GetOrder
         member this.GetId world = World.getGameId this world
@@ -78,9 +81,10 @@ module WorldGameModule =
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUpEvent index --> Game.Handle
         member this.TextInputEvent = Events.TextInputEvent --> Game.Handle
         member this.AssetsReloadEvent = Events.AssetsReloadEvent --> Game.Handle
+        member this.CodeReloadEvent = Events.CodeReloadEvent --> Game.Handle
+        member this.ExitRequestEvent = Events.ExitRequestEvent --> Game.Handle
         member this.BodyAddingEvent = Events.BodyAddingEvent --> Game.Handle
         member this.BodyRemovingEvent = Events.BodyRemovingEvent --> Game.Handle
-        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game.Handle
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -92,8 +96,8 @@ module WorldGameModule =
         member this.GetProperty propertyName world =
             World.getGameProperty propertyName this world
 
-        /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
+        /// Try to get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetGameXtensionValue<'a> propertyName this world
 
         /// Get an xtension property value.
@@ -110,13 +114,11 @@ module WorldGameModule =
 
         /// To try set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.trySetGameXtensionProperty propertyName property this world
+            World.trySetGameXtensionValue propertyName value this world
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setGameXtensionProperty propertyName property this world
+            World.setGameXtensionValue<'a> propertyName value this world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -204,27 +206,43 @@ module WorldGameModule =
             Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat
 
+        /// Get all the entities in the selected screen, if any.
+        static member getSelectedEntities world =
+            World.getSelectedGroups world |>
+            Seq.map (fun selectedGroup -> World.getEntities selectedGroup world)
+
+        /// Get all the entities directly parented by a group in the selected screen, if any.
+        static member getSelectedSovereignEntities world =
+            World.getSelectedGroups world |>
+            Seq.map (fun selectedGroup -> World.getSovereignEntities selectedGroup world)
+
         /// Get all the groups in the world.
         static member getGroups1 world =
             World.getScreens world |>
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
 
+        /// Get all the groups in the selected screen, if any.
+        static member getSelectedGroups world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen -> World.getGroups selectedScreen world
+            | None -> []
+
         /// Write a game to a game descriptor.
-        static member writeGame writePropagationHistory gameDescriptor game world =
+        static member writeGame gameDescriptor game world =
             let gameState = World.getGameState game world
             let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
-            let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
             let screens = World.getScreens world
-            { gameDescriptor with ScreenDescriptors = World.writeScreens writePropagationHistory screens world }
+            { gameDescriptor with ScreenDescriptors = World.writeScreens screens world }
 
         /// Write a game to a file.
-        static member writeGameToFile writePropagationHistory (filePath : string) game world =
+        static member writeGameToFile (filePath : string) game world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let gameDescriptor = World.writeGame writePropagationHistory GameDescriptor.empty game world
+            let gameDescriptor = World.writeGame GameDescriptor.empty game world
             let gameDescriptorStr = scstring gameDescriptor
             let gameDescriptorPretty = PrettyPrinter.prettyPrint gameDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, gameDescriptorPretty)

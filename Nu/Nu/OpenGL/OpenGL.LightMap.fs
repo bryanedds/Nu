@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -11,12 +11,12 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, geometryResolution, ssaoResolution, rasterResolution, origin) =
+    let CreateReflectionMap (render, resolution, origin, ambientColor, ambientBrightness) =
 
         // create reflection renderbuffer
         let rasterRenderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, rasterRenderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, rasterResolution, rasterResolution)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, resolution, resolution)
         Hl.Assert ()
 
         // create reflection framebuffer
@@ -34,7 +34,7 @@ module LightMap =
         // setup reflection cube map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, rasterResolution, rasterResolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
@@ -49,10 +49,8 @@ module LightMap =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete then Log.error "Reflection framebuffer is incomplete!"
         Hl.Assert ()
 
-        // construct viewports
-        let geometryViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero geometryResolution)
-        let ssaoViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero ssaoResolution)
-        let rasterViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup rasterResolution))
+        // construct geometry viewport
+        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent (box2i v2iZero (v2iDup resolution))
 
         // construct eye rotations
         let eyeRotations =
@@ -62,10 +60,6 @@ module LightMap =
               (v3Down, v3Forward)   // (-y) bottom
               (v3Back, v3Down)      // (+z) back
               (v3Forward, v3Down)|] // (-z) front
-
-        // construct projections
-        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.NearDistance, geometryViewport.FarDistance)
-        let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
 
         // render reflection cube map faces
         for i in 0 .. dec 6 do
@@ -79,8 +73,7 @@ module LightMap =
             let (eyeForward, eyeUp) = eyeRotations.[i]
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
-            let viewAbsolute = m4Identity
-            let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
+            let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox =
                 match i with
                 | 2 -> // NOTE: special case for sky box top.
@@ -93,16 +86,17 @@ module LightMap =
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
             render
-                false origin eyeRotation
-                viewAbsolute viewRelative viewSkyBox
-                geometryViewport geometryProjection
-                ssaoViewport
-                rasterViewport rasterProjection
+                false (Some (ambientColor, ambientBrightness)) origin
+                view viewSkyBox
+                (Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport)
+                (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
+                (box2i v2iZero (v2iDup resolution))
+                (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 
-            //// take a snapshot for testing
-            //Hl.SaveFramebufferRgbaToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMapId + "." + string i + ".bmp")
+            // take a snapshot for testing
+            //Hl.SaveFramebufferRgbaToBitmap (rasterViewport.Bounds.Width, rasterViewport.Bounds.Height, "Reflection." + string rasterCubeMapId + "." + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
@@ -144,7 +138,7 @@ module LightMap =
         // setup irradiance cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
@@ -182,8 +176,8 @@ module LightMap =
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
             Hl.Assert ()
 
-            //// take a snapshot for testing
-            //Hl.SaveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
+            // take a snapshot for testing
+            //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Irradiance." + string cubeMapId + "." + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
@@ -300,7 +294,7 @@ module LightMap =
         // setup environment filter cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
@@ -340,10 +334,9 @@ module LightMap =
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
 
-                //// take a snapshot for testing
-                //if mip = 0 then
-                //    Hl.SaveFramebufferRgbaToBitmap resolution resolution ("EnvironmentFilter." + string cubeMapId + "." + string mip + "." + string i + ".bmp")
-                //    Hl.Assert ()
+                // take a snapshot for testing
+                //Hl.SaveFramebufferRgbaToBitmap (int mipResolution, int mipResolution, "EnvironmentFilter." + string i + "." + string mip + ".bmp")
+                //Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do
@@ -364,13 +357,17 @@ module LightMap =
         { Enabled : bool
           Origin : Vector3
           Bounds : Box3
+          AmbientColor : Color
+          AmbientBrightness : single
           IrradianceMap : Texture.Texture
           EnvironmentFilterMap : Texture.Texture }
 
     /// Create a light map with existing irradiance and environment filter maps.
-    let CreateLightMap enabled origin bounds irradianceMap environmentFilterMap =
+    let CreateLightMap enabled origin ambientColor ambientBrightness bounds irradianceMap environmentFilterMap =
         { Enabled = enabled
           Origin = origin
+          AmbientColor = ambientColor
+          AmbientBrightness = ambientBrightness
           Bounds = bounds
           IrradianceMap = irradianceMap
           EnvironmentFilterMap = environmentFilterMap }

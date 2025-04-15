@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -29,7 +29,7 @@ uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec4 frag;
+layout(location = 0) out vec4 frag;
 
 void main()
 {
@@ -46,7 +46,7 @@ void main()
         int lm2 = int(lmData.g) - 1;
         float lmRatio = lmData.b;
 
-        // compute irradiance terms
+        // compute irradiance
         vec3 irradiance = vec3(0.0);
         if (lm1 == -1 && lm2 == -1)
         {
@@ -67,5 +67,5 @@ void main()
         // write
         frag = vec4(irradiance, 1.0);
     }
-    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white irradiance
+    else frag = vec4(1.0); // white irradiance
 }

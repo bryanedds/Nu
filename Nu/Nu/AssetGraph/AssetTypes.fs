@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -19,6 +19,9 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
+/// A spine skeleton. Currently just used as a phantom type.
+type SpineSkeleton = private { __ : unit }
+
 /// A cube map. Currently just used as a phantom type.
 type CubeMap = private { __ : unit }
 
@@ -36,19 +39,6 @@ type AnimatedModel = private { __ : unit }
 
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string
-
-[<AutoOpen>]
-module AssetPatterns =
-
-    let (|RawExtension|_|) extension = match extension with ".raw" -> Some extension | _ -> None
-    let (|ImageExtension|_|) extension = match extension with ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" -> Some extension | _ -> None
-    let (|FontExtension|_|) extension = match extension with ".ttf" -> Some extension | _ -> None
-    let (|TileMapExtension|_|) extension = match extension with ".tmx" -> Some extension | _ -> None
-    let (|CubeMapExtension|_|) extension = match extension with ".cbm" -> Some extension | _ -> None
-    let (|SoundExtension|_|) extension = match extension with ".wav" -> Some extension | _ -> None
-    let (|SongExtension|_|) extension = match extension with ".ogg" | ".mp3" -> Some extension | _ -> None
-    let (|ModelExtension|_|) extension = match extension with ".fbx" | ".dae" | ".obj" -> Some extension | _ -> None
-    let (|CsvExtension|_|) extension = match extension with ".csv" -> Some extension | _ -> None
 
 [<AutoOpen>]
 module TmxExtensions =

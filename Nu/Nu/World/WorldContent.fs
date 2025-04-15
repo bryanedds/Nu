@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -58,12 +58,12 @@ module Content =
                 // subscribe to added events
                 let world =
                     List.foldGeneric (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -108,12 +108,12 @@ module Content =
                 // subscribe to added handlers
                 let world =
                     List.foldGeneric (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -142,7 +142,7 @@ module Content =
                     let lens = propertyContent.PropertyLens
                     match lens.This :> obj with
                     | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
-                    | _ -> lens.TrySet propertyContent.PropertyValue world
+                    | _ -> lens.TrySet propertyContent.PropertyValue world |> snd'
                 else world)
                 world content.PropertyContentsOpt
         else world
@@ -161,10 +161,10 @@ module Content =
                 let propertyContent = propertyContents.[i]
                 if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
-                    if strEq lens.Name "MountOpt" then mountOptFound <- true
+                    if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
                     match lens.This :> obj with
                     | null -> world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world
+                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world |> snd'
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
             world
         else world
@@ -186,7 +186,7 @@ module Content =
                     | (true, childContentOld) when optEq childEntry.Value.DispatcherNameOpt childContentOld.DispatcherNameOpt ->
                         let childSimulant = // OPTIMIZATION: attempt to get child simulant from old content rather than deriving it, and store it for future use.
                             if isNull (childContentOld.SimulantCachedOpt :> obj) then
-                                let derived = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                                let derived = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
                                 childEntry.Value.SimulantCachedOpt <- derived
                                 derived
                             else
@@ -195,7 +195,7 @@ module Content =
                                 found
                         childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
                     | (_, _) ->
-                        let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                        let childSimulant = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
                         childEntry.Value.SimulantCachedOpt <- childSimulant
                         childrenAdded.Add (childSimulant, childEntry.Value)
                 let childrenRemoved = List<'child> ()
@@ -238,7 +238,7 @@ module Content =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
                             if not (entity.GetExists world) || entity.GetDestroying world
-                            then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                            then World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
@@ -269,8 +269,8 @@ module Content =
                         let world =
                             if not (entity.GetExists world) || entity.GetDestroying world then
                                 match entityContent.EntityFilePathOpt with
-                                | Some entityFilePath -> World.readEntityFromFile entityFilePath (Some entity.Name) entity.Parent world |> snd
-                                | None -> World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                                | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> snd
+                                | None -> World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
@@ -320,8 +320,8 @@ module Content =
                         let world =
                             if not (group.GetExists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
-                                | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                                | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
+                                | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> snd
+                                | None -> World.createGroup5 false groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
                             else world
                         let world = World.setGroupProtected true group world |> snd'
                         synchronizeGroup true GroupContent.empty groupContent origin group world)
@@ -349,7 +349,7 @@ module Content =
                     List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
                             if not (screen.GetExists world) || screen.GetDestroying world
-                            then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
+                            then World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
                             else world
                         let world = World.setScreenProtected true screen world |> snd'
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
@@ -360,15 +360,15 @@ module Content =
         else (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
 
     /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
-    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt definitions entities =
+    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt (definitions : Entity DefinitionContent seq) entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let mutable entityContentsOpt = null
         for definition in definitions do
             match definition with
-            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
+            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
@@ -412,7 +412,7 @@ module Content =
     /// Describe an association of gui entities with the given definitions and content.
     let association entityName definitions content = composite<GuiDispatcher> entityName definitions content
 
-    /// Describe a text with the given definitions.
+    /// Describe a text entity with the given definitions.
     let text entityName definitions = entity<TextDispatcher> entityName definitions
 
     /// Describe a label with the given definitions.
@@ -433,7 +433,10 @@ module Content =
     /// Describe a feeler with the given definitions.
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
-    /// Describe an fps gui with the given definitions.
+    /// Describe a text box entity with the given definitions.
+    let textBox entityName definitions = entity<TextBoxDispatcher> entityName definitions
+
+    /// Describe an fps entity with the given definitions.
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 
     /// Describe a panel with the given definitions and content.
@@ -444,6 +447,12 @@ module Content =
 
     /// Describe a 2d box with the given definitions.
     let box2d entityName definitions = entity<Box2dDispatcher> entityName definitions
+
+    /// Describe a 2d sphere with the given definitions.
+    let sphere2d entityName definitions = entity<Sphere2dDispatcher> entityName definitions
+
+    /// Describe a 2d ball with the given definitions.
+    let ball2d entityName definitions = entity<Ball2dDispatcher> entityName definitions
 
     /// Describe a 2d character with the given definitions.
     let character2d entityName definitions = entity<Character2dDispatcher> entityName definitions
@@ -456,6 +465,9 @@ module Content =
 
     /// Describe a tmx map with the given definitions.
     let tmxMap entityName definitions = entity<TmxMapDispatcher> entityName definitions
+
+    /// Describe a Spine skeleton with the given definitions.
+    let spineSkeleton entityName definitions = entity<SpineSkeletonDispatcher> entityName definitions
 
     /// Describe a 3d light probe with the given definitions.
     let lightProbe3d entityName definitions = entity<LightProbe3dDispatcher> entityName definitions
@@ -478,23 +490,38 @@ module Content =
     /// Describe a 3d box with the given definitions.
     let box3d entityName definitions = entity<Box3dDispatcher> entityName definitions
 
+    /// Describe a 3d sphere with the given definitions.
+    let sphere3d entityName definitions = entity<Sphere3dDispatcher> entityName definitions
+
+    /// Describe a 3d ball with the given definitions.
+    let ball3d entityName definitions = entity<Ball3dDispatcher> entityName definitions
+
     /// Describe a static billboard with the given definitions.
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
+
+    /// Describe an animated billboard with the given definitions.
+    let animatedBillboard entityName definitions = entity<AnimatedBillboardDispatcher> entityName definitions
 
     /// Describe a static model with the given definitions.
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
 
-    /// Describe a static model surface with the given definitions.
-    let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+    /// Describe an animated model with the given definitions.
+    let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
+
+    /// Describe a sensor model with the given definitions.
+    let sensorModel entityName definitions = entity<SensorModelDispatcher> entityName definitions
 
     /// Describe a rigid model with the given definitions.
     let rigidModel entityName definitions = entity<RigidModelDispatcher> entityName definitions
 
+    /// Describe a static model surface with the given definitions.
+    let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+
+    /// Describe a sensor model surface with the given definitions.
+    let sensorModelSurface entityName definitions = entity<SensorModelSurfaceDispatcher> entityName definitions
+
     /// Describe a rigid model surface with the given definitions.
     let rigidModelSurface entityName definitions = entity<RigidModelSurfaceDispatcher> entityName definitions
-
-    /// Describe an animated model with the given definitions.
-    let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
 
     /// Describe a 3d character with the given definitions.
     let character3d entityName definitions = entity<Character3dDispatcher> entityName definitions
@@ -518,15 +545,15 @@ module Content =
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
-    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt definitions entities =
+    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq)  entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let mutable entityContentsOpt = null
         for definition in definitions do
             match definition with
-            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
+            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
@@ -548,15 +575,15 @@ module Content =
         group4<'groupDispatcher> groupName (Some filePath) definitions entities
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
-    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt definitions groups =
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq)  groups =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let groupContents = OrderedDictionary StringComparer.Ordinal
         for definition in definitions do
             match definition with
-            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
+            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for group in groups do
             groupContents.Add (group.GroupName, group)
@@ -586,14 +613,14 @@ module Content =
         let screenContents = OrderedDictionary StringComparer.Ordinal
         for definition in definitions do
             match definition with
-            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
+            | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for screen in screens do
             screenContents.Add (screen.ScreenName, screen)
 #if DEBUG
         if screenContents.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
-            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screen (> 2048) in a single game may thrash the LOH."
+            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screens (> 2048) in a single game may thrash the LOH."
 #endif
         { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
@@ -620,15 +647,15 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (==) (lens : Lens<'a, 's>) (value : 'a) : DefinitionContent =
+        (==) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make true lens value)
 
-    /// Define a synchronized property equality.
+    /// Define a dynamic property equality.
     let
 #if !DEBUG
         inline
 #endif
-        (:=) (lens : Lens<'a, 's>) (value : 'a) : DefinitionContent =
+        (:=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define an event signal.
@@ -636,7 +663,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=>) (eventAddress : 'a Address) (signal : Signal) : DefinitionContent =
+        (=>) (eventAddress : 'a Address) (signal : Signal) : 's DefinitionContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define an event handler.
@@ -644,5 +671,5 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : DefinitionContent =
+        (=|>) (eventAddress : 'a Address) (callback : Event<'a, #Simulant> -> Signal) : 's DefinitionContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))

@@ -107,7 +107,7 @@ namespace Nu
             //check if all corner is in sphere
             bool inside = true;
 
-            Vector3[] corners = frustum.GetCorners();
+            Vector3[] corners = frustum.Corners;
             foreach (Vector3 corner in corners)
             {
                 if (this.Contains(corner) == ContainmentType.Disjoint)
@@ -241,7 +241,7 @@ namespace Nu
         /// <returns>The new <see cref="Sphere"/>.</returns>
         public static Sphere CreateFromFrustum(Frustum frustum)
         {
-            return CreateFromPoints(frustum.GetCorners());
+            return CreateFromPoints(frustum.Corners);
         }
 
         /// <summary>

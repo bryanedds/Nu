@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu.Behaviors
 open System
@@ -293,7 +293,7 @@ module Behavior =
         map (fun steps -> steps % 2 <> 0) (step stride bhvr)
 
     /// A behavior that produces a value that remains constant (equal to 'a') regardless of the input behavior's value.
-    let inline constantTween (a :'a) (_ :'a) bhvr =
+    let inline constantTween (a : 'a) (_ : 'a) bhvr =
         map (fun (_ : 'b) -> a) bhvr
 
     /// A behavior that produces a value that is linearly interpolated between the values 'a' and 'b' based on the input

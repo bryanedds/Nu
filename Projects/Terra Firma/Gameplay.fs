@@ -3,176 +3,129 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open TerraFirma
 
-// this represents that state of gameplay simulation.
 type GameplayState =
-    | Quit
     | Playing
-
-// this is our MMCC model type representing gameplay.
-type [<SymbolicExpansion>] Gameplay =
-    { GameplayState : GameplayState
-      Score : int }
-
-    // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
-    static member empty =
-        { GameplayState = Quit
-          Score = 0 }
-
-    // this represents the gameplay model in its initial state, such as when gameplay starts.
-    static member initial =
-        { GameplayState = Playing
-          Score = 0 }
-
-// this is our MMCC message type.
-type GameplayMessage =
-    | StartPlaying
-    | FinishQuitting
-    | Die of Entity
-    interface Message
-
-// this is our MMCC command type.
-type GameplayCommand =
-    | SetupScene
-    | StartQuitting
-    | AttackCharacter of Entity
-    | DestroyEnemy of Entity
-    | TrackPlayer
-    interface Command
+    | Quit
 
 // this extends the Screen API to expose the Gameplay model as well as the Quit event.
 [<AutoOpen>]
-module Gameplay =
+module GameplayExtensions =
     type Screen with
-        member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
-        member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
-        member this.Gameplay = this.ModelGeneric<Gameplay> ()
-        member this.QuitEvent = Events.QuitEvent --> this
+        member this.GetGameplayState world : GameplayState = this.Get (nameof Screen.GameplayState) world
+        member this.SetGameplayState (value : GameplayState) world = this.Set (nameof Screen.GameplayState) value world
+        member this.GameplayState = lens (nameof Screen.GameplayState) this this.GetGameplayState this.SetGameplayState
+        member this.GetScore world : int = this.Get (nameof Screen.Score) world
+        member this.SetScore (value : int) world = this.Set (nameof Screen.Score) value world
+        member this.Score = lens (nameof Screen.Score) this this.GetScore this.SetScore
 
-// this is the screen dispatcher that defines the screen where gameplay takes place.
+// this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type GameplayDispatcher () =
-    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
+    inherit ScreenDispatcherImNui ()
 
-    // here we define the screen's fallback model depending on whether screen is selected
-    override this.GetFallbackModel (_, screen, world) =
-        if screen.GetSelected world
-        then Gameplay.initial
-        else Gameplay.empty
+    // here we define default property values
+    static member Properties =
+        [define Screen.GameplayState Quit
+         define Screen.Score 0]
 
-    // here we define the screen's property values and event handling
-    override this.Definitions (_, _) =
-        [Screen.SelectEvent => StartPlaying
-         Screen.DeselectingEvent => FinishQuitting
-         Screen.PostUpdateEvent => TrackPlayer
-         Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> AttackCharacter evt.Data
-         Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Die evt.Data]
+    // here we define the behavior of our gameplay
+    override this.Process (selectionResults, screen, world) =
 
-    // here we handle the gameplay messages
-    override this.Message (gameplay, message, _, world) =
+        // only process when selected
+        if screen.GetSelected world then
 
-        match message with
-        | StartPlaying ->
-            let gameplay = Gameplay.initial
-            withSignals [SetupScene; TrackPlayer] gameplay
+            // process scene initialization
+            let initializing = FQueue.contains Select selectionResults
+            let world =
+                if initializing then
+                    let world = Simulants.Gameplay.SetGameplayState Playing world
+                    let world = Simulants.Gameplay.SetScore 0 world
+                    world
+                else world
 
-        | FinishQuitting ->
-            let gameplay = Gameplay.empty
-            just gameplay
+            // begin scene declaration
+            let world = World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
 
-        | Die deadCharacter ->
-            let character = deadCharacter.GetCharacter world
-            match character.CharacterType with
-            | Player -> withSignal StartQuitting gameplay
-            | Enemy ->
-                let gameplay = { gameplay with Score = gameplay.Score + 100 }
-                withSignal (DestroyEnemy deadCharacter) gameplay
+            // declare player
+            let world =
+                World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
+                    [if initializing then Entity.Position @= v3 0.0f 1.65f 0.0f
+                     Entity.Elevation .= 1.0f]
+                    world
 
-    // here we handle the gameplay commands
-    // notice how in here we handle events from characters to implement intra-character interactions rather than
-    // the more complex approach of having characters talk to each other or handle each other's events.
-    override this.Command (_, command, screen, world) =
+            // process attacks
+            let (attacks, world) = World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world
+            let world =
+                FQueue.fold (fun world (attack : Entity) ->
+                    let world = attack.HitPoints.Map (dec >> max 0) world
+                    if attack.GetHitPoints world > 0 then
+                        if not (attack.GetActionState world).IsInjuryState then
+                            let world = attack.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            let world = attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                            world
+                        else world
+                    else
+                        if not (attack.GetActionState world).IsWoundState then
+                            let world = attack.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            let world = attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                            world
+                        else world)
+                    world attacks
 
-        match command with
-        | SetupScene ->
-            let world = Simulants.GameplayPlayer.SetPosition (v3 0.0f 1.65f 0.0f) world
-            let world = World.synchronizeNav3d screen world
-            just world
+            // process enemy deaths
+            let (deaths, world) = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world
+            let enemyDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) deaths
+            let world = FQueue.fold (fun world death -> World.destroyEntity death world) world enemyDeaths
+            let world = screen.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
+        
+            // process player deaths
+            let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
+            let world = if FQueue.notEmpty playerDeaths then screen.SetGameplayState Quit world else world
 
-        | StartQuitting ->
-            let world = World.publish () screen.QuitEvent screen world
-            just world
+            // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
+            // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
+            let sun = Simulants.GameplaySun
+            let mutable shadowViewInverse = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion (sun.GetRotation world)
+            shadowViewInverse.Translation <- sun.GetPosition world
+            let shadowView = shadowViewInverse.Inverted
+            let shadowWidth = max (sun.GetLightCutoff world * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+            let shadowResolution = Viewport.getShadowTextureBufferResolution 0 world.GeometryViewport
+            let shadowTexelSize = shadowWidth / single shadowResolution.X // assuming square, of course
+            let position = Simulants.GameplayPlayer.GetPositionInterpolated world
+            let positionShadow = position.Transform shadowView
+            let positionSnapped =
+                v3
+                    (floor (positionShadow.X / shadowTexelSize) * shadowTexelSize)
+                    (floor (positionShadow.Y / shadowTexelSize) * shadowTexelSize)
+                    (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
+            let position = positionSnapped.Transform shadowViewInverse
+            let world = sun.SetPositionLocal position world
 
-        | AttackCharacter entity ->
-            let character = entity.GetCharacter world
-            let character = { character with HitPoints = max (dec character.HitPoints) 0 }
-            let (signals, character) =
-                if character.HitPoints > 0 then
-                    match character.ActionState with
-                    | InjuryState _ -> just character
-                    | _ ->
-                        let character = { character with ActionState = InjuryState { InjuryTime = world.UpdateTime }}
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                        just character
-                else
-                    match character.ActionState with
-                    | WoundState _ -> just character
-                    | _ ->
-                        let character = { character with ActionState = WoundState { WoundTime = world.UpdateTime }}
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                        just character
-            let world = entity.SetCharacter character world
-            withSignals signals world
+            // update eye to look at player while game is advancing
+            let world =
+                if world.Advancing then
+                    let position = Simulants.GameplayPlayer.GetPositionInterpolated world
+                    let rotation = Simulants.GameplayPlayer.GetRotationInterpolated world * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
+                    let world = World.setEye3dCenter (position + v3Up * 1.75f - rotation.Forward * 3.0f) world
+                    let world = World.setEye3dRotation rotation world
+                    world
+                else world
 
-        | DestroyEnemy entity ->
-            let world = World.destroyEntity entity world
-            just world
+            // process nav sync
+            let world = if initializing then World.synchronizeNav3d screen world else world
 
-        | TrackPlayer ->
-            
-            // update eye to look at player
-            let player = Simulants.GameplayPlayer.GetCharacter world
-            let position = Simulants.GameplayPlayer.GetPosition world
-            let rotation = Simulants.GameplayPlayer.GetRotation world
-            let positionInterp = player.PositionInterp position
-            let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
-            let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
-            let world = World.setEye3dRotation rotationInterp world
+            // declare score text
+            let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
 
-            // update sun to shine over player
-            let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
-            let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
-            just world
+            // declare quit button
+            let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
+            let world = if clicked then screen.SetGameplayState Quit world else world
 
-    // here we describe the content of the game including the hud group and the scene group
-    override this.Content (gameplay, _) =
+            // end scene declaration
+            World.endGroup world
 
-        [// the gui group
-         Content.group Simulants.GameplayGui.Name []
-
-            [// score
-             Content.text Simulants.GameplayScore.Name
-                [Entity.Position == v3 260.0f 155.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text := "Score: " + string gameplay.Score]
-
-             // quit
-             Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]
-
-         // the scene group while playing
-         match gameplay.GameplayState with
-         | Playing ->
-            
-            // loads scene from file edited in Gaia
-            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-
-                [// the player that's always present in the scene
-                 Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                    [Entity.Persistent == false
-                     Entity.DieEvent => Die Simulants.GameplayPlayer]]
-
-         // no scene group otherwise
-         | Quit -> ()]
+        // otherwise, no processing
+        else world

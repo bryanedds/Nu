@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -15,12 +15,18 @@ type TileMapMetadata =
     { TileMapImageAssets : struct (TmxTileset * Image AssetTag) array
       TileMap : TmxMap }
 
+/// Metadata of a Spine skeleton.
+type SpineSkeletonMetadata =
+    { SpineSkeletonData : Spine.SkeletonData
+      SpineAtlas : Spine.Atlas }
+
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
 /// memory.
 type Metadata =
     | RawMetadata
     | TextureMetadata of Vortice.Vulkan.Texture.TextureMetadata
     | TileMapMetadata of TileMapMetadata
+    | SpineSkeletonMetadata of SpineSkeletonMetadata
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
@@ -40,43 +46,49 @@ module Metadata =
         else None
 
     /// Thread-safe.
-    let private tryGenerateTextureMetadata (asset : Asset) =
-        if File.Exists asset.FilePath then
+    let private tryGenerateTextureMetadataFromFilePath (filePath : string) =
+        if File.Exists filePath then
             let platform = Environment.OSVersion.Platform
-            let fileExtension = PathF.GetExtensionLower asset.FilePath
+            let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".dds" then
                 let ddsHeader = Array.zeroCreate<byte> 20
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
-                Some (TextureMetadata (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height)))
+                Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let width = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (12, 2))
                 let height = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (14, 2))
-                Some (TextureMetadata (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height)))
+                Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (Vortice.Vulkan.Texture.TextureMetadata.make image.Width image.Height))
+                Some (Vortice.Vulkan.Texture.TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match Vortice.Vulkan.Texture.TryCreateTextureData (true, asset.FilePath) with
+                match Vortice.Vulkan.Texture.TryCreateTextureData (true, filePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
-                    Some (TextureMetadata metadata)
+                    Some metadata
                 | None ->
-                    let errorMessage = "Failed to load texture metadata for '" + asset.FilePath + "."
+                    let errorMessage = "Failed to load texture metadata for '" + filePath + "."
                     Log.error errorMessage
                     None
         else
-            let errorMessage = "Failed to load texture due to missing file '" + asset.FilePath + "'."
+            let errorMessage = "Failed to load texture due to missing file '" + filePath + "'."
             Log.error errorMessage
             None
+
+    /// Thread-safe.
+    let private tryGenerateTextureMetadata (asset : Asset) =
+        match tryGenerateTextureMetadataFromFilePath asset.FilePath with
+        | Some metadata -> Some (TextureMetadata metadata)
+        | None -> None
 
     /// Thread-safe.
     let private tryGenerateTileMapMetadata (asset : Asset) =
@@ -85,6 +97,43 @@ module Metadata =
             Some (TileMapMetadata { TileMapImageAssets = imageAssets; TileMap = tmxMap })
         with exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
+            Log.error errorMessage
+            None
+
+    /// Thread-safe.
+    let private tryGenerateSpineSkeletonMetadata (asset : Asset) =
+        try let directoryPath = PathF.GetDirectoryName asset.FilePath
+            let fileName = PathF.GetFileNameWithoutExtension asset.FilePath
+            let fileExtension = PathF.GetExtensionLower asset.FilePath
+            let getTexture filePath =
+                match tryGenerateTextureMetadataFromFilePath filePath with
+                | Some metadata ->
+                    let assetTag = AssetTag.make<Image> asset.AssetTag.PackageName (PathF.GetFileNameWithoutExtension filePath)
+                    (metadata.TextureWidth, metadata.TextureHeight, assetTag :> obj)
+                | None ->
+                    let assetTag = AssetTag.make<Image> Assets.Default.PackageName Assets.Default.ImageName
+                    (32, 32, assetTag :> obj) // TODO: P1: turn the resolution into constants?
+            let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas")
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-ess", "")) else spineAtlasFilePath
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-pro", "")) else spineAtlasFilePath
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-ent", "")) else spineAtlasFilePath
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-edu", "")) else spineAtlasFilePath
+            let spineTextureRetriever = Spine.TextureRetriever getTexture
+            try let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever)
+                if fileExtension = ".skel" then
+                    let spineSkeletonBin = Spine.SkeletonBinary spineAtlas
+                    let spineSkeletonData = spineSkeletonBin.ReadSkeletonData asset.FilePath
+                    Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
+                else
+                    let spineSkeletonJson = Spine.SkeletonJson spineAtlas
+                    let spineSkeletonData = spineSkeletonJson.ReadSkeletonData asset.FilePath
+                    Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
+            with exn ->
+                let errorMessage = "Failed to load Spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
+                Log.error errorMessage
+                None
+        with exn ->
+            let errorMessage = "Failed to load Spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
             Log.error errorMessage
             None
 
@@ -114,6 +163,7 @@ module Metadata =
         | RawExtension _ -> tryGenerateRawMetadata asset
         | ImageExtension _ -> tryGenerateTextureMetadata asset
         | TileMapExtension _ -> tryGenerateTileMapMetadata asset
+        | SpineSkeletonExtension _ -> tryGenerateSpineSkeletonMetadata asset
         | ModelExtension _ -> tryGenerateModelMetadata asset
         | SoundExtension _ -> Some SoundMetadata
         | SongExtension _ -> Some SongMetadata
@@ -197,18 +247,18 @@ module Metadata =
                         let assetsLoaded = Dictionary ()
                         for asset in assetsToLoad do
                             match tryGenerateAssetMetadata asset with
-                            | Some audioAsset ->
+                            | Some assetMetadata ->
                                 let lastWriteTime =
                                     try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                                     with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                                assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
+                                assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, assetMetadata)
                             | None -> ()
 
                         // insert assets into package
-                        for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                        for assetEntry in assetsLoaded do
                             let assetName = assetEntry.Key
                             let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                            metadataPackage.TryAdd (assetName, (lastWriteTime, filePath, audioAsset)) |> ignore<bool>
+                            metadataPackage.[assetName] <- (lastWriteTime, filePath, audioAsset)
 
                         // insert package
                         MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>
@@ -221,18 +271,19 @@ module Metadata =
     /// Attempt to get the metadata package containing the given asset, attempt to load it if it isn't already.
     /// Thread-safe.
     let private tryGetMetadataPackage (assetTag : AssetTag) =
-        match MetadataPackagesLoaded.TryGetValue assetTag.PackageName with
-        | (true, package) -> Some package
-        | (false, _) ->
+        let mutable package = Unchecked.defaultof<_>
+        if MetadataPackagesLoaded.TryGetValue (assetTag.PackageName, &package)
+        then ValueSome package // OPTIMIZATION: eliding allocation with voption.
+        else
             match AssetGraphOpt with
             | Some assetGraph ->
                 if assetGraph.PackageDescriptors.ContainsKey assetTag.PackageName then
                     Log.info ("Loading Metadata package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     let package = tryGenerateMetadataPackage assetTag.PackageName assetGraph
                     MetadataPackagesLoaded.TryAdd (assetTag.PackageName, package) |> ignore<bool>
-                    Some package
-                else None
-            | None -> None
+                    ValueSome package
+                else ValueNone
+            | None -> ValueNone
 
     /// Get the metadate packages that have been loaded.
     /// NOTE: this is a potentially expensive call as the tree of ConcurrentDictionaries must be copied to avoid
@@ -246,94 +297,112 @@ module Metadata =
     /// Thread-safe.
     let getMetadataExists (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
-        | Some package ->
+        | ValueSome package ->
             match package.TryGetValue assetTag.AssetName with
             | (true, (_, _, _)) -> true
             | (false, _) -> false
-        | None -> false
+        | ValueNone -> false
 
     /// Attempt to get the file path of the given asset.
     /// Thread-safe.
     let tryGetFilePath (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
-        | Some package ->
+        | ValueSome package ->
             match package.TryGetValue assetTag.AssetName with
             | (true, (_, filePath, _)) -> Some filePath
             | (false, _) -> None
-        | None -> None
+        | ValueNone -> None
 
     /// Attempt to get the metadata of the given asset.
     /// Thread-safe.
     let tryGetMetadata (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
-        | Some package ->
-            match package.TryGetValue assetTag.AssetName with
-            | (true, (_, _, asset)) -> Some asset
-            | (false, _) -> None
-        | None -> None
+        | ValueSome package ->
+            let mutable asset = Unchecked.defaultof<_>
+            if package.TryGetValue (assetTag.AssetName, &asset)
+            then ValueSome (__c asset)
+            else ValueNone
+        | ValueNone -> ValueNone
 
     /// Attempt to get the texture metadata of the given image.
     /// Thread-safe.
     let tryGetTextureMetadata (image : Image AssetTag) =
         match tryGetMetadata image with
-        | Some (TextureMetadata metadata) -> Some metadata
-        | None -> None
-        | _ -> None
+        | ValueSome (TextureMetadata metadata) -> ValueSome metadata
+        | ValueNone -> ValueNone
+        | _ -> ValueNone
 
     /// Forcibly get the texture metadata of the given image (throwing on failure).
     /// Thread-safe.
     let getTextureMetadata image =
-        Option.get (tryGetTextureMetadata image)
+        ValueOption.get (tryGetTextureMetadata image)
 
     /// Attempt to get the texture size of the given image.
     /// Thread-safe.
     let tryGetTextureSize (image : Image AssetTag) =
         match tryGetTextureMetadata image with
-        | Some metadata -> Some (v2i metadata.TextureWidth metadata.TextureHeight)
-        | None -> None
+        | ValueSome metadata -> ValueSome (v2i metadata.TextureWidth metadata.TextureHeight)
+        | ValueNone -> ValueNone
 
     /// Forcibly get the texture size of the given image (throwing on failure).
     /// Thread-safe.
     let getTextureSize image =
-        Option.get (tryGetTextureSize image)
+        ValueOption.get (tryGetTextureSize image)
 
     /// Attempt to get the texture size of the given image.
     /// Thread-safe.
     let tryGetTextureSizeF image =
         match tryGetTextureSize image with
-        | Some size -> Some (v2 (single size.X) (single size.Y))
-        | None -> None
+        | ValueSome size -> ValueSome (v2 (single size.X) (single size.Y))
+        | ValueNone -> ValueNone
 
     /// Forcibly get the texture size of the given image (throwing on failure).
     /// Thread-safe.
     let getTextureSizeF image =
-        Option.get (tryGetTextureSizeF image)
+        ValueOption.get (tryGetTextureSizeF image)
 
     /// Attempt to get the metadata of the given tile map.
     /// Thread-safe.
     let tryGetTileMapMetadata (tileMap : TileMap AssetTag) =
         match tryGetMetadata tileMap with
-        | Some (TileMapMetadata tileMapMetadata) -> Some tileMapMetadata
-        | None -> None
-        | _ -> None
+        | ValueSome (TileMapMetadata tileMapMetadata) -> ValueSome tileMapMetadata
+        | ValueSome _ | ValueNone -> ValueNone
 
     /// Forcibly get the metadata of the given tile map (throwing on failure).
     /// Thread-safe.
     let getTileMapMetadata tileMap =
-        Option.get (tryGetTileMapMetadata tileMap)
+        ValueOption.get (tryGetTileMapMetadata tileMap)
+
+    /// Attempt to get the metadata of the given Spine skeleton.
+    /// Thread-safe.
+    let tryGetSpineSkeletonMetadata (spineSkeleton : SpineSkeleton AssetTag) =
+        match tryGetMetadata spineSkeleton with
+        | ValueSome (SpineSkeletonMetadata spineSkeletonMetadata) -> ValueSome spineSkeletonMetadata
+        | ValueSome _->
+            Log.warn
+                ("This failure to locate Spine skeleton metadata may mean that you used the same asset name (file " +
+                 "name without extension) for a Spine skeleton as you did for one of its image files. Make sure that " +
+                 "your Spine skeleton .json or .skel file has a name that is different than any of its image files, " +
+                 "such as suffixing its file name with -ess or -pro.")
+            ValueNone
+        | ValueNone -> ValueNone
+
+    /// Forcibly get the metadata of the given Spine skeleton (throwing on failure).
+    /// Thread-safe.
+    let getSpineSkeletonMetadata spineSkeleton =
+        ValueOption.get (tryGetSpineSkeletonMetadata spineSkeleton)
 
     /// Thread-safe.
     let private tryGetModelMetadata model =
         match tryGetMetadata model with
-        | Some (StaticModelMetadata model) -> Some model
-        | Some (AnimatedModelMetadata model) -> Some model
-        | None -> None
-        | _ -> None
+        | ValueSome (StaticModelMetadata model) -> ValueSome model
+        | ValueSome (AnimatedModelMetadata model) -> ValueSome model
+        | ValueSome _ | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelAlbedoImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -346,14 +415,14 @@ module Metadata =
                     else albedoTextureSlotA.FilePath
                 let assetName = PathF.GetFileNameWithoutExtension albedoTextureSlotFilePath
                 let image = asset model.PackageName assetName
-                if getMetadataExists image then Some image else None
-            | Some _ | None -> None
-        | None -> None
+                if getMetadataExists image then ValueSome image else ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelRoughnessImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -363,7 +432,7 @@ module Metadata =
                 let image = asset model.PackageName assetName
                 if not (getMetadataExists image) then
                     match tryGetModelAlbedoImage materialIndex model with
-                    | Some albedoImage ->
+                    | ValueSome albedoImage ->
                         let albedoAssetName =   albedoImage.AssetName
                         let has_bc =            albedoAssetName.Contains "_bc"
                         let has_d =             albedoAssetName.Contains "_d"
@@ -377,23 +446,23 @@ module Metadata =
                         let rmAsset =           asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "RM")         elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "RM")          elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "RM")           else "")
                         let rmaAsset =          asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "RMA")        elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "RMA")         elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "RMA")          else "")
                         let roughnessAsset =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Roughness")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Roughness")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Roughness")    else "")
-                        if getMetadataExists gAsset then Some gAsset
-                        elif getMetadataExists sAsset then Some sAsset
-                        elif getMetadataExists g_mAsset then Some g_mAsset
-                        elif getMetadataExists g_m_aoAsset then Some g_m_aoAsset
-                        elif getMetadataExists roughnessAsset then Some roughnessAsset
-                        elif getMetadataExists rmAsset then Some rmAsset
-                        elif getMetadataExists rmaAsset then Some rmaAsset
-                        else None
-                    | None -> None
-                else Some image
-            | Some _ | None -> None
-        | None -> None
+                        if getMetadataExists gAsset then ValueSome gAsset
+                        elif getMetadataExists sAsset then ValueSome sAsset
+                        elif getMetadataExists g_mAsset then ValueSome g_mAsset
+                        elif getMetadataExists g_m_aoAsset then ValueSome g_m_aoAsset
+                        elif getMetadataExists roughnessAsset then ValueSome roughnessAsset
+                        elif getMetadataExists rmAsset then ValueSome rmAsset
+                        elif getMetadataExists rmaAsset then ValueSome rmaAsset
+                        else ValueNone
+                    | ValueNone -> ValueNone
+                else ValueSome image
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelMetallicImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -403,7 +472,7 @@ module Metadata =
                 let image = asset model.PackageName assetName
                 if not (getMetadataExists image) then
                     match tryGetModelAlbedoImage materialIndex model with
-                    | Some albedoImage ->
+                    | ValueSome albedoImage ->
                         let albedoAssetName =   albedoImage.AssetName
                         let has_bc =            albedoAssetName.Contains "_bc"
                         let has_d =             albedoAssetName.Contains "_d"
@@ -417,23 +486,23 @@ module Metadata =
                         let rmaAsset =          asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "RMA")        elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "RMA")         elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "RMA")          else "")
                         let metallicAsset =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Metallic")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Metallic")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Metallic")     else "")
                         let metalnessAsset =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Metalness")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Metalness")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Metalness")    else "")
-                        if getMetadataExists mAsset then Some mAsset
-                        elif getMetadataExists g_mAsset then Some g_mAsset
-                        elif getMetadataExists g_m_aoAsset then Some g_m_aoAsset
-                        elif getMetadataExists metallicAsset then Some metallicAsset
-                        elif getMetadataExists metalnessAsset then Some metalnessAsset
-                        elif getMetadataExists rmAsset then Some rmAsset
-                        elif getMetadataExists rmaAsset then Some rmaAsset
-                        else None
-                    | None -> None
-                else Some image
-            | Some _ | None -> None
-        | None -> None
+                        if getMetadataExists mAsset then ValueSome mAsset
+                        elif getMetadataExists g_mAsset then ValueSome g_mAsset
+                        elif getMetadataExists g_m_aoAsset then ValueSome g_m_aoAsset
+                        elif getMetadataExists metallicAsset then ValueSome metallicAsset
+                        elif getMetadataExists metalnessAsset then ValueSome metalnessAsset
+                        elif getMetadataExists rmAsset then ValueSome rmAsset
+                        elif getMetadataExists rmaAsset then ValueSome rmaAsset
+                        else ValueNone
+                    | ValueNone -> ValueNone
+                else ValueSome image
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelAmbientOcclusionImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -448,7 +517,7 @@ module Metadata =
                 let image = asset model.PackageName assetName
                 if not (getMetadataExists image) then
                     match tryGetModelAlbedoImage materialIndex model with
-                    | Some albedoImage ->
+                    | ValueSome albedoImage ->
                         let albedoAssetName =       albedoImage.AssetName
                         let has_bc =                albedoAssetName.Contains "_bc"
                         let has_d =                 albedoAssetName.Contains "_d"
@@ -459,22 +528,24 @@ module Metadata =
                         let aoAsset =               asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_ao")                            elif has_d then albedoAssetName.Replace ("_d", "_ao")                           else "")
                         let rmaAsset =              asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "RMA")                elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "RMA")                 elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "RMA")              else "")
                         let ambientOcclusionAsset = asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "AmbientOcclusion")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "AmbientOcclusion")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "AmbientOcclusion") else "")
+                        let occlusionAsset =        asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Occlusion")          elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Occlusion")           elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Occlusion")        else "")
                         let aoAsset' =              asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "AO")                 elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "AO")                  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "AO")               else "")
-                        if getMetadataExists aoAsset then Some aoAsset
-                        elif getMetadataExists g_m_aoAsset then Some g_m_aoAsset
-                        elif getMetadataExists ambientOcclusionAsset then Some ambientOcclusionAsset
-                        elif getMetadataExists aoAsset' then Some aoAsset'
-                        elif getMetadataExists rmaAsset then Some rmaAsset
-                        else None
-                    | None -> None
-                else Some image
-            | Some _ | None -> None
-        | None -> None
+                        if getMetadataExists aoAsset then ValueSome aoAsset
+                        elif getMetadataExists g_m_aoAsset then ValueSome g_m_aoAsset
+                        elif getMetadataExists ambientOcclusionAsset then ValueSome ambientOcclusionAsset
+                        elif getMetadataExists occlusionAsset then ValueSome occlusionAsset
+                        elif getMetadataExists aoAsset' then ValueSome aoAsset'
+                        elif getMetadataExists rmaAsset then ValueSome rmaAsset
+                        else ValueNone
+                    | ValueNone -> ValueNone
+                else ValueSome image
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelEmissionImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -484,7 +555,7 @@ module Metadata =
                 let image = asset model.PackageName assetName
                 if not (getMetadataExists image) then
                     match tryGetModelAlbedoImage materialIndex model with
-                    | Some albedoImage ->
+                    | ValueSome albedoImage ->
                         let albedoAssetName =   albedoImage.AssetName
                         let has_bc =            albedoAssetName.Contains "_bc"
                         let has_d =             albedoAssetName.Contains "_d"
@@ -493,18 +564,18 @@ module Metadata =
                         let hasAlbedo =         albedoAssetName.Contains "Albedo"
                         let eAsset =            asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_e")                     elif has_d then albedoAssetName.Replace ("_d", "_e")                    else "")
                         let emissionAsset =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Emission")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Emission")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Emission") else "")
-                        if getMetadataExists eAsset then Some eAsset
-                        elif getMetadataExists emissionAsset then Some emissionAsset
-                        else None
-                    | None -> None
-                else Some image
-            | Some _ | None -> None
-        | None -> None
+                        if getMetadataExists eAsset then ValueSome eAsset
+                        elif getMetadataExists emissionAsset then ValueSome emissionAsset
+                        else ValueNone
+                    | ValueNone -> ValueNone
+                else ValueSome image
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelNormalImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -514,7 +585,7 @@ module Metadata =
                 let image = asset model.PackageName assetName
                 if not (getMetadataExists image) then
                     match tryGetModelAlbedoImage materialIndex model with
-                    | Some albedoImage ->
+                    | ValueSome albedoImage ->
                         let albedoAssetName =   albedoImage.AssetName
                         let has_bc =            albedoAssetName.Contains "_bc"
                         let has_d =             albedoAssetName.Contains "_d"
@@ -523,18 +594,18 @@ module Metadata =
                         let hasAlbedo =         albedoAssetName.Contains "Albedo"
                         let nAsset =            asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_n")                 elif has_d then albedoAssetName.Replace ("_d", "_n")                else "")
                         let normalAsset =       asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Normal") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Normal")  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Normal") else "")
-                        if getMetadataExists nAsset then Some nAsset
-                        elif getMetadataExists normalAsset then Some normalAsset
-                        else None
-                    | None -> None
-                else Some image
-            | Some _ | None -> None
-        | None -> None
+                        if getMetadataExists nAsset then ValueSome nAsset
+                        elif getMetadataExists normalAsset then ValueSome normalAsset
+                        else ValueNone
+                    | ValueNone -> ValueNone
+                else ValueSome image
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelHeightImage materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
@@ -544,7 +615,7 @@ module Metadata =
                 let image = asset model.PackageName assetName
                 if not (getMetadataExists image) then
                     match tryGetModelAlbedoImage materialIndex model with
-                    | Some albedoImage ->
+                    | ValueSome albedoImage ->
                         let albedoAssetName =   albedoImage.AssetName
                         let has_bc =            albedoAssetName.Contains "_bc"
                         let has_d =             albedoAssetName.Contains "_d"
@@ -553,52 +624,121 @@ module Metadata =
                         let hasAlbedo =         albedoAssetName.Contains "Albedo"
                         let hAsset =            asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_h")                 elif has_d then albedoAssetName.Replace ("_d", "_h")                else "")
                         let heightAsset =       asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Height") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Height")  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Height") else "")
-                        if getMetadataExists hAsset then Some hAsset
-                        elif getMetadataExists heightAsset then Some heightAsset
-                        else None
-                    | None -> None
-                else Some image
-            | Some _ | None -> None
-        | None -> None
+                        if getMetadataExists hAsset then ValueSome hAsset
+                        elif getMetadataExists heightAsset then ValueSome heightAsset
+                        else ValueNone
+                    | ValueNone -> ValueNone
+                else ValueSome image
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelSubdermalImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let subdermalAsset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_subdermal")             elif has_d then albedoAssetName.Replace ("_d", "_subdermal")            else "")
+                    let subdermalAsset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Subdermal")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Subdermal")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Subdermal") else "")
+                    if getMetadataExists subdermalAsset then ValueSome subdermalAsset
+                    elif getMetadataExists subdermalAsset' then ValueSome subdermalAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelFinenessImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let finenessAsset =     asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_fineness")              elif has_d then albedoAssetName.Replace ("_d", "_fineness")             else "")
+                    let finenessAsset' =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Fineness")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Fineness")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Fineness") else "")
+                    if getMetadataExists finenessAsset then ValueSome finenessAsset
+                    elif getMetadataExists finenessAsset' then ValueSome finenessAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelScatterImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let scatterAsset =      asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_scatter")               elif has_d then albedoAssetName.Replace ("_d", "_scatter")              else "")
+                    let scatterAsset' =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Scatter")    elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Scatter")     elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Scatter") else "")
+                    if getMetadataExists scatterAsset then ValueSome scatterAsset
+                    elif getMetadataExists scatterAsset' then ValueSome scatterAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelTwoSided materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 match material.IgnoreLightMapsOpt with
-                | Some ignoreLightMaps -> Some ignoreLightMaps
-                | None -> None
-            | Some _ | None -> None
-        | None -> None
+                | ValueSome ignoreLightMaps -> ValueSome ignoreLightMaps
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Thread-safe.
     let private tryGetModelNavShape materialIndex model =
         match tryGetModelMetadata model with
-        | Some modelMetadata ->
+        | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 match material.NavShapeOpt with
-                | Some shape -> Some shape
-                | None -> None
-            | Some _ | None -> None
-        | None -> None
+                | ValueSome shape -> ValueSome shape
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
 
     /// Attempt to get the metadata of the given static model.
     /// Thread-safe.
     let tryGetStaticModelMetadata (staticModel : StaticModel AssetTag) =
         match tryGetMetadata staticModel with
-        | Some (StaticModelMetadata model) -> Some model
-        | None -> None
-        | _ -> None
+        | ValueSome (StaticModelMetadata model) -> ValueSome model
+        | ValueNone -> ValueNone
+        | _ -> ValueNone
 
     /// Forcibly get the metadata of the given static model (throwing on failure).
     /// Thread-safe.
     let getStaticModelMetadata staticModel =
-        Option.get (tryGetStaticModelMetadata staticModel)
+        ValueOption.get (tryGetStaticModelMetadata staticModel)
 
     /// Attempt to get the albedo image asset for the given material index and static model.
     /// Thread-safe.
@@ -635,6 +775,21 @@ module Metadata =
     let tryGetStaticModelHeightImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelHeightImage materialIndex staticModel
 
+    /// Attempt to get the subsurface image asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelSubdermalImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelSubdermalImage materialIndex staticModel
+
+    /// Attempt to get the fineness image asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelFinenessImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelFinenessImage materialIndex staticModel
+
+    /// Attempt to get the scatter image asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelScatterImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelScatterImage materialIndex staticModel
+
     /// Attempt to get the two-sided property for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
@@ -649,14 +804,13 @@ module Metadata =
     /// Thread-safe.
     let tryGetAnimatedModelMetadata (animatedModel : AnimatedModel AssetTag) =
         match tryGetMetadata animatedModel with
-        | Some (AnimatedModelMetadata model) -> Some model
-        | None -> None
-        | _ -> None
+        | ValueSome (AnimatedModelMetadata model) -> ValueSome model
+        | ValueSome _ | ValueNone -> ValueNone
 
     /// Forcibly get the metadata of the given animated model (throwing on failure).
     /// Thread-safe.
     let getAnimatedModelMetadata animatedModel =
-        Option.get (tryGetAnimatedModelMetadata animatedModel)
+        ValueOption.get (tryGetAnimatedModelMetadata animatedModel)
 
     /// Attempt to get the albedo image asset for the given material index and animated model.
     /// Thread-safe.
@@ -692,6 +846,21 @@ module Metadata =
     /// Thread-safe.
     let tryGetAnimatedModelHeightImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelHeightImage materialIndex animatedModel
+
+    /// Attempt to get the subdermal image asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelSubdermalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelSubdermalImage materialIndex animatedModel
+
+    /// Attempt to get the fineness image asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelFinenessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelFinenessImage materialIndex animatedModel
+
+    /// Attempt to get the scatter image asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelScatterImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelScatterImage materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.

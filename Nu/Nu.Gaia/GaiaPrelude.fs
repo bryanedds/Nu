@@ -1,15 +1,16 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu.Gaia
 open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Gaia
 
 type DragEntityState =
-    | DragEntityPosition2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
-    | DragEntityRotation2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
+    | DragEntityPosition2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
+    | DragEntityRotation2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
     | DragEntityInactive
 
 type DragEyeState =
@@ -33,6 +34,7 @@ type [<SymbolicExpansion>] GaiaState =
       CreationElevation : single
       CreationDistance : single
       AlternativeEyeTravelInput : bool }
+
     static member make
         dllPath editModeOpt freshlyLoaded imperativeExecution editWhileAdvancing
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
@@ -53,6 +55,7 @@ type [<SymbolicExpansion>] GaiaState =
           CreationElevation = creationElevation
           CreationDistance = creationDistance
           AlternativeEyeTravelInput = alternativeEyeTravelInput }
+
     static member defaultState =
         GaiaState.make
             "" None false false false
