@@ -49,7 +49,7 @@ type [<Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType of Subsort : single * Sort : single
 
-/// Desribes the render pass at play.
+/// Describes the nature of the rendering that takes place.
 type RenderPass =
     | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
