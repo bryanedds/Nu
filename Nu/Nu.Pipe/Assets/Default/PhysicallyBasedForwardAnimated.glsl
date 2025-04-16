@@ -255,8 +255,8 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
 {
-    vec4 positionShadow = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+    vec4 positionShadowClip = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
         shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
         shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
@@ -408,8 +408,8 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
-            vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
-            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+            vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
+            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
@@ -482,8 +482,8 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
-            vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
-            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+            vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
+            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
