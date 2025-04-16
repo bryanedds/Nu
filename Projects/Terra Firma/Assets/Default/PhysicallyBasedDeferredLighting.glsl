@@ -286,8 +286,6 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
         shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
     {
         // compute z position in view space
-        //vec3 positionShadow = position.xyz - lightOrigins[lightIndex];
-        //float shadowZ = length(positionShadow);
         float shadowNear = 0.125; // NOTE: presuming near plane at 0.125 since I don't know if I can recover it directly from shadowMatrix.
         float shadowFar = lightCutoffs[lightIndex];
         float shadowZ = worldToDepthView(shadowNear, shadowFar, shadowMatrix, position);
