@@ -71,6 +71,7 @@ module Sprite =
          indices : VulkanMemory.Buffer,
          modelViewProjection : single array,
          insetOpt : Box2 ValueOption,
+         clipOpt : Box2 ValueOption,
          color : Color,
          flip,
          textureWidth,
