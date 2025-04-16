@@ -160,23 +160,6 @@ float depthViewToDepthBuffer(float near, float far, float depthView)
     return (-depthView - near) / (far - near);
 }
 
-float depthViewToDepthScreen(float near, float far, float depthView)
-{
-    // for a standard OpenGL projection, compute a and b:
-    float a = -(far + near) / (far - near);
-    float b = -(2.0 * far * near) / (far - near);
-
-    // compute clip-space z and w:
-    // (depthView is negative in front of the camera, so note that clip.w = -depthView).
-    float clipZ = a * depthView + b;
-    float clipW = -depthView;
-
-    // normalize to NDC (range: [-1, 1]).
-    float ndcZ = clipZ / clipW;
-
-    // remap NDC z to depth buffer range [0, 1].
-    return ndcZ * 0.5 + 0.5;
-}
 
 float depthScreenToDepthView(float near, float far, float depthScreen)
 {
@@ -190,7 +173,7 @@ float depthScreenToDepthView(float near, float far, float depthScreen)
     // recover view-space z: note that view-space z is negative in front of the camera.
     // when depthScreen is 0 (near plane), ndcZ is -1 and view.z becomes -near.
     // when depthScreen is 1 (far plane), ndcZ is 1 and view.z becomes -far.
-    return -b / (ndcZ + a);
+    return b / (ndcZ + a);
 }
 
 float worldToDepthView(float near, float far, mat4 viewProjection, vec4 position)
@@ -206,7 +189,7 @@ float worldToDepthView(float near, float far, mat4 viewProjection, vec4 position
     float ndcZ = positionClip.z / positionClip.w; // in range [-1, 1]
 
     // invert the projection depth mapping to recover light view-space depth.
-    return -b / (ndcZ + a);
+    return b / (ndcZ + a);
 }
 
 float geometryTracePoint(vec4 position, int lightIndex, samplerCube shadowMap)
@@ -261,7 +244,7 @@ float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sample
             {
                 float shadowDepthScreen = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
                 float shadowDepth = depthScreenToDepthView(shadowNear, shadowFar, shadowDepthScreen);
-                float delta = abs(shadowZ) - abs(shadowDepth);
+                float delta = shadowZ - shadowDepth;
                 travel += delta;
             }
         }
@@ -301,7 +284,7 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
             {
                 float shadowDepthScreen = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
                 float shadowDepth = depthScreenToDepthView(shadowNear, shadowFar, shadowDepthScreen);
-                float delta = abs(shadowZ) - abs(shadowDepth);
+                float delta = shadowZ - shadowDepth;
                 travel += delta;
             }
         }
