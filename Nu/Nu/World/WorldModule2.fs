@@ -1769,8 +1769,8 @@ module WorldModule2 =
 
                                 // grab light info
                                 let lightId = light.GetId world
-                                let lightOrigin = light.GetPosition world
-                                let lightCutoff = light.GetLightCutoff world
+                                let shadowOrigin = light.GetPosition world
+                                let shadowCutoff = max (light.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
 
                                 // construct eye rotations
                                 let eyeRotations =
@@ -1782,17 +1782,17 @@ module WorldModule2 =
                                       (v3Forward, v3Down)|] // (-z) front
 
                                 // construct projections
-                                let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, Constants.Render.NearPlaneDistanceInterior, lightCutoff)
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
 
                                 // render faces
                                 let world =
                                     Array.fold (fun world i ->
                                         let (eyeForward, eyeUp) = eyeRotations.[i]
-                                        let shadowRotation = Quaternion.CreateLookAt (lightOrigin, lightOrigin + eyeForward, eyeUp)
-                                        let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + eyeForward, eyeUp)
-                                        let shadowViewProjection = shadowView * lightProjection
+                                        let shadowRotation = Quaternion.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
+                                        let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
+                                        let shadowViewProjection = shadowView * shadowProjection
                                         let shadowFrustum = Frustum shadowViewProjection
-                                        World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, lightProjection), lightType, shadowRotation, shadowFrustum)) world)
+                                        World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, shadowRotation, shadowFrustum)) world)
                                         world [|0 .. dec 6|]
 
                                 // fin
