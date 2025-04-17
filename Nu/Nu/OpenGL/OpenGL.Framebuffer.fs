@@ -384,7 +384,7 @@ module Framebuffer =
         // create albedo buffer
         let albedoId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, albedoId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba8, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.UnsignedByte, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
@@ -396,7 +396,7 @@ module Framebuffer =
         // create material buffer
         let materialId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, materialId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba8, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.UnsignedByte, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
@@ -420,7 +420,7 @@ module Framebuffer =
         // create subdermal plus buffer
         let subdermalPlusId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba8, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.UnsignedByte, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
@@ -432,7 +432,7 @@ module Framebuffer =
         // create scatter plus buffer
         let scatterPlusId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, scatterPlusId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba8, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.UnsignedByte, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
