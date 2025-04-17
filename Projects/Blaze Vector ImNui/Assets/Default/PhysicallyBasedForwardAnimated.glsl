@@ -144,6 +144,7 @@ uniform float lightConeOuters[LIGHTS_MAX];
 uniform int lightDesireFogs[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
+uniform float shadowNear; // NOTE: currently unused.
 uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX];
 
 in vec4 positionOut;

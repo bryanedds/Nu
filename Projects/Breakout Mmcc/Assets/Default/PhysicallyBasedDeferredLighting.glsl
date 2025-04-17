@@ -87,6 +87,7 @@ uniform float lightConeOuters[LIGHTS_MAX];
 uniform int lightDesireFogs[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
+uniform float shadowNear;
 uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX];
 
 in vec2 texCoordsOut;
@@ -160,7 +161,6 @@ float depthViewToDepthBuffer(float near, float far, float depthView)
     return (-depthView - near) / (far - near);
 }
 
-
 float depthScreenToDepthView(float near, float far, float depthScreen)
 {
     // for a standard OpenGL projection, compute a and b:
@@ -229,7 +229,6 @@ float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sample
         shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
     {
         // compute z position in view space
-        float shadowNear = 0.125; // NOTE: presuming near plane at 0.125 since I don't know if I can recover it directly from shadowMatrix.
         float shadowFar = lightCutoffs[lightIndex];
         float shadowZ = worldToDepthView(shadowNear, shadowFar, shadowMatrix, position);
 
@@ -269,7 +268,6 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
         shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
     {
         // compute z position in view space
-        float shadowNear = 0.125; // NOTE: presuming near plane at 0.125 since I don't know if I can recover it directly from shadowMatrix.
         float shadowFar = lightCutoffs[lightIndex];
         float shadowZ = worldToDepthView(shadowNear, shadowFar, shadowMatrix, position);
 

@@ -362,6 +362,7 @@ module PhysicallyBased =
           LightDesireFogsUniform : int
           LightShadowIndicesUniform : int
           LightsCountUniform : int
+          ShadowNearUniform : int
           ShadowMatricesUniforms : int array
           PhysicallyBasedShader : uint }
 
@@ -500,6 +501,7 @@ module PhysicallyBased =
           LightDesireFogsUniform : int
           LightShadowIndicesUniform : int
           LightsCountUniform : int
+          ShadowNearUniform : int
           ShadowMatricesUniforms : int array
           PhysicallyBasedDeferredLightingShader : uint }
 
@@ -1765,6 +1767,7 @@ module PhysicallyBased =
         let lightDesireFogsUniform = Gl.GetUniformLocation (shader, "lightDesireFogs")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
+        let shadowNearUniform = Gl.GetUniformLocation (shader, "shadowNear")
         let shadowMatricesUniforms =
             Array.init Constants.Render.ShadowTexturesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
@@ -1826,6 +1829,7 @@ module PhysicallyBased =
           LightDesireFogsUniform = lightDesireFogsUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
+          ShadowNearUniform = shadowNearUniform
           ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedShader = shader }
 
@@ -2087,6 +2091,7 @@ module PhysicallyBased =
         let lightDesireFogsUniform = Gl.GetUniformLocation (shader, "lightDesireFogs")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
+        let shadowNearUniform = Gl.GetUniformLocation (shader, "shadowNear")
         let shadowMatricesUniforms =
             Array.init Constants.Render.ShadowTexturesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
@@ -2150,6 +2155,7 @@ module PhysicallyBased =
           LightDesireFogsUniform = lightDesireFogsUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
+          ShadowNearUniform = shadowNearUniform
           ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedDeferredLightingShader = shader }
 
@@ -2705,6 +2711,7 @@ module PhysicallyBased =
          lightDesireFogs : int array,
          lightShadowIndices : int array,
          lightsCount : int,
+         shadowNear : single,
          shadowMatrices : single array array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
@@ -2804,6 +2811,7 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightDesireFogsUniform, lightDesireFogs)
             Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
             Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+            Gl.Uniform1 (shader.ShadowNearUniform, shadowNear)
             for i in 0 .. dec (min Constants.Render.ShadowTexturesMax shadowMatrices.Length) do
                 Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
             Hl.Assert ()
@@ -3390,6 +3398,7 @@ module PhysicallyBased =
          lightDesireFogs : int array,
          lightShadowIndices : int array,
          lightsCount : int,
+         shadowNear : single,
          shadowMatrices : single array array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightingShader) =
@@ -3454,6 +3463,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightDesireFogsUniform, lightDesireFogs)
         Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+        Gl.Uniform1 (shader.ShadowNearUniform, shadowNear)
         for i in 0 .. dec (min Constants.Render.ShadowTexturesMax shadowMatrices.Length) do
             Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
         Hl.Assert ()
