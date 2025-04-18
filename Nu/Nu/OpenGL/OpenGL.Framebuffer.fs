@@ -221,8 +221,8 @@ module Framebuffer =
             Right (colorDownSample, depthDownSample, renderbuffer, framebuffer)
         else Left "Could not create complete filter down-sample bilateral framebuffer."
 
-    /// Destroy filter fog accum buffers.
-    let DestroyFilterBilateralBuffers (downSample : Texture.Texture, upSample : Texture.Texture, framebuffer, renderbuffer) =
+    /// Destroy filter bilateral down-sample buffers.
+    let DestroyFilterBilateralDownSampleBuffers (downSample : Texture.Texture, upSample : Texture.Texture, framebuffer, renderbuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         downSample.Destroy ()
