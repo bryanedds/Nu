@@ -631,10 +631,10 @@ type private SortableLightMap =
     /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
     static member sortLightMapsIntoFloatArrays lightMapsMax position boundsOpt lightMaps =
-        let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
-        let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
-        let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
-        let lightMapAmbientColors = Array.zeroCreate<single> (lightMapsMax * 3)
+        let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 4)
+        let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 4)
+        let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 4)
+        let lightMapAmbientColors = Array.zeroCreate<single> (lightMapsMax * 4)
         let lightMapAmbientBrightnesses = Array.zeroCreate<single> lightMapsMax
         let lightMapIrradianceMaps = Array.init<OpenGL.Texture.Texture> lightMapsMax (fun _ -> OpenGL.Texture.EmptyTexture)
         let lightMapEnvironmentFilterMaps = Array.init<OpenGL.Texture.Texture> lightMapsMax (fun _ -> OpenGL.Texture.EmptyTexture)
@@ -648,20 +648,20 @@ type private SortableLightMap =
             lightMapsFiltered |> Array.sortBy (fun lightMap -> lightMap.SortableLightMapDistanceSquared)
         for i in 0 .. dec lightMapsMax do
             if i < lightMapsSorted.Length then
-                let i3 = i * 3
+                let i4 = i * 4
                 let lightMap = lightMapsSorted.[i]
-                lightMapOrigins.[i3] <- lightMap.SortableLightMapOrigin.X
-                lightMapOrigins.[i3+1] <- lightMap.SortableLightMapOrigin.Y
-                lightMapOrigins.[i3+2] <- lightMap.SortableLightMapOrigin.Z
-                lightMapMins.[i3] <- lightMap.SortableLightMapBounds.Min.X
-                lightMapMins.[i3+1] <- lightMap.SortableLightMapBounds.Min.Y
-                lightMapMins.[i3+2] <- lightMap.SortableLightMapBounds.Min.Z
-                lightMapSizes.[i3] <- lightMap.SortableLightMapBounds.Size.X
-                lightMapSizes.[i3+1] <- lightMap.SortableLightMapBounds.Size.Y
-                lightMapSizes.[i3+2] <- lightMap.SortableLightMapBounds.Size.Z
-                lightMapAmbientColors.[i3] <- lightMap.SortableLightMapAmbientColor.R
-                lightMapAmbientColors.[i3+1] <- lightMap.SortableLightMapAmbientColor.G
-                lightMapAmbientColors.[i3+2] <- lightMap.SortableLightMapAmbientColor.B
+                lightMapOrigins.[i4] <- lightMap.SortableLightMapOrigin.X
+                lightMapOrigins.[i4+1] <- lightMap.SortableLightMapOrigin.Y
+                lightMapOrigins.[i4+2] <- lightMap.SortableLightMapOrigin.Z
+                lightMapMins.[i4] <- lightMap.SortableLightMapBounds.Min.X
+                lightMapMins.[i4+1] <- lightMap.SortableLightMapBounds.Min.Y
+                lightMapMins.[i4+2] <- lightMap.SortableLightMapBounds.Min.Z
+                lightMapSizes.[i4] <- lightMap.SortableLightMapBounds.Size.X
+                lightMapSizes.[i4+1] <- lightMap.SortableLightMapBounds.Size.Y
+                lightMapSizes.[i4+2] <- lightMap.SortableLightMapBounds.Size.Z
+                lightMapAmbientColors.[i4] <- lightMap.SortableLightMapAmbientColor.R
+                lightMapAmbientColors.[i4+1] <- lightMap.SortableLightMapAmbientColor.G
+                lightMapAmbientColors.[i4+2] <- lightMap.SortableLightMapAmbientColor.B
                 lightMapAmbientBrightnesses.[i] <- lightMap.SortableLightMapAmbientBrightness
                 lightMapIrradianceMaps.[i] <- lightMap.SortableLightMapIrradianceMap
                 lightMapEnvironmentFilterMaps.[i] <- lightMap.SortableLightMapEnvironmentFilterMap
@@ -724,9 +724,9 @@ type private SortableLight =
     /// TODO: see if we can get rid of allocation here.
     static member sortLightsIntoFloatArrays lightsMax position lights =
         let lightIds = Array.zeroCreate<uint64> lightsMax
-        let lightOrigins = Array.zeroCreate<single> (lightsMax * 3)
-        let lightDirections = Array.zeroCreate<single> (lightsMax * 3)
-        let lightColors = Array.zeroCreate<single> (lightsMax * 3)
+        let lightOrigins = Array.zeroCreate<single> (lightsMax * 4)
+        let lightDirections = Array.zeroCreate<single> (lightsMax * 4)
+        let lightColors = Array.zeroCreate<single> (lightsMax * 4)
         let lightBrightnesses = Array.zeroCreate<single> lightsMax
         let lightAttenuationLinears = Array.zeroCreate<single> lightsMax
         let lightAttenuationQuadratics = Array.zeroCreate<single> lightsMax
@@ -741,18 +741,18 @@ type private SortableLight =
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
-                let i3 = i * 3
+                let i4 = i * 4
                 let light = lightsSorted.[i]
                 lightIds.[i] <- light.SortableLightId
-                lightOrigins.[i3] <- light.SortableLightOrigin.X
-                lightOrigins.[i3+1] <- light.SortableLightOrigin.Y
-                lightOrigins.[i3+2] <- light.SortableLightOrigin.Z
-                lightDirections.[i3] <- light.SortableLightDirection.X
-                lightDirections.[i3+1] <- light.SortableLightDirection.Y
-                lightDirections.[i3+2] <- light.SortableLightDirection.Z
-                lightColors.[i3] <- light.SortableLightColor.R
-                lightColors.[i3+1] <- light.SortableLightColor.G
-                lightColors.[i3+2] <- light.SortableLightColor.B
+                lightOrigins.[i4] <- light.SortableLightOrigin.X
+                lightOrigins.[i4+1] <- light.SortableLightOrigin.Y
+                lightOrigins.[i4+2] <- light.SortableLightOrigin.Z
+                lightDirections.[i4] <- light.SortableLightDirection.X
+                lightDirections.[i4+1] <- light.SortableLightDirection.Y
+                lightDirections.[i4+2] <- light.SortableLightDirection.Z
+                lightColors.[i4] <- light.SortableLightColor.R
+                lightColors.[i4+1] <- light.SortableLightColor.G
+                lightColors.[i4+2] <- light.SortableLightColor.B
                 lightBrightnesses.[i] <- light.SortableLightBrightness
                 lightAttenuationLinears.[i] <- light.SortableLightAttenuationLinear
                 lightAttenuationQuadratics.[i] <- light.SortableLightAttenuationQuadratic
@@ -2711,10 +2711,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             if topLevelRender then
                 SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
             else
-                (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
+                (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
                  Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
                  Array.init Constants.Render.LightMapsMaxDeferred (fun _ -> OpenGL.Texture.EmptyTexture),
                  Array.init Constants.Render.LightMapsMaxDeferred (fun _ -> OpenGL.Texture.EmptyTexture))

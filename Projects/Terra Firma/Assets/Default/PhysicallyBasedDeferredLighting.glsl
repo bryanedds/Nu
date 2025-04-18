@@ -401,9 +401,6 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
         float lightConeInner = lightConeInners[lightIndex];
         float lightConeOuter = lightConeOuters[lightIndex];
 
-        // compute shadow space
-        mat4 shadowMatrix = shadowMatrices[shadowIndex];
-
         // compute ray info
         vec3 startPosition = eyeCenter;
         vec3 stopPosition = position.xyz;
