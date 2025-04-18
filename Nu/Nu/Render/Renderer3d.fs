@@ -2724,6 +2724,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // compute light shadow indices according to sorted lights
         let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+        for i in 0 .. dec lightShadowIndices.Length do lightShadowIndices.[i] <- -1 // TODO: P0: remove this test hack.
 
         // grab shadow textures
         let shadowTextures = Array.map a__ renderer.PhysicallyBasedBuffers.ShadowTextureBuffersArray
@@ -3015,6 +3016,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+            for i in 0 .. dec lightShadowIndices.Length do
+                lightShadowIndices.[i] <- -1 // TODO: P0: remove this test hack.
             let (bonesArray, shader) =
                 match boneTransformsOpt with
                 | ValueSome boneTransforms ->
