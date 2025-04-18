@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Vortice.Vulkan
 open OpenGL
@@ -34,13 +34,15 @@ module Texture =
     let BlockCompressable (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         not (name.EndsWith "_n") &&
-        not (name.EndsWith "_u") &&
+        not (name.EndsWith "_hm") &&
         not (name.EndsWith "_b") &&
         not (name.EndsWith "_t") &&
+        not (name.EndsWith "_u") &&
         not (name.EndsWith "Normal") &&
-        not (name.EndsWith "Uncompressed") &&
+        not (name.EndsWith "HeightMap") &&
         not (name.EndsWith "Blend") &&
-        not (name.EndsWith "Tint")
+        not (name.EndsWith "Tint") &&
+        not (name.EndsWith "Uncompressed")
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
@@ -596,12 +598,16 @@ module Texture =
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-                try let bitmap = new Drawing.Bitmap (filePath)
-                    let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
-                    let metadata = TextureMetadata.make bitmap.Width bitmap.Height
-                    let scan0 = data.Scan0
-                    Some (TextureDataNative (metadata, scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () })) // NOTE: calling UnlockBits explicitly since I can't figure out if Dispose does.
-                with _ -> None
+                let extension = Path.GetExtension filePath
+                match extension with
+                | ImageExtension _ ->
+                    try let bitmap = new Drawing.Bitmap (filePath)
+                        let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
+                        let metadata = TextureMetadata.make bitmap.Width bitmap.Height
+                        let scan0 = data.Scan0
+                        Some (TextureDataNative (metadata, scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () })) // NOTE: calling UnlockBits explicitly since I can't figure out if Dispose does.
+                    with _ -> None
+                | _ -> None
 
             // attempt to load data as any format supported by SDL_image on any device
             else
@@ -777,15 +783,17 @@ module Texture =
 //        let [<VolatileField>] mutable terminated = false
 //
 //        member private this.Run () =
+//            OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
 //            started <- true
 //            while not terminated do
 //                let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
 //                let desiredFrameTimeMinimumMs = GameTime.DesiredFrameTimeMinimum * 1000.0
+//                let frameTimeOutMs = max 4L (int64 (desiredFrameTimeMinimumMs * 0.5))
 //                let lazyTextureQueueEnr = lazyTextureQueues.GetEnumerator ()
-//                while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueueEnr.MoveNext () do
+//                while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueueEnr.MoveNext () do
 //                    let lazyTextureQueue = lazyTextureQueueEnr.Current.Key
 //                    let mutable lazyTexture = Unchecked.defaultof<_>
-//                    while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueue.TryDequeue &lazyTexture do
+//                    while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueue.TryDequeue &lazyTexture do
 //                        lazyTexture.TryServe ()
 //                Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
 //
