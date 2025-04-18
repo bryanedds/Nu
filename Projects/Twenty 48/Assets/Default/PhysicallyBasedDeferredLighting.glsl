@@ -815,7 +815,9 @@ void main()
                 vec3 fog = vec3(0.0);
                 switch (lightType)
                 {
-                default: break; // directional
+                case 0: { fog = vec3(0.25, 0.0, 0.0); break; } // point
+                case 1: { fog = vec3(0.0, 0.25, 0.0); break; } // spot
+                default: { fog = vec3(0.0, 0.0, 0.25); break; } // directional
                 }
                 fogAccum += vec4(fog, 0.0);
             }
