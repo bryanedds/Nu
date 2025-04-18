@@ -22,13 +22,13 @@ module SpriteBatch =
             (match struct (state.ClipOpt, state2.ClipOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
-             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueNone, ValueNone) -> false
              | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
             state.Blend <> state2.Blend ||
             (match struct (state.TextureOpt, state2.TextureOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
-             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueNone, ValueNone) -> false
              | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture)
 
         static member inline make absolute clipOpt blend texture =
