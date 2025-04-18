@@ -812,18 +812,18 @@ void main()
                 scatterAccum += kD * scatter * radiance * shadowScalarScatter;
             }
 
-            // accumulate fog
-            if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
-            {
-                vec3 fog = vec3(0.0);
-                switch (lightType)
-                {
-                case 0: { fog = computeFogAccumPoint(position, i); break; } // point
-                case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
-                default: { fog = computeFogAccumDirectional(position, i); break; } // directional
-                }
-                fogAccum += vec4(fog, 0.0);
-            }
+            //// accumulate fog
+            //if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
+            //{
+            //    vec3 fog = vec3(0.0);
+            //    switch (lightType)
+            //    {
+            //    case 0: { fog = computeFogAccumPoint(position, i); break; } // point
+            //    case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
+            //    default: { fog = computeFogAccumDirectional(position, i); break; } // directional
+            //    }
+            //    fogAccum += vec4(fog, 0.0);
+            //}
         }
 
         // compute ambient light
