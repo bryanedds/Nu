@@ -19,7 +19,7 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
 const float ATTENUATION_CONSTANT = 1.0;
-const int LIGHTS_MAX = 16;
+const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
@@ -401,6 +401,9 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
         float lightAttenuationQuadratic = lightAttenuationQuadratics[lightIndex];
         float lightConeInner = lightConeInners[lightIndex];
         float lightConeOuter = lightConeOuters[lightIndex];
+
+        // compute shadow space
+        mat4 shadowMatrix = shadowMatrices[shadowIndex];
 
         // compute ray info
         vec3 startPosition = eyeCenter;
@@ -815,9 +818,9 @@ void main()
                 vec3 fog = vec3(0.0);
                 switch (lightType)
                 {
-                case 0: { fog = vec3(0.25, 0.0, 0.0); break; } // point
-                case 1: { fog = vec3(0.0, 0.25, 0.0); break; } // spot
-                default: { fog = vec3(0.0, 0.0, 0.25); break; } // directional
+                case 0: { fog = computeFogAccumPoint(position, i); break; } // point
+                case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
+                default: { fog = computeFogAccumDirectional(position, i); break; } // directional
                 }
                 fogAccum += vec4(fog, 0.0);
             }
