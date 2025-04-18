@@ -641,7 +641,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
         // advance frag values
         currentFrag += stepAmount;
         currentTexCoords = currentFrag / texSize;
-        currentPosition = texture(positionTexture, currentTexCoords, 0);
+        currentPosition = texture(positionTexture, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
@@ -660,7 +660,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentTexCoords = currentFrag / texSize;
-                currentPosition = texture(positionTexture, currentTexCoords, 0);
+                currentPosition = texture(positionTexture, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
 
@@ -677,7 +677,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen = vec3(texture(albedoTexture, currentTexCoords, 0).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
+                    specularScreen = vec3(texture(albedoTexture, currentTexCoords).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
                     specularScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
@@ -708,21 +708,21 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
 void main()
 {
     // ensure position was written
-    vec4 position = texture(positionTexture, texCoordsOut, 0);
+    vec4 position = texture(positionTexture, texCoordsOut);
     if (position.w == 1.0)
     {
         // retrieve remaining data from geometry buffers
-        vec3 albedo = texture(albedoTexture, texCoordsOut, 0).rgb;
-        vec4 material = texture(materialTexture, texCoordsOut, 0);
-        vec3 normal = texture(normalPlusTexture, texCoordsOut, 0).xyz;
-        vec4 subdermalPlus = texture(subdermalPlusTexture, texCoordsOut, 0);
-        vec4 scatterPlus = texture(scatterPlusTexture, texCoordsOut, 0);
+        vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
+        vec4 material = texture(materialTexture, texCoordsOut);
+        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+        vec4 subdermalPlus = texture(subdermalPlusTexture, texCoordsOut);
+        vec4 scatterPlus = texture(scatterPlusTexture, texCoordsOut);
 
         // retrieve data from intermediate buffers
-        vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut, 0);
-        vec3 irradiance = texture(irradianceTexture, texCoordsOut, 0).rgb;
-        vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut, 0).rgb;
-        float ssao = texture(ssaoTexture, texCoordsOut, 0).r;
+        vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
+        vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
+        vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
+        float ssao = texture(ssaoTexture, texCoordsOut).r;
 
         // compute materials
         float roughness = material.r;
@@ -848,7 +848,7 @@ void main()
             float texelHeight = 1.0 / texSize.y;
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
-            vec4 positionBelow = texture(positionTexture, texCoordsBelow, 0);
+            vec4 positionBelow = texture(positionTexture, texCoordsBelow);
             computeSsr(positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
 
             // if hit failed, try again on the proper tex coord
