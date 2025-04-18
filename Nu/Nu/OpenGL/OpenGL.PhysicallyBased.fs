@@ -663,9 +663,9 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersUnfiltered
         OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersFiltered
         OpenGL.Framebuffer.DestroyLightingBuffers buffers.LightingBuffers
-        OpenGL.Framebuffer.DestroyFilterBilateralBuffers buffers.SpecularScreenDownSampleBuffers
+        OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.SpecularScreenDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.SpecularScreenUpSampleBuffers
-        OpenGL.Framebuffer.DestroyFilterBilateralBuffers buffers.FogAccumDownSampleBuffers
+        OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.FogAccumDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
         for shadowTextureBuffers in buffers.ShadowTextureBuffersArray do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers
