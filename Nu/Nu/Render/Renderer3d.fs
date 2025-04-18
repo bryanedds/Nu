@@ -2710,10 +2710,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             if topLevelRender then
                 SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
             else
-                (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
+                (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
                  Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
                  Array.init Constants.Render.LightMapsMaxDeferred (fun _ -> OpenGL.Texture.EmptyTexture),
                  Array.init Constants.Render.LightMapsMaxDeferred (fun _ -> OpenGL.Texture.EmptyTexture))
