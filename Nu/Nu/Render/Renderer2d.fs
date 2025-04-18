@@ -660,7 +660,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             | Some _ | None -> text
 
         // attempt to render text
-        let color = color // copy to local for proprety access
+        let color = color // copy to local for property access
         if  not (String.IsNullOrWhiteSpace text) && // render only when non-whitespace
             color.A8 <> 0uy then // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
             let transform = transform // copy to local to make visible from lambda
@@ -781,20 +781,23 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
-                            let insetOpt : Box2 voption = ValueNone
                             let (vertices, indices) = renderer.TextQuad
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
+                            let insetOpt : Box2 voption = ValueNone
+                            let color = Color.White
                             Sprite.DrawSprite
                                 (vertices,
                                  indices,
+                                 &viewProjection,
                                  modelViewProjection.ToArray (),
-                                 insetOpt,
-                                 clipOpt,
-                                 color,
+                                 &insetOpt,
+                                 &clipOpt,
+                                 &color,
                                  FlipNone,
                                  textSurfaceWidth,
                                  textSurfaceHeight,
                                  renderer.TextTexture.VulkanTexture,
+                                 renderer.Viewport,
                                  modelViewProjectionUniform,
                                  texCoords4Uniform,
                                  colorUniform,

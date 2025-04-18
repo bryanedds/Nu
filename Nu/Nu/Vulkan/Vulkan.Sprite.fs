@@ -3,6 +3,7 @@
 
 namespace Vortice.Vulkan
 open System
+open System.Numerics
 open System.Runtime.InteropServices
 open Prime
 open Nu
@@ -69,14 +70,16 @@ module Sprite =
     let DrawSprite
         (vertices : VulkanMemory.Buffer,
          indices : VulkanMemory.Buffer,
+         viewProjection : Matrix4x4 inref,
          modelViewProjection : single array,
-         insetOpt : Box2 ValueOption,
-         clipOpt : Box2 ValueOption,
-         color : Color,
+         insetOpt : Box2 voption inref,
+         clipOpt : Box2 voption inref,
+         color : Color inref,
          flip,
          textureWidth,
          textureHeight,
          texture : Texture.VulkanTexture,
+         viewport : Viewport,
          modelViewProjectionUniform : VulkanMemory.FifBuffer,
          texCoords4Uniform : VulkanMemory.FifBuffer,
          colorUniform : VulkanMemory.FifBuffer,
@@ -91,11 +94,11 @@ module Sprite =
             let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
             match insetOpt with
             | ValueSome inset ->
-                let px = inset.Min.X * texelWidth + borderWidth
-                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
+                let mx = inset.Min.X * texelWidth + borderWidth
+                let my = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
-                Box2 (px, py, sx, sy)
+                Box2 (mx, my, sx, sy)
             | ValueNone ->
                 let mx = borderWidth
                 let my = 1.0f - borderHeight

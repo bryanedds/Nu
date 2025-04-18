@@ -10,25 +10,32 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
+    // TODO: DJL: find out what's slowing batch down to a crawl!
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
+          ClipOpt : Box2 voption
           Blend : Pipeline.Blend
-          TextureOpt : Texture.Texture ValueOption }
+          TextureOpt : Texture.Texture voption }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
+            (match struct (state.ClipOpt, state2.ClipOpt) with
+             | struct (ValueSome _, ValueNone) -> true
+             | struct (ValueNone, ValueSome _) -> true
+             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
             state.Blend <> state2.Blend ||
             (match struct (state.TextureOpt, state2.TextureOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
-             | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
+             | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture)
 
-        static member make absolute blend texture =
-            { Absolute = absolute; Blend = blend; TextureOpt = ValueSome texture }
+        static member inline make absolute clipOpt blend texture =
+            { Absolute = absolute; ClipOpt = clipOpt; Blend = blend; TextureOpt = ValueSome texture }
 
         static member defaultState =
-            { Absolute = false; Blend = Pipeline.Transparent; TextureOpt = ValueNone }
+            { Absolute = false; ClipOpt = ValueNone; Blend = Pipeline.Transparent; TextureOpt = ValueNone }
 
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
@@ -204,7 +211,7 @@ module SpriteBatch =
     let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture.Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
-        let state = SpriteBatchState.make absolute blend texture
+        let state = SpriteBatchState.make absolute clipOpt blend texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state viewport env
 
