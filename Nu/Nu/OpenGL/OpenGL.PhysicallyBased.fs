@@ -2671,7 +2671,7 @@ module PhysicallyBased =
          instanceFields : single array,
          eyeCenter : Vector3,
          lightCutoffMargin : single,
-         lightAmbientColor : single array,
+         lightAmbientColor : Color,
          lightAmbientBrightness : single,
          lightShadowSamples : int,
          lightShadowBias : single,
@@ -2759,8 +2759,7 @@ module PhysicallyBased =
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
             Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
-            if lightAmbientColor.Length = 3 then
-                Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
+            Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor.R, lightAmbientColor.G, lightAmbientColor.B)
             Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
             Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
             Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
@@ -3016,7 +3015,7 @@ module PhysicallyBased =
     let DrawPhysicallyBasedDeferredAmbientSurface
         (positionTexture : Texture.Texture,
          lightMappingTexture : Texture.Texture,
-         lightMapAmbientColor : single array,
+         lightMapAmbientColor : Color,
          lightMapAmbientBrightness : single,
          lightMapAmbientColors : Color array,
          lightMapAmbientBrightnesses : single array,
@@ -3027,7 +3026,7 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedDeferredAmbientShader
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.LightMappingTextureUniform, 1)
-        Gl.Uniform3 (shader.LightMapAmbientColorUniform, lightMapAmbientColor)
+        Gl.Uniform3 (shader.LightMapAmbientColorUniform, lightMapAmbientColor.R, lightMapAmbientColor.G, lightMapAmbientColor.B)
         Gl.Uniform1 (shader.LightMapAmbientBrightnessUniform, lightMapAmbientBrightness)
         for i in 0 .. dec (min lightMapAmbientColors.Length Constants.Render.LightMapsMaxDeferred) do
             Gl.Uniform3 (shader.LightMapAmbientColorsUniforms.[i], lightMapAmbientColors.[i].R, lightMapAmbientColors.[i].G, lightMapAmbientColors.[i].B)
@@ -3242,7 +3241,7 @@ module PhysicallyBased =
          ssrSlopeCutoffMargin : single,
          ssrEdgeHorizontalMargin : single,
          ssrEdgeVerticalMargin : single,
-         ssrLightColor : single array,
+         ssrLightColor : Color,
          ssrLightBrightness : single,
          positionTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
@@ -3305,7 +3304,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrSlopeCutoffMarginUniform, ssrSlopeCutoffMargin)
         Gl.Uniform1 (shader.SsrEdgeHorizontalMarginUniform, ssrEdgeHorizontalMargin)
         Gl.Uniform1 (shader.SsrEdgeVerticalMarginUniform, ssrEdgeVerticalMargin)
-        Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor)
+        Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor.R, ssrLightColor.G, ssrLightColor.B)
         Gl.Uniform1 (shader.SsrLightBrightnessUniform, ssrLightBrightness)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
