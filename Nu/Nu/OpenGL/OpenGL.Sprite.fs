@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -91,6 +91,7 @@ module Sprite =
          textureWidth,
          textureHeight,
          texture : Texture.Texture,
+         viewport : Viewport,
          modelViewProjectionUniform,
          texCoords4Uniform,
          colorUniform,
@@ -143,11 +144,16 @@ module Sprite =
         match clipOpt with
         | ValueSome clip ->
             let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
-            let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
-            let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
-            let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
+            let minNdc = minClip / minClip.W * single viewport.DisplayScalar
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+            let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+            let offset = viewport.Bounds.Min
             Gl.Enable EnableCap.ScissorTest
-            Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
+            Gl.Scissor
+                ((minScissor.X |> round |> int) + offset.X,
+                 (minScissor.Y |> round |> int) + offset.Y,
+                 int sizeScissor.X,
+                 int sizeScissor.Y)
         | ValueNone -> ()
         Hl.Assert ()
 

@@ -1,11 +1,12 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu.Tests
 open System
 open NUnit.Framework
 open Prime
 open Nu
+open Nu.Tests
 module WorldTests =
 
     let [<Test>] runEmptyFrameThenCleanUp () =
@@ -17,10 +18,14 @@ module WorldTests =
     let [<Test; Category "Integration">] runIntegrationFrameThenCleanUp () =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }
-        match SdlDeps.tryMake worldConfig.SdlConfig with
+        let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+        match SdlDeps.tryMake worldConfig.SdlConfig false windowSize with
         | Right sdlDeps ->
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-            match World.tryMake sdlDeps worldConfig (TestPlugin ()) with
+            let outerViewport = Viewport.makeOuter windowSize
+            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
+            match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport (TestPlugin ()) with
             | Right world ->
                 let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id id Live true world
                 Assert.Equal (result, Constants.Engine.ExitCodeSuccess)

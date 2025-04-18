@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -16,6 +16,65 @@ module WorldRender =
 
         static member internal withRendererProcess fn world =
             fn (World.getRendererProcess world)
+
+        /// Get the current configuration of the 3d renderer.
+        static member getRenderer3dConfig world =
+            world.Subsystems.RendererProcess.Renderer3dConfig
+
+        /// Set the current configuration of the 3d renderer.
+        static member setRenderer3dConfig config world =
+            World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
+            world
+
+        /// Enqueue a rendering message to the world.
+        static member enqueueRenderMessage3d (message : RenderMessage3d) world =
+            (World.getRendererProcess world).EnqueueMessage3d message
+
+        /// Enqueue multiple 3d rendering messages to the world.
+        static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
+            let rendererProcess = World.getRendererProcess world
+            for message in messages do rendererProcess.EnqueueMessage3d message
+
+        /// Send a message to the render system to render a static model using a fast path.
+        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, staticModel, depthTest, renderType, renderPass)
+
+        /// Send a message to the render system to render a static model surface using a fast path.
+        static member renderStaticModelSurfaceFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, material : Material inref, staticModel, surfaceIndex, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelSurfaceFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, &material, staticModel, surfaceIndex, depthTest, renderType, renderPass)
+
+        /// Send a message to the render system to render an animated model using a fast path.
+        static member renderAnimatedModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderAnimatedModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, animations, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass)
+
+        /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
+        /// middle of game play!)
+        static member loadRenderPackage3d packageName world =
+            let loadRenderPackageUseMessage = LoadRenderPackage3d packageName
+            World.enqueueRenderMessage3d loadRenderPackageUseMessage world
+            world
+
+        /// Unload a 3d render package should be unloaded since its assets will not be used again soon.
+        static member unloadRenderPackage3d packageName world =
+            let unloadRenderPackageMessage = UnloadRenderPackage3d packageName
+            World.enqueueRenderMessage3d unloadRenderPackageMessage world
+            world
+
+        /// Send a message to the 3d renderer to reload its rendering assets.
+        static member reloadRenderAssets3d world =
+            let reloadRenderAssetsMessage = ReloadRenderAssets3d
+            World.enqueueRenderMessage3d reloadRenderAssetsMessage world
+            world
+
+        /// Send a message to the render to create the given user-defined static model.
+        static member createUserDefinedStaticModel surfaceDescriptors bounds staticModel world =
+            let message = CreateUserDefinedStaticModel { StaticModelSurfaceDescriptors = surfaceDescriptors; Bounds = bounds; StaticModel = staticModel }
+            World.enqueueRenderMessage3d message world
+
+        /// Send a message to the render to destroy the given user-defined static model.
+        static member destroyUserDefinedStaticModel staticModel world =
+            let message = DestroyUserDefinedStaticModel { StaticModel = staticModel }
+            World.enqueueRenderMessage3d message world
 
         /// Enqueue a 2d rendering message.
         static member enqueueRenderMessage2d (message : RenderMessage2d) world =
@@ -58,83 +117,46 @@ module WorldRender =
             World.enqueueRenderMessage2d reloadRenderAssetsMessage world
             world
 
-        /// Get the current configuration of the 3d renderer.
-        static member getRenderer3dConfig world =
-            world.Subsystems.RendererProcess.Renderer3dConfig
-
-        /// Set the current configuration of the 3d renderer.
-        static member setRenderer3dConfig config world =
-            World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
-            world
-
         /// Enqueue a rendering message to the world.
-        static member enqueueRenderMessage3d (message : RenderMessage3d) world =
-            (World.getRendererProcess world).EnqueueMessage3d message
+        static member enqueueRenderMessageImGui (message : RenderMessageImGui) world =
+            (World.getRendererProcess world).EnqueueMessageImGui message
 
-        /// Enqueue multiple 3d rendering messages to the world.
-        static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
-            let rendererProcess = World.getRendererProcess world
-            for message in messages do rendererProcess.EnqueueMessage3d message
-
-        /// Send a message to the render system to render a static model using a fast path.
-        static member renderStaticModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, renderType, renderPass, world) =
-            (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, staticModel, renderType, renderPass)
-
-        /// Send a message to the render system to render a static model surface using a fast path.
-        static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, material : Material inref, staticModel, surfaceIndex, renderType, renderPass, world) =
-            (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, &material, staticModel, surfaceIndex, renderType, renderPass)
-
-        /// Send a message to the render system to render an animated model using a fast path.
-        static member renderAnimatedModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, renderPass, world) =
-            (World.getRendererProcess world).RenderAnimatedModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, animations, animatedModel, renderPass)
-
-        /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
-        /// middle of game play!)
-        static member loadRenderPackage3d packageName world =
-            let loadRenderPackageUseMessage = LoadRenderPackage3d packageName
-            World.enqueueRenderMessage3d loadRenderPackageUseMessage world
+        /// Send a message to the ImGui renderer to reload its rendering assets.
+        static member reloadRenderAssetsImGui world =
+            let reloadRenderAssetsMessage = ReloadRenderAssets
+            World.enqueueRenderMessageImGui reloadRenderAssetsMessage world
             world
-
-        /// Unload a 3d render package should be unloaded since its assets will not be used again soon.
-        static member unloadRenderPackage3d packageName world =
-            let unloadRenderPackageMessage = UnloadRenderPackage3d packageName
-            World.enqueueRenderMessage3d unloadRenderPackageMessage world
-            world
-
-        /// Send a message to the 3d renderer to reload its rendering assets.
-        static member reloadRenderAssets3d world =
-            let reloadRenderAssetsMessage = ReloadRenderAssets3d
-            World.enqueueRenderMessage3d reloadRenderAssetsMessage world
-            world
-
-        /// Send a message to the render to create the given user-defined static model.
-        static member createUserDefinedStaticModel surfaceDescriptors bounds staticModel world =
-            let message = CreateUserDefinedStaticModel { StaticModelSurfaceDescriptors = surfaceDescriptors; Bounds = bounds; StaticModel = staticModel }
-            World.enqueueRenderMessage3d message world
-
-        /// Send a message to the render to destroy the given user-defined static model.
-        static member destroyUserDefinedStaticModel staticModel world =
-            let message = DestroyUserDefinedStaticModel { StaticModel = staticModel }
-            World.enqueueRenderMessage3d message world
 
         /// Render a gui sprite.
         static member renderGuiSprite absolute perimeter spriteImage offset elevation color world =
             let mutable spriteTransform = Transform.makePerimeter absolute perimeter offset elevation // out-of-box gui ignores rotation
-            let descriptor = { Transform = spriteTransform; InsetOpt = ValueNone; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
-            let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
-            World.enqueueLayeredOperation2d operation world
+            let insetOpt = ValueOption<Box2>.None
+            let perimeter = ValueSome perimeter.Box2
+            let blend = Color.Zero
+            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
 
         /// Render a gui sprite with 9-way slicing.
-        static member renderGuiSpriteSliced absolute perimeter margins spriteImage offset elevation color world =
-            if margins <> v2Zero then
+        static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation color world =
+            if margin <> v2Zero then
                 for i in 0 .. dec 9 do
-                    let slice = box3Slice i margins perimeter
+                    let slice = box3Slice i margin perimeter
                     let insetOpt =
                         match Metadata.tryGetTextureSizeF spriteImage with
-                        | Some imageSize -> ValueSome (box2SliceInverted i margins (box2 v2Zero imageSize))
-                        | None -> ValueNone
+                        | ValueSome imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
+                        | ValueNone -> ValueNone
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
-                    let descriptor = { Transform = spriteTransform; InsetOpt = insetOpt; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
-                    let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
-                    World.enqueueLayeredOperation2d operation world
+                    let perimeter = ValueSome perimeter.Box2
+                    let blend = Color.Zero
+                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
+
+        static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification cursorOpt textMargin color font fontSizing fontStyling text world =
+            if not (String.IsNullOrWhiteSpace text) || Option.isSome cursorOpt then
+                let mutable textTransform = Transform.makeDefault ()
+                textTransform.Position <- perimeter.Center + textMargin + offset // out-of-box gui ignores rotation and scale
+                textTransform.Size <- perimeter.Size - textMargin * 2.0f
+                textTransform.Elevation <- elevation + shift
+                textTransform.Absolute <- absolute
+                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CursorOpt = cursorOpt }
+                let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
+                World.enqueueLayeredOperation2d operation world

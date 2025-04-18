@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -24,10 +24,6 @@ module EventTrace =
         ignore moreInfo
         eventTrace
 #endif
-
-    /// Record event only in all modes.
-    let trace moduleName functionName moreInfo eventTrace =
-        record moduleName functionName moreInfo eventTrace
 
     /// The empty event trace.
     let empty : EventTrace = []

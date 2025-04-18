@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -24,7 +24,7 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
-             | struct (ValueSome c, ValueSome c2) -> c <> c2) ||
+             | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
@@ -85,7 +85,7 @@ module SpriteBatch =
     let private BeginSpriteBatch state env =
         env.State <- state
 
-    let private EndSpriteBatch env =
+    let private EndSpriteBatch (viewport : Viewport) env =
 
         // ensure something to draw
         match env.State.TextureOpt with
@@ -100,11 +100,16 @@ module SpriteBatch =
             | ValueSome clip ->
                 let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
                 let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
-                let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
-                let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
-                let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
+                let minNdc = minClip / minClip.W * single viewport.DisplayScalar
+                let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+                let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+                let offset = viewport.Bounds.Min
                 Gl.Enable EnableCap.ScissorTest
-                Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
+                Gl.Scissor
+                    ((minScissor.X |> round |> int) + offset.X,
+                     (minScissor.Y |> round |> int) + offset.Y,
+                     int sizeScissor.X,
+                     int sizeScissor.Y)
             | ValueNone -> ()
             Hl.Assert ()
 
@@ -153,8 +158,8 @@ module SpriteBatch =
         // not ready
         | ValueSome _ | ValueNone -> ()
 
-    let private RestartSpriteBatch state env =
-        Hl.Assert (EndSpriteBatch env)
+    let private RestartSpriteBatch state viewport env =
+        Hl.Assert (EndSpriteBatch viewport env)
         BeginSpriteBatch state env
 
     /// Beging a new sprite batch frame3.
@@ -168,9 +173,9 @@ module SpriteBatch =
         EndSpriteBatch env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
-    let InterruptSpriteBatchFrame fn env =
+    let InterruptSpriteBatchFrame fn viewport env =
         let state = env.State
-        Hl.Assert (EndSpriteBatch env)
+        Hl.Assert (EndSpriteBatch viewport env)
         Hl.Assert (fn ())
         BeginSpriteBatch state env
 
@@ -201,12 +206,12 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt bfs bfd beq texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            RestartSpriteBatch state env
+            RestartSpriteBatch state viewport env
             Hl.Assert ()
 
         // populate vertices

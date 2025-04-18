@@ -35,6 +35,7 @@ layout(location = 10) in vec4 texCoordsOffset;
 layout(location = 11) in vec4 albedo;
 layout(location = 12) in vec4 material;
 layout(location = 13) in vec4 heightPlus;
+layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -90,6 +91,8 @@ layout(location = 0) out vec4 position;
 layout(location = 1) out vec3 albedo;
 layout(location = 2) out vec4 material;
 layout(location = 3) out vec4 normalPlus;
+layout(location = 4) out vec4 subdermalPlus;
+layout(location = 5) out vec4 scatterPlus;
 
 void main()
 {
@@ -138,9 +141,14 @@ void main()
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
+    // discard fragment if even partly transparent
+    if (albedoBlend.w < 0.5) discard;
+
     // populate albedo, material, and normalPlus
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
     normalPlus.xyz = normalize(toWorld * normalize(normalBlend));
     normalPlus.w = heightPlusOut.y;
+    subdermalPlus = vec4(0.0);
+    scatterPlus = vec4(0.0);
 }

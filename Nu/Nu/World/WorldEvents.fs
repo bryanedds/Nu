@@ -1,10 +1,25 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
 open System.Numerics
 open Prime
+
+/// The data for a life-cycle event.
+type LifeCycleEventData =
+    | RegisterData of Simulant
+    | UnregisteringData of Simulant
+    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
+
+/// The data for a screen selection event.
+type SelectionEventData =
+    | Select
+    | IncomingStart
+    | IncomingFinish
+    | OutgoingStart
+    | OutgoingFinish
+    | Deselecting
 
 /// The data for a change in a simulant.
 type KeyedValueChangeData =
@@ -45,10 +60,15 @@ type GamepadButtonData =
 type TextInputData =
     { TextInput : char }
 
+/// The data for a text edit event.
+type TextEditData =
+    { Text : string
+      Cursor : int }
+
 /// The data for a physics integration event.
 type IntegrationData =
     { /// The integration messages sourced from a physics engine.
-      /// Do NOT change the content of this collection as it is exposed as a SArray for speed.
+      /// Do NOT change the content of this collection as it is exposed as an SArray for speed.
       IntegrationMessages : IntegrationMessage SArray }
 
 /// The data of a body transform event.
@@ -63,36 +83,53 @@ type BodyPenetrationData =
       BodyShapePenetratee : BodyShapeIndex
       Normal : Vector3 }
 
-/// The explicit data for a separation event.
-/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
-/// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
+/// The data for an explicit body separation event.
 type BodySeparationExplicitData =
     { BodyShapeSeparator : BodyShapeIndex
       BodyShapeSeparatee : BodyShapeIndex }
 
-/// The implicit data for a separation event.
-/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
-/// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
+/// The data for an implicit body separation event.
 type BodySeparationImplicitData =
     { BodyId : BodyId }
 
-/// Tje data for describing a change in transform.
+/// The data for a body separation event.
+/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
+/// frame, we need both an explicit and implicit body separation representation and the user MUST handle both!
+type BodySeparationData =
+    | BodySeparationExplicitData of BodySeparationExplicitData
+    | BodySeparationImplicitData of BodySeparationImplicitData
+
+/// The data for describing a change in transform.
 type BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
 
-/// The data for a life cycle event.
-type LifeCycleData =
-    | RegisterData of Simulant
-    | UnregisteringData of Simulant
-    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
+/// The data for a physics body event.
+type BodyEventData =
+    | BodyPenetrationData of BodyPenetrationData
+    | BodySeparationData of BodySeparationData
+    | BodyTransformData of BodyTransformData
+
+/// The data of a body joint break event.
+type BodyJointBreakData =
+    { BodyJointId : BodyJointId
+      BreakingPoint : single
+      BreakingOverflow : single }
 
 /// The data for describing a mounting or unmounting event.
 type MountData =
     { Mount : Entity
       Mounter : Entity }
+
+/// The data for describing an animation trigger event.
+type SpineSkeletonAnimationTriggerData =
+    | SpineSkeletonAnimationStartData of Spine.TrackEntry
+    | SpineSkeletonAnimationInterruptData of Spine.TrackEntry
+    | SpineSkeletonAnimationCompleteData of Spine.TrackEntry
+    | SpineSkeletonAnimationEndData of Spine.TrackEntry
+    | SpineSkeletonAnimationEventData of Spine.TrackEntry * Spine.Event
 
 [<RequireQualifiedAccess>]
 module Events =
@@ -100,7 +137,7 @@ module Events =
     let RegisterEvent = stoa<unit> "Register/Event"
     let UnregisteringEvent = stoa<unit> "Unregistering/Event"
     let ChangeEvent propertyName = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
-    let LifeCycleEvent simulantTypeName = rtoa<LifeCycleData> [|"LifeCycle"; simulantTypeName; "Event"|]
+    let LifeCycleEvent simulantTypeName = rtoa<LifeCycleEventData> [|"LifeCycle"; simulantTypeName; "Event"|]
     let PreUpdateEvent = stoa<unit> "PreUpdate/Event"
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
@@ -118,9 +155,10 @@ module Events =
     let BodyAddingEvent = stoa<BodyId> "Body/Adding/Event"
     let BodyRemovingEvent = stoa<BodyId> "Body/Removing/Event"
     let BodyPenetrationEvent = stoa<BodyPenetrationData> "BodyPenetration/Event"
-    let BodySeparationExplicitEvent = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"
-    let BodySeparationImplicitEvent = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
+    let BodySeparationEvent = stoa<BodySeparationData> "BodySeparation/Event"
     let BodyTransformEvent = stoa<BodyTransformData> "BodyTransform/Event"
+    let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
+    let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"
     let ClickEvent = stoa<unit> "Click/Event"
     let DownEvent = stoa<unit> "Down/Event"
     let UpEvent = stoa<unit> "Up/Event"
@@ -133,6 +171,8 @@ module Events =
     let TouchEvent = stoa<Vector2> "Touch/Event"
     let TouchingEvent = stoa<Vector2> "Touching/Event"
     let UntouchEvent = stoa<Vector2> "Untouch/Event"
+    let TextEditEvent = stoa<TextEditData> "TextEdit/Event"
+    let FocusEvent = stoa<unit> "Focus/Event"
     let MouseMoveEvent = stoa<MouseMoveData> "Mouse/Move/Event"
     let MouseDragEvent = stoa<MouseMoveData> "Mouse/Drag/Event"
     let MouseWheelEvent = stoa<MouseWheelData> "Mouse/Wheel/Event"
@@ -160,3 +200,5 @@ module Events =
     let GamepadButtonUpEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Up"; "Event"|]
     let TextInputEvent = stoa<TextInputData> "TextInput/Event"
     let AssetsReloadEvent = stoa<unit> "Assets/Reload/Event"
+    let CodeReloadEvent = stoa<unit> "Code/Reload/Event"
+    let ExitRequestEvent = stoa<unit> "ExitRequest/Event"

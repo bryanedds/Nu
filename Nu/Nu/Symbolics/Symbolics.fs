@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -64,7 +64,7 @@ module Symbolics =
                         let lastWriteTime =
                             try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                             with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, symbol)
+                        symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, symbol)
                     | None -> ()
             | Left error ->
                 Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -77,8 +77,8 @@ module WorldScreenModule =
         member this.GetProperty propertyName world =
             World.getScreenProperty propertyName this world
 
-        /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
+        /// Try to get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetScreenXtensionValue<'a> propertyName this world
 
         /// Get an xtension property value.
@@ -95,13 +95,11 @@ module WorldScreenModule =
 
         /// To try set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.trySetScreenXtensionProperty propertyName property this world
+            World.trySetScreenXtensionValue propertyName value this world
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setScreenXtensionProperty propertyName property this world
+            World.setScreenXtensionValue<'a> propertyName value this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.GetIdling world =
@@ -109,15 +107,11 @@ module WorldScreenModule =
             | IdlingState _ -> true
             | _ -> false
 
-        /// Check that a screen is selected.
-        member this.GetSelected world =
-            let gameState = World.getGameState Game.Handle world
-            match gameState.SelectedScreenOpt with
-            | Some screen when this.Name = screen.Name -> true
-            | _ -> false
-
         /// Check that a screen exists in the world.
         member this.GetExists world = World.getScreenExists this world
+
+        /// Check that a screen is selected.
+        member this.GetSelected world = World.getScreenSelected this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -189,7 +183,7 @@ module WorldScreenModule =
             match simulants.TryGetValue (Game.Handle :> Simulant) with
             | (true, screensOpt) ->
                 match screensOpt with
-                | Some screens -> screens |> Seq.map cast<Screen>
+                | Some screens -> Seq.map cast<Screen> screens
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
@@ -209,6 +203,7 @@ module WorldScreenModule =
                 let groups = World.getGroups screen world
                 let world = World.unregisterScreen screen world
                 let world = World.removeTasklets screen world
+                let world = World.removeSimulantImNui screen world
                 let world = World.destroyGroupsImmediate groups world
                 World.removeScreenState screen world
             else world
@@ -218,12 +213,16 @@ module WorldScreenModule =
             World.addSimulantToDestruction screen world
 
         /// Create a screen and add it to the world.
-        static member createScreen3 dispatcherName nameOpt world =
+        static member createScreen4 dispatcherName nameOpt world =
+
+            // make the dispatcher
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
+
+            // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
@@ -233,7 +232,12 @@ module WorldScreenModule =
                     then World.destroyScreenImmediate screen world
                     else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
+
+            // add the screen's state to the world
             let world = World.addScreen false screenState screen world
+
+            // unconditionally zero-process ImNui screen first time
+            let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.
@@ -244,7 +248,7 @@ module WorldScreenModule =
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Screen cannot have multiple names."
-                World.createScreen3 descriptor.SimulantDispatcherName screenNameOpt world
+                World.createScreen4 descriptor.SimulantDispatcherName screenNameOpt world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setScreenProperty propertyName property screen world |> snd')
@@ -257,11 +261,11 @@ module WorldScreenModule =
 
         /// Create a screen and add it to the world.
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
-            World.createScreen3 typeof<'d>.Name nameOpt world
+            World.createScreen4 typeof<'d>.Name nameOpt world
 
         /// Create a screen with a dissolving transition, and add it to the world.
         static member createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world =
-            let (screen, world) = World.createScreen3 dispatcherName nameOpt world
+            let (screen, world) = World.createScreen4 dispatcherName nameOpt world
             let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
             (screen, world)
         
@@ -270,29 +274,29 @@ module WorldScreenModule =
             World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveDescriptor songOpt world
 
         /// Write a screen to a screen descriptor.
-        static member writeScreen writePropagationHistory (screenDescriptor : ScreenDescriptor) screen world =
+        static member writeScreen (screenDescriptor : ScreenDescriptor) screen world =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.Dispatcher
             let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
-            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let getScreenProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             let groups = World.getGroups screen world
-            { screenDescriptor with GroupDescriptors = World.writeGroups writePropagationHistory groups world }
+            { screenDescriptor with GroupDescriptors = World.writeGroups groups world }
 
         /// Write multiple screens to a game descriptor.
-        static member writeScreens writePropagationHistory screens world =
+        static member writeScreens screens world =
             screens |>
             Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && not (screen.GetProtected world)) |>
-            Seq.fold (fun screenDescriptors screen -> World.writeScreen writePropagationHistory ScreenDescriptor.empty screen world :: screenDescriptors) [] |>
+            Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) [] |>
             Seq.rev |>
             Seq.toList
 
         /// Write a screen to a file.
-        static member writeScreenToFile writePropagationHistory (filePath : string) screen world =
+        static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let screenDescriptor = World.writeScreen writePropagationHistory ScreenDescriptor.empty screen world
+            let screenDescriptor = World.writeScreen ScreenDescriptor.empty screen world
             let screenDescriptorStr = scstring screenDescriptor
             let screenDescriptorPretty = PrettyPrinter.prettyPrint screenDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, screenDescriptorPretty)
@@ -327,6 +331,9 @@ module WorldScreenModule =
             
             // read the screen's groups
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
+
+            // unconditionally zero-process ImNui screen first time
+            let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
         /// Read multiple screens from a game descriptor.
@@ -359,22 +366,28 @@ module WorldScreenModule =
                 setScreenSlide slideDescriptor destination screen world
 
         static member internal getNav3dDescriptors contents =
-            [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do
+            [for (bounds : Box3, affineMatrix, staticModel, surfaceIndex, content) in contents do
                 match content with
                 | NavShape.EmptyNavShape -> ()
                 | NavShape.BoundsNavShape -> Left bounds
                 | NavShape.StaticModelSurfaceNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
+                    | ValueSome physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                            Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
-                    | None -> ()
+                            if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
+                                Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                            else
+                                Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
+                    | ValueNone -> ()
                 | NavShape.StaticModelNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
+                    | ValueSome physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
-                            Right (bounds, affineMatrix, surface)
-                    | None -> ()]
+                            if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
+                                Right (bounds, affineMatrix, surface)
+                            else
+                                Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
+                    | ValueNone -> ()]
 
         static member internal tryBuildNav3dMesh contents config =
 
@@ -466,35 +479,37 @@ module WorldScreenModule =
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
-                let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
-                let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
-                match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
-                | null -> None // some sort of argument issue
-                | dtMeshData ->
-                    DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
-                    let dtNavMesh = DtNavMesh ()
-                    if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
-                        let dtQuery = DtNavMeshQuery dtNavMesh
-                        Some (navBuilderResultData, dtNavMesh, dtQuery)
-                    else None
+                if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but null here seems to be an indication of nav mesh build failure.
+                    let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
+                    let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
+                    match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
+                    | null -> None // some sort of argument issue
+                    | dtMeshData ->
+                        DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
+                        let dtNavMesh = DtNavMesh ()
+                        if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
+                            let dtQuery = DtNavMeshQuery dtNavMesh
+                            Some (navBuilderResultData, dtNavMesh, dtQuery)
+                        else None
+                else None
 
             // geometry not found
             | None -> None
 
-        static member internal setNav3dBodyOpt contentOpt (source : Entity) world =
-            let screen = source.Screen
+        static member internal setNav3dBodyOpt contentOpt (navId : NavId) world =
+            let screen = navId.NavEntity.Screen
             let nav3d = World.getScreenNav3d screen world
-            match (nav3d.Nav3dBodies.TryFind source, contentOpt) with
+            match (nav3d.Nav3dBodies.TryFind navId, contentOpt) with
             | (Some body, Some body') ->
                 if body' <> body then // OPTIMIZATION: preserve map reference if no content changes detected.
-                    let nav3d = { nav3d with Nav3dBodies = Map.add source body' nav3d.Nav3dBodies }
+                    let nav3d = { nav3d with Nav3dBodies = Map.add navId body' nav3d.Nav3dBodies }
                     World.setScreenNav3d nav3d screen world |> snd'
                 else world
             | (None, Some body) ->
-                let nav3d = { nav3d with Nav3dBodies = Map.add source body nav3d.Nav3dBodies }
+                let nav3d = { nav3d with Nav3dBodies = Map.add navId body nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> snd'
             | (Some _, None) ->
-                let nav3d = { nav3d with Nav3dBodies = Map.remove source nav3d.Nav3dBodies }
+                let nav3d = { nav3d with Nav3dBodies = Map.remove navId nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> snd'
             | (None, None) -> world
 
@@ -512,19 +527,19 @@ module WorldScreenModule =
             let rebuild =
                 match (nav3d.Nav3dBodiesOldOpt, nav3d.Nav3dConfigOldOpt) with
                 | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
-                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected 3d navigation state; navigation rebuild declined."; false
-                | (None, None) -> nav3d.Nav3dBodies.Count <> 0
+                | (None, Some _) | (Some _, None) -> Log.warn "Unexpected 3d navigation state; navigation rebuild declined."; false
+                | (None, None) -> true // never built or didn't completed building
             if rebuild then
                 let bodies = nav3d.Nav3dBodies.Values
-                match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
-                | Some navMesh ->
-                    let nav3d =
+                let nav3d =
+                    match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
+                    | Some navMesh ->
                         { nav3d with
                             Nav3dBodiesOldOpt = Some nav3d.Nav3dBodies
                             Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
                             Nav3dMeshOpt = Some navMesh }
-                    World.setScreenNav3d nav3d screen world |> snd'
-                | None -> Log.info "Unable to build 3d navigation mesh."; world
+                    | None -> nav3d
+                World.setScreenNav3d nav3d screen world |> snd'
             else world
 
         /// Query the given screen's 3d navigation information if it exists.
@@ -582,21 +597,26 @@ module WorldScreenModule =
                 else None
             else None
 
-        /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
-        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
-            let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let naveSign = (rotation.Forward.Cross navRotation.Forward).Y
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+        /// Compute angular velocity for the given turn speed and navDirection.
+        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
+            let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
             let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navRotation = if navAngleBetween > turnSpeed then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, naveSign)) else navRotation
+            let navRotation =
+                if navAngleBetween > turnSpeed * deltaTime
+                then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed * deltaTime, navSign))
+                else navRotationDesired
             let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
             let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
             let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign) 0.0f
+            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign / deltaTime) 0.0f
             (navRotation, navAngularVelocity)
 
         /// Compute navigation information that results in following the given destination.
-        static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
+        static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
@@ -608,17 +628,18 @@ module WorldScreenModule =
                     let navLinearVelocity = navPosition - position
                     if navLinearVelocity.WithY(0.0f).Magnitude < 0.0001f then
                         let navDirection = destination - position
-                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                         { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
                     else
-                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
+                        let navPosition = Vector3.Lerp (position, navPosition, deltaTime)
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity world
                         { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->
                     let navDirection = destination - position
-                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                     { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
                 let navDirection = destination - position
-                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                 { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }

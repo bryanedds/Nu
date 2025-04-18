@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -32,40 +32,43 @@ module WorldInputModule =
             ignore (world : World)
             MouseState.isButtonUp mouseButton
 
+        /// Check that the given mouse button was just pressed.
+        static member isMouseButtonPressed mouseButton world =
+            ignore (world : World)
+            MouseState.isButtonPressed mouseButton
+
+        /// Check that the given mouse button was just clicked.
+        static member isMouseButtonClicked mouseButton world =
+            ignore (world : World)
+            MouseState.isButtonClicked mouseButton
+
         /// Get the position of the mouse.
-        static member getMousePosition world =
-            match World.tryGetWindowSize world with
-            | Some windowSize ->
-                let marginI = Constants.Render.OffsetMargin windowSize
-                let margin = v2 (single marginI.X) (single marginI.Y)
-                MouseState.getPosition () - margin
-            | None -> MouseState.getPosition ()
+        static member getMousePosition (world : World) =
+            let viewport = world.RasterViewport
+            let offset = viewport.Bounds.Min
+            let margin = v2 (single offset.X) (single offset.Y)
+            MouseState.getPosition () - margin
 
         /// Get the 2d screen position of the mouse.
-        static member getMousePosition2dScreen world =
-            let viewport = World.getViewport world
-            let eyeCenter = World.getEye2dCenter world
-            let eyeSize = World.getEye2dSize world
-            viewport.MouseTo2dScreen (World.getMousePosition world, eyeCenter, eyeSize)
+        static member getMousePosition2dScreen (world : World) =
+            let viewport = world.RasterViewport
+            let mousePosition = World.getMousePosition world
+            Viewport.mouseTo2dScreen world.Eye2dCenter world.Eye2dSize mousePosition viewport
 
         /// Get the 2d world position of the mouse.
-        static member getMousePostion2dWorld absolute world =
-            let viewport = World.getViewport world
-            let eyeCenter = World.getEye2dCenter world
-            let eyeSize = World.getEye2dSize world
-            viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyeCenter, eyeSize)
+        static member getMousePostion2dWorld absolute (world : World) =
+            let viewport = world.RasterViewport
+            let mousePosition = World.getMousePosition world
+            Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition viewport
 
         /// Get the 3d screen position of the mouse.
-        static member getMousePosition3dScreen world =
-            let viewport = World.getViewport world
-            viewport.MouseToScreen3d (World.getMousePosition world)
+        static member getMousePosition3dScreen (world : World) =
+            Viewport.mouseToScreen3d (World.getMousePosition world) world.RasterViewport
 
         /// Get the 3d world ray of the mouse.
-        static member getMouseRay3dWorld absolute world =
-            let viewport = World.getViewport world
-            let eyeCenter = World.getEye3dCenter world
-            let eyeRotation = World.getEye3dRotation world
-            viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyeCenter, eyeRotation)
+        static member getMouseRay3dWorld (world : World) =
+            let mousePosition = World.getMousePosition world
+            Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView mousePosition world.RasterViewport
 
         /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown key world =
@@ -79,6 +82,11 @@ module WorldInputModule =
         static member isKeyboardKeyUp key world =
             ignore (world : World)
             KeyboardState.isKeyUp key
+
+        /// Check that the given keyboard key was just pressed.
+        static member isKeyboardKeyPressed key world =
+            ignore (world : World)
+            KeyboardState.isKeyPressed key
 
         /// Check that a keyboard alt key is down.
         static member isKeyboardAltDown world =
@@ -99,6 +107,11 @@ module WorldInputModule =
         static member isKeyboardEnterUp world =
             ignore (world : World)
             KeyboardState.isEnterUp ()
+
+        /// Check that a keyboard enter key was just pressed.
+        static member isKeyboardEnterPressed world =
+            ignore (world : World)
+            KeyboardState.isEnterPressed ()
 
         /// Check that a keyboard ctrl key is down.
         static member isKeyboardCtrlDown world =

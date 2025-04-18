@@ -1,15 +1,16 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu.Gaia
 open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Gaia
 
 type DragEntityState =
-    | DragEntityPosition2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
-    | DragEntityRotation2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
+    | DragEntityPosition2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
+    | DragEntityRotation2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
     | DragEntityInactive
 
 type DragEyeState =
@@ -32,12 +33,12 @@ type [<SymbolicExpansion>] GaiaState =
       Snaps3d : single * single * single
       CreationElevation : single
       CreationDistance : single
-      AlternativeEyeTravelInput : bool
-      ReloadPhysicsAssetsWorkaround : bool }
+      AlternativeEyeTravelInput : bool }
+
     static member make
         dllPath editModeOpt freshlyLoaded imperativeExecution editWhileAdvancing
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
-        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput reloadPhysicsAssetsWorkaround =
+        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectFreshlyLoaded = freshlyLoaded
@@ -53,10 +54,10 @@ type [<SymbolicExpansion>] GaiaState =
           Snaps3d = snaps3d
           CreationElevation = creationElevation
           CreationDistance = creationDistance
-          AlternativeEyeTravelInput = alternativeEyeTravelInput
-          ReloadPhysicsAssetsWorkaround = reloadPhysicsAssetsWorkaround }
+          AlternativeEyeTravelInput = alternativeEyeTravelInput }
+
     static member defaultState =
         GaiaState.make
             "" None false false false
             v2Zero Constants.Engine.Eye3dCenterDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
-            true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false true
+            true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false

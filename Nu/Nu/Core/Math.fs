@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -23,6 +23,8 @@ module Vector2 =
         member inline this.Normalized = Vector2.Normalize this
         member inline this.Magnitude = this.Length ()
         member inline this.MagnitudeSquared = this.LengthSquared ()
+        member inline this.Distance that = Vector2.Distance (this, that)
+        member inline this.DistanceSquared that = Vector2.DistanceSquared (this, that)
         member inline this.Absolute = Vector2 (abs this.X, abs this.Y)
         member inline this.MapX mapper = Vector2 (mapper this.X, this.Y)
         member inline this.MapY mapper = Vector2 (this.X, mapper this.Y)
@@ -57,8 +59,8 @@ module Vector2 =
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
     let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
     let v2EqApprox (v : Vector2) (v2 : Vector2) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon)
     let inline v2NeqApprox v v2 epsilon = not (v2EqApprox v v2 epsilon)
     let inline v2Dup (a : single) = v2 a a
     let v2One = Vector2.One
@@ -113,6 +115,8 @@ module Vector3 =
         member inline this.Normalized = Vector3.Normalize this
         member inline this.Magnitude = this.Length ()
         member inline this.MagnitudeSquared = this.LengthSquared ()
+        member inline this.Distance that = Vector3.Distance (this, that)
+        member inline this.DistanceSquared that = Vector3.DistanceSquared (this, that)
         member inline this.Absolute = Vector3 (abs this.X, abs this.Y, abs this.Z)
         member inline this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
         member inline this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
@@ -181,9 +185,9 @@ module Vector3 =
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
     let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let v3EqApprox (v : Vector3) (v2 : Vector3) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqual (v.Z, v2.Z, epsilon)
     let inline v3NeqApprox v v2 epsilon = not (v3EqApprox v v2 epsilon)
     let inline v3Dup (a : single) = v3 a a a
     let v3UncenteredOffset = v3Dup 0.5f
@@ -243,6 +247,8 @@ module Vector4 =
         member inline this.V4i = Vector4i (int this.X, int this.Y, int this.Z, int this.W)
         member inline this.Magnitude = this.Length ()
         member inline this.MagnitudeSquared = this.LengthSquared ()
+        member inline this.Distance that = Vector4.Distance (this, that)
+        member inline this.DistanceSquared that = Vector4.DistanceSquared (this, that)
         member inline this.Absolute = Vector4 (abs this.X, abs this.Y, abs this.Z, abs this.W)
         member inline this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member inline this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
@@ -274,10 +280,10 @@ module Vector4 =
     let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
     let inline v4Neq (v : Vector4) (v2 : Vector4) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
     let v4EqApprox (v : Vector4) (v2 : Vector4) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqual (v.Z, v2.Z, epsilon) &&
+        Math.ApproximatelyEqual (v.W, v2.W, epsilon)
     let inline v3NeqApprox v v2 epsilon = not (v3EqApprox v v2 epsilon)
     let inline v4Dup (a : single) = v4 a a a a
     let v4One = Vector4.One
@@ -539,6 +545,10 @@ module Quaternion =
 
     type Quaternion with
 
+        /// Create a look-at rotation.
+        static member CreateLookAt (source, destination, up) =
+            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, destination - source, up))
+
         /// The right vector of the quaternion.
         member inline this.Right =
             v3Right.Transform this
@@ -595,17 +605,11 @@ module Quaternion =
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
     let quatEqApprox (v : Quaternion) (v2 : Quaternion) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqual (v.Z, v2.Z, epsilon) &&
+        Math.ApproximatelyEqual (v.W, v2.W, epsilon)
     let inline quatNeqApprox v v2 epsilon = not (quatEqApprox v v2 epsilon)
-
-    /// Create a look-at rotation quaternion.
-    /// NOTE: this might be less efficient since it uses Matrix4x4's look-at function then converts to quaternion.
-    let CreateLookAt (position, direction, up) =
-        Quaternion.CreateFromRotationMatrix
-            (Matrix4x4.CreateLookAt (position, direction, up))
 
 /// Converts Quaternion types.
 type QuaternionConverter () =
@@ -658,6 +662,7 @@ module Box2 =
         member this.TopRight = v2 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y)
         member this.BottomLeft = this.Min
         member this.BottomRight = v2 (this.Min.X + this.Size.X) this.Min.Y
+        member this.Corners = [|this.TopLeft; this.TopRight; this.BottomLeft; this.BottomRight|] // TODO: move this into C# like Box3.
         member this.IsEmpty = this.Equals Box2.Zero
         member this.Translate translation = Box2 (this.Min + translation, this.Size)
         member this.WithMin min = Box2 (min, this.Size)
@@ -985,6 +990,88 @@ type Box3iConverter () =
         | :? Box3 -> source
         | _ -> failconv "Invalid Box3iConverter conversion from source." None
 
+/// Converts Matrix3x2 types.
+type Matrix3x2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Matrix3x2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v3x2 = source :?> Matrix3x2
+            Symbols
+                ([Number (string v3x2.M11, ValueNone); Number (string v3x2.M12, ValueNone)
+                  Number (string v3x2.M21, ValueNone); Number (string v3x2.M22, ValueNone)
+                  Number (string v3x2.M31, ValueNone); Number (string v3x2.M32, ValueNone)],
+                 ValueNone) :> obj
+        elif destType = typeof<Matrix3x2> then source
+        else failconv "Invalid Matrix3x2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Matrix3x2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols
+                ([Number (m11, _); Number (m12, _)
+                  Number (m21, _); Number (m22, _)
+                  Number (m31, _); Number (m32, _)],
+                 _) ->
+                Matrix3x2
+                    (Single.Parse m11, Single.Parse m12,
+                     Single.Parse m21, Single.Parse m22,
+                     Single.Parse m31, Single.Parse m32) :> obj
+            | _ -> failconv "Invalid Matrix3x2Converter conversion from source." (Some symbol)
+        | :? Matrix3x2 -> source
+        | _ -> failconv "Invalid Matrix3x2Converter conversion from source." None
+
+[<AutoOpen>]
+module Matrix3x2 =
+
+    type Matrix3x2 with
+
+        member inline this.IsZero =
+            this.M11 = 0.0f && this.M12 = 0.0f &&
+            this.M21 = 0.0f && this.M22 = 0.0f &&
+            this.M31 = 0.0f && this.M32 = 0.0f
+
+        /// Create a matrix from an array of 16 single values.
+        static member CreateFromArray (arr : single array) =
+            Matrix3x2
+                (arr.[00], arr.[01],
+                 arr.[02], arr.[03],
+                 arr.[04], arr.[05])
+
+        /// Convert a Matrix3x2 to an array.
+        member this.ToArray () =
+            let value = Array.zeroCreate 6
+            value.[00] <- this.M11; value.[01] <- this.M12
+            value.[02] <- this.M21; value.[03] <- this.M22
+            value.[04] <- this.M31; value.[05] <- this.M32
+            value
+
+        /// Convert a Matrix3x2 to an array.
+        member this.ToArray (value : single array, offset) =
+            value.[offset+00] <- this.M11; value.[offset+01] <- this.M12
+            value.[offset+02] <- this.M21; value.[offset+03] <- this.M22
+            value.[offset+04] <- this.M31; value.[offset+05] <- this.M32
+
+    let inline m3x2 (r0 : Vector2) (r1 : Vector2) (r2 : Vector2) =
+        Matrix3x2
+            (r0.X, r0.Y,
+             r1.X, r1.Y,
+             r2.X, r2.Y)
+
+    let inline m3x2Eq (x : Matrix3x2) (y : Matrix3x2) = x.Equals y
+    let inline m3x2Neq (x : Matrix3x2) (y : Matrix3x2) = not (x.Equals y)
+    let m3x2Identity = Matrix3x2.Identity
+    let m3x2Zero = Unchecked.defaultof<Matrix3x2>
+
 /// Converts Matrix4x4 types.
 type Matrix4x4Converter () =
     inherit TypeConverter ()
@@ -1069,6 +1156,10 @@ module Matrix4x4 =
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
 
+        /// The transposed value of a matrix.
+        member inline this.Transposed =
+            Matrix4x4.Transpose this
+
         member inline this.IsZero =
             this.M11 = 0.0f && this.M12 = 0.0f && this.M13 = 0.0f && this.M13 = 0.0f &&
             this.M21 = 0.0f && this.M22 = 0.0f && this.M23 = 0.0f && this.M23 = 0.0f &&
@@ -1111,14 +1202,6 @@ module Matrix4x4 =
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
-    /// Create a matrix from translation, rotation, and scale.
-    let CreateFromTrs (translation, rotation, scale : Vector3) =
-        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-        let scaleMatrix = Matrix4x4.CreateScale scale
-        let mutable trs = scaleMatrix * rotationMatrix
-        trs.Translation <- translation
-        trs
-
     /// Create a rotation matrix from three orthogonal vectors.
     let CreateRotation (right : Vector3, up : Vector3, forward : Vector3) =
         Matrix4x4
@@ -1126,6 +1209,14 @@ module Matrix4x4 =
              right.Y, up.Y, forward.Y, 0.0f,
              right.Z, up.Z, forward.Z, 0.0f,
              0.0f, 0.0f, 0.0f, 1.0f)
+
+    /// Create an affine matrix from translation, rotation, and scale.
+    let CreateAffine (translation, rotation, scale : Vector3) =
+        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+        let scaleMatrix = Matrix4x4.CreateScale scale
+        let mutable affineMatrix = scaleMatrix * rotationMatrix
+        affineMatrix.Translation <- translation
+        affineMatrix
 
 [<AutoOpen>]
 module Color =
@@ -1280,7 +1371,7 @@ type [<Struct>] Affine =
 
     /// Create an affine matrix (lossy).
     member this.Matrix =
-        Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
+        Matrix4x4.CreateAffine (this.Translation, this.Rotation, this.Scale)
 
     /// Create from components (lossless).
     static member make translation rotation scale =
@@ -1347,8 +1438,21 @@ type [<Struct>] Flip =
 /// Type of light.
 type LightType =
     | PointLight
-    | DirectionalLight
     | SpotLight of ConeInner : single * ConeOuter : single
+    | DirectionalLight
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | PointLight -> 0
+        | SpotLight _ -> 1
+        | DirectionalLight -> 2
+
+/// The type of subsurface scattering that a material utilizes.
+type ScatterType =
+    | NoScatter
+    | SkinScatter
+    | FoliageScatter
 
 [<RequireQualifiedAccess>]
 module Math =
@@ -1368,6 +1472,8 @@ module Math =
             assignTypeConverter<Box2, Box2Converter> ()
             assignTypeConverter<Box3, Box3Converter> ()
             assignTypeConverter<Box2i, Box2iConverter> ()
+            assignTypeConverter<Box3i, Box3iConverter> ()
+            assignTypeConverter<Matrix3x2, Matrix3x2Converter> ()
             assignTypeConverter<Matrix4x4, Matrix4x4Converter> ()
             assignTypeConverter<Color, ColorConverter> ()
             Initialized <- true
@@ -1395,7 +1501,7 @@ module Math =
             (DegreesToRadians degrees.Z)
 
     /// Snap an int value to an offset.
-    let SnapI offset (value : int) =
+    let SnapI (offset, value : int) =
         if offset <> 0 then
             let (div, rem) = Math.DivRem (value, offset)
             let rem = if single rem < single offset * 0.5f then 0 else offset
@@ -1404,44 +1510,64 @@ module Math =
 
     /// Snap a single value to an offset.
     /// Has a minimum granularity of 0.01f.
-    let SnapF (offset : single) (value : single) =
-        single (SnapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) / 100.0f
+    let SnapF (offset : single, value : single) =
+        single (SnapI (int (round (offset * 100.0f)), int (round (value * 100.0f)))) / 100.0f
 
     /// Snap a Vector3 value to an offset.
     /// Has a minimum granularity of 0.001f.
-    let SnapF3d offset (v3 : Vector3) =
-        Vector3 (SnapF offset v3.X, SnapF offset v3.Y, SnapF offset v3.Z)
+    let SnapF3d (offset, v3 : Vector3) =
+        Vector3 (SnapF (offset, v3.X), SnapF (offset, v3.Y), SnapF (offset, v3.Z))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree (offset : single) (value : single) =
-        single (SnapI (int (round offset)) (int (round value)))
+    let SnapDegree (offset : single, value : single) =
+        single (SnapI (int (round offset), int (round value)))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree3d offset (v3 : Vector3) =
-        Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
+    let SnapDegree3d (offset, v3 : Vector3) =
+        Vector3 (SnapDegree (offset, v3.X), SnapDegree (offset, v3.Y), SnapDegree (offset, v3.Z))
 
-    /// Find the the union of a line segment and a frustum if one exists.
-    let TryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
+    /// Find the union of a line segment and a frustum if one exists.
+    /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
+    let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then
-            let start =
+            let start' =
                 if not startContained then
                     let ray = Ray3 (start, (stop - start).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (start, stop, tOpt.Value)
+                    then Vector3.Lerp (start, stop, tOpt.Value / (stop - start).Magnitude)
                     else start // TODO: figure out why intersection could fail here.
                 else start
-            let stop =
+            let stop' =
                 if not stopContained then
-                    let ray = Ray3 (stop, (start - stop).Normalized)
+                    let ray = Ray3 (stop, (start' - stop).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (stop, start, tOpt.Value)
+                    then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some (start, stop)
+            Some struct (start', stop')
         else None
+
+    /// Find the the union of a line segment and a frustum if one exists.
+    /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
+    let TryUnionSegmentAndFrustum' (start : Vector3, stop : Vector3, frustum : Frustum) : struct (Vector3 * Vector3) array =
+        let extent = stop - start
+        let extentMagnitude = extent.Magnitude
+        let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
+        if extentMagnitude > partMagnitude then
+            let partMax = 8 // NOTE: magic value that keeps too many operations from occurring, again for perf reasons...
+            let partCount = min partMax (int (ceil (extentMagnitude / partMagnitude)))
+            let partExtent = extent / single partCount
+            [|for i in 0 .. dec partCount do
+                let start' = start + partExtent * single i
+                let stop' = start' + partExtent
+                if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
+                    struct (start', stop')|]
+        elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
+            [|struct (start, stop)|]
+        else [||]

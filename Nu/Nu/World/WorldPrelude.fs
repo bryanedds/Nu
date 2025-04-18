@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -14,9 +14,20 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
 
-// The inferred attributes of an entity that are used to construct its bounds.
-// HACK: added Unimportant field to allow attributes to be marked as unimportant.
-// TODO: P1: see if we can refactor this type to make its representation and algo less hacky.
+/// The result of an intersection-detecting operation.
+type [<Struct>] Intersection =
+    | Hit of single
+    | Miss
+
+    /// Convert from nullable intersection value.
+    static member ofNullable (intersection : single Nullable) =
+        if intersection.HasValue
+        then Hit intersection.Value
+        else Miss
+
+/// The inferred attributes of an entity that are used to construct its bounds.
+/// HACK: added Unimportant field to allow attributes to be marked as unimportant.
+/// TODO: see if we can refactor this type to make its representation and algo less hacky.
 type AttributesInferred =
     { Unimportant : bool
       SizeInferred : Vector3
@@ -62,6 +73,17 @@ type TileMapDescriptor =
       TileMapSizeI : Vector2i
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
+
+/// Describes a Spine animation for a given track.
+type [<DefaultValue "[idle Loop]">] SpineAnimation =
+    { SpineAnimationName : string
+      SpineAnimationPlayback : Playback }
+
+/// Represents the mutable backing state of an animating Spine skeleton.
+/// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
+type SpineSkeletonState =
+    { SpineSkeleton : Spine.Skeleton
+      SpineAnimationState : Spine.AnimationState }
 
 /// The timing with which an effect should be evaluated in a frame.
 type RunMode =
@@ -267,7 +289,7 @@ type Layout =
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
-type [<Struct>] TransitionType =
+type TransitionType =
     | Incoming
     | Outgoing
 
@@ -283,7 +305,7 @@ type TransitionState =
         | IdlingState time -> time
 
 /// Describes one of a screen's transition processes.
-type Transition =
+type [<SymbolicExpansion>] Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : GameTime
       DissolveImageOpt : Image AssetTag option
@@ -426,10 +448,11 @@ type Timers =
 [<AutoOpen>]
 module AmbientState =
 
-    let [<Literal>] private ImperativeMask =    0b0001u
-    let [<Literal>] private AccompaniedMask =   0b0010u
-    let [<Literal>] private AdvancingMask =     0b0100u
-    let [<Literal>] private FramePacingMask =   0b1000u
+    let [<Literal>] private ImperativeMask =            0b00001u
+    let [<Literal>] private AccompaniedMask =           0b00010u
+    let [<Literal>] private AdvancingMask =             0b00100u
+    let [<Literal>] private FramePacingMask =           0b01000u
+    let [<Literal>] private AdvancementClearedMask =    0b10000u
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
@@ -437,29 +460,32 @@ module AmbientState =
             { // cache line 1 (assuming 16 byte header)
               Flags : uint
               Liveness : Liveness
+              UpdateDelta : int64
               UpdateTime : int64
               ClockDelta : single
               ClockTime : single
-              TickDelta : int64
               // cache line 2
+              TickDelta : int64
               KeyValueStore : SUMap<string, obj>
               TickTime : int64
-              TickTimeShavings : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
               // cache line 3
+              TickDeltaPrevious : int64
               DateTime : DateTimeOffset
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               Overlayer : Overlayer
               Timers : Timers
+              // cache line 4
               LightMapRenderRequested : bool }
 
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
         member this.Advancing = this.Flags &&& AdvancingMask <> 0u
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
+        member this.AdvancementCleared = this.Flags &&& AdvancementClearedMask <> 0u
 
     /// Get the the liveness state of the engine.
     let getLiveness state =
@@ -477,8 +503,29 @@ module AmbientState =
         { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
 
     /// Get the collection config value.
-    let getConfig (state : 'w AmbientState) =
+    let getConfig (state : _ AmbientState) =
         if state.Imperative then TConfig.Imperative else TConfig.Functional
+
+    let internal clearAdvancement (state : _ AmbientState) =
+        { state with
+            Flags = state.Flags &&& ~~~AdvancingMask ||| AdvancementClearedMask
+            UpdateDelta = 0L
+            ClockDelta = 0.0f
+            TickDelta = 0L }
+
+    let internal restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
+        let flags = state.Flags
+        let flags = if advancing then flags ||| AdvancingMask else flags &&& ~~~AdvancingMask
+        let flags = if advancementCleared then flags ||| AdvancementClearedMask else flags &&& ~~~AdvancementClearedMask
+        { state with
+            Flags = flags
+            UpdateDelta = updateDelta
+            ClockDelta = clockDelta
+            TickDelta = tickDelta }
+
+    /// Get the update delta.
+    let getUpdateDelta state =
+        state.UpdateDelta
 
     /// Get the update time.
     let getUpdateTime state =
@@ -504,13 +551,13 @@ module AmbientState =
     let getGameDelta (state : 'w AmbientState) =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
-        | DynamicFrameRate _ -> ClockTime (getClockDelta state)
+        | DynamicFrameRate _ -> TickTime (getTickDelta state)
 
     /// Get the polymorphic engine time.
     let getGameTime state =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
-        | DynamicFrameRate _ -> ClockTime (getClockTime state)
+        | DynamicFrameRate _ -> TickTime (getTickTime state)
 
     /// Get the date delta as a TimeSpan.
     let getDateDelta state =
@@ -522,20 +569,26 @@ module AmbientState =
 
     /// Update the update and clock times.
     let updateTime (state : 'w AmbientState) =
+        let tickDeltaCurrent =
+            if state.Advancing
+            then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
+            else 0L
+        state.TickWatch.Restart ()
         let updateDelta = if state.Advancing then 1L else 0L
-        let tickTimeShaved = state.TickWatch.ElapsedTicks - state.TickTimeShavings
-        let tickDeltaUnshaved = tickTimeShaved - state.TickTime
-        let tickDelta = min (tickTimeShaved - state.TickTime) Constants.Engine.TickDeltaMax
-        let tickDeltaShavings = max (tickDeltaUnshaved - tickDelta) 0L
-        let tickTime = tickTimeShaved - tickDeltaShavings
+        let tickDelta =
+            if Constants.Engine.TickDeltaAveraging
+            then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
+            else tickDeltaCurrent
+        let tickTime = state.TickTime + tickDelta
         let dateTime = DateTimeOffset.Now
         { state with
+            UpdateDelta = updateDelta
             UpdateTime = state.UpdateTime + updateDelta
             ClockDelta = single tickDelta / single Stopwatch.Frequency
             ClockTime = single tickTime / single Stopwatch.Frequency
-            TickTime = tickTime
-            TickTimeShavings = state.TickTimeShavings + tickDeltaShavings
             TickDelta = tickDelta
+            TickDeltaPrevious = tickDeltaCurrent
+            TickTime = tickTime
             DateTime = dateTime
             DateDelta = dateTime - state.DateTime }
 
@@ -607,13 +660,41 @@ module AmbientState =
 
     /// Attempt to check that the window is in a full screen state.
     let tryGetWindowFullScreen state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->            
+            let (width, height) = (ref 0, ref 0)
+            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
+            let mutable displayMode = Unchecked.defaultof<_>
+            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
+            Some (width.Value = displayMode.w || height.Value = displayMode.h)
+        | _ -> None
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =
         match state.SdlDepsOpt with
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
+
+    /// Attempt to toggle the window's full screen state.
+    let tryToggleWindowFullScreen state =
+        match tryGetWindowFullScreen state with
+        | Some fullScreen -> trySetWindowFullScreen (not fullScreen) state
+        | None -> state
+
+    /// Attempt to get the window position.
+    let tryGetWindowPosition state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->
+            let (x, y) = (ref 0, ref 0)
+            SDL.SDL_GetWindowPosition (window.SglWindow, x, y) |> ignore
+            Some (v2i x.Value y.Value)
+        | _ -> None
+
+    /// Attempt to set the window's position.
+    let trySetWindowPosition (position : Vector2i) state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) -> SDL.SDL_SetWindowPosition (window.SglWindow, position.X, position.Y) |> ignore
+        | None -> ()
 
     /// Attempt to get the window size.
     let tryGetWindowSize state =
@@ -623,6 +704,12 @@ module AmbientState =
             SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
             Some (v2i width.Value height.Value)
         | _ -> None
+
+    /// Attempt to set the window's size.
+    let trySetWindowSize (size : Vector2i) state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) -> SDL.SDL_SetWindowSize (window.SglWindow, size.X, size.Y) |> ignore
+        | None -> ()
 
     /// Get symbolics with the by map.
     let getSymbolicsBy by state =
@@ -675,16 +762,17 @@ module AmbientState =
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Flags = flags
           Liveness = Live
+          UpdateDelta = 0L
           UpdateTime = 0L
           ClockDelta = 0.0f
           ClockTime = 0.0f
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
           TickTime = 0L
-          TickTimeShavings = 0L
           TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
-          DateTime = DateTime.Now
           DateDelta = TimeSpan.Zero
+          TickDeltaPrevious = 0L
+          DateTime = DateTime.Now
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

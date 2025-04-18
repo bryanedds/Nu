@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -32,6 +32,14 @@ module WorldSimulantModule =
             | :? Group as group -> World.getGroupState group world :> SimulantState
             | :? Screen as screen -> World.getScreenState screen world :> SimulantState
             | :? Game as game -> World.getGameState game world :> SimulantState
+            | _ -> failwithumf ()
+
+        static member internal getXtension (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.getEntityXtension entity world
+            | :? Group as group -> World.getGroupXtension group world
+            | :? Screen as screen -> World.getScreenXtension screen world
+            | :? Game as game -> World.getGameXtension game world
             | _ -> failwithumf ()
 
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
@@ -89,20 +97,12 @@ module WorldSimulantModule =
                 | 3 -> World.setGroupProperty name property (simulant :?> Group) world
                 | _ -> failwithumf ()
 
-        static member internal attachProperty name property (simulant : Simulant) world =
+        static member internal attachMissingProperties (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.attachEntityProperty name property entity world
-            | :? Group as group -> World.attachGroupProperty name property group world
-            | :? Screen as screen -> World.attachScreenProperty name property screen world
-            | :? Game as game -> World.attachGameProperty name property game world
-            | _ -> failwithumf ()
-
-        static member internal detachProperty name (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.detachEntityProperty name entity world
-            | :? Group as group -> World.detachGroupProperty name group world
-            | :? Screen as screen -> World.detachScreenProperty name screen world
-            | :? Game as game -> World.detachGameProperty name game world
+            | :? Entity as entity -> World.attachEntityMissingProperties entity world
+            | :? Group as group -> World.attachGroupMissingProperties group world
+            | :? Screen as screen -> World.attachScreenMissingProperties screen world
+            | :? Game as game -> World.attachGameMissingProperties game world
             | _ -> failwithumf ()
 
         /// Get the given simulant's dispatcher.
@@ -215,14 +215,14 @@ module WorldSimulantModule =
         static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> enumerable<Simulant> (World.getEntityChildren entity world)
-            | :? Group as group -> enumerable<Simulant> (World.getEntitiesSovereign group world)
+            | :? Group as group -> enumerable<Simulant> (World.getSovereignEntities group world)
             | :? Screen as screen -> enumerable<Simulant> (World.getGroups screen world)
             | :? Game -> enumerable<Simulant> (World.getScreens world)
             | _ -> failwithumf ()
 
         /// Check that a simulant exists in the world.
         static member getExists (simulant : Simulant) (world : World) =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 4 then
                 let entity = simulant :?> Entity
                 notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
@@ -237,7 +237,7 @@ module WorldSimulantModule =
         /// Determine if a simulant is contained by, or is the same as, any currently selected screen.
         /// Game is always considered 'selected' as well.
         static member getSelected (simulant : Simulant) world =
-            match Address.getNames simulant.SimulantAddress with
+            match simulant.Names with
             | [||] -> failwithumf ()
             | [|_|] -> true
             | names ->
@@ -247,36 +247,55 @@ module WorldSimulantModule =
                 | _ -> false
 
         /// Convert an address to a concrete simulant reference.
-        static member derive address =
-            let namesLength = address |> Address.getNames |> Array.length
+        static member deriveFromNames (names : string seq) =
+            let names = Seq.toArray names // NOTE: this should be fast for arrays because there's an explicit array test in Seq.toArray.
+            let namesLength = names.Length
             if namesLength >= 4
-            then Entity (Address.changeType<obj, Entity> address) :> Simulant
+            then Entity (rtoa names) :> Simulant
             else
                 match namesLength with
-                | 1 -> Game.Handle :> Simulant
-                | 2 -> Screen (Address.changeType<obj, Screen> address) :> Simulant
-                | 3 -> Group (Address.changeType<obj, Group> address) :> Simulant
+                | 1 -> Game.Handle // OPTIMIZATION: avoid allocation.
+                | 2 -> Screen (rtoa names)
+                | 3 -> Group (rtoa names)
+                | _ -> failwithumf ()
+
+        /// Convert an address to a concrete simulant reference.
+        static member deriveFromAddress (address : Address) =
+            let names = address.Names // OPTIMIZATION: unroll fields to locals to avoid redundant fetches.
+            let hashCode = address.HashCode
+            let anonymous = address.Anonymous
+            let namesLength = names.Length
+            if namesLength >= 4
+            then Entity { Names = names; HashCode = hashCode; Anonymous = anonymous } :> Simulant
+            else
+                match namesLength with
+                | 1 -> Game.Handle // OPTIMIZATION: avoid allocation.
+                | 2 -> Screen { Names = names; HashCode = hashCode; Anonymous = anonymous }
+                | 3 -> Group { Names = names; HashCode = hashCode; Anonymous = anonymous }
                 | _ -> failwithumf ()
 
         /// Convert an event address to the concrete simulant that it targets.
-        static member deriveFromEvent event =
-            let eventAddressNames = Address.getNames event
+        static member deriveFromEventAddress (event : Address) =
+            let eventAddressNames = event.Names
             let eventTargetIndex = Array.findIndex (fun name -> name = "Event") eventAddressNames + 1
             if eventTargetIndex < Array.length eventAddressNames then
-                let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> rtoa
-                World.derive eventTarget
+                let eventTargetNames = eventAddressNames |> Array.skip eventTargetIndex
+                World.deriveFromNames eventTargetNames
             else failwithumf ()
+
+        /// Get the property definitions of the given simulant.
+        static member getPropertyDefinitions simulant world =
+            let state = World.getState simulant world
+            Reflection.getReflectivePropertyDefinitions state
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 
     /// Check that an entity contains the given property descriptor.
-    let containsPropertyDescriptor<'s when 's :> SimulantState> (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) world =
+    let containsPropertyDescriptor<'s when 's :> SimulantState> propertyName (simulant : Simulant) world =
         let properties = typeof<'s>.GetProperties true
-        if Seq.exists (fun (property : PropertyInfo) ->
-            property.Name = propertyDescriptor.PropertyName &&
-            (property.PropertyType = propertyDescriptor.PropertyType || property.PropertyType = typeof<DesignerProperty>))
-            properties then true
+        if Seq.exists (fun (property : PropertyInfo) -> property.Name = propertyName) properties then
+            true
         else
             let state = World.getState simulant world
             let xtensionOpt =
@@ -286,8 +305,7 @@ module PropertyDescriptor =
             match xtensionOpt with
             | Some xtension ->
                 let mutable p = Unchecked.defaultof<Property>
-                Xtension.tryGetProperty (propertyDescriptor.PropertyName, xtension, &p) &&
-                p.PropertyType = propertyDescriptor.PropertyType
+                Xtension.tryGetProperty (propertyName, xtension, &p)
             | None -> false
 
     /// Attempt to get the simulant's property value.
@@ -307,11 +325,11 @@ module PropertyDescriptor =
     let getPropertyDescriptors<'s when 's :> SimulantState> simulantOpt world =
         match simulantOpt with
         | Some simulant ->
-            // OPTIMIZATION: seqs used for speed.
-            let properties = typeof<'s>.GetProperties true
+            let properties = typeof<'s>.GetProperties true // OPTIMIZATION: seqs used for speed.
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Order") properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
             let properties =
                 Seq.filter (fun (property : PropertyInfo) ->
@@ -325,23 +343,21 @@ module PropertyDescriptor =
                     let propertyDescriptor = { PropertyType = property.PropertyType; PropertyName = propertyName }
                     propertyDescriptor)
                     properties
+            let propertyDefinitions =
+                World.getPropertyDefinitions simulant world
             let propertyDescriptors =
-                match simulant :> obj with
-                | :? Entity as entity ->
-                    let properties' = World.getEntityXtensionProperties entity world
-                    let propertyDescriptors' =
-                        Seq.fold
-                            (fun propertyDescriptors' (propertyName, property : Property) ->
-                                if property.PropertyType = typeof<ComputedProperty> then
-                                    propertyDescriptors'
-                                elif not (Reflection.isPropertyNonPersistentByName propertyName) then
-                                    let propertyType = property.PropertyType
-                                    let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
-                                    propertyDescriptor :: propertyDescriptors'
-                                else propertyDescriptors')
-                            []
-                            properties'
-                    Seq.append propertyDescriptors' propertyDescriptors
-                | _ -> propertyDescriptors
+                let properties' = World.getXtension simulant world
+                let propertyDescriptors' =
+                    Seq.fold
+                        (fun propertyDescriptors' (propertyName, _) ->
+                            let propertyType = propertyDefinitions.[propertyName].PropertyType
+                            if propertyType = typeof<ComputedProperty> then
+                                propertyDescriptors'
+                            elif not (Reflection.isPropertyNonPersistentByName propertyName) then
+                                let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
+                                propertyDescriptor :: propertyDescriptors'
+                            else propertyDescriptors')
+                        [] (Xtension.toSeq properties')
+                Seq.append propertyDescriptors' propertyDescriptors
             List.ofSeq propertyDescriptors
         | None -> []

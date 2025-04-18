@@ -1,10 +1,9 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
 open System.Diagnostics
-open System.Text.RegularExpressions
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -42,15 +41,14 @@ module CoreOperators =
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
 
-// TODO: put this in Prime?
-[<AutoOpen>]
-module StringExtensions =
+    /// Attempt to cast an obj to type 'a, returning 'a option.
+    /// TODO: remove this after updating Prime.
+    let inline tryCast<'a> (obj : obj) = match obj with :? 'a as a -> Some a | _ -> None
 
-    let regex = Regex "([A-Z][a-z]+)"
+    /// Attempt to cast an obj to type 'a, returning 'a voption.
+    /// TODO: remove this after updating Prime.
+    let inline tryCast'<'a> (obj : obj) = match obj with :? 'a as a -> ValueSome a | _ -> ValueNone
 
-    type String with
-        member this.Spaced =
-            regex.Matches this |>
-            Seq.map cast<Match> |>
-            Seq.map _.Value |>
-            String.join " "
+    /// Force a value to be in between zero and one.
+    /// TODO: remove this after updating Prime.
+    let inline saturate (a : 'a) = a |> min (one ()) |> max (zero ())

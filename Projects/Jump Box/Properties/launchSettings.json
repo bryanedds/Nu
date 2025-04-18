@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Jump Box": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open Prime
+open System.Reflection
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
@@ -45,6 +46,16 @@ type [<SymbolicExpansion; DefaultValue "[[StartTime 0] [LifeTimeOpt None] [Name 
     static member bounce startTime lifeTimeOpt name =
         Animation.make startTime lifeTimeOpt name Bounce 1.0f 1.0f None
 
+/// Specifies the type of desired fragment depth testing.
+type [<Struct>] DepthTest =
+    | LessThanTest
+    | LessThanOrEqualTest
+    | EqualTest
+    | GreaterThanOrEqualTest
+    | GreaterThanTest
+    | NeverPassTest
+    | AlwaysPassTest
+
 /// The type of rendering used on a surface (for use by the higher-level engine API).
 type RenderStyle =
     | Deferred
@@ -81,46 +92,55 @@ module Assimp =
              m.A4, m.B4, m.C4, m.D4)
 
     let internal ComputePositionKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
+        let last = dec keys.Length
         let mutable low = 0
-        let mutable high = keys.Length - 1
+        let mutable high = last
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            let midTime = single keys.[inc mid].Time
-            if animationTime < midTime then high <- mid - 1
-            elif animationTime > midTime then low <- mid + 1
-            else found <- true; i <- mid
+            if mid < last then
+                let midTime = single keys.[inc mid].Time
+                if animationTime < midTime then high <- mid - 1
+                elif animationTime > midTime then low <- mid + 1
+                else found <- true; i <- mid
+            else found <- true; i <- last
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
     let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
+        let last = dec keys.Length
         let mutable low = 0
-        let mutable high = keys.Length - 1
+        let mutable high = last
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            let midTime = single keys.[inc mid].Time
-            if animationTime < midTime then high <- mid - 1
-            elif animationTime > midTime then low <- mid + 1
-            else found <- true; i <- mid
+            if mid < last then
+                let midTime = single keys.[inc mid].Time
+                if animationTime < midTime then high <- mid - 1
+                elif animationTime > midTime then low <- mid + 1
+                else found <- true; i <- mid
+            else found <- true; i <- last
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
     let internal ComputeScalingKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
+        let last = dec keys.Length
         let mutable low = 0
-        let mutable high = keys.Length - 1
+        let mutable high = last
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            let midTime = single keys.[inc mid].Time
-            if animationTime < midTime then high <- mid - 1
-            elif animationTime > midTime then low <- mid + 1
-            else found <- true; i <- mid
+            if mid < last then
+                let midTime = single keys.[inc mid].Time
+                if animationTime < midTime then high <- mid - 1
+                elif animationTime > midTime then low <- mid + 1
+                else found <- true; i <- mid
+            else found <- true; i <- last
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
@@ -171,11 +191,20 @@ module Assimp =
 [<AutoOpen>]
 module AssimpExtensions =
 
-    let private AnimationChannelsCached =
-        ConcurrentDictionary<_, _> HashIdentity.Reference
-
     let private NodeEmpty =
         Assimp.Node ()
+
+    type MaterialPropertyComparer<'e when 'e : equality> () =
+        interface struct (Assimp.Material * string) IEqualityComparer with
+            member this.Equals (struct (leftMaterial, leftPropertyName), struct (rightMaterial, rightPropertyName)) =
+                leftMaterial = rightMaterial &&
+                leftPropertyName = rightPropertyName
+            member this.GetHashCode struct (material, propertyName) =
+                material.GetHashCode () ^^^
+                propertyName.GetHashCode ()
+
+    let private MaterialPropertyCached =
+        ConcurrentDictionary<_, _> (MaterialPropertyComparer ())
 
     type [<Struct>] private BoneInfo =
         { BoneOffset : Assimp.Matrix4x4
@@ -195,7 +224,7 @@ module AssimpExtensions =
               RotationKeys = rotationKeys
               ScalingKeys = scalingKeys }
 
-    type [<CustomEquality; NoComparison>] private AnimationChannelKey =
+    type [<Struct; CustomEquality; NoComparison>] private AnimationChannelKey =
         { AnimationName : string
           NodeName : string
           HashCode : int }
@@ -206,15 +235,27 @@ module AssimpExtensions =
               NodeName = nodeName
               HashCode = hashCode }
 
+        static member equals left right =
+            left.AnimationName = right.AnimationName &&
+            left.NodeName = right.NodeName
+
+        static member hash key =
+            key.HashCode
+
         override this.Equals thatObj =
             match thatObj with
-            | :? AnimationChannelKey as that -> this.AnimationName = that.AnimationName && this.NodeName = that.NodeName
+            | :? AnimationChannelKey as that -> AnimationChannelKey.equals this that
             | _ -> false
 
         override this.GetHashCode () =
-            this.HashCode
+            AnimationChannelKey.hash this
 
-    type [<NoEquality; NoComparison>] AnimationDecomposition =
+    type private AnimationChannelKeyComparer<'e when 'e : equality> () =
+        interface AnimationChannelKey IEqualityComparer with
+            member _.Equals (leftKey, rightKey) = AnimationChannelKey.equals leftKey rightKey
+            member _.GetHashCode key = AnimationChannelKey.hash key
+
+    type [<Struct; NoEquality; NoComparison>] AnimationDecomposition =
         { Translation : Assimp.Vector3D
           Rotation : Assimp.Quaternion
           Scaling : Assimp.Vector3D
@@ -226,62 +267,111 @@ module AssimpExtensions =
               Scaling = scaling
               Weight = weight }
 
+    let private AnimationChannelsCached =
+        ConcurrentDictionary<_, _> HashIdentity.Reference
+
+    type Assimp.Quaternion with
+        
+        member this.Scale (scalar : single) =
+            Assimp.Quaternion (this.W * scalar, this.X * scalar, this.Y * scalar, this.Z * scalar)
+
+        member this.Add (that : Assimp.Quaternion) =
+            Assimp.Quaternion (this.W + that.W, this.X + that.X, this.Y + that.Y, this.Z + that.Z)
+
+        member this.Abs =
+            if this.W < 0.0f then this.Scale -1.0f else this
+
+        member this.Dot (q2 : Assimp.Quaternion) =
+            this.W * q2.W + this.X * q2.X + this.Y * q2.Y + this.Z * q2.Z
+
+        member this.Normalized =
+            let mutable copy = this
+            this.Normalize ()
+            copy
+
     /// Material extensions.
     type Assimp.Material with
 
+        member this.TryGetMaterialProperty propertyName =
+            let key = struct (this, propertyName)
+            let mutable property = Unchecked.defaultof<_>
+            if not (MaterialPropertyCached.TryGetValue (key, &property)) then
+                let propertyOpt = ValueOption.ofObj (this.GetNonTextureProperty propertyName)
+                MaterialPropertyCached.[key] <- propertyOpt
+                propertyOpt
+            else property
+
         member this.RenderStyleOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof RenderStyle) with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.RenderStylePropertyName with
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<RenderStyle> |> Some
-                    with _ -> None
-                else None
+                    try property.GetStringValue () |> scvalueMemo<RenderStyle> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.PresenceOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Presence) with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.PresencePropertyName with
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<Presence> |> Some
-                    with _ -> None
-                else None
+                    try property.GetStringValue () |> scvalueMemo<Presence> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.IgnoreLightMapsOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Constants.Render.IgnoreLightMapsName) with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.IgnoreLightMapsPropertyName with
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                else None
+                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.OpaqueDistanceOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Constants.Render.OpaqueDistanceName) with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.OpaqueDistancePropertyName with
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<single> |> Some
-                    with _ -> None
-                else None
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.FinenessOffsetOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.FinenessOffsetPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.ScatterTypeOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ScatterTypePropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<ScatterType> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.TwoSidedOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.TwoSidedName) with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.TwoSidedPropertyName with
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                else Some true
+                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome true
+            | ValueNone -> ValueNone
 
         member this.NavShapeOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavShapeName) with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.NavShapePropertyName with
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<NavShape> |> Some
-                    with _ -> None
-                else Some EmptyNavShape
+                    try property.GetStringValue () |> scvalueMemo<NavShape> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome EmptyNavShape
+            | ValueNone -> ValueNone
 
     /// Node extensions.
     type Assimp.Node with
@@ -326,54 +416,74 @@ module AssimpExtensions =
             node
 
         member this.RenderStyleOpt =
-            match this.Metadata.TryGetValue (nameof RenderStyle) with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (nameof RenderStyle, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
+                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.PresenceOpt =
-            match this.Metadata.TryGetValue (nameof Presence) with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (nameof Presence, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<Presence> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
+                    try entry.Data :?> string |> scvalueMemo<Presence> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.IgnoreLightMapsOpt =
-            match this.Metadata.TryGetValue Constants.Render.IgnoreLightMapsName with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.IgnoreLightMapsName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
+                    try entry.Data :?> string |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.OpaqueDistanceOpt =
-            match this.Metadata.TryGetValue Constants.Render.OpaqueDistanceName with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.OpaqueDistanceName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<single> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.FinenessOffsetOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.FinenessOffsetName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.ScatterTypeOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.ScatterTypeName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<ScatterType> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.NavShapeOpt =
-            match this.Metadata.TryGetValue Constants.Render.NavShapeName with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.NavShapeName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<NavShape> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
+                    try entry.Data :?> string |> scvalueMemo<NavShape> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
     /// Scene extensions.
     type Assimp.Scene with
@@ -386,6 +496,30 @@ module AssimpExtensions =
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
 
+        member this.ClearColorData () =
+            for i in 0 .. dec this.Meshes.Count do
+                let mesh = this.Meshes.[i]
+                let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
+                for attachment in mesh.MeshAnimationAttachments do
+                    let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
+
+        member this.TryFindNode (meshIndex, node : Assimp.Node) =
+            let nodes =
+                [for i in 0 .. dec node.MeshCount do
+                    if node.MeshIndices.[i] = meshIndex then
+                        node]
+            match nodes with
+            | node :: _ -> Some node
+            | _ ->
+                let nodes =
+                    [for child in node.Children do
+                        match this.TryFindNode (meshIndex, child) with
+                        | Some node -> node
+                        | None -> ()]
+                List.tryHead nodes
+
         static member private UpdateBoneTransforms
             (time : single,
              boneIds : Dictionary<string, int>,
@@ -397,67 +531,72 @@ module AssimpExtensions =
              parentTransform : Assimp.Matrix4x4,
              scene : Assimp.Scene) =
 
-            // compute local transform of the current node.
-            // TODO: see if there's a clean way to get rid of allocation here.
+            // compute animation decompositions of the current node.
             let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
-            let decompositions = List animations.Length
+            let decompositions = List ()
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
-                match animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name) with
-                | (true, channel) ->
-                    let localTime = time - animationStartTime
-                    if  localTime >= 0.0f &&
-                        (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
+                let mutable animationChannel = Unchecked.defaultof<_>
+                if animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name, &animationChannel) then
+                    let localTime = max 0.0f (time - animationStartTime)
+                    if  (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
                         (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
                         let localTimeScaled =
                             match animation.Playback with
                             | Once ->
                                 localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
                             | Loop ->
-                                let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
+                                let length = single animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
                                 localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
                             | Bounce ->
-                                let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
+                                let length = single animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
                                 let localTimeScaled = localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
                                 let remainingTime = localTimeScaled % length
                                 if int (localTimeScaled / length) % 2 = 1
                                 then length - remainingTime
                                 else remainingTime
-                        let translation = Assimp.InterpolatePosition (localTimeScaled, channel.TranslationKeys)
-                        let rotation = Assimp.InterpolateRotation (localTimeScaled, channel.RotationKeys)
-                        let scaling = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
+                        let translation = Assimp.InterpolatePosition (localTimeScaled, animationChannel.TranslationKeys)
+                        let rotation = Assimp.InterpolateRotation (localTimeScaled, animationChannel.RotationKeys)
+                        let scaling = Assimp.InterpolateScaling (localTimeScaled, animationChannel.ScalingKeys)
                         decompositions.Add (AnimationDecomposition.make translation rotation scaling animation.Weight)
-                | (false, _) -> ()
+
+            // compute local transform from said decompositions
+            // TODO: consider using the more accurate approach discussed here -
+            // https://theorangeduck.com/page/quaternion-weighted-average
             if decompositions.Count > 0 then
                 let mutable translationAccumulated = Assimp.Vector3D 0.0f
-                let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
-                let mutable scalingAccumulated = Assimp.Vector3D 1.0f
+                let mutable rotationAccumulated = Assimp.Quaternion (0.0f, 0.0f, 0.0f, 0.0f)
+                let mutable scalingAccumulated = Assimp.Vector3D 0.0f
                 let mutable weightAccumulated = 0.0f
-                for i in 0 .. dec decompositions.Count do
-                    let factor = weightAccumulated / (weightAccumulated + decompositions.[i].Weight)
-                    let factor2 = 1.0f - factor
-                    translationAccumulated <- translationAccumulated * factor + decompositions.[i].Translation * factor2
-                    rotationAccumulated <- Assimp.Quaternion.Slerp (rotationAccumulated, decompositions.[i].Rotation, factor2)
-                    scalingAccumulated <- scalingAccumulated * factor + decompositions.[i].Scaling * factor2
-                    weightAccumulated <- weightAccumulated + decompositions.[i].Weight
-                nodeTransform <-
+                for decomposition in decompositions do
+                    translationAccumulated <- translationAccumulated + decomposition.Translation * decomposition.Weight
+                    rotationAccumulated <-
+                        if rotationAccumulated.Dot decomposition.Rotation < 0.0f
+                        then rotationAccumulated.Add (decomposition.Rotation.Scale -decomposition.Weight)
+                        else rotationAccumulated.Add (decomposition.Rotation.Scale +decomposition.Weight)
+                    scalingAccumulated <- scalingAccumulated + decomposition.Scaling * decomposition.Weight
+                    weightAccumulated <- weightAccumulated + decomposition.Weight
+                scalingAccumulated <- scalingAccumulated / weightAccumulated
+                rotationAccumulated <- rotationAccumulated.Scale (1.0f / weightAccumulated)
+                rotationAccumulated <- rotationAccumulated.Abs.Normalized
+                translationAccumulated <- translationAccumulated / weightAccumulated
+                nodeTransform <- // TODO: see if there's a faster way to construct a TRS matrix here.
                     Assimp.Matrix4x4.FromScaling scalingAccumulated *
                     Assimp.Matrix4x4 (rotationAccumulated.GetMatrix ()) *
-                    Assimp.Matrix4x4.FromTranslation translationAccumulated // TODO: see if there's a faster way to construct a TRS matrix here.
+                    Assimp.Matrix4x4.FromTranslation translationAccumulated
 
             // compute current transform and assign the final bone transform where applicable
             let accumulatedTransform = nodeTransform * parentTransform
-            match boneIds.TryGetValue node.Name with
-            | (true, boneId) ->
+            let mutable boneId = Unchecked.defaultof<_>
+            if boneIds.TryGetValue (node.Name, &boneId) then
                 let boneOffset = boneInfos.[boneId].BoneOffset
                 boneInfos.[boneId].BoneTransform <- boneOffset * accumulatedTransform
                 boneWrites.Value <- inc boneWrites.Value
-            | (false, _) -> ()
 
             // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
-                for i in 0 .. dec node.Children.Count do
+                for i in 0 .. dec node.ChildCount do
                     let child = node.Children.[i]
                     Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
@@ -466,27 +605,22 @@ module AssimpExtensions =
         member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh) =
 
             // pre-compute animation channels
-            let animationChannels =
-                match AnimationChannelsCached.TryGetValue this with
-                | (false, _) ->
-                    let animationChannels = dictPlus HashIdentity.Structural []
-                    for animationId in 0 .. dec this.Animations.Count do
-                        let animation = this.Animations.[animationId]
-                        for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
-                            let channel = animation.NodeAnimationChannels.[channelId]
-                            let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
-                            animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
-                    AnimationChannelsCached.[this] <- animationChannels
-                    animationChannels
-                | (true, animationChannels) -> animationChannels
+            let mutable animationChannels = Unchecked.defaultof<_>
+            if not (AnimationChannelsCached.TryGetValue (this, &animationChannels)) then
+                animationChannels <- dictPlus (AnimationChannelKeyComparer ()) []
+                for animation in this.Animations do
+                    for channel in animation.NodeAnimationChannels do
+                        let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
+                        animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
+                AnimationChannelsCached.[this] <- animationChannels
 
             // log if there are more bones than we currently support
             if mesh.Bones.Count >= Constants.Render.BonesMax then
-                Log.info ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
+                Log.warn ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
-            let boneInfos = Array.zeroCreate<BoneInfo> mesh.Bones.Count
+            let boneInfos = Array.zeroCreate<_> mesh.Bones.Count
             for boneId in 0 .. dec mesh.Bones.Count do
                 let bone = mesh.Bones.[boneId]
                 let boneName = bone.Name
@@ -497,6 +631,10 @@ module AssimpExtensions =
             Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
 
             // convert bone info transforms to Nu's m4 representation
-            let boneOffsets = Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneOffset) boneInfos
-            let boneTransforms = Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransform) boneInfos
+            let boneOffsets = Array.zeroCreate boneInfos.Length
+            let boneTransforms = Array.zeroCreate boneInfos.Length
+            for i in 0 .. dec boneInfos.Length do
+                let boneInfo = &boneInfos.[i]
+                boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset
+                boneTransforms.[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
             (boneIds, boneOffsets, boneTransforms)

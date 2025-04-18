@@ -1,4 +1,6 @@
 # a blender script for normalizing texture names for consumption by Nu
+# NOTE: this is not a comprehensive set of conversions for what you'll find out in the wild, but a basic subset you'll
+# have to extend yourself.
 import bpy
 import os
 
@@ -59,16 +61,6 @@ for obj in bpy.context.scene.objects:
                             new_file_name = new_file_name.replace("Normal_2k.", "Normal.")
                             new_file_name = new_file_name.replace("nor_2k.", "Normal.")
                             new_file_name = new_file_name.replace("normal.", "Normal.")
-
-                            # user-defined
-                            new_file_name = new_file_name.replace("plant_22.", "PlantAlbedo.")
-                            new_file_name = new_file_name.replace("SHC art 2.", "ShcArt2Albedo.")
-                            new_file_name = new_file_name.replace("SHC art.", "ShcArtaAlbedo.")
-                            new_file_name = new_file_name.replace("SHC Tree Leaves 4096px .", "ShcTreeLeavesAlbedo.")
-                            new_file_name = new_file_name.replace("SHC-full-planet-edit-1.", "ShcFullPlanetAlbedo.")
-                            new_file_name = new_file_name.replace("Ultrawide screen.", "UltrawideScreenAlbedo.")
-                            new_file_name = new_file_name.replace("pc hardware.", "PcHardwareAlbedo.")
-                            new_file_name = new_file_name.replace("cylces10.", "Cycles10Albedo.")
 
                             # new file path
                             new_file_path = os.getcwd() + "\\textures\\" + new_file_name

@@ -424,6 +424,34 @@ namespace Nu
         }
 
         /// <summary>
+        /// Check for a ray intersection.
+        /// </summary>
+        public float? Intersects(Ray3 ray)
+        {
+            float? ret;
+            Intersects(in ray, out ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Check for a ray intersection.
+        /// </summary>
+        public void Intersects(in Ray3 ray, out float? result)
+        {
+            float denominator = Vector3.Dot(Normal, ray.Direction);
+            if (System.Math.Abs(denominator) > 0.0001f) // Avoid division by zero
+            {
+                float t = -(Vector3.Dot(Normal, ray.Origin) + D) / denominator;
+                if (t >= 0) // Intersection is in front of the ray
+                {
+                    result = t;
+                    return;
+                }
+            }
+            result = null;
+        }
+
+        /// <summary>
         /// Get a <see cref="String"/> representation of this <see cref="Plane3"/>.
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Plane3"/>.</returns>

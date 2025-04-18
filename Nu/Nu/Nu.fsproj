@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
+		<NoWarn>FS0009;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
@@ -17,7 +17,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
+		<NoWarn>FS0009;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
@@ -38,6 +38,7 @@
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
 		<Compile Include="Core\Constants.fs" />
+		<Compile Include="Core\Globals.fs" />
 		<Compile Include="Transform\Viewport.fs" />
 		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Quadtree.fs" />
@@ -62,8 +63,8 @@
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
 		<Compile Include="ImGui\ImGuiIOPtr.fs" />
-		<Compile Include="ImGui\ImGuiFileDialog.fs" />
 		<Compile Include="ImGui\ImGui.fs" />
+		<Compile Include="ImGui\ImGuiFileDialog.fs" />
 		<Compile Include="ImGui\ImGuizmo.fs" />
 		<Compile Include="Reflection\Reflection.fs" />
 		<Compile Include="Reflection\Overlayer.fs" />
@@ -86,13 +87,15 @@
 		<Compile Include="Render\RendererProcess.fs" />
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
-		<Compile Include="DataToken\DataToken.fs" />
 		<Compile Include="Particles\Particles.fs" />
-		<Compile Include="Effects\Effects.fs" />
+		<Compile Include="Effects\EffectDescriptor.fs" />
+		<Compile Include="Effects\DataToken.fs" />
+		<Compile Include="Effects\EffectSystem.fs" />
 		<Compile Include="World\WorldPrelude.fs" />
 		<Compile Include="World\WorldTypes.fs" />
 		<Compile Include="World\WorldAssets.fs" />
 		<Compile Include="World\WorldConstants.fs" />
+		<Compile Include="World\WorldConfigure.fs" />
 		<Compile Include="World\WorldEvents.fs" />
 		<Compile Include="World\WorldModule.fs" />
 		<Compile Include="World\WorldModuleGame.fs" />
@@ -106,6 +109,7 @@
 		<Compile Include="World\WorldSimulant.fs" />
 		<Compile Include="World\WorldInput.fs" />
 		<Compile Include="World\WorldStream.fs" />
+		<Compile Include="World\WorldChain.fs" />
 		<Compile Include="World\WorldPhysics.fs" />
 		<Compile Include="World\WorldRender.fs" />
 		<Compile Include="World\WorldAudio.fs" />
@@ -116,13 +120,11 @@
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
 		<Compile Include="World\WorldEntityHierarchy.fs" />
+		<Compile Include="World\WorldImNui.fs" />
 		<Compile Include="World\WorldContent.fs" />
 		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\World.fs" />
 		<None Include="Scripts\GenerateInputBindings.fsx" />
-		<None Include="Scripts\Entity2dDispatcherTemplate.fsx" />
-		<None Include="Scripts\Entity3dDispatcherTemplate.fsx" />
-		<None Include="Scripts\FacetTemplate.fsx" />
 		<None Include="SDL2.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -202,24 +204,25 @@
 			<HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
 		<PackageReference Include="Csv" Version="2.0.93" />
-		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.3.1" />
+		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
+		<PackageReference Include="JoltPhysicsSharp" Version="2.16.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.10.0" />
 		<PackageReference Include="Pfim" Version="0.11.3" />
-		<PackageReference Include="Prime" Version="9.27.0" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
-		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
-		<PackageReference Include="Twizzle.ImPlot.NET" Version="1.89.4" />
+		<PackageReference Include="Prime" Version="10.1.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+		<PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="8.0.100" />
+		<PackageReference Update="FSharp.Core" Version="9.0.100" />
 	</ItemGroup>
 
 </Project>

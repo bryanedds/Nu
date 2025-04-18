@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 
@@ -39,7 +39,6 @@ module Hl =
                 Log.error ("OpenGL assertion failed due to: " + string error)
         a
 
-#if DEBUG
     let private DebugMessageListener (_ : DebugSource) (_ : DebugType) (_ : uint) (severity : DebugSeverity) (length : int) (message : nativeint) (_ : nativeint) =
         match severity with
         | DebugSeverity.DebugSeverityMedium ->
@@ -66,11 +65,6 @@ module Hl =
         Gl.Enable EnableCap.DebugOutputSynchronous
         Gl.DebugMessageControl (DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, [||], true)
         Gl.DebugMessageCallback (DebugMessageProc, nativeint 0)
-#else
-    /// Listen to the OpenGL error stream.
-    let AttachDebugMessageCallback () =
-        () // nothing to do
-#endif
 
     /// Create an SDL OpenGL context with the given window.
     let CreateSglContextInitial window =
@@ -93,7 +87,7 @@ module Hl =
             Log.fail "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
         let vendorName = Gl.GetString StringName.Vendor
         let glFinishRequired =
-            Constants.Render.VendorNamesExceptedFromGlFinishSwapRequirement |>
+            Constants.Render.VendorNamesExceptedFromSwapGlFinishRequirement |>
             List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))
         if glFinishRequired then Log.warn "Requirement to call 'glFinish' before swapping is detected on current hardware. This will likely reduce rendering performance."
         (glFinishRequired, glContext)
@@ -110,10 +104,10 @@ module Hl =
         glContext
 
     /// Initialize OpenGL context once created.
-    let InitContext () =
+    let InitContext attach =
 
-        // listen to debug messages
-        AttachDebugMessageCallback ()
+        // potentially listen to debug messages
+        if attach then AttachDebugMessageCallback ()
         Assert ()
         
         // globally configure opengl for physically-based rendering
@@ -136,7 +130,7 @@ module Hl =
             Log.fail "Bindless textures required to run Nu."
 
     /// Begin an OpenGL frame.
-    let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =
+    let BeginFrame (windowSize : Vector2i, outerBounds : Box2i) =
 
         // set viewport to window
         Gl.Viewport (0, 0, windowSize.X, windowSize.Y)
@@ -152,13 +146,13 @@ module Hl =
         Gl.Clear ClearBufferMask.ColorBufferBit
         Assert ()
 
-        // set viewport to offset
-        Gl.Viewport (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
+        // set viewport to offset bounds
+        Gl.Viewport (outerBounds.Min.X, outerBounds.Min.Y, outerBounds.Size.X, outerBounds.Size.Y)
         Assert ()
 
-        // clear offset viewport to designated clear color
+        // clear outer viewport to designated clear color
         Gl.Enable EnableCap.ScissorTest
-        Gl.Scissor (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
+        Gl.Scissor (outerBounds.Min.X, outerBounds.Min.Y, outerBounds.Size.X, outerBounds.Size.Y)
         Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
         Gl.Disable EnableCap.ScissorTest

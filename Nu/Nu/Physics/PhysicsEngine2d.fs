@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -10,7 +10,6 @@ open nkast.Aether.Physics2D.Dynamics
 open nkast.Aether.Physics2D.Dynamics.Contacts
 open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
-
 #nowarn "44" // ignore aether deprecation warnings
 
 /// The 2d implementation of PhysicsEngine in terms of Aether Physics.
@@ -22,7 +21,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List
           PenetrationHandler : OnCollisionEventHandler
-          SeparationHandler : OnSeparationEventHandler }
+          SeparationHandler : OnSeparationEventHandler
+          BreakHandler : Action<Joint, single> }
 
     static member private toPixel value =
         value * Constants.Engine.Meter2d
@@ -64,12 +64,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
               Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         integrationMessages.Add integrationMessage
-        let bodyPenetrationMessage2 =
-            { BodyShapeSource = bodyPenetrationMessage.BodyShapeSource2
-              BodyShapeSource2 = bodyPenetrationMessage.BodyShapeSource
-              Normal = -bodyPenetrationMessage.Normal }
-        let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage2
-        integrationMessages.Add integrationMessage
         true
 
     static member private handleSeparation
@@ -80,6 +74,17 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { BodyShapeSource = bodyShape.Tag :?> BodyShapeIndex
               BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeIndex }
         let integrationMessage = BodySeparationMessage bodySeparationMessage
+        integrationMessages.Add integrationMessage
+
+    static member private handleBreak
+        (joint : Joint)
+        (jointError : single)
+        (integrationMessages : IntegrationMessage List) =
+        let bodyJointBreakMessage =
+            { BodyJointId = joint.Tag :?> BodyJointId
+              BreakingPoint = joint.Breakpoint
+              BreakingOverflow = jointError - joint.Breakpoint }
+        let integrationMessage = BodyJointBreakMessage bodyJointBreakMessage
         integrationMessages.Add integrationMessage
 
     static member private getBodyContacts (bodyId : BodyId) physicsEngine =
@@ -108,8 +113,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.BodyType <- PhysicsEngine2d.toPhysicsBodyType bodyProperties.BodyType // NOTE: BodyType must be set first or other configurations may be ignored!
-        body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Enabled <- bodyProperties.Enabled
+        body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
         body.Rotation <- bodyProperties.Rotation.RollPitchYaw.Z
         body.SetFriction bodyProperties.Friction
@@ -120,7 +125,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
         body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/nkast/Aether.Physics2D/issues/85#issuecomment-716051707
-        body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discontinuous -> true | Continuous _ -> false
+        body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discontinuous -> true | Continuous -> false
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.SetIsSensor bodyProperties.Sensor
@@ -215,49 +220,76 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyConvexHull bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
-        let vertices = Array.zeroCreate pointsShape.Points.Length
-        for i in 0 .. dec pointsShape.Points.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (pointsShape.Points.[i].Transform transform)
+    static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
+        assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
+        let points' = Array.zeroCreate points.Length
+        for i in 0 .. dec points.Length do
+            points'.[i] <- PhysicsEngine2d.toPhysicsV2 (points.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass ->
-                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                let box = points' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
-        let bodyShape = body.CreatePolygon (Common.Vertices vertices, density)
+        let bodyShape = body.CreatePolygon (Common.Vertices points', density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt bodyShape
+              BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         bodyShape
 
-    static member private attachBodyTriangles bodySource bodyProperties (geometryShape : GeometryShape) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity geometryShape.TransformOpt
-        let vertices = Array.zeroCreate geometryShape.Vertices.Length
-        for i in 0 .. dec geometryShape.Vertices.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (geometryShape.Vertices.[i].Transform transform)
+    static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt propertiesOpt (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
+        let vertices' = Array.zeroCreate vertices.Length
+        for i in 0 .. dec vertices.Length do
+            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (vertices.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass ->
-                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                let box = vertices' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
-        let triangles = vertices |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
+        let triangles = vertices' |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
         let bodyShapes = body.CreateCompoundPolygon (triangles, density)
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                  BodyShapeIndex = match geometryShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties geometryShape.PropertiesOpt bodyShape
+                  BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) (body : Body) =
-        if geometryShape.Convex then
-            let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
-            PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
-        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape body
+    static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
+        let bounds = points |> Array.map _.V2 |> Box2.Enclose
+        let corners = bounds.Corners
+        let corners' = Array.zeroCreate points.Length
+        for i in 0 .. dec corners.Length do
+            corners'.[i] <- PhysicsEngine2d.toPhysicsV2 (corners.[i].V3.Transform transform)
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass -> mass / (bounds.Width * bounds.Height)
+        let bodyShape = body.CreatePolygon (bounds.Corners |> Array.map (fun v -> Common.Vector2 (v.X, v.Y)) |> Common.Vertices, density)
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
+        bodyShape
+
+    static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
+        match pointsShape.Profile with
+        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
+        | Concave ->
+            Log.warnOnce "Creating a compound polygon with PointsShape; PointsShape generally specifies individual points rather than triangulated vertices, so unintended behavior may arise."
+            PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
+        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
+
+    static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) body =
+        match geometryShape.Profile with
+        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
+        | Concave -> PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
+        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -273,7 +305,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
         | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
-        | PointsShape pointsShape -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
+        | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
         | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
         | StaticModelSurfaceShape _ -> [||]
@@ -298,10 +330,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         try PhysicsEngine2d.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
         with :? ArgumentOutOfRangeException -> ()
 
-        // listen for collisions when observable
-        if bodyProperties.ShouldObserve then
-            body.add_OnCollision physicsEngine.PenetrationHandler
-            body.add_OnSeparation physicsEngine.SeparationHandler
+        // listen for collisions
+        body.add_OnCollision physicsEngine.PenetrationHandler
+        body.add_OnSeparation physicsEngine.SeparationHandler
 
         // attempt to add the body
         let bodyId = { BodySource = createBodyMessage.BodyId.BodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -350,55 +381,55 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
-        match bodyJointProperties.BodyJoint with
-        | EmptyJoint -> ()
-        | _ ->
-            let bodyId = bodyJointProperties.BodyJointTarget
-            let body2Id = bodyJointProperties.BodyJointTarget2
-            match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-            | ((true, (_, body)), (true, (_, body2))) ->
-                let jointOpt =
-                    match bodyJointProperties.BodyJoint with
-                    | EmptyJoint ->
-                        failwithumf () // already checked
-                    | AngleJoint angleJoint ->
-                        let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                        joint.TargetAngle <- angleJoint.Angle
-                        joint.Softness <- angleJoint.Softness
-                        joint.BiasFactor <- angleJoint.BiasFactor
-                        joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                        Some (joint :> Joint)
-                    | DistanceJoint distanceJoint ->
-                        let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
-                        joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
-                        joint.Frequency <- distanceJoint.Frequency
-                        joint.DampingRatio <- distanceJoint.DampingRatio
-                        Some joint
-                    | UserDefinedAetherJoint aetherJoint ->
-                        Some (aetherJoint.CreateBodyJoint body body2)
-                    | _ ->
-                        Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
-                        None
-                match jointOpt with
-                | Some joint ->
-                    joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                    joint.CollideConnected <- bodyJointProperties.CollideConnected
-                    joint.Enabled <- bodyJointProperties.BodyJointEnabled
-                    body.Awake <- true
-                    body2.Awake <- true
-                    if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-                    then () // nothing to do
-                    else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
-                | None -> ()
-            | (_, _) -> ()
+        let resultOpt =
+            match bodyJointProperties.BodyJoint with
+            | EmptyJoint ->
+                None
+            | OneBodyJoint2d oneBodyJoint ->
+                let bodyId = bodyJointProperties.BodyJointTarget
+                match physicsEngine.Bodies.TryGetValue bodyId with
+                | (true, (_, body)) ->
+                    let joint = oneBodyJoint.CreateOneBodyJoint body
+                    Some (joint, body, None)
+                | (false, _) -> None
+            | TwoBodyJoint2d twoBodyJoint ->
+                let bodyId = bodyJointProperties.BodyJointTarget
+                let body2IdOpt = bodyJointProperties.BodyJointTarget2Opt
+                match body2IdOpt with
+                | Some body2Id ->
+                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                    | ((true, (_, body)), (true, (_, body2))) ->
+                        let joint = twoBodyJoint.CreateTwoBodyJoint body body2
+                        Some (joint, body, Some body2)
+                    | _ -> None
+                | None -> None
+            | OneBodyJoint3d _ | TwoBodyJoint3d _ ->
+                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
+                None
+        match resultOpt with
+        | Some (joint, body, body2Opt) ->
+            joint.Tag <- bodyJointId
+            joint.Breakpoint <- bodyJointProperties.BreakingPoint
+            joint.CollideConnected <- bodyJointProperties.CollideConnected
+            joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
+            joint.add_Broke physicsEngine.BreakHandler
+            body.Awake <- true
+            match body2Opt with Some body2 -> body2.Awake <- true | None -> ()
+            if physicsEngine.Joints.TryAdd (bodyJointId, joint)
+            then () // nothing to do
+            else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
+        | None -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
         // log creation message
-        for bodyTarget in [createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2] do
-            match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
-            | (true, messages) -> messages.Add createBodyJointMessage
-            | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
+        for bodyTargetOpt in [Some createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2Opt] do
+            match bodyTargetOpt with
+            | Some bodyTarget ->
+                match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
+                | (true, messages) -> messages.Add createBodyJointMessage
+                | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
+            | None -> ()
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
@@ -414,14 +445,17 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
 
         // unlog creation message
-        for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
-            match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
-            | (true, messages) ->
-                messages.RemoveAll (fun message ->
-                    message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
-                    message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
-                ignore<int>
-            | (false, _) -> ()
+        for bodyTargetOpt in [Some destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2Opt] do
+            match bodyTargetOpt with
+            | Some bodyTarget ->
+                match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
+                | (true, messages) ->
+                    messages.RemoveAll (fun message ->
+                        message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
+                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
+                    ignore<int>
+                | (false, _) -> ()
+            | None -> ()
 
         // attempt to destroy body joint
         PhysicsEngine2d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
@@ -463,9 +497,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (_, body)) ->
             if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
-                body.ApplyLinearImpulse
-                    (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
-                     PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.Offset)
+                match applyBodyLinearImpulseMessage.OriginWorldOpt with
+                | Some originWorld ->
+                    body.ApplyLinearImpulse
+                        (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                         PhysicsEngine2d.toPhysicsV2 originWorld)
+                | None ->
+                    body.ApplyLinearImpulse
+                        (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
             else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
@@ -481,9 +520,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.BodyId with
         | (true, (_, body)) ->
             if not (Single.IsNaN applyBodyForceMessage.Force.X) then
-                body.ApplyForce
-                    (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force,
-                     PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Offset)
+                match applyBodyForceMessage.OriginWorldOpt with
+                | Some originWorld ->
+                    body.ApplyForce
+                        (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force,
+                         PhysicsEngine2d.toPhysicsV2 originWorld)
+                | None ->
+                    body.ApplyForce
+                        (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force)
             else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
@@ -495,8 +539,34 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
-    static member private jumpBody (_ : JumpBodyMessage) (_ : PhysicsEngine) =
-        () // character body type not yet supported
+    static member private getBodyContactNormals bodyId physicsEngine =
+        PhysicsEngine2d.getBodyContacts bodyId physicsEngine |>
+        Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
+
+    static member private getBodyToGroundContactNormals bodyId physicsEngine =
+        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine |>
+        Array.filter (fun normal ->
+            let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
+            theta < Constants.Physics.GroundAngleMax)
+ 
+    static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
+        match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
+        | [||] -> None
+        | groundNormals ->
+            groundNormals |>
+            Seq.map (fun normal -> struct (normal.Dot v3Down, normal)) |>
+            Seq.maxBy fst' |>
+            snd' |>
+            Some
+
+    static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
+        | (true, (_, body)) ->
+            if  jumpBodyMessage.CanJumpInAir ||
+                Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals jumpBodyMessage.BodyId physicsEngine) then
+                body.LinearVelocity <- body.LinearVelocity + Common.Vector2 (0.0f, jumpBodyMessage.JumpSpeed)
+                body.Awake <- true
+        | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -517,12 +587,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
-        | ClearPhysicsMessageInternal ->
-            physicsEngine.PhysicsContext.Clear ()
-            physicsEngine.Joints.Clear ()
-            physicsEngine.Bodies.Clear ()
-            physicsEngine.CreateBodyJointMessages.Clear ()
-            physicsEngine.IntegrationMessages.Clear ()
 
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
@@ -554,9 +618,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     /// Make a physics engine.
     static member make gravity =
+        Settings.UseConvexHullPolygons <- true
         let integrationMessages = List ()
         let penetrationHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
+        let breakHandler = fun joint jointError -> PhysicsEngine2d.handleBreak joint jointError integrationMessages
         let physicsEngine =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> HashIdentity.Structural
@@ -564,7 +630,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = integrationMessages
               PenetrationHandler = penetrationHandler
-              SeparationHandler = separationHandler }
+              SeparationHandler = separationHandler
+              BreakHandler = breakHandler }
         physicsEngine :> PhysicsEngine
 
     interface PhysicsEngine with
@@ -573,9 +640,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             physicsEngine.Bodies.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            PhysicsEngine2d.getBodyContacts bodyId physicsEngine |>
-            Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f)) |>
-            Array.toList
+            PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             let (_, body) = physicsEngine.Bodies.[bodyId]
@@ -586,18 +651,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             v3 body.AngularVelocity 0.0f 0.0f
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            List.filter (fun normal ->
-                let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
-                theta < Constants.Physics.GroundAngleMax)
-                ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
+            PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
-            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-            match groundNormals with
-            | [] -> None
-            | _ ->
-                let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
-                Some averageNormal
+            PhysicsEngine2d.getBodyToGroundContactNormalOpt bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactTangentOpt bodyId =
             match (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormalOpt bodyId with
@@ -606,32 +663,42 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.GetBodyGrounded bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-            List.notEmpty groundNormals
+            Array.notEmpty groundNormals
 
-        member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
-            ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
+        member physicsEngine.GetBodySensor bodyId =
+            let (_, body) = physicsEngine.Bodies.[bodyId]
+            let mutable found = false
+            let mutable sensor = false
+            let mutable i = 0
+            while i < body.FixtureList.Count && not found do
+                let fixture = body.FixtureList.[i]
+                let fixtureBodyId = (fixture.Tag :?> BodyShapeIndex).BodyId
+                if fixtureBodyId = bodyId then
+                    sensor <- fixture.IsSensor
+                    found <- true
+                i <- inc i
+            sensor
+
+        member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
             let callback =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
-                    match fixture.Body.Tag with
-                    | :? BodyId as bodyId ->
-                        match fixture.Tag with
-                        | :? BodyShapeIndex as bodyShapeIndex ->
-                            if (int fixture.CollidesWith &&& collisionCategories) <> 0 then
-                                let report = (v3 point.X point.Y 0.0f, v3 normal.X normal.Y 0.0f, fraction, bodyShapeIndex, bodyId)
-                                if fraction < fractionMin then
-                                    fractionMin <- fraction
-                                    closestOpt <- Some report
-                                results.Add report
-                        | _ -> ()
+                    match fixture.Tag with
+                    | :? BodyShapeIndex as bodyShapeIndex ->
+                        if (int fixture.CollidesWith &&& collisionMask) <> 0 then
+                            let report = BodyIntersection.make bodyShapeIndex fraction (v3 point.X point.Y 0.0f) (v3 normal.X normal.Y 0.0f)
+                            if fraction < fractionMin then
+                                fractionMin <- fraction
+                                closestOpt <- Some report
+                            results.Add report
                     | _ -> ()
                     if closestOnly then fraction else 1.0f)
             physicsEngine.PhysicsContext.RayCast
                 (callback,
-                 Common.Vector2 (start.X, start.Y),
-                 Common.Vector2 (stop.X, stop.Y))
+                 Common.Vector2 (ray.Origin.X, ray.Origin.Y),
+                 Common.Vector2 (ray.Origin.X + ray.Direction.X, ray.Origin.Y + ray.Direction.Y))
             if closestOnly then
                 match closestOpt with
                 | Some closest -> [|closest|]
@@ -642,19 +709,33 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 
         member physicsEngine.TryIntegrate stepTime =
-            let physicsStepAmount =
-                match (Constants.GameTime.DesiredFrameRate, stepTime) with
-                | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
-                | (DynamicFrameRate _, ClockTime time) -> if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
-                | (_, _) -> failwithumf ()
-            if physicsStepAmount > 0.0f then
-                PhysicsEngine2d.applyGravity physicsStepAmount physicsEngine
-                physicsEngine.PhysicsContext.Step physicsStepAmount
+
+            // constrain step time
+            let stepTime = stepTime.Seconds
+            let stepTime =
+                if stepTime > 0.0f && stepTime < 0.001f then 0.001f
+                elif stepTime > 0.1f then 0.1f
+                else stepTime
+
+            // integrate only when time has passed
+            if stepTime > 0.0f then
+                PhysicsEngine2d.applyGravity stepTime physicsEngine
+                physicsEngine.PhysicsContext.Step stepTime
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages
             else None
+
+        member physicsEngine.TryRender (_, _, _, _) =
+            () // TODO: implement.
+
+        member physicsEngine.ClearInternal () =
+            physicsEngine.Joints.Clear ()
+            physicsEngine.Bodies.Clear ()
+            physicsEngine.CreateBodyJointMessages.Clear ()
+            physicsEngine.IntegrationMessages.Clear ()
+            physicsEngine.PhysicsContext.Clear ()
 
         member physicsEngine.CleanUp () =
             ()

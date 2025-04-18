@@ -1,18 +1,22 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
-open System.Collections.Generic
+open System.Collections.Frozen
 open System.Numerics
 open Prime
 
 [<AutoOpen>]
 module WorldModuleGame =
 
+    /// Dynamic property getter and setter.
+    type private PropertyGetter = Game -> World -> Property
+    type private PropertySetter = Property -> Game -> World -> struct (bool * World)
+
     /// Dynamic property getters / setters.
-    let private GameGetters = Dictionary<string, Game -> World -> Property> StringComparer.Ordinal
-    let private GameSetters = Dictionary<string, Property -> Game -> World -> struct (bool * World)> StringComparer.Ordinal
+    let mutable private GameGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
+    let mutable private GameSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
     type World with
 
@@ -29,6 +33,10 @@ module WorldModuleGame =
         static member internal setGameState gameState game world =
             ignore<Game> game
             World.choose { world with GameState = gameState }
+
+        static member internal getGameXtension game world =
+            let gameState = World.getGameState game world
+            gameState.Xtension
 
         static member internal getGameId game world = (World.getGameState game world).Id
         static member internal getGameOrder game world = (World.getGameState game world).Order
@@ -68,9 +76,9 @@ module WorldModuleGame =
                     gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.warn "Could not convert existing game model value to new type; using fallback model value instead."
+                    Log.warn "Could not convert existing game model value to new type; attempting to use fallback model value instead."
                     match gameState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, game, world) with
-                    | None -> failwithnie ()
+                    | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
                         gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
@@ -243,14 +251,14 @@ module WorldModuleGame =
             World.setGameEye2dSize value Game.Handle world |> snd'
 
         /// Get the current 2d eye bounds.
-        static member getEyeBounds2d world =
+        static member getEye2dBounds world =
             let eyeCenter = World.getGameEye2dCenter Game.Handle world
             let eyeSize = World.getGameEye2dSize Game.Handle world
             box2 (eyeCenter - eyeSize * 0.5f) eyeSize
 
         /// Constrain the eye to the given 2d bounds.
-        static member constrainEyeBounds2d (bounds : Box2) world =
-            let mutable eyeBounds = World.getEyeBounds2d world
+        static member constrainEye2dBounds (bounds : Box2) world =
+            let mutable eyeBounds = World.getEye2dBounds world
             eyeBounds.Min <-
                 v2
                     (if eyeBounds.Min.X < bounds.Min.X then bounds.Min.X
@@ -300,15 +308,15 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dCenter
             if v3Neq previous value then
-                let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
-                let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
-                let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
+                let viewportInterior = Viewport.makeInterior ()
+                let viewportExterior = Viewport.makeExterior ()
+                let viewportImposter = Viewport.makeImposter ()
                 let gameState =
                     { gameState with
                         Eye3dCenter = value
-                        Eye3dFrustumInterior = viewportInterior.Frustum (value, gameState.Eye3dRotation)
-                        Eye3dFrustumExterior = viewportExterior.Frustum (value, gameState.Eye3dRotation)
-                        Eye3dFrustumImposter = viewportImposter.Frustum (value, gameState.Eye3dRotation) }
+                        Eye3dFrustumInterior = Viewport.getFrustum value gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportInterior
+                        Eye3dFrustumExterior = Viewport.getFrustum value gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportExterior
+                        Eye3dFrustumImposter = Viewport.getFrustum value gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportImposter }
                 struct (true, world |> World.setGameState gameState game |> World.publishGameChange (nameof gameState.Eye3dCenter) previous value game)
             else struct (false, world)
 
@@ -327,25 +335,52 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dRotation
             if quatNeq previous value then
-                let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
-                let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
-                let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
+                let viewportInterior = Viewport.makeInterior ()
+                let viewportExterior = Viewport.makeExterior ()
+                let viewportImposter = Viewport.makeImposter ()
                 let gameState =
                     { gameState with
                         Eye3dRotation = value
-                        Eye3dFrustumInterior = viewportInterior.Frustum (gameState.Eye3dCenter, value)
-                        Eye3dFrustumExterior = viewportExterior.Frustum (gameState.Eye3dCenter, value)
-                        Eye3dFrustumImposter = viewportImposter.Frustum (gameState.Eye3dCenter, value) }
+                        Eye3dFrustumInterior = Viewport.getFrustum gameState.Eye3dCenter value gameState.Eye3dFieldOfView viewportInterior
+                        Eye3dFrustumExterior = Viewport.getFrustum gameState.Eye3dCenter value gameState.Eye3dFieldOfView viewportExterior
+                        Eye3dFrustumImposter = Viewport.getFrustum gameState.Eye3dCenter value gameState.Eye3dFieldOfView viewportImposter }
                 struct (true, world |> World.setGameState gameState game |> World.publishGameChange (nameof gameState.Eye3dRotation) previous value game)
             else struct (false, world)
-
+            
         /// Get the current 3d eye rotation.
         static member getEye3dRotation world =
             World.getGameEye3dRotation Game.Handle world
-
+            
         /// Set the current 3d eye rotation.
         static member setEye3dRotation value world =
             World.setGameEye3dRotation value Game.Handle world |> snd'
+
+        static member internal getGameEye3dFieldOfView game world =
+            (World.getGameState game world).Eye3dFieldOfView
+
+        static member internal setGameEye3dFieldOfView value game world =
+            let gameState = World.getGameState game world
+            let previous = gameState.Eye3dFieldOfView
+            if previous <> value then
+                let viewportInterior = Viewport.makeInterior ()
+                let viewportExterior = Viewport.makeExterior ()
+                let viewportImposter = Viewport.makeImposter ()
+                let gameState =
+                    { gameState with
+                        Eye3dFieldOfView = value
+                        Eye3dFrustumInterior = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation value viewportInterior
+                        Eye3dFrustumExterior = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation value viewportExterior
+                        Eye3dFrustumImposter = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation value viewportImposter }
+                struct (true, world |> World.setGameState gameState game |> World.publishGameChange (nameof gameState.Eye3dFieldOfView) previous value game)
+            else struct (false, world)
+
+        /// Get the current 3d eye field of view.
+        static member getEye3dFieldOfView world =
+            World.getGameEye3dFieldOfView Game.Handle world
+
+        /// Set the current 3d eye field of view.
+        static member setEye3dFieldOfView value world =
+            World.setGameEye3dFieldOfView value Game.Handle world |> snd'
 
         static member internal getGameEye3dFrustumInterior game world =
             (World.getGameState game world).Eye3dFrustumInterior
@@ -356,9 +391,11 @@ module WorldModuleGame =
         static member internal getGameEye3dFrustumImposter game world =
             (World.getGameState game world).Eye3dFrustumImposter
 
-        static member internal getGameEye3dFrustumView game world =
-            let viewport = Constants.Render.Viewport
-            viewport.Frustum (World.getGameEye3dCenter game world, World.getGameEye3dRotation game world)
+        static member internal getGameEye3dFrustumView game (world : World) =
+            let eyeCenter = World.getGameEye3dCenter game world
+            let eyeRotation = World.getGameEye3dRotation game world
+            let eyeFieldOfView = World.getGameEye3dFieldOfView game world
+            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView world.RasterViewport
 
         /// Get the current interior 3d eye frustum.
         static member getEye3dFrustumInterior world =
@@ -379,22 +416,24 @@ module WorldModuleGame =
         /// Convert the given relative 3d position to the absolute 2d position.
         /// Useful for gui entities that track 3d entities.
         /// Where Z > 1.0f, position is behind view.
-        static member position3dToPosition2d position world =
+        static member position3dToPosition2d position (world : World) =
+            let rasterViewport = world.RasterViewport
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
-            let viewport = Constants.Render.Viewport
-            viewport.Position3dToPosition2d (position, eyeCenter, eyeRotation, Constants.Render.Resolution)
+            let eyeFieldOfView = World.getEye3dFieldOfView world
+            Viewport.position3dToPosition2d eyeCenter eyeRotation eyeFieldOfView position rasterViewport
 
         /// Convert the given absolute 2d position to the relative 3d ray.
         /// TODO: also implement position2dToPosition3d.
-        static member position2dToRay3d position world =
+        static member position2dToRay3d position (world : World) =
+            let rasterViewport = world.RasterViewport
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
-            let viewport = Constants.Render.Viewport
-            viewport.Position2dToRay3d (position, eyeCenter, eyeRotation, Constants.Render.Resolution)
+            let eyeFieldOfView = World.getEye3dFieldOfView world
+            Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView position rasterViewport
 
         /// Get the current 3d light box.
-        static member getLight3dBox world =
+        static member getLight3dViewBox world =
             let lightBoxSize = Constants.Render.Light3dBoxSize
             box3 ((World.getGameState Game.Handle world).Eye3dCenter - lightBoxSize * 0.5f) lightBoxSize
 
@@ -408,10 +447,10 @@ module WorldModuleGame =
         /// Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
         static member boundsInView3d lightProbe light presence (bounds : Box3) world =
             Presence.intersects3d
-                (Some (World.getGameEye3dFrustumInterior Game.Handle world))
+                (ValueSome (World.getGameEye3dFrustumInterior Game.Handle world))
                 (World.getGameEye3dFrustumExterior Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
-                (Some (World.getLight3dBox world))
+                (ValueSome (World.getLight3dViewBox world))
                 lightProbe light presence bounds
 
         /// Check that the given bounds is within the 3d eye's play bounds.
@@ -422,6 +461,130 @@ module WorldModuleGame =
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
+
+        static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) world =
+            let quadtree = World.getQuadtree world
+            getElementsFromQuadree quadtree
+
+        static member internal getElements2dInView set world =
+            let viewBounds = World.getViewBounds2dRelative world
+            World.getElements2dBy (Quadtree.getElementsInView viewBounds set) world
+
+        static member internal getElements2dInPlay set world =
+            let playBounds = World.getPlayBounds2dRelative world
+            World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
+
+        /// Get all 2d entities in the given bounds, including all uncullable entities.
+        static member getEntities2dInBounds bounds set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsInBounds bounds set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities at the given point, including all uncullable entities.
+        static member getEntities2dAtPoint point set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsAtPoint point set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities in the current 2d view, including all uncullable entities.
+        static member getEntities2dInView set world =
+            let viewBounds = World.getViewBounds2dRelative world
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsInView viewBounds set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
+        static member getEntities2dInPlay set world =
+            let playBounds = World.getPlayBounds2dRelative world
+            let quadtree = World.getQuadtree world
+            Quadtree.getElementsInPlay playBounds set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        /// Get all 2d entities in the current selected screen, including all uncullable entities.
+        static member getEntities2d set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElements set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
+        static member internal getElements3dInPlay set world =
+            let struct (playBox, playFrustum) = World.getPlayBounds3d world
+            let octree = World.getOctree world
+            Octree.getElementsInPlay playBox playFrustum set octree
+
+        static member internal getElements3dInViewFrustum interior exterior frustum set world =
+            let octree = World.getOctree world
+            Octree.getElementsInViewFrustum interior exterior frustum set octree
+
+        static member internal getElements3dInViewBox box set world =
+            let octree = World.getOctree world
+            Octree.getElementsInViewBox box set octree
+
+        static member internal getElements3dInView set world =
+            let lightBox = World.getLight3dViewBox world
+            let octree = World.getOctree world
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
+
+        /// Get all 3d entities in the given bounds, including all uncullable entities.
+        static member getEntities3dInBounds bounds set world =
+            let octree = World.getOctree world
+            Octree.getElementsInBounds bounds set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities at the given point, including all uncullable entities.
+        static member getEntities3dAtPoint point set world =
+            let octree = World.getOctree world
+            Octree.getElementsAtPoint point set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
+        static member getEntities3dInPlay set world =
+            let struct (playBox, playFrustum) = World.getPlayBounds3d world
+            let octree = World.getOctree world
+            Octree.getElementsInPlay playBox playFrustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current 3d view, including all uncullable entities.
+        static member getEntities3dInView set world =
+            let lightBox = World.getLight3dViewBox world
+            let octree = World.getOctree world
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
+        static member getLightProbes3dInViewFrustum frustum set world =
+            let octree = World.getOctree world
+            Octree.getLightProbesInViewFrustum frustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        static member getLightProbes3dInViewBox box set world =
+            let octree = World.getOctree world
+            Octree.getLightProbesInViewBox box set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        static member getLightProbes3dInView set world =
+            let octree = World.getOctree world
+            Octree.getLightProbesInView set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        static member getLights3dInViewFrustum frustum set world =
+            let octree = World.getOctree world
+            Octree.getLightsInViewFrustum frustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        static member getLights3dInViewBox box set world =
+            let octree = World.getOctree world
+            Octree.getLightsInViewBox box set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current selected screen, including all uncullable entities.
+        static member getEntities3d set world =
+            let octree = World.getOctree world
+            Octree.getElements set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =
@@ -438,29 +601,11 @@ module WorldModuleGame =
         static member internal tryGetGameXtensionProperty (propertyName, game, world, property : _ outref) =
             GameState.tryGetProperty (propertyName, World.getGameState game world, &property)
 
-        static member internal tryGetGameXtensionValue<'a> propertyName game world =
-            let gameState = World.getGameState game world
-            let mutable property = Unchecked.defaultof<Property>
-            if GameState.tryGetProperty (propertyName, gameState, &property) then
-                match property.PropertyValue with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-            else Unchecked.defaultof<'a>
-
         static member internal getGameXtensionProperty propertyName game world =
             let mutable property = Unchecked.defaultof<_>
             match GameState.tryGetProperty (propertyName, World.getGameState game world, &property) with
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
-
-        static member internal getGameXtensionValue<'a> propertyName game world =
-            let gameState = World.getGameState game world
-            let property = GameState.getProperty propertyName gameState
-            match property.PropertyValue with
-            | :? 'a as value -> value
-            | null -> null :> obj :?> 'a
-            | valueObj -> valueObj |> valueToSymbol |> symbolToValue
 
         static member internal tryGetGameProperty (propertyName, game, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with
@@ -468,36 +613,152 @@ module WorldModuleGame =
                 property <- getter game world
                 true
             | (false, _) ->
-                World.tryGetGameXtensionProperty (propertyName, game, world, &property)
+                let gameState = World.getGameState game world
+                if GameState.tryGetProperty (propertyName, gameState, &property) then
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                    | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (game :> obj) (world :> obj) }; true
+                    | _ -> true
+                else false
+
+        static member internal getGameXtensionValue<'a> propertyName game world =
+            let gameState = World.getGameState game world
+            let mutable property = Unchecked.defaultof<_>
+            if GameState.tryGetProperty (propertyName, gameState, &property) then
+                let valueObj =
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerValue
+                    | :? ComputedProperty as cp -> cp.ComputedGet game world
+                    | _ -> property.PropertyValue
+                match valueObj with
+                | :? 'a as value -> value
+                | null -> null :> obj :?> 'a
+                | value ->
+                    let value =
+                        try value |> valueToSymbol |> symbolToValue
+                        with _ ->
+                            let value = typeof<'a>.GetDefaultValue ()
+                            Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                            value :?> 'a
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
+                    | :? ComputedProperty -> () // nothing to do
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
+                    value
+            else
+                let definitions = Reflection.getPropertyDefinitions (getType gameState.Dispatcher)
+                let value =
+                    match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                    | Some definition ->
+                        match definition.PropertyExpr with
+                        | DefineExpr value -> value :?> 'a
+                        | VariableExpr eval -> eval world :?> 'a
+                        | ComputedExpr property -> property.ComputedGet game world :?> 'a
+                    | None -> failwithumf ()
+                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                gameState.Xtension <- Xtension.attachProperty propertyName property gameState.Xtension
+                value
+
+        static member internal tryGetGameXtensionValue<'a> propertyName game world : 'a voption =
+            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
+            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getGameXtensionValue call.
+            try World.getGameXtensionValue<'a> propertyName game world |> ValueSome
+            with _ -> ValueNone
 
         static member internal getGameProperty propertyName game world =
             match GameGetters.TryGetValue propertyName with
             | (true, getter) -> getter game world
             | (false, _) -> World.getGameXtensionProperty propertyName game world
 
+        static member internal trySetGameXtensionPropertyWithoutEvent propertyName (property : Property) gameState game world =
+            let mutable propertyOld = Unchecked.defaultof<_>
+            match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
+            | true ->
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    let previous = dp.DesignerValue
+                    if property.PropertyValue =/= previous then
+                        let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
+                        match GameState.trySetProperty propertyName property gameState with
+                        | struct (true, gameState) -> struct (true, true, previous, World.setGameState gameState game world)
+                        | struct (false, _) -> struct (false, false, previous, world)
+                    else (true, false, previous, world)
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        let previous = cp.ComputedGet (box game) (box world)
+                        if property.PropertyValue =/= previous
+                        then struct (true, true, previous, computedSet property.PropertyValue game world :?> World)
+                        else struct (true, false, previous, world)
+                    | None -> struct (false, false, Unchecked.defaultof<_>, world)
+                | _ ->
+                    let previous = propertyOld.PropertyValue
+                    if property.PropertyValue =/= previous then
+                        match GameState.trySetProperty propertyName property gameState with
+                        | struct (true, gameState) -> (true, true, previous, World.setGameState gameState game world)
+                        | struct (false, _) -> struct (false, false, previous, world)
+                    else struct (true, false, previous, world)
+            | false -> struct (false, false, Unchecked.defaultof<_>, world)
+
         static member internal trySetGameXtensionPropertyFast propertyName (property : Property) game world =
             let gameState = World.getGameState game world
-            match GameState.tryGetProperty (propertyName, gameState) with
-            | (true, propertyOld) ->
-                if property.PropertyValue =/= propertyOld.PropertyValue then
-                    let struct (success, gameState) = GameState.trySetProperty propertyName property gameState
-                    let world = World.setGameState gameState game world
-                    if success then World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world else world
+            match World.trySetGameXtensionPropertyWithoutEvent propertyName property gameState game world with
+            | struct (true, changed, previous, world) ->
+                if changed
+                then World.publishGameChange propertyName previous property.PropertyValue game world
                 else world
-            | (false, _) -> world
+            | struct (false, _, _, world) -> world
 
         static member internal trySetGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world
-            match GameState.tryGetProperty (propertyName, gameState) with
-            | (true, propertyOld) ->
-                if property.PropertyValue =/= propertyOld.PropertyValue then
-                    let struct (success, gameState) = GameState.trySetProperty propertyName property gameState
-                    let world = World.setGameState gameState game world
-                    if success
-                    then struct (success, true, World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world)
-                    else struct (false, true, world)
-                else struct (false, false, world)
-            | (false, _) -> struct (false, false, world)
+            match World.trySetGameXtensionPropertyWithoutEvent propertyName property gameState game world with
+            | struct (true, changed, previous, world) ->
+                let world =
+                    if changed
+                    then World.publishGameChange propertyName previous property.PropertyValue game world
+                    else world
+                struct (true, changed, world)
+            | struct (false, changed, _, world) -> struct (false, changed, world)
+
+        static member internal trySetGameXtensionValue<'a> propertyName (value : 'a) game world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGameXtensionProperty propertyName property game world
+
+        static member internal setGameXtensionValue<'a> propertyName (value : 'a) game world =
+            let gameState = World.getGameState game world
+            let propertyOld = GameState.getProperty propertyName gameState
+            let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+            let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+            let world =
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    previous <- dp.DesignerValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                        let gameState = GameState.setProperty propertyName property gameState
+                        World.setGameState gameState game world
+                    else world
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        previous <- cp.ComputedGet (box game) (box world)
+                        if value =/= previous then
+                            changed <- true
+                            computedSet propertyOld.PropertyValue game world :?> World
+                        else world
+                    | None -> world
+                | _ ->
+                    previous <- propertyOld.PropertyValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = value }
+                        let gameState = GameState.setProperty propertyName property gameState
+                        World.setGameState gameState game world
+                    else world
+            if changed
+            then World.publishGameChange propertyName previous value game world
+            else world
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world
@@ -526,15 +787,18 @@ module WorldModuleGame =
             | (true, setter) -> setter property game world
             | (false, _) -> World.setGameXtensionProperty propertyName property game world
 
-        static member internal attachGameProperty propertyName property game world =
+        static member internal attachGameMissingProperties game world =
             let gameState = World.getGameState game world
-            let gameState = GameState.attachProperty propertyName property gameState
-            let world = World.setGameState gameState game world
-            World.publishGameChange propertyName property.PropertyValue property.PropertyValue game world
-
-        static member internal detachGameProperty propertyName game world =
-            let gameState = World.getGameState game world
-            let gameState = GameState.detachProperty propertyName gameState
+            let definitions = Reflection.getReflectivePropertyDefinitions gameState
+            let gameState =
+                Map.fold (fun gameState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    if not (World.tryGetGameProperty (propertyName, game, world, &property)) then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        GameState.attachProperty propertyName property gameState
+                    else gameState)
+                    gameState definitions
             World.setGameState gameState game world
 
         static member internal viewGameProperties game world =
@@ -548,27 +812,35 @@ module WorldModuleGame =
 
     /// Initialize property getters.
     let private initGetters () =
-        GameGetters.Add ("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
-        GameGetters.Add ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        GameGetters.Add ("SelectedScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameSelectedScreenOpt game world })
-        GameGetters.Add ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
-        GameGetters.Add ("ScreenTransitionDestinationOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameScreenTransitionDestinationOpt game world })
-        GameGetters.Add ("Eye2dCenter", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dCenter game world })
-        GameGetters.Add ("Eye2dSize", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dSize game world })
-        GameGetters.Add ("Eye3dCenter", fun game world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getGameEye3dCenter game world })
-        GameGetters.Add ("Eye3dRotation", fun game world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getGameEye3dRotation game world })
-        GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
-        GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
+        let gameGetters =
+            dictPlus StringComparer.Ordinal
+                [("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
+                 ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+                 ("SelectedScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameSelectedScreenOpt game world })
+                 ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
+                 ("ScreenTransitionDestinationOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameScreenTransitionDestinationOpt game world })
+                 ("Eye2dCenter", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dCenter game world })
+                 ("Eye2dSize", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dSize game world })
+                 ("Eye3dCenter", fun game world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getGameEye3dCenter game world })
+                 ("Eye3dRotation", fun game world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getGameEye3dRotation game world })
+                 ("Eye3dFieldOfView", fun game world -> { PropertyType = typeof<single>; PropertyValue = World.getGameEye3dFieldOfView game world })
+                 ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
+                 ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })]
+        GameGetters <- gameGetters.ToFrozenDictionary ()
 
     /// Initialize property setters.
     let private initSetters () =
-        GameSetters.Add ("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
-        GameSetters.Add ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
-        GameSetters.Add ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
-        GameSetters.Add ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)
-        GameSetters.Add ("Eye2dSize", fun property game world -> World.setGameEye2dSize (property.PropertyValue :?> Vector2) game world)
-        GameSetters.Add ("Eye3dCenter", fun property game world -> World.setGameEye3dCenter (property.PropertyValue :?> Vector3) game world)
-        GameSetters.Add ("Eye3dRotation", fun property game world -> World.setGameEye3dRotation (property.PropertyValue :?> Quaternion) game world)
+        let gameSetters =
+            dictPlus StringComparer.Ordinal
+                [("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
+                 ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
+                 ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
+                 ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)
+                 ("Eye2dSize", fun property game world -> World.setGameEye2dSize (property.PropertyValue :?> Vector2) game world)
+                 ("Eye3dCenter", fun property game world -> World.setGameEye3dCenter (property.PropertyValue :?> Vector3) game world)
+                 ("Eye3dRotation", fun property game world -> World.setGameEye3dRotation (property.PropertyValue :?> Quaternion) game world)
+                 ("Eye3dFieldOfView", fun property game world -> World.setGameEye3dFieldOfView (property.PropertyValue :?> single) game world)]
+        GameSetters <- gameSetters.ToFrozenDictionary ()
 
     /// Initialize getters and setters
     let internal init () =
