@@ -817,7 +817,7 @@ void main()
                 {
                 case 0: { fog = computeFogAccumPoint(position, i); break; } // point
                 case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
-                default: { fog = computeFogAccumDirectional(position, i); break; } // directional
+                default: break; // directional
                 }
                 fogAccum += vec4(fog, 0.0);
             }
