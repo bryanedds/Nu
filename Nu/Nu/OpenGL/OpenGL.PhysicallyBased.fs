@@ -2679,10 +2679,11 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.Texture2d, material.ScatterTexture.TextureId)
             Hl.Assert ()
 
-            // update instance buffer
+            // update instance buffer using buffer orphaning
             let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
             try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), nativeint 0, BufferUsage.StreamDraw)
+                Gl.BufferSubData (BufferTarget.ArrayBuffer, 0, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject ())
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
                 Hl.Assert ()
             finally instanceFieldsPtr.Free ()
@@ -2945,10 +2946,11 @@ module PhysicallyBased =
                 Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
             Hl.Assert ()
 
-            // update instance buffer
+            // update instance buffer using buffer orphaning
             let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
             try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), nativeint 0, BufferUsage.StreamDraw)
+                Gl.BufferSubData (BufferTarget.ArrayBuffer, 0, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject ())
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
                 Hl.Assert ()
             finally instanceFieldsPtr.Free ()
@@ -3082,10 +3084,11 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.Texture2d, materials.[i].HeightTexture.TextureId)
         Hl.Assert ()
 
-        // update instance buffer
+        // update instance buffer using buffer orphaning
         let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (Constants.Render.InstanceFieldCount * sizeof<single>), nativeint 0, BufferUsage.StreamDraw)
+            Gl.BufferSubData (BufferTarget.ArrayBuffer, 0, uint (Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject ())
             Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
             Hl.Assert ()
         finally instanceFieldsPtr.Free ()
