@@ -138,20 +138,20 @@ module Sprite =
         Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
         // set viewport and scissor
-        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
+        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent) // TODO: DJL: review use of swapextent.
         let mutable vkViewport = Hl.makeViewport renderArea
         let mutable scissor = renderArea
         match clipOpt with
         | ValueSome clip ->
-            let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
+            let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2 // TODO: DJL: clamp values.
             let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
             let offset = viewport.Bounds.Min
             scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,
-                     (minScissor.Y |> round |> int) + offset.Y,
+                     (((single renderArea.extent.height) - minScissor.Y) |> round |> int) + offset.Y,
                      uint sizeScissor.X,
                      uint sizeScissor.Y)
         | ValueNone -> ()
