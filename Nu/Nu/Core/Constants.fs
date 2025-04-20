@@ -89,6 +89,12 @@ module Engine =
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> Pass | value -> scvalue value
     let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment that a static prop
+    let [<Literal>] BuildName =
+#if DEBUG
+        "Debug"
+#else
+        "Release"
+#endif
 
 [<RequireQualifiedAccess>]
 module Render =
@@ -148,10 +154,10 @@ module Render =
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] LightShadowSamplesDefault = 3
-    let [<Literal>] LightShadowBiasDefault = 0.01f
+    let [<Literal>] LightShadowBiasDefault = 0.02f
     let [<Literal>] LightShadowSampleScalarDefault = 0.02f
-    let [<Literal>] LightShadowExponentDefault = 24.0f
-    let [<Literal>] LightShadowDensityDefault = 4.0f
+    let [<Literal>] LightShadowExponentDefault = 40.0f
+    let [<Literal>] LightShadowDensityDefault = 8.0f
     let [<Literal>] FogEnabledDefault = false
     let [<Literal>] FogStartDefault = 16.0f
     let [<Literal>] FogFinishDefault = 64.0f
