@@ -572,6 +572,7 @@ module Texture =
 
         member private this.Run () =
             OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
+            OpenGL.Hl.Assert ()
             started <- true
             while not terminated do
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
