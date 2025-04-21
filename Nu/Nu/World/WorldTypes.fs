@@ -1957,12 +1957,14 @@ and [<ReferenceEquality>] World =
         this.WorldExtension.ContextImNui
 
     /// Get the current ImNui Game context (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGame =
         if this.WorldExtension.ContextImNui.Names.Length > 0
         then Game.Handle
         else raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the current ImNui Screen context (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextScreen =
         match this.WorldExtension.ContextImNui with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
@@ -1971,6 +1973,7 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the current ImNui Group context (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGroup =
         match this.WorldExtension.ContextImNui with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
@@ -1978,6 +1981,7 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the current ImNui Entity context (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextEntity =
         match this.WorldExtension.ContextImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
@@ -1994,12 +1998,14 @@ and [<ReferenceEquality>] World =
         this.WorldExtension.DeclaredImNui
 
     /// Get the recent ImNui Game declaration (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGame =
         if this.WorldExtension.DeclaredImNui.Names.Length > 0
         then Game.Handle
         else raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImNui Screen declaration (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredScreen =
         match this.WorldExtension.DeclaredImNui with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
@@ -2008,6 +2014,7 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImNui Group declaration (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGroup =
         match this.WorldExtension.DeclaredImNui with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
@@ -2015,6 +2022,7 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImNui Entity declaration (throwing upon failure).
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredEntity =
         match this.WorldExtension.DeclaredImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress

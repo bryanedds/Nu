@@ -70,9 +70,12 @@ module Hl =
     let CreateSglContextInitial window =
         Gl.Initialize ()
         let glContext = SDL.SDL_GL_CreateContext window
+        Assert ()
         let swapInterval = if Constants.Render.Vsync then 1 else 0
         SDL.SDL_GL_SetSwapInterval swapInterval |> ignore<int>
+        Assert ()
         SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
+        Assert ()
         Gl.BindAPI ()
         Assert ()
         let versionStr = Gl.GetString StringName.Version
@@ -96,11 +99,13 @@ module Hl =
     /// on the given WaitOnce object before continuing processing.
     let CreateSglContextSharedWithCurrentContext (window, sharedContext) =
         SDL.SDL_GL_MakeCurrent (window, sharedContext) |> ignore<int>
+        Assert ()
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1) |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext window
-        SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
-        Gl.BindAPI ()
         Assert ()
+        SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
+        Assert ()
+        Gl.BindAPI ()
         glContext
 
     /// Initialize OpenGL context once created.
@@ -125,8 +130,31 @@ module Hl =
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
             Log.warn "Anisotropic texture filtering required to properly run Nu."
 
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let ReportDrawCall drawInstances =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- inc DrawCallCount
+            DrawInstanceCount <- DrawInstanceCount + drawInstances)
+
+    /// Reset the running number of draw calls.
+    let ResetDrawCalls () =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- 0
+            DrawInstanceCount <- 0)
+
+    /// Get the running number of draw calls.
+    let GetDrawCallCount () =
+        lock DrawReportLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let GetDrawInstanceCount () =
+        lock DrawReportLock (fun () -> DrawInstanceCount)
+
     /// Begin an OpenGL frame.
     let BeginFrame (windowSize : Vector2i, outerBounds : Box2i) =
+
+        // reset draw call counts
+        ResetDrawCalls ()        
 
         // set viewport to window
         Gl.Viewport (0, 0, windowSize.X, windowSize.Y)
@@ -155,7 +183,9 @@ module Hl =
 
     /// End an OpenGL frame.
     let EndFrame () =
-        () // nothing to do
+        match OpenGL.Gl.GetGraphicsResetStatus () with
+        | OpenGL.GraphicsResetStatus.NoError -> ()
+        | status -> Log.fail ("Unexpected OpenGL graphics reset (GraphicResetStatus = " + string status + ").")
 
     /// Save the current bound RGBA framebuffer to an image file.
     /// Only works on Windows platforms for now.
@@ -180,23 +210,3 @@ module Hl =
                     bitmap.Save (filePath, Drawing.Imaging.ImageFormat.Bmp)
                 with exn -> Log.info (scstring exn)
             finally handle.Free ()
-
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let ReportDrawCall drawInstances =
-        lock DrawReportLock (fun () ->
-            DrawCallCount <- inc DrawCallCount
-            DrawInstanceCount <- DrawInstanceCount + drawInstances)
-
-    /// Reset the running number of draw calls.
-    let ResetDrawCalls () =
-        lock DrawReportLock (fun () ->
-            DrawCallCount <- 0
-            DrawInstanceCount <- 0)
-
-    /// Get the running number of draw calls.
-    let GetDrawCallCount () =
-        lock DrawReportLock (fun () -> DrawCallCount)
-
-    /// Get the running number of draw calls.
-    let GetDrawInstanceCount () =
-        lock DrawReportLock (fun () -> DrawInstanceCount)

@@ -114,8 +114,12 @@ type GameplayDispatcher () =
                     world
                 else world
 
-            // process nav sync
-            let world = if initializing then World.synchronizeNav3d screen world else world
+            // process nav sync at end of frame since optimized representations like frozen entities won't have their
+            // nav info registered until then
+            let world =
+                if initializing
+                then World.defer (World.synchronizeNav3d screen) screen world 
+                else world
 
             // declare score text
             let world = World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
