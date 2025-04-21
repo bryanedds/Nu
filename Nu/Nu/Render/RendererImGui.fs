@@ -348,7 +348,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
     
     interface RendererImGui with
         
-        member this.Initialize (fonts : ImFontAtlasPtr) =
+        member renderer.Initialize (fonts : ImFontAtlasPtr) =
             
             // get font atlas data
             let mutable pixels = Unchecked.defaultof<nativeint>
@@ -388,7 +388,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             vertexBuffer <- VulkanMemory.FifBuffer.createVertex vertexBufferSize vkc
             indexBuffer <- VulkanMemory.FifBuffer.createIndex indexBufferSize vkc
 
-        member this.Render viewport_ (drawData : ImDrawDataPtr) _ =
+        member renderer.Render viewport_ (drawData : ImDrawDataPtr) _ =
 
             // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
@@ -518,7 +518,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 // flush render commands
                 Hl.endRenderBlock cb vkc.GraphicsQueue [||] [||] vkc.InFlightFence
         
-        member this.CleanUp () =
+        member renderer.CleanUp () =
             VulkanMemory.FifBuffer.destroy indexBuffer vkc
             VulkanMemory.FifBuffer.destroy vertexBuffer vkc
             Texture.VulkanTexture.destroy fontTexture vkc
