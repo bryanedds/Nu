@@ -11,3 +11,4 @@ module Constants =
         let [<Literal>] CharacterAnimatedModelName = "AnimatedModel"
         let [<Literal>] CharacterWeaponName = "Weapon"
         let [<Literal>] CharacterWeaponHandBoneName = "mixamorig:RightHand"
+        let [<Literal>] DesertTownNavFilePath = "DesertTown.nav"

@@ -156,7 +156,7 @@ type NavOutput =
       NavAngularVelocity : Vector3 }
 
 /// The data collected from a navigation builder result.
-type NavBuilderResultData =
+type [<SymbolicExpansion>] NavBuilderResultData =
     { NavPointsMinY : single
       NavPointsMaxY : single
       NavPoints : Vector3 array

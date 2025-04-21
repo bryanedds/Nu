@@ -664,7 +664,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private synchronizeNav world =
         let world = snapshot SynchronizeNav world
         // TODO: sync nav 2d when it's available.
-        World.synchronizeNav3d SelectedScreen world
+        World.synchronizeNav3d None SelectedScreen world
 
     let private rerenderLightMaps world =
         let groups = World.getGroups SelectedScreen world
@@ -2713,7 +2713,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world =
                     if ImGui.Button "Renavigate" then
                         // TODO: sync nav 2d when it's available.
-                        World.synchronizeNav3d SelectedScreen world
+                        World.synchronizeNav3d None SelectedScreen world
                     else world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Rebuild navigation mesh. (Ctrl+Shift+N)"
