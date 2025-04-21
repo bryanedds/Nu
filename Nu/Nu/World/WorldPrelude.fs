@@ -157,10 +157,7 @@ type NavOutput =
 
 /// The data collected from a navigation builder result.
 type [<SymbolicExpansion>] NavBuilderResultData =
-    { NavPointsMinY : single
-      NavPointsMaxY : single
-      NavPoints : Vector3 array
-      NavEdgesMinY : single
+    { NavEdgesMinY : single
       NavEdgesMaxY : single
       NavInteriorEdges : Segment3 array
       NavExteriorEdges : Segment3 array }
@@ -168,23 +165,8 @@ type [<SymbolicExpansion>] NavBuilderResultData =
     /// Make from an RcBuilderResult.
     static member make (builderResult : RcBuilderResult) =
 
-        // compute points
-        let dmesh = builderResult.MeshDetail
-        let mutable pointsMinY = Single.MaxValue
-        let mutable pointsMaxY = Single.MinValue
-        let points =
-            [|for i in 0 .. dec dmesh.nmeshes do
-                let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let nverts = dmesh.meshes.[m + 1]
-                let verts = bverts * 3
-                for j in 0 .. dec nverts do
-                    let point = v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2]
-                    if pointsMinY > point.Y then pointsMinY <- point.Y
-                    if pointsMaxY < point.Y then pointsMaxY <- point.Y
-                    point|]
-
         // compute interior edges
+        let dmesh = builderResult.MeshDetail
         let mutable edgesMinY = Single.MaxValue
         let mutable edgesMaxY = Single.MinValue
         let interiorEdges =
@@ -251,10 +233,7 @@ type [<SymbolicExpansion>] NavBuilderResultData =
                         k <- inc k|]
 
         // fin
-        { NavPointsMinY = pointsMinY
-          NavPointsMaxY = pointsMaxY
-          NavPoints = points
-          NavEdgesMinY = edgesMinY
+        { NavEdgesMinY = edgesMinY
           NavEdgesMaxY = edgesMaxY
           NavInteriorEdges = interiorEdges
           NavExteriorEdges = exteriorEdges }

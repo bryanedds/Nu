@@ -118,7 +118,7 @@ type GameplayDispatcher () =
             // nav info registered until then
             let world =
                 if initializing
-                then World.defer (World.synchronizeNav3d (Some Constants.Gameplay.DesertTownNavFilePath) screen) screen world 
+                then World.defer (World.synchronizeNav3d false (Some Constants.Gameplay.SceneNavFilePath) screen) screen world 
                 else world
 
             // declare score text

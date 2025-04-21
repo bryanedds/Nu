@@ -1309,7 +1309,42 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
-// TODO: create symbolic converter for Segment2.
+/// Converts Segment2 types.
+type Segment2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Segment2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let segment2 = source :?> Segment2
+            Symbols
+                ([Symbols ([Number (string segment2.A.X, ValueNone); Number (string segment2.A.Y, ValueNone)], ValueNone)
+                  Symbols ([Number (string segment2.B.X, ValueNone); Number (string segment2.B.Y, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Segment2> then source
+        else failconv "Invalid Segment2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Segment2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([minSymbol; sizeSymbol], _) ->
+                match (minSymbol, sizeSymbol) with
+                | (Symbols ([Number (ax, _); Number (ay, _)], _), Symbols ([Number (bx, _); Number (by, _)], _)) ->
+                    let a = Vector2 (Single.Parse ax, Single.Parse ay)
+                    let b = Vector2 (Single.Parse bx, Single.Parse by)
+                    Segment2 (a, b) :> obj
+                | _ -> failconv "Invalid Segment2Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Segment2Converter conversion from source." (Some symbol)
+        | :? Box2 -> source
+        | _ -> failconv "Invalid Segment2Converter conversion from source." None
+
 [<AutoOpen>]
 module Segment2 =
 
@@ -1321,7 +1356,42 @@ module Segment2 =
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
 
-// TODO: create symbolic converter for Segment3.
+/// Converts Segment3 types.
+type Segment3Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Segment3>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let segment3 = source :?> Segment3
+            Symbols
+                ([Symbols ([Number (string segment3.A.X, ValueNone); Number (string segment3.A.Y, ValueNone); Number (string segment3.A.Z, ValueNone)], ValueNone)
+                  Symbols ([Number (string segment3.B.X, ValueNone); Number (string segment3.B.Y, ValueNone); Number (string segment3.B.Z, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Segment3> then source
+        else failconv "Invalid Segment3Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Segment3>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([minSymbol; sizeSymbol], _) ->
+                match (minSymbol, sizeSymbol) with
+                | (Symbols ([Number (ax, _); Number (ay, _); Number (az, _)], _), Symbols ([Number (bx, _); Number (by, _); Number (bz, _)], _)) ->
+                    let a = Vector3 (Single.Parse ax, Single.Parse ay, Single.Parse az)
+                    let b = Vector3 (Single.Parse bx, Single.Parse by, Single.Parse bz)
+                    Segment3 (a, b) :> obj
+                | _ -> failconv "Invalid Segment3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Segment3Converter conversion from source." (Some symbol)
+        | :? Box2 -> source
+        | _ -> failconv "Invalid Segment3Converter conversion from source." None
+
 [<AutoOpen>]
 module Segment3 =
 
@@ -1476,6 +1546,7 @@ module Math =
             assignTypeConverter<Matrix3x2, Matrix3x2Converter> ()
             assignTypeConverter<Matrix4x4, Matrix4x4Converter> ()
             assignTypeConverter<Color, ColorConverter> ()
+            assignTypeConverter<Segment3, Segment3Converter> ()
             Initialized <- true
 
     /// Convert radians to degrees.

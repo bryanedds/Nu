@@ -399,7 +399,7 @@ module WorldScreenModule =
                     let dtMeshSetReader = new DtMeshSetWriter ()
                     dtMeshSetReader.Write (reader, dtNavMesh, RcByteOrder.LITTLE_ENDIAN, true)
                     let prettyPrinter = (SyntaxAttribute.defaultValue typeof<NavBuilderResultData>).PrettyPrinter
-                    File.WriteAllText (filePath + ".nbrd", PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
+                    File.WriteAllText (PathF.ChangeExtension (filePath, ".nbrd"), PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
                 | None -> ()
             with exn -> Log.warn ("Failed to load nav mesh due to: " + scstring exn)
 
@@ -504,7 +504,7 @@ module WorldScreenModule =
                         if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
                             World.trySaveNav3dMesh navBuilderResultData dtNavMesh filePathOpt
                             let dtQuery = DtNavMeshQuery dtNavMesh
-                            Some (navBuilderResultData, dtNavMesh, dtQuery)
+                            Some (filePathOpt, navBuilderResultData, dtNavMesh, dtQuery)
                         else None
                 else None
 
@@ -518,8 +518,8 @@ module WorldScreenModule =
                     let dtMeshSetReader = new DtMeshSetReader ()
                     let dtNavMesh = dtMeshSetReader.Read (reader, 6) // TODO: introduce constant?
                     let dtQuery = DtNavMeshQuery dtNavMesh
-                    let navBuilderResultData = File.ReadAllText (filePath + ".nbrd") |> scvalue<NavBuilderResultData>
-                    Some (navBuilderResultData, dtNavMesh, dtQuery)
+                    let navBuilderResultData = PathF.ChangeExtension (filePath, ".nbrd") |> File.ReadAllText |> scvalue<NavBuilderResultData>
+                    Some (Some filePath, navBuilderResultData, dtNavMesh, dtQuery)
                 with exn ->
                     Log.warn ("Failed to load nav mesh due to: " + scstring exn)
                     None
@@ -551,9 +551,10 @@ module WorldScreenModule =
             else world
 
         /// Attempt to synchronize the given screen's 3d navigation information.
-        static member synchronizeNav3d filePathOpt screen world =
+        static member synchronizeNav3d forceRebuild filePathOpt screen world =
             let nav3d = World.getScreenNav3d screen world
             let rebuild =
+                forceRebuild ||
                 match (nav3d.Nav3dBodiesOldOpt, nav3d.Nav3dConfigOldOpt) with
                 | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
                 | (None, Some _) | (Some _, None) -> Log.warn "Unexpected 3d navigation state; navigation rebuild declined."; false
@@ -561,7 +562,7 @@ module WorldScreenModule =
             if rebuild then
                 let navMeshOpt =
                     match filePathOpt with
-                    | Some filePath ->
+                    | Some filePath when not forceRebuild ->
                         match World.tryLoadNav3dMesh filePath world with
                         | Some navMesh -> Some navMesh
                         | None -> World.tryBuildNav3dMesh filePathOpt nav3d.Nav3dBodies.Values nav3d.Nav3dConfig
@@ -581,7 +582,7 @@ module WorldScreenModule =
         static member tryQueryNav3d query screen world =
             let nav3d = World.getScreenNav3d screen world
             match nav3d.Nav3dMeshOpt with
-            | Some (_, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
+            | Some (_, _, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
             | None -> None
 
         /// A nav3d query that attempts to compute navigation information that results in following the given destination.
