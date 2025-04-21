@@ -915,8 +915,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
     private
-        { Window : Window
-          mutable GeometryViewport : Viewport
+        { mutable GeometryViewport : Viewport
           mutable RasterViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
           TextureServer : OpenGL.Texture.TextureServer
@@ -3427,10 +3426,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         // start lazy texture server
         let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
         SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) |> ignore<int>
+        OpenGL.Hl.Assert ()
         let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
         let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, sglWindow)
         textureServer.Start ()
         SDL.SDL_GL_MakeCurrent (sglWindow, glContext) |> ignore<int>
+        OpenGL.Hl.Assert ()
 
         // create sky box shader
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
@@ -3672,8 +3673,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // make renderer
         let renderer =
-            { Window = window
-              GeometryViewport = geometryViewport
+            { GeometryViewport = geometryViewport
               RasterViewport = rasterViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
@@ -3747,7 +3747,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.RendererConfig
 
         member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
-            OpenGL.Hl.ResetDrawCalls ()
             if renderMessages.Count > 0 then
                 GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
 
