@@ -29,6 +29,12 @@
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
+	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
+		<PropertyGroup>
+			<PublishDir>$(OutputPath)</PublishDir>
+		</PropertyGroup>
+	</Target>
+
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
 		<RemoveDir Directories="refinement" />
 		<RemoveDir Directories="$(OutDir)/Assets" />

@@ -29,9 +29,15 @@
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
+	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
+		<PropertyGroup>
+			<PublishDir>$(OutputPath)</PublishDir>
+		</PropertyGroup>
+	</Target>
+
 	<ItemGroup>
 		<Compile Include="Program.fs" />
-		<Content Include="AssetGraph.nuag">
+		<Content Include="TestGraph.nuag">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<None Include="App.config" />

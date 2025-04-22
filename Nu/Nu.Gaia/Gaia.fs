@@ -662,9 +662,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         Seq.fold (fun world freezer -> freezer.SetFrozen false world) world
 
     let private synchronizeNav world =
-        let world = snapshot SynchronizeNav world
         // TODO: sync nav 2d when it's available.
-        World.synchronizeNav3d SelectedScreen world
+        let world = snapshot SynchronizeNav world
+        let navFilePathOpt =
+            let nav3d = SelectedScreen.GetNav3d world
+            match nav3d.Nav3dMeshOpt with
+            | Some (navFilePathOpt, _, _, _) -> navFilePathOpt
+            | None -> None
+        World.synchronizeNav3d true navFilePathOpt SelectedScreen world
 
     let private rerenderLightMaps world =
         let groups = World.getGroups SelectedScreen world
@@ -1193,10 +1198,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | fsprojFilePaths ->
 
                     // generate code reload fsx file string
+                    // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
-                    let fsprojNugetPaths = // imagine manually parsing an xml file...
+                    let fsprojNugetPaths =
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
                         Array.filter (fun line -> line.Contains "PackageReference") |>
@@ -1231,6 +1237,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         Array.map (fun line -> line.Replace ("\"", "")) |>
                         Array.map (fun line -> PathF.Normalize line) |>
                         Array.map (fun line -> line.Trim ())
+                    let fsprojDefineConstantsOpt =
+                        fsprojFileLines |>
+                        Array.map (fun line -> line.Trim ()) |>
+                        Array.filter (fun line -> line.Contains "DefineConstants") |>
+                        Array.map (fun line -> line.Replace ("DefineConstants", "")) |>
+                        Array.map (fun line -> line.Replace ("/", "")) |>
+                        Array.map (fun line -> line.Replace (">", "")) |>
+                        Array.map (fun line -> line.Replace ("<", "")) |>
+                        fun fdcs ->
+                            if fdcs.Length = 2
+                            then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                            else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
@@ -1259,7 +1277,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
+                    let fsiArgs =
+                        match fsprojDefineConstantsOpt with
+                        | Some fsprojDefineConstants -> Array.add ("--define:" + fsprojDefineConstants) FsiArgs
+                        | None -> FsiArgs
+                    FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, fsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
                     let world =
                         match FsiSession.EvalInteractionNonThrowing fsxFileString with
                         | (Choice1Of2 _, _) ->
@@ -2710,11 +2732,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
-                let world =
-                    if ImGui.Button "Renavigate" then
-                        // TODO: sync nav 2d when it's available.
-                        World.synchronizeNav3d SelectedScreen world
-                    else world
+                let world = if ImGui.Button "Renavigate" then synchronizeNav world else world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Rebuild navigation mesh. (Ctrl+Shift+N)"
                     ImGui.EndTooltip ()

@@ -10,7 +10,7 @@ module Program =
     let [<EntryPoint; STAThread>] main argv =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
-            match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
+            match AssetGraph.tryMakeFromFile "TestGraph.nuag" with
             | Right assetGraph ->
                 let fullBuild = fullBuildStr = string true
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
