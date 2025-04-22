@@ -2261,64 +2261,6 @@ module PhysicallyBased =
           FogAccumTextureUniform = fogAccumTextureUniform
           PhysicallyBasedDeferredCompositionShader = shader }
 
-    /// Create the shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders
-        (shaderStaticFilePath,
-         shaderAnimatedFilePath,
-         terrainShaderFilePath,
-         shaderLightMappingFilePath,
-         shaderAmbientFilePath,
-         shaderIrradianceFilePath,
-         shaderEnvironmentFilterFilePath,
-         shaderSsaoFilePath,
-         shaderLightingFilePath,
-         shaderCompositionFilePath) =
-        let lightMapsMax = Constants.Render.LightMapsMaxDeferred
-        let lightsMax = Constants.Render.LightsMaxDeferred
-        let shaderStatic = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderStaticFilePath in Hl.Assert ()
-        let shaderAnimated = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderAnimatedFilePath in Hl.Assert ()
-        let shaderTerrain = CreatePhysicallyBasedTerrainShader terrainShaderFilePath in Hl.Assert ()
-        let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader lightMapsMax shaderLightMappingFilePath in Hl.Assert ()
-        let shaderAmbient = CreatePhysicallyBasedDeferredAmbientShader lightMapsMax shaderAmbientFilePath in Hl.Assert ()
-        let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath in Hl.Assert ()
-        let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader lightMapsMax shaderEnvironmentFilterFilePath in Hl.Assert ()
-        let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath in Hl.Assert ()
-        let shaderLighting = CreatePhysicallyBasedDeferredLightingShader lightsMax shaderLightingFilePath
-        let shaderComposition = CreatePhysicallyBasedDeferredCompositionShader shaderCompositionFilePath
-        (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderAmbient, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting, shaderComposition)
-
-    /// Create the shaders for physically-based shadow rendering.
-    let CreatePhysicallyBasedShadowShaders
-        (shaderStaticShadowPointFilePath,
-         shaderStaticShadowSpotFilePath,
-         shaderStaticShadowDirectionalFilePath,
-         shaderAnimatedShadowPointFilePath,
-         shaderAnimatedShadowSpotFilePath,
-         shaderAnimatedShadowDirectionalFilePath,
-         shaderTerrainShadowPointFilePath,
-         shaderTerrainShadowSpotFilePath,
-         shaderTerrainShadowDirectionalFilePath) =
-        let lightMapsMax = 0 // zero for shadows since they don't use these uniforms
-        let lightsMax = 0 // zero for shadows since they don't use these uniforms
-        let shaderStaticShadowPoint = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderStaticShadowPointFilePath in Hl.Assert ()
-        let shaderStaticShadowSpot = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderStaticShadowSpotFilePath in Hl.Assert ()
-        let shaderStaticShadowDirectional = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderStaticShadowDirectionalFilePath in Hl.Assert ()
-        let shaderAnimatedShadowPoint = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderAnimatedShadowPointFilePath in Hl.Assert ()
-        let shaderAnimatedShadowSpot = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderAnimatedShadowSpotFilePath in Hl.Assert ()
-        let shaderAnimatedShadowDirectional = CreatePhysicallyBasedShader lightMapsMax lightsMax shaderAnimatedShadowDirectionalFilePath in Hl.Assert ()
-        let shaderTerrainShadowPoint = CreatePhysicallyBasedTerrainShader shaderTerrainShadowPointFilePath in Hl.Assert ()
-        let shaderTerrainShadowSpot = CreatePhysicallyBasedTerrainShader shaderTerrainShadowSpotFilePath in Hl.Assert ()
-        let shaderTerrainShadowDirectional = CreatePhysicallyBasedTerrainShader shaderTerrainShadowDirectionalFilePath in Hl.Assert ()
-        (shaderStaticShadowPoint,
-         shaderStaticShadowSpot,
-         shaderStaticShadowDirectional,
-         shaderAnimatedShadowPoint,
-         shaderAnimatedShadowSpot,
-         shaderAnimatedShadowDirectional,
-         shaderTerrainShadowPoint,
-         shaderTerrainShadowSpot,
-         shaderTerrainShadowDirectional)
-
     /// Draw the filter box pass using a physically-based surface.
     let DrawFilterBoxSurface
         (inputTexture : Texture.Texture,
@@ -3872,3 +3814,102 @@ module PhysicallyBased =
                 // error
                 | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
             | Left error -> Left error
+
+    /// Physically-based shaders.
+    type PhysicallyBasedShaders =
+        { ShadowStaticPointShader : PhysicallyBasedShader
+          ShadowStaticSpotShader : PhysicallyBasedShader
+          ShadowStaticDirectionalShader : PhysicallyBasedShader
+          ShadowAnimatedPointShader : PhysicallyBasedShader
+          ShadowAnimatedSpotShader : PhysicallyBasedShader
+          ShadowAnimatedDirectionalShader : PhysicallyBasedShader
+          ShadowTerrainPointShader : PhysicallyBasedDeferredTerrainShader
+          ShadowTerrainSpotShader : PhysicallyBasedDeferredTerrainShader
+          ShadowTerrainDirectionalShader : PhysicallyBasedDeferredTerrainShader
+          DeferredStaticShader : PhysicallyBasedShader
+          DeferredAnimatedShader : PhysicallyBasedShader
+          DeferredTerrainShader : PhysicallyBasedDeferredTerrainShader
+          DeferredLightMappingShader : PhysicallyBasedDeferredLightMappingShader
+          DeferredAmbientShader : PhysicallyBasedDeferredAmbientShader
+          DeferredIrradianceShader : PhysicallyBasedDeferredIrradianceShader
+          DeferredEnvironmentFilterShader : PhysicallyBasedDeferredEnvironmentFilterShader
+          DeferredSsaoShader : PhysicallyBasedDeferredSsaoShader
+          DeferredLightingShader : PhysicallyBasedDeferredLightingShader
+          DeferredCompositionShader : PhysicallyBasedDeferredCompositionShader
+          ForwardStaticShader : PhysicallyBasedShader
+          ForwardAnimatedShader : PhysicallyBasedShader }
+
+    let CreatePhysicallyBasedShaders (lightMapsMax, lightsMax) =
+
+        // create shadow shaders
+        let shadowStaticPointShader = CreatePhysicallyBasedShader 0 0 Constants.Paths.PhysicallyBasedShadowStaticPointShaderFilePath in Hl.Assert ()
+        let shadowStaticSpotShader = CreatePhysicallyBasedShader 0 0 Constants.Paths.PhysicallyBasedShadowStaticSpotShaderFilePath in Hl.Assert ()
+        let shadowStaticDirectionalShader = CreatePhysicallyBasedShader 0 0 Constants.Paths.PhysicallyBasedShadowStaticDirectionalShaderFilePath in Hl.Assert ()
+        let shadowAnimatedPointShader = CreatePhysicallyBasedShader 0 0 Constants.Paths.PhysicallyBasedShadowAnimatedPointShaderFilePath in Hl.Assert ()
+        let shadowAnimatedSpotShader = CreatePhysicallyBasedShader 0 0 Constants.Paths.PhysicallyBasedShadowAnimatedSpotShaderFilePath in Hl.Assert ()
+        let shadowAnimatedDirectionalShader = CreatePhysicallyBasedShader 0 0 Constants.Paths.PhysicallyBasedShadowAnimatedDirectionalShaderFilePath in Hl.Assert ()
+        let shadowTerrainPointShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedShadowTerrainPointShaderFilePath in Hl.Assert ()
+        let shadowTerrainSpotShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedShadowTerrainSpotShaderFilePath in Hl.Assert ()
+        let shadowTerrainDirectionalShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedShadowTerrainDirectionalShaderFilePath in Hl.Assert ()
+
+        // create deferred shaders
+        let deferredStaticShader = CreatePhysicallyBasedShader lightMapsMax lightsMax Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath in Hl.Assert ()
+        let deferredAnimatedShader = CreatePhysicallyBasedShader lightMapsMax lightsMax Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath in Hl.Assert ()
+        let deferredTerrainShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath in Hl.Assert ()
+        let deferredLightMappingShader = CreatePhysicallyBasedDeferredLightMappingShader lightMapsMax Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath in Hl.Assert ()
+        let deferredAmbientShader = CreatePhysicallyBasedDeferredAmbientShader lightMapsMax Constants.Paths.PhysicallyBasedDeferredAmbientShaderFilePath in Hl.Assert ()
+        let deferredIrradianceShader = CreatePhysicallyBasedDeferredIrradianceShader Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath in Hl.Assert ()
+        let deferredEnvironmentFilterShader = CreatePhysicallyBasedDeferredEnvironmentFilterShader lightMapsMax Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath in Hl.Assert ()
+        let deferredSsaoShader = CreatePhysicallyBasedDeferredSsaoShader Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath in Hl.Assert ()
+        let deferredLightingShader = CreatePhysicallyBasedDeferredLightingShader lightsMax Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath in Hl.Assert ()
+        let deferredCompositionShader = CreatePhysicallyBasedDeferredCompositionShader Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath in Hl.Assert ()
+
+        // create forward shaders
+        let forwardStaticShader = CreatePhysicallyBasedShader Constants.Render.LightMapsMaxForward Constants.Render.LightsMaxForward Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath in Hl.Assert ()
+        let forwardAnimatedShader = CreatePhysicallyBasedShader Constants.Render.LightMapsMaxForward Constants.Render.LightsMaxForward Constants.Paths.PhysicallyBasedForwardAnimatedShaderFilePath in Hl.Assert ()
+
+        // fin
+        { ShadowStaticPointShader = shadowStaticPointShader
+          ShadowStaticSpotShader = shadowStaticSpotShader
+          ShadowStaticDirectionalShader = shadowStaticDirectionalShader
+          ShadowAnimatedPointShader = shadowAnimatedPointShader
+          ShadowAnimatedSpotShader = shadowAnimatedSpotShader
+          ShadowAnimatedDirectionalShader = shadowAnimatedDirectionalShader
+          ShadowTerrainPointShader = shadowTerrainPointShader
+          ShadowTerrainSpotShader = shadowTerrainSpotShader
+          ShadowTerrainDirectionalShader = shadowTerrainDirectionalShader
+          DeferredStaticShader = deferredStaticShader
+          DeferredAnimatedShader = deferredAnimatedShader
+          DeferredTerrainShader = deferredTerrainShader
+          DeferredLightMappingShader = deferredLightMappingShader
+          DeferredIrradianceShader = deferredIrradianceShader
+          DeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
+          DeferredAmbientShader = deferredAmbientShader
+          DeferredSsaoShader = deferredSsaoShader
+          DeferredLightingShader = deferredLightingShader
+          DeferredCompositionShader = deferredCompositionShader
+          ForwardStaticShader = forwardStaticShader
+          ForwardAnimatedShader = forwardAnimatedShader }
+
+    let DestroyPhysicallyBasedShaders shaders =
+        Gl.DeleteProgram shaders.ShadowStaticPointShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowStaticSpotShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowStaticDirectionalShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowAnimatedPointShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowAnimatedSpotShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowAnimatedDirectionalShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowTerrainPointShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowTerrainSpotShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ShadowTerrainDirectionalShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.DeferredStaticShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.DeferredAnimatedShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.DeferredTerrainShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.DeferredLightMappingShader.PhysicallyBasedDeferredLightMappingShader
+        Gl.DeleteProgram shaders.DeferredIrradianceShader.PhysicallyBasedDeferredIrradianceShader
+        Gl.DeleteProgram shaders.DeferredEnvironmentFilterShader.PhysicallyBasedDeferredEnvironmentFilterShader
+        Gl.DeleteProgram shaders.DeferredAmbientShader.PhysicallyBasedDeferredAmbientShader
+        Gl.DeleteProgram shaders.DeferredSsaoShader.PhysicallyBasedDeferredSsaoShader
+        Gl.DeleteProgram shaders.DeferredLightingShader.PhysicallyBasedDeferredLightingShader
+        Gl.DeleteProgram shaders.DeferredCompositionShader.PhysicallyBasedDeferredCompositionShader
+        Gl.DeleteProgram shaders.ForwardStaticShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.ForwardAnimatedShader.PhysicallyBasedShader
