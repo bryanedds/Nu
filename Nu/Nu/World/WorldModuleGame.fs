@@ -486,6 +486,12 @@ module WorldModuleGame =
             Quadtree.getElementsAtPoint point set quadtree
             Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
 
+        /// Get all 2d entities in the current selected screen, including all uncullable entities.
+        static member getEntities2d set world =
+            let quadtree = World.getQuadtree world
+            Quadtree.getElements set quadtree
+            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
+
         /// Get all 2d entities in the current 2d view, including all uncullable entities.
         static member getEntities2dInView set world =
             let viewBounds = World.getViewBounds2dRelative world
@@ -498,12 +504,6 @@ module WorldModuleGame =
             let playBounds = World.getPlayBounds2dRelative world
             let quadtree = World.getQuadtree world
             Quadtree.getElementsInPlay playBounds set quadtree
-            Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
-
-        /// Get all 2d entities in the current selected screen, including all uncullable entities.
-        static member getEntities2d set world =
-            let quadtree = World.getQuadtree world
-            Quadtree.getElements set quadtree
             Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
 
         static member internal getElements3dInPlay set world =
@@ -534,6 +534,12 @@ module WorldModuleGame =
         static member getEntities3dAtPoint point set world =
             let octree = World.getOctree world
             Octree.getElementsAtPoint point set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all 3d entities in the current selected screen, including all uncullable entities.
+        static member getEntities3d set world =
+            let octree = World.getOctree world
+            Octree.getElements set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
@@ -578,12 +584,6 @@ module WorldModuleGame =
         static member getLights3dInViewBox box set world =
             let octree = World.getOctree world
             Octree.getLightsInViewBox box set octree
-            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d entities in the current selected screen, including all uncullable entities.
-        static member getEntities3d set world =
-            let octree = World.getOctree world
-            Octree.getElements set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
