@@ -1201,7 +1201,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
-                    let fsprojNugetPaths = // imagine manually parsing an xml file...
+                    let fsprojNugetPaths =
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
                         Array.filter (fun line -> line.Contains "PackageReference") |>
@@ -1236,6 +1236,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         Array.map (fun line -> line.Replace ("\"", "")) |>
                         Array.map (fun line -> PathF.Normalize line) |>
                         Array.map (fun line -> line.Trim ())
+                    let fsprojDefineConstantsOpt =
+                        fsprojFileLines |>
+                        Array.map (fun line -> line.Trim ()) |>
+                        Array.filter (fun line -> line.Contains "DefineConstants") |>
+                        Array.map (fun line -> line.Replace ("DefineConstants", "")) |>
+                        Array.map (fun line -> line.Replace ("/", "")) |>
+                        Array.map (fun line -> line.Replace (">", "")) |>
+                        Array.map (fun line -> line.Replace ("<", "")) |>
+                        fun fdcs ->
+                            if fdcs.Length = 2
+                            then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                            else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
@@ -1264,7 +1276,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
+                    let fsiArgs =
+                        match fsprojDefineConstantsOpt with
+                        | Some fsprojDefineConstants -> Array.add ("--define:" + fsprojDefineConstants) FsiArgs
+                        | None -> FsiArgs
+                    FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, fsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
                     let world =
                         match FsiSession.EvalInteractionNonThrowing fsxFileString with
                         | (Choice1Of2 _, _) ->
