@@ -70,14 +70,10 @@ module Hl =
     let CreateSglContextInitial window =
         Gl.Initialize ()
         let glContext = SDL.SDL_GL_CreateContext window
-        Assert ()
         let swapInterval = if Constants.Render.Vsync then 1 else 0
         SDL.SDL_GL_SetSwapInterval swapInterval |> ignore<int>
-        Assert ()
         SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
-        Assert ()
         Gl.BindAPI ()
-        Assert ()
         let versionStr = Gl.GetString StringName.Version
         Log.info ("Initialized OpenGL " + versionStr + ".")
         if  not (versionStr.StartsWith "4.1") &&
@@ -99,12 +95,9 @@ module Hl =
     /// on the given WaitOnce object before continuing processing.
     let CreateSglContextSharedWithCurrentContext (window, sharedContext) =
         SDL.SDL_GL_MakeCurrent (window, sharedContext) |> ignore<int>
-        Assert ()
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1) |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext window
-        Assert ()
         SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
-        Assert ()
         Gl.BindAPI ()
         glContext
 
