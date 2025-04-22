@@ -1198,6 +1198,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | fsprojFilePaths ->
 
                     // generate code reload fsx file string
+                    // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
