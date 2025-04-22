@@ -2964,7 +2964,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         // attempt to render sky box to composition buffer
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
             OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, rasterProjectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.SkyBoxShader)
             OpenGL.Hl.Assert ()
         | None -> ()
