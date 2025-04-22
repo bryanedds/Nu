@@ -31,7 +31,7 @@
 
 	<ItemGroup>
 		<Compile Include="Program.fs" />
-		<Content Include="AssetGraph.nuag">
+		<Content Include="TestGraph.nuag">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<None Include="App.config" />
