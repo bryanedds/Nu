@@ -927,27 +927,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           FilterBilateralDownSample4dShader : OpenGL.Filter.FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : OpenGL.Filter.FilterBilateralUpSampleShader
           FilterFxaaShader : OpenGL.Filter.FilterFxaaShader
-          PhysicallyBasedShadowStaticPointShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedShadowStaticSpotShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedShadowStaticDirectionalShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedShadowAnimatedPointShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedShadowAnimatedSpotShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedShadowAnimatedDirectionalShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedShadowTerrainPointShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
-          PhysicallyBasedShadowTerrainSpotShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
-          PhysicallyBasedShadowTerrainDirectionalShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
-          PhysicallyBasedDeferredStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
-          PhysicallyBasedDeferredLightMappingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightMappingShader
-          PhysicallyBasedDeferredAmbientShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredAmbientShader
-          PhysicallyBasedDeferredIrradianceShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredIrradianceShader
-          PhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
-          PhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
-          PhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
-          PhysicallyBasedDeferredCompositionShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredCompositionShader
-          PhysicallyBasedForwardStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedForwardAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          mutable PhysicallyBasedShaders : OpenGL.PhysicallyBased.PhysicallyBasedShaders
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
@@ -1640,6 +1620,9 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private handleReloadRenderAssets renderer =
         GlRenderer3d.invalidateCaches renderer
         GlRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
+        let physicallyBasedShaders = OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
+        OpenGL.Hl.Assert ()
+        renderer.PhysicallyBasedShaders <- physicallyBasedShaders
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
@@ -2459,9 +2442,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             let shadowShader =
                 match lightType with
-                | PointLight -> renderer.PhysicallyBasedShadowStaticPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShadowStaticSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShadowStaticDirectionalShader
+                | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
+                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray [||] entry.Value
                 entry.Key shadowShader renderer
@@ -2480,9 +2463,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 bonesArrays.[i] <- boneArray
             let shadowShader =
                 match lightType with
-                | PointLight -> renderer.PhysicallyBasedShadowAnimatedPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShadowAnimatedSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShadowAnimatedDirectionalShader
+                | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
+                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
+                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays parameters
                 surfaceKey.AnimatedSurface shadowShader renderer
@@ -2492,9 +2475,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (descriptor, geometry) in renderTasks.DeferredTerrains do
             let shadowShader =
                 match lightType with
-                | PointLight -> renderer.PhysicallyBasedShadowTerrainPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShadowTerrainSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShadowTerrainDirectionalShader
+                | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
+                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
+                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
             GlRenderer3d.renderPhysicallyBasedTerrain
                 lightViewArray lightProjectionArray lightOrigin
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
@@ -2510,9 +2493,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                     bonesArrays.[i] <- boneArray
                 let shadowShader =
                     match lightType with
-                    | PointLight -> renderer.PhysicallyBasedShadowAnimatedPointShader
-                    | SpotLight (_, _)-> renderer.PhysicallyBasedShadowAnimatedSpotShader
-                    | DirectionalLight -> renderer.PhysicallyBasedShadowAnimatedDirectionalShader
+                    | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
+                    | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
+                    | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                     surface shadowShader renderer
@@ -2520,9 +2503,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ValueNone ->
                 let shadowShader =
                     match lightType with
-                    | PointLight -> renderer.PhysicallyBasedShadowStaticPointShader
-                    | SpotLight (_, _)-> renderer.PhysicallyBasedShadowStaticSpotShader
-                    | DirectionalLight -> renderer.PhysicallyBasedShadowStaticDirectionalShader
+                    | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
+                    | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                    | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightOrigin lightViewArray lightProjectionArray [||] (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                     surface shadowShader renderer
@@ -2748,7 +2731,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 batchPhase viewArray geometryProjectionArray [||] eyeCenter entry.Value
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
+                entry.Key renderer.PhysicallyBasedShaders.DeferredStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
 
@@ -2763,7 +2746,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 SingletonPhase viewArray geometryProjectionArray bonesArrays eyeCenter parameters
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                surfaceKey.AnimatedSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                surfaceKey.AnimatedSurface renderer.PhysicallyBasedShaders.DeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // render terrains deferred
@@ -2771,7 +2754,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedTerrain
                 viewArray geometryProjectionArray eyeCenter
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
-                descriptor geometry renderer.PhysicallyBasedDeferredTerrainShader renderer
+                descriptor geometry renderer.PhysicallyBasedShaders.DeferredTerrainShader renderer
 
         // run light mapping pass
         let lightMappingTexture =
@@ -2792,7 +2775,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightMappingSurface
                     (positionTexture, normalPlusTexture,
                      lightMapOrigins, lightMapMins, lightMapSizes, min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count,
-                     renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightMappingShader)
+                     renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightMappingShader)
                 OpenGL.Hl.Assert ()
                 lightMappingTexture
 
@@ -2812,7 +2795,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredAmbientSurface
             (positionTexture, lightMappingTexture,
              lightAmbientColor, lightAmbientBrightness, lightMapAmbientColors, lightMapAmbientBrightnesses,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredAmbientShader)
+             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredAmbientShader)
         OpenGL.Hl.Assert ()
 
         // setup irradiance buffer and viewport
@@ -2828,7 +2811,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredIrradianceSurface
             (positionTexture, normalPlusTexture, lightMappingTexture,
              lightMapFallback.IrradianceMap, lightMapIrradianceMaps,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredIrradianceShader)
+             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredIrradianceShader)
         OpenGL.Hl.Assert ()
 
         // setup environment filter buffer and viewport
@@ -2846,7 +2829,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              positionTexture, materialTexture, normalPlusTexture, lightMappingTexture,
              lightMapFallback.EnvironmentFilterMap, lightMapEnvironmentFilterMaps,
              lightMapOrigins, lightMapMins, lightMapSizes,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredEnvironmentFilterShader)
+             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredEnvironmentFilterShader)
         OpenGL.Hl.Assert ()
 
         // run ssao pass
@@ -2871,7 +2854,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                      positionTexture, normalPlusTexture,
                      [|ssaoResolution.X; ssaoResolution.Y|],
                      renderer.LightingConfig.SsaoIntensity, renderer.LightingConfig.SsaoBias, renderer.LightingConfig.SsaoRadius, renderer.LightingConfig.SsaoDistanceMax, renderer.RendererConfig.SsaoSampleCount,
-                     renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredSsaoShader)
+                     renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredSsaoShader)
                 OpenGL.Hl.Assert ()
 
                 // setup filtered ssao buffer and viewport
@@ -2912,7 +2895,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
              renderer.LightingConfig.SsrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, renderer.BrdfTexture, ambientTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures, shadowMaps,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowNear, shadowMatrices,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
+             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightingShader)
         OpenGL.Hl.Assert ()
 
         // run fog accum blur pass
@@ -2965,7 +2948,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let fogEnabled = if renderer.LightingConfig.FogEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface
             (eyeCenter, fogEnabled, renderer.LightingConfig.FogStart, renderer.LightingConfig.FogFinish, renderer.LightingConfig.FogColor,
-             positionTexture, colorTexture, fogAccumTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredCompositionShader)
+             positionTexture, colorTexture, fogAccumTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredCompositionShader)
 
         // copy depths from geometry framebuffer to composition framebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
@@ -3005,8 +2988,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let boneArray = boneTransforms.[i].ToArray ()
                         boneArrays.Add boneArray
                         bonesArrays.[i] <- boneArray
-                    (bonesArrays, renderer.PhysicallyBasedForwardAnimatedShader)
-                | ValueNone -> ([||], renderer.PhysicallyBasedForwardStaticShader)
+                    (bonesArrays, renderer.PhysicallyBasedShaders.ForwardAnimatedShader)
+                | ValueNone -> ([||], renderer.PhysicallyBasedShaders.ForwardStaticShader)
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 viewArray rasterProjectionArray bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                 eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness
@@ -3464,56 +3447,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         let filterFxaaShader = OpenGL.Filter.CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
         OpenGL.Hl.Assert ()
 
-        // create shadow shaders
-        let (shadowStaticPointShader,
-             shadowStaticSpotShader,
-             shadowStaticDirectionalShader,
-             shadowAnimatedPointShader,
-             shadowAnimatedSpotShader,
-             shadowAnimatedDirectionalShader,
-             shadowTerrainPointShader,
-             shadowTerrainSpotShader,
-             shadowTerrainDirectionalShader) =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedShadowShaders
-                (Constants.Paths.PhysicallyBasedShadowStaticPointShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowStaticSpotShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowStaticDirectionalShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowAnimatedPointShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowAnimatedSpotShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowAnimatedDirectionalShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowTerrainPointShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowTerrainSpotShaderFilePath,
-                 Constants.Paths.PhysicallyBasedShadowTerrainDirectionalShaderFilePath)
-        OpenGL.Hl.Assert ()
-
-        // create deferred shaders
-        let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader,
-             deferredAmbientShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader,
-             deferredLightingShader, deferredCompositionShader) =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
-                (Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredAmbientShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath)
-        OpenGL.Hl.Assert ()
-
-        // create forward shaders
-        let forwardStaticShader =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedShader
-                Constants.Render.LightMapsMaxForward
-                Constants.Render.LightsMaxForward
-                Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath
-        let forwardAnimatedShader =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedShader
-                Constants.Render.LightMapsMaxForward
-                Constants.Render.LightsMaxForward
-                Constants.Paths.PhysicallyBasedForwardAnimatedShaderFilePath
+        // create physically-based shaders
+        let physicallyBasedShaders = OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
         OpenGL.Hl.Assert ()
 
         // create white cube map
@@ -3708,27 +3643,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
               FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
               FilterFxaaShader = filterFxaaShader
-              PhysicallyBasedShadowStaticPointShader = shadowStaticPointShader
-              PhysicallyBasedShadowStaticSpotShader = shadowStaticSpotShader
-              PhysicallyBasedShadowStaticDirectionalShader = shadowStaticDirectionalShader
-              PhysicallyBasedShadowAnimatedPointShader = shadowAnimatedPointShader
-              PhysicallyBasedShadowAnimatedSpotShader = shadowAnimatedSpotShader
-              PhysicallyBasedShadowAnimatedDirectionalShader = shadowAnimatedDirectionalShader
-              PhysicallyBasedShadowTerrainPointShader = shadowTerrainPointShader
-              PhysicallyBasedShadowTerrainSpotShader = shadowTerrainSpotShader
-              PhysicallyBasedShadowTerrainDirectionalShader = shadowTerrainDirectionalShader
-              PhysicallyBasedDeferredStaticShader = deferredStaticShader
-              PhysicallyBasedDeferredAnimatedShader = deferredAnimatedShader
-              PhysicallyBasedDeferredTerrainShader = deferredTerrainShader
-              PhysicallyBasedDeferredLightMappingShader = deferredLightMappingShader
-              PhysicallyBasedDeferredIrradianceShader = deferredIrradianceShader
-              PhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
-              PhysicallyBasedDeferredAmbientShader = deferredAmbientShader
-              PhysicallyBasedDeferredSsaoShader = deferredSsaoShader
-              PhysicallyBasedDeferredLightingShader = deferredLightingShader
-              PhysicallyBasedDeferredCompositionShader = deferredCompositionShader
-              PhysicallyBasedForwardStaticShader = forwardStaticShader
-              PhysicallyBasedForwardAnimatedShader = forwardAnimatedShader
+              PhysicallyBasedShaders = physicallyBasedShaders
               ShadowMatrices = Array.zeroCreate<Matrix4x4> Constants.Render.ShadowTexturesMax
               LightShadowIndices = dictPlus HashIdentity.Structural []
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
@@ -3777,18 +3692,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.IrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.EnvironmentFilterShader.EnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredStaticShader.PhysicallyBasedShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredAnimatedShader.PhysicallyBasedShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredTerrainShader.PhysicallyBasedShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredLightMappingShader.PhysicallyBasedDeferredLightMappingShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredIrradianceShader.PhysicallyBasedDeferredIrradianceShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredEnvironmentFilterShader.PhysicallyBasedDeferredEnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredSsaoShader.PhysicallyBasedDeferredSsaoShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedDeferredLightingShader.PhysicallyBasedDeferredLightingShader
-            OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedForwardStaticShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.FilterBox1dShader.FilterBoxShader
             OpenGL.Gl.DeleteProgram renderer.FilterGaussian2dShader.FilterGaussianShader
+            OpenGL.Gl.DeleteProgram renderer.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
+            OpenGL.Gl.DeleteProgram renderer.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
             OpenGL.Gl.DeleteProgram renderer.FilterFxaaShader.FilterFxaaShader
+            OpenGL.PhysicallyBased.DestroyPhysicallyBasedShaders renderer.PhysicallyBasedShaders
             OpenGL.CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.BillboardGeometry
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.PhysicallyBasedQuad
