@@ -288,8 +288,6 @@ type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
 module Quadtree =
 
     /// A spatial structure that organizes elements on a 2d plane.
-    /// NOTE: there is some overlap between Ubiquitous and UbiquitousInPlay, which makes the in play query a bit
-    /// slower. However, this makes the logic easier to implement and maintain, which is necessary for my finite brain.
     type [<ReferenceEquality>] Quadtree<'e when 'e : equality> =
         private
             { Leaves : Dictionary<Vector2, 'e Quadnode>
