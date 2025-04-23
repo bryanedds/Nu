@@ -804,8 +804,7 @@ void main()
             if (scatterType != 0.0)
             {
                 vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
-                float shadowScalarScatter = shadowScalar * (nDotL > 0.0 ? 1.0 : 1.0 - max(dot(normal, -l), 0.0)); // HACK: we blend shadow toward the backfaces in order to blend with backscattering on the forward faces.
-                scatterAccum += kD * scatter * radiance * shadowScalarScatter;
+                scatterAccum += kD * scatter * radiance * shadowScalar;
             }
 
             // accumulate fog
