@@ -8,7 +8,6 @@
 		<ServerGarbageCollection>True</ServerGarbageCollection>
 		<TieredPGO>True</TieredPGO>
 		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
-		<StartArguments>../../.. . ../../refinement True</StartArguments>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -37,9 +36,6 @@
 
 	<ItemGroup>
 		<Compile Include="Program.fs" />
-		<Content Include="TestGraph.nuag">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
 		<None Include="App.config" />
 	</ItemGroup>
 
