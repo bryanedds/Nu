@@ -471,7 +471,7 @@ module Octree =
               Leaves : Dictionary<Vector3, 'e Octnode>
               Imposter : 'e Octelement HashSet
               Omnipresent : 'e Octelement HashSet
-              OmnipresentInPlay : 'e Octelement HashSet
+              OmnipresentInPlayOnly : 'e Octelement HashSet
               UbiquitousFallback : 'e Octelement HashSet
               Node : 'e Octnode
               Depth : int
@@ -497,10 +497,11 @@ module Octree =
         if presence.IsOmnipresent then
             tree.Omnipresent.Add element |> ignore
 
-        // add to omnipresent in play when appropriate
-        if presenceInPlay.IsOmnipresent then
-            tree.OmnipresentInPlay.Remove element |> ignore
-            tree.OmnipresentInPlay.Add element |> ignore
+        // add to omnipresent-in-play-only when appropriate
+        let omnipresentInPlayOnly = not presence.IsOmnipresent && presenceInPlay.IsOmnipresent
+        if omnipresentInPlayOnly then
+            tree.OmnipresentInPlayOnly.Remove element |> ignore
+            tree.OmnipresentInPlayOnly.Add element |> ignore
 
         // add to node tree or ubiquitous fallback
         if  not (Octnode.isIntersectingBox bounds tree.Node) ||
@@ -520,9 +521,10 @@ module Octree =
         if presence.IsOmnipresent then
             tree.Omnipresent.Remove element |> ignore
 
-        // remove from omnipresent in play when appropriate
-        if presenceInPlay.IsOmnipresent then
-            tree.OmnipresentInPlay.Remove element |> ignore
+        // remove from omnipresent-in-play-only when appropriate
+        let omnipresentInPlayOnly = not presence.IsOmnipresent && presenceInPlay.IsOmnipresent
+        if omnipresentInPlayOnly then
+            tree.OmnipresentInPlayOnly.Remove element |> ignore
 
         // remove from node tree or ubiquitous fallback
         if  not (Octnode.isIntersectingBox bounds tree.Node) ||
@@ -533,26 +535,28 @@ module Octree =
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
 
-        // update imposter in play where appropriate
+        // update imposter where appropriate
         if presenceOld.IsImposter <> presenceNew.IsImposter then
             if presenceOld.IsImposter then
                 tree.Omnipresent.Remove element |> ignore
             if presenceNew.IsImposter then
                 tree.Omnipresent.Add element |> ignore
 
-        // update omnipresent in play where appropriate
+        // update omnipresent where appropriate
         if presenceOld.IsOmnipresent <> presenceNew.IsOmnipresent then
             if presenceOld.IsOmnipresent then
-                tree.Omnipresent.Remove element |> ignore
+                tree.OmnipresentInPlayOnly.Remove element |> ignore
             if presenceNew.IsOmnipresent then
-                tree.Omnipresent.Add element |> ignore
+                tree.OmnipresentInPlayOnly.Add element |> ignore
 
-        // update omnipresent in play where appropriate
-        if presenceInPlayOld.IsOmnipresent <> presenceInPlayNew.IsOmnipresent then
-            if presenceInPlayOld.IsOmnipresent then
-                tree.OmnipresentInPlay.Remove element |> ignore
-            if presenceInPlayNew.IsOmnipresent then
-                tree.OmnipresentInPlay.Add element |> ignore
+        // update omnipresent-in-play-only where appropriate
+        let omnipresentInPlayOnlyOld = not presenceOld.IsOmnipresent && presenceInPlayOld.IsOmnipresent
+        let omnipresentInPlayOnlyNew = not presenceNew.IsOmnipresent && presenceInPlayNew.IsOmnipresent
+        if omnipresentInPlayOnlyOld <> omnipresentInPlayOnlyNew then
+            if omnipresentInPlayOnlyOld then
+                tree.OmnipresentInPlayOnly.Remove element |> ignore
+            if omnipresentInPlayOnlyNew then
+                tree.OmnipresentInPlayOnly.Add element |> ignore
 
         // update in node tree or ubiquitous fallback
         let wasInNode = Octnode.isIntersectingBox boundsOld tree.Node && boundsOld.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
@@ -584,7 +588,7 @@ module Octree =
     let clear tree =
         tree.Imposter.Clear ()
         tree.Omnipresent.Clear ()
-        tree.OmnipresentInPlay.Clear ()
+        tree.OmnipresentInPlayOnly.Clear ()
         tree.UbiquitousFallback.Clear ()
         Octnode.clearElements tree.Node
 
@@ -721,7 +725,7 @@ module Octree =
             set.Add imposter |> ignore<bool>
         for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
-        for omnipresent in tree.OmnipresentInPlay do
+        for omnipresent in tree.OmnipresentInPlayOnly do
             set.Add omnipresent |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
             set.Add ubiquitous |> ignore<bool>
@@ -749,7 +753,7 @@ module Octree =
         if  not (Math.PowerOfTwo size.X) ||
             not (Math.PowerOfTwo size.Y) ||
             not (Math.PowerOfTwo size.Z) then
-            failwith "Invalid size for Octtree. Expected value whose components are a power of two."
+            failwith "Invalid size for Octree. Expected value whose components are a power of two."
         let leafComparer = // OPTIMIZATION: avoid allocation on Equals calls.
             { new IEqualityComparer<Vector3> with
                 member this.Equals (left, right) = left.Equals right
@@ -764,7 +768,7 @@ module Octree =
           LeafSize = leafSize
           Imposter = HashSet elementComparer
           Omnipresent = HashSet elementComparer
-          OmnipresentInPlay = HashSet elementComparer
+          OmnipresentInPlayOnly = HashSet elementComparer
           UbiquitousFallback = HashSet elementComparer
           Node = Octnode.make<'e> elementComparer (inc depth) bounds leaves
           Depth = depth
