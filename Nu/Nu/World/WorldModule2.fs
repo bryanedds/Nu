@@ -866,13 +866,13 @@ module WorldModule2 =
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
                 let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
-                Quadtree.addElement entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
+                Quadtree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                    Octree.addElement entityState.PresenceInPlay entityState.Bounds element octree
+                    Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
             world
                 
         static member internal evictScreenElements screen world =
@@ -882,13 +882,13 @@ module WorldModule2 =
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
                 let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
-                Quadtree.removeElement entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
+                Quadtree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                    Octree.removeElement entityState.PresenceInPlay entityState.Bounds element octree
+                    Octree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
             world
 
         static member internal registerScreenPhysics screen world =

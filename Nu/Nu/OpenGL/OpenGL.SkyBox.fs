@@ -44,7 +44,7 @@ module SkyBox =
     let DrawSkyBox
         (view : single array,
          projection : single array,
-         color : single array,
+         color : Color,
          brightness : single,
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
@@ -59,7 +59,7 @@ module SkyBox =
         Gl.UseProgram shader.SkyBoxShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.Uniform3 (shader.ColorUniform, color)
+        Gl.Uniform3 (shader.ColorUniform, color.R, color.G, color.B)
         Gl.Uniform1 (shader.BrightnessUniform, brightness)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
         Gl.ActiveTexture TextureUnit.Texture0

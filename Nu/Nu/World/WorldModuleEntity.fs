@@ -2254,12 +2254,12 @@ module WorldModuleEntity =
                         let quadtree = World.getQuadtree world
                         let entityState = World.getEntityState entity world
                         let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
-                        Quadtree.addElement entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
+                        Quadtree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
                     else
                         let octree = World.getOctree world
                         let entityState = World.getEntityState entity world
                         let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                        Octree.addElement entityState.PresenceInPlay entityState.Bounds element octree
+                        Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
 
                 // register entity
                 World.registerEntity entity world
@@ -2299,12 +2299,12 @@ module WorldModuleEntity =
                         let quadtree = World.getQuadtree world
                         let entityState = World.getEntityState entity world
                         let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
-                        Quadtree.removeElement entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
+                        Quadtree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
                     else
                         let octree = World.getOctree world
                         let entityState = World.getEntityState entity world
                         let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                        Octree.removeElement entityState.PresenceInPlay entityState.Bounds element octree
+                        Octree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
 
                 // remove cached entity event addresses
                 EventGraph.cleanEventAddressCache entity.EntityAddress
@@ -2765,11 +2765,11 @@ module WorldModuleEntity =
                     if entityState.Is2d then
                         let quadree = World.getQuadtree world
                         let element = Quadelement.make visibleInViewNew staticInPlayNew presenceNew presenceInPlayNew boundsNew.Box2 entity
-                        Quadtree.updateElement presenceInPlayOld boundsOld.Box2 presenceInPlayNew boundsNew.Box2 element quadree
+                        Quadtree.updateElement presenceOld presenceInPlayOld boundsOld.Box2 presenceNew presenceInPlayNew boundsNew.Box2 element quadree
                     else
                         let octree = World.getOctree world
                         let element = Octelement.make visibleInViewNew staticInPlayNew lightProbeNew lightNew presenceNew presenceInPlayNew boundsNew entity
-                        Octree.updateElement presenceInPlayOld boundsOld presenceInPlayNew boundsNew element octree
+                        Octree.updateElement presenceOld presenceInPlayOld boundsOld presenceNew presenceInPlayNew boundsNew element octree
 
                     // fin
                     world

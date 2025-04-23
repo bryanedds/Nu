@@ -370,11 +370,11 @@ type SpineSkeletonDispatcher () =
 type SkyBoxDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
-    override this.PresenceOverride =
-        ValueSome Omnipresent
-
     static member Facets =
         [typeof<SkyBoxFacet>]
+
+    override this.PresenceOverride =
+        ValueSome Omnipresent
 
 [<AutoOpen>]
 module Lighting3dConfigDispatcherExtensions =
@@ -387,10 +387,8 @@ type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
     
     static member Properties =
-        [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig]
-
-    override this.PresenceOverride =
-        ValueSome Omnipresent
+        [define Entity.Presence Omnipresent
+         define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig]
 
     override this.Render (_, entity, world) =
         let config = entity.GetLighting3dConfig world
@@ -402,9 +400,6 @@ type LightProbe3dDispatcher () =
 
     static member Facets =
         [typeof<LightProbe3dFacet>]
-
-    override this.PresenceOverride =
-        ValueSome Omnipresent
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -738,9 +733,6 @@ type TerrainDispatcher () =
 
     static member Facets =
         [typeof<TerrainFacet>]
-
-    override this.PresenceOverride =
-        ValueSome Omnipresent
 
 [<AutoOpen>]
 module Nav3dConfigDispatcherExtensions =

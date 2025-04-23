@@ -2886,6 +2886,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     else world
 
                 // entity editing
+                ImGui.BeginChild "Container" |> ignore<bool>
                 let world =
                     World.getSovereignEntities SelectedGroup world |>
                     Array.ofSeq |>
@@ -2893,6 +2894,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     Array.sortBy fst |>
                     Array.map snd |>
                     Array.fold (fun world entity -> imGuiEntityHierarchy entity world) world
+                ImGui.EndChild ()
 
                 // finish entity showing
                 ShowSelectedEntity <- false
@@ -2993,6 +2995,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ())) |>
                     Seq.filter (fun entity -> not (entity.GetProtected world)) |>
                     hashSetPlus HashIdentity.Structural
+                ImGui.BeginChild "Container" |> ignore<bool>               
                 let world =
                     Seq.fold (fun world (entity : Entity) ->
                         let treeNodeFlags = ImGuiTreeNodeFlags.Leaf ||| if Option.contains entity SelectedEntityOpt then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None
@@ -3089,6 +3092,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             world
                         else world)
                         world propagationSources
+                ImGui.EndChild ()
                 world
             else world
         ImGui.End ()
@@ -3442,7 +3446,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if enter then InteractiveInputStr <- ""
                 if eval || enter then InteractiveInputFocusRequested <- true
                 ImGui.Separator ()
-                ImGui.BeginChild ("##interactiveOutputStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+                ImGui.BeginChild ("##interactiveOutputStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysHorizontalScrollbar ||| ImGuiWindowFlags.AlwaysVerticalScrollbar) |> ignore<bool>
                 ImGui.TextUnformatted InteractiveOutputStr
                 if toBottom then ImGui.SetScrollHereY 1.0f
                 ImGui.EndChild ()
@@ -3554,7 +3558,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Clear evaluation output (Alt+C)"
                     ImGui.EndTooltip ()
-                ImGui.BeginChild ("##outputBufferStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+                ImGui.BeginChild ("##outputBufferStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysHorizontalScrollbar ||| ImGuiWindowFlags.AlwaysVerticalScrollbar) |> ignore<bool>
                 ImGui.TextUnformatted LogStr
                 ImGui.EndChild ()
             if flash then for i in 0 .. dec 8 do ImGui.PopStyleColor ()
@@ -3619,6 +3623,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
             let searchActiveCurrent = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
+            ImGui.BeginChild "Container" |> ignore<bool>
             for packageEntry in Metadata.getMetadataPackagesLoaded () |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                 let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
                 if searchActiveCurrent then ImGui.SetNextItemOpen true
@@ -3652,6 +3657,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 ImGui.EndDragDropSource ()
                             ImGui.TreePop ()
                     ImGui.TreePop ()
+            ImGui.EndChild ()
         ImGui.End ()
 
     let private imGuiDebugWindow () =
