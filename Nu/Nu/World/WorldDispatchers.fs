@@ -370,11 +370,11 @@ type SpineSkeletonDispatcher () =
 type SkyBoxDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
-    override this.PresenceOverride =
-        ValueSome Omnipresent
-
     static member Facets =
         [typeof<SkyBoxFacet>]
+
+    override this.PresenceOverride =
+        ValueSome Omnipresent
 
 [<AutoOpen>]
 module Lighting3dConfigDispatcherExtensions =
