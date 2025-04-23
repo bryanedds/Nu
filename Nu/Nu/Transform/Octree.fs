@@ -472,10 +472,10 @@ module Octree =
         private
             { LeafSize : Vector3 // TODO: consider keeping the inverse of this to avoid divides.
               Leaves : Dictionary<Vector3, 'e Octnode>
-              ImposterPlus : 'e Octelement HashSet
-              ImposterInPlay : 'e Octelement HashSet
-              OmnipresentPlus : 'e Octelement HashSet
+              Imposter : 'e Octelement HashSet
+              Omnipresent : 'e Octelement HashSet
               OmnipresentInPlay : 'e Octelement HashSet
+              OmnipresentFallback : 'e Octelement HashSet
               Node : 'e Octnode
               Depth : int
               Bounds : Box3 }
@@ -492,70 +492,76 @@ module Octree =
     /// Add an element with the given presence and bounds to the tree.
     let addElement (presence : Presence) (presenceInPlay : Presence) bounds (element : 'e Octelement) tree =
 
-        // add to imposter-in-play when such
-        if presenceInPlay.IsImposter then tree.ImposterInPlay.Add element |> ignore
-        
-        // add to omnipresent-in-play when such
-        if presenceInPlay.IsOmnipresent then tree.OmnipresentInPlay.Add element |> ignore
-
-        // add to either imposter, omnipresent, or node tree
+        // add to imposter when such
         if presence.IsImposter then
-            tree.ImposterPlus.Remove element |> ignore
-            tree.ImposterPlus.Add element |> ignore
-        elif presence.IsOmnipresent then
-            tree.OmnipresentPlus.Remove element |> ignore
-            tree.OmnipresentPlus.Add element |> ignore
-        elif
-            not (Octnode.isIntersectingBox bounds tree.Node) ||
+            tree.Imposter.Add element |> ignore
+
+        // add to omnipresent when such
+        if presence.IsOmnipresent then
+            tree.Omnipresent.Add element |> ignore
+
+        // add to omnipresent in play when appropriate
+        let omnipresentInPlay = presenceInPlay.IsOmnipresent
+        if omnipresentInPlay then
+            tree.OmnipresentInPlay.Remove element |> ignore
+            tree.OmnipresentInPlay.Add element |> ignore
+
+        // add to node tree or omnipresent fallback
+        if  not (Octnode.isIntersectingBox bounds tree.Node) ||
             bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
-            tree.OmnipresentPlus.Remove element |> ignore
-            tree.OmnipresentPlus.Add element |> ignore
-        else
-            Octnode.addElement bounds &element tree.Node |> ignore
+            tree.OmnipresentFallback.Remove element |> ignore
+            tree.OmnipresentFallback.Add element |> ignore
+        else Octnode.addElement bounds &element tree.Node |> ignore
 
     /// Remove an element with the given presence and bounds from the tree.
     let removeElement (presence : Presence) (presenceInPlay : Presence) bounds (element : 'e Octelement) tree =
 
-        // remove from imposter-in-play when such
-        if presenceInPlay.IsImposter then tree.ImposterInPlay.Add element |> ignore
-        
-        // remove from omnipresent-in-play when such
-        if presenceInPlay.IsOmnipresent then tree.OmnipresentInPlay.Add element |> ignore
+        // remove from imposter when appropriate
+        if presence.IsImposter then
+            tree.Imposter.Remove element |> ignore
 
-        // remove from either imposter, omnipresent, or node tree
-        if presence.IsImposter then 
-            tree.ImposterPlus.Remove element |> ignore
-        elif presence.IsOmnipresent then 
-            tree.OmnipresentPlus.Remove element |> ignore
-        elif
-            not (Octnode.isIntersectingBox bounds tree.Node) ||
+        // remove from omnipresent when appropriate
+        if presence.IsOmnipresent then
+            tree.Omnipresent.Remove element |> ignore
+
+        // remove from omnipresent in play when appropriate
+        let omnipresentInPlay = presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent
+        if omnipresentInPlay then
+            tree.OmnipresentInPlay.Remove element |> ignore
+
+        // remove from node tree or omnipresent fallback
+        if  not (Octnode.isIntersectingBox bounds tree.Node) ||
             bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
-            tree.OmnipresentPlus.Remove element |> ignore
-        else
-            Octnode.removeElement bounds &element tree.Node |> ignore
+            tree.OmnipresentFallback.Remove element |> ignore
+        else Octnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
-    
-        //
-        if presenceInPlayOld.IsImposter then tree.ImposterInPlay.Remove element |> ignore
-        if presenceInPlayNew.IsImposter then tree.ImposterInPlay.Add element |> ignore
-        
-        //
-        if presenceInPlayOld.IsOmnipresent then tree.OmnipresentInPlay.Remove element |> ignore
-        if presenceInPlayNew.IsOmnipresent then tree.OmnipresentInPlay.Add element |> ignore
 
-        //
-        let wasInNode =
-            not presenceOld.IsImposter &&
-            not presenceOld.IsOmnipresent &&
-            Octnode.isIntersectingBox boundsOld tree.Node &&
-            boundsOld.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
-        let isInNode =
-            not presenceNew.IsImposter &&
-            not presenceNew.IsOmnipresent &&
-            Octnode.isIntersectingBox boundsNew tree.Node &&
-            boundsNew.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
+        // update imposter in play where appropriate
+        if presenceOld.IsImposter <> presenceNew.IsImposter then
+            if presenceOld.IsImposter then
+                tree.Omnipresent.Remove element |> ignore
+            if presenceNew.IsImposter then
+                tree.Omnipresent.Add element |> ignore
+
+        // update omnipresent in play where appropriate
+        if presenceOld.IsOmnipresent <> presenceNew.IsOmnipresent then
+            if presenceOld.IsOmnipresent then
+                tree.Omnipresent.Remove element |> ignore
+            if presenceNew.IsOmnipresent then
+                tree.Omnipresent.Add element |> ignore
+
+        // update omnipresent in play where appropriate
+        if presenceInPlayOld.IsOmnipresent <> presenceInPlayNew.IsOmnipresent then
+            if presenceInPlayOld.IsOmnipresent then
+                tree.OmnipresentInPlay.Remove element |> ignore
+            if presenceInPlayNew.IsOmnipresent then
+                tree.OmnipresentInPlay.Add element |> ignore
+
+        // update in node tree or omnipresent fallback
+        let wasInNode = Octnode.isIntersectingBox boundsOld tree.Node && boundsOld.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
+        let isInNode = Octnode.isIntersectingBox boundsNew tree.Node && boundsNew.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with
@@ -568,132 +574,163 @@ module Octree =
                     | None -> Octnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
                 | None -> Octnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
             else
+                tree.OmnipresentFallback.Remove element |> ignore
+                tree.OmnipresentFallback.Add element |> ignore
                 Octnode.removeElement boundsOld &element tree.Node |> ignore
-                if presenceInPlayOld.IsImposter then tree.ImposterPlus.Remove element |> ignore else tree.OmnipresentPlus.Remove element |> ignore
-                if presenceInPlayNew.IsImposter then tree.ImposterPlus.Add element |> ignore else tree.OmnipresentPlus.Add element |> ignore
         else
             if isInNode then
-                if presenceInPlayOld.IsImposter then tree.ImposterPlus.Remove element |> ignore else tree.OmnipresentPlus.Remove element |> ignore
+                tree.OmnipresentFallback.Remove element |> ignore
                 Octnode.addElement boundsNew &element tree.Node |> ignore
             else
-                if presenceInPlayOld.IsImposter then tree.ImposterPlus.Remove element |> ignore else tree.OmnipresentPlus.Remove element |> ignore
-                if presenceInPlayNew.IsImposter then tree.ImposterPlus.Add element |> ignore else tree.OmnipresentPlus.Add element |> ignore
+                tree.OmnipresentFallback.Remove element |> ignore
+                tree.OmnipresentFallback.Add element |> ignore
 
     /// Clear the contents of the tree.
     let clear tree =
-        tree.ImposterPlus.Clear ()
-        tree.OmnipresentPlus.Clear ()
+        tree.Imposter.Clear ()
+        tree.Omnipresent.Clear ()
+        tree.OmnipresentInPlay.Clear ()
+        tree.OmnipresentFallback.Clear ()
         Octnode.clearElements tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
-    let getElementsAtPoint point (set : _ HashSet) tree =
-        Octnode.getElementsAtPoint point set tree.Node
-        for imposter in tree.ImposterPlus do
+    let getElementsAtPoint (point : Vector3) (set : _ HashSet) tree =
+        for imposter in tree.Imposter do
             let bounds = imposter.Bounds
             if bounds.Intersects point then
                 set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsAtPoint point set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInBounds bounds (set : _ HashSet) tree =
-        Octnode.getElementsInBox bounds set tree.Node
-        for imposter in tree.ImposterPlus do
+    let getElementsInBounds (bounds : Box3) (set : _ HashSet) tree =
+        for imposter in tree.Imposter do
             if bounds.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsInBox bounds set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given frustum.
-    let getElementsInFrustum frustum (set : _ HashSet) tree =
-        Octnode.getElementsInFrustum frustum set tree.Node
-        for imposter in tree.ImposterPlus do
+    let getElementsInFrustum (frustum : Frustum) (set : _ HashSet) tree =
+        for imposter in tree.Imposter do
             if frustum.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsInFrustum frustum set tree.Node
 
     /// Get all of the elements in a tree.
     let getElements (set : _ HashSet) tree =
-        Octnode.getElements set tree.Node
-        for imposter in tree.ImposterPlus do
+        for imposter in tree.Imposter do
             set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElements set tree.Node
 
     /// Get all of the elements in a tree that satisfy the given query parameters.
-    let getElementsInViewFrustum interior exterior frustum (set : _ HashSet) tree =
-        Octnode.getElementsInViewFrustum interior exterior frustum set tree.Node
-        for imposter in tree.ImposterPlus do
+    let getElementsInViewFrustum interior exterior (frustum : Frustum) (set : _ HashSet) tree =
+        for imposter in tree.Imposter do
             if frustum.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsInViewFrustum interior exterior frustum set tree.Node
 
     /// Get all of the elements in a tree that satisfy the given query parameters.
     let getElementsInViewBox (box : Box3) (set : _ HashSet) tree =
-        Octnode.getElementsInViewBox box set tree.Node
-        for imposter in tree.ImposterPlus do
+        for imposter in tree.Imposter do
             if box.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsInViewBox box set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by one of the given frustums or light box depending on its attributes.
     let getElementsInView frustumInterior frustumExterior (frustumImposter : Frustum) lightBox (set : _ HashSet) tree =
-        Octnode.getElementsInView frustumInterior frustumExterior lightBox set tree.Node
-        for imposter in tree.ImposterPlus do
+        for imposter in tree.Imposter do
             if frustumImposter.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
-
-    /// Get all of the elements in a tree that are in a node intersected by one of the given box or frustum depending on its attributes.
-    let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
-        Octnode.getElementsInPlay playBox playFrustum set tree.Node
-        for imposter in tree.ImposterPlus do
-            set.Add imposter |> ignore<bool>
-        for imposter in tree.ImposterInPlay do
-            set.Add imposter |> ignore<bool>
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.OmnipresentFallback do
             set.Add omnipresent |> ignore<bool>
-        for omnipresent in tree.OmnipresentInPlay do
-            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsInView frustumInterior frustumExterior lightBox set tree.Node
 
     /// Get all of the light probe elements in the given frustum.
     let getLightProbesInViewFrustum frustum (set : _ HashSet) tree =
-        Octnode.getLightProbesInViewFrustum frustum set tree.Node
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             if omnipresent.LightProbe && omnipresent.VisibleInView then
                 set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            if omnipresent.LightProbe && omnipresent.VisibleInView then
+                set.Add omnipresent |> ignore<bool>
+        Octnode.getLightProbesInViewFrustum frustum set tree.Node
 
     /// Get all of the light probe elements in the given box.
     let getLightProbesInViewBox box (set : _ HashSet) tree =
-        Octnode.getLightProbesInViewBox box set tree.Node
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             if omnipresent.LightProbe && omnipresent.VisibleInView then
                 set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            if omnipresent.LightProbe && omnipresent.VisibleInView then
+                set.Add omnipresent |> ignore<bool>
+        Octnode.getLightProbesInViewBox box set tree.Node
 
     /// Get all of the light probe elements.
     let getLightProbesInView (set : _ HashSet) tree =
-        Octnode.getLightProbes set tree.Node
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             if omnipresent.LightProbe && omnipresent.VisibleInView then
                 set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            if omnipresent.LightProbe && omnipresent.VisibleInView then
+                set.Add omnipresent |> ignore<bool>
+        Octnode.getLightProbes set tree.Node
 
     /// Get all of the light elements in the given frustum.
     let getLightsInViewFrustum frustum (set : _ HashSet) tree =
-        Octnode.getLightsInViewFrustum frustum set tree.Node
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             if omnipresent.Light && omnipresent.VisibleInView then
                 set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            if omnipresent.Light && omnipresent.VisibleInView then
+                set.Add omnipresent |> ignore<bool>
+        Octnode.getLightsInViewFrustum frustum set tree.Node
 
     /// Get all of the light elements in the given box.
     let getLightsInViewBox box (set : _ HashSet) tree =
-        Octnode.getLightsInViewBox box set tree.Node
-        for omnipresent in tree.OmnipresentPlus do
+        for omnipresent in tree.Omnipresent do
             if omnipresent.Light && omnipresent.VisibleInView then
                 set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            if omnipresent.Light && omnipresent.VisibleInView then
+                set.Add omnipresent |> ignore<bool>
+        Octnode.getLightsInViewBox box set tree.Node
+
+    /// Get all of the elements in a tree that are in a node intersected by one of the given box or frustum depending on its attributes.
+    let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
+        for imposter in tree.Imposter do
+            set.Add imposter |> ignore<bool>
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentInPlay do
+            set.Add omnipresent |> ignore<bool>
+        for omnipresent in tree.OmnipresentFallback do
+            set.Add omnipresent |> ignore<bool>
+        Octnode.getElementsInPlay playBox playFrustum set tree.Node
 
     /// Get the size of the tree's leaves.
     let getLeafSize tree =
@@ -730,10 +767,10 @@ module Octree =
         let bounds = box3 min size
         { Leaves = leaves
           LeafSize = leafSize
-          ImposterPlus = HashSet elementComparer
-          ImposterInPlay = HashSet elementComparer
-          OmnipresentPlus = HashSet elementComparer
+          Imposter = HashSet elementComparer
+          Omnipresent = HashSet elementComparer
           OmnipresentInPlay = HashSet elementComparer
+          OmnipresentFallback = HashSet elementComparer
           Node = Octnode.make<'e> elementComparer (inc depth) bounds leaves
           Depth = depth
           Bounds = bounds }
