@@ -403,7 +403,7 @@ type RendererThread () =
 
                 // guard against early termination
                 if not terminated then
-            
+
                     // wait until swap is requested
                     while not swapRequested && not terminated do Thread.Yield () |> ignore<bool>
                     swapRequested <- false
