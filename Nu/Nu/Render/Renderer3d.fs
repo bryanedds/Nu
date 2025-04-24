@@ -3718,3 +3718,4 @@ type [<ReferenceEquality>] GlRenderer3d =
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, asset) in renderAssets do GlRenderer3d.freeRenderAsset asset renderer
             renderer.RenderPackages.Clear ()
+            renderer.TextureServer.Terminate ()
