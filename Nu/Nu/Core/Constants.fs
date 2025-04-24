@@ -3,6 +3,7 @@
 
 namespace Nu.Constants
 open System
+open System.Collections.Frozen
 open System.Configuration
 open System.Diagnostics
 open System.Numerics
@@ -90,56 +91,58 @@ module Engine =
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> Pass | value -> scvalue value
     let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment that a static prop
     let [<Uniform>] NonPersistentPropertyNames =
-        [|// simulant properties
-          "Dispatcher"
-          "Content"
-          "Protected"
-          "Id"
-
-          // game properties
-          "Eye3dFrustumInterior"
-          "Eye3dFrustumExterior"
-          "Eye3dFrustumImposter"
-
-          // screen properties
-          "TransitionState"
-          "Nav3d"
-
-          // entity properties
-          "Facets"
-          "Surnames"
-          "PerimeterCenter"
-          "PerimeterBottom"
-          "PerimeterBottomLeft"
-          "PerimeterMin"
-          "PerimeterMax"
-          "PerimeterCenterLocal"
-          "PerimeterBottomLocal"
-          "PerimeterBottomLeftLocal"
-          "PerimeterMinLocal"
-          "PerimeterMaxLocal"
-          "RotationMatrix"
-          "Angles"
-          "AnglesLocal"
-          "Degrees"
-          "DegreesLocal"
-          "AffineMatrix"
-          "PerimeterUnscaled"
-          "Perimeter"
-          "Bounds"
-          "Imperative"
-          "PresenceOverride"
-          "PublishChangeEvents"
-          "PublishPreUpdates"
-          "PublishUpdates"
-          "PublishPostUpdates"
-          "Mounted"
-          "Is2d"
-          "Is3d"
-          "Physical"
-          "LightProbe"
-          "Light"
-          "Optimized"|]
+        FrozenSet.ToFrozenSet
+            ([// simulant properties
+              "Dispatcher"
+              "Content"
+              "Protected"
+              "Id"
+             
+              // game properties
+              "Eye3dFrustumInterior"
+              "Eye3dFrustumExterior"
+              "Eye3dFrustumImposter"
+             
+              // screen properties
+              "TransitionState"
+              "Nav3d"
+             
+              // entity properties
+              "Facets"
+              "Surnames"
+              "PerimeterCenter"
+              "PerimeterBottom"
+              "PerimeterBottomLeft"
+              "PerimeterMin"
+              "PerimeterMax"
+              "PerimeterCenterLocal"
+              "PerimeterBottomLocal"
+              "PerimeterBottomLeftLocal"
+              "PerimeterMinLocal"
+              "PerimeterMaxLocal"
+              "RotationMatrix"
+              "Angles"
+              "AnglesLocal"
+              "Degrees"
+              "DegreesLocal"
+              "AffineMatrix"
+              "PerimeterUnscaled"
+              "Perimeter"
+              "Bounds"
+              "Imperative"
+              "PresenceOverride"
+              "PublishChangeEvents"
+              "PublishPreUpdates"
+              "PublishUpdates"
+              "PublishPostUpdates"
+              "Mounted"
+              "Is2d"
+              "Is3d"
+              "Physical"
+              "LightProbe"
+              "Light"
+              "Optimized"],
+             StringComparer.Ordinal)
     let [<Literal>] BuildName =
 #if DEBUG
         "Debug"
@@ -302,6 +305,28 @@ module Physics =
     let [<Uniform>] internal ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us
     let [<Uniform>] internal ObjectLayerDisabled = JoltPhysicsSharp.ObjectLayer 2us
     let [<Literal>] internal InternalIndex = -1
+    let [<Uniform>] BodyPropertyAffectingPropertyNames =
+        FrozenSet.ToFrozenSet
+            (["Scale"
+              "Offset"
+              "Size"
+              "BodyEnabled"
+              "BodyType"
+              "SleepingAllowed"
+              "Friction"
+              "Restitution"
+              "LinearDamping"
+              "AngularDamping"
+              "AngularFactor"
+              "Substance"
+              "GravityOverride"
+              "CharacterProperties"
+              "CollisionDetection"
+              "CollisionCategories"
+              "CollisionMask"
+              "BodyShape"
+              "Sensor"],
+             StringComparer.Ordinal)
 
 [<RequireQualifiedAccess>]
 module Nav =

@@ -33,7 +33,7 @@ module Reflection =
     /// A dictionary of properties and their cached persistence state.
     let private PropertyPersistence =
         Constants.Engine.NonPersistentPropertyNames |>
-        Array.map (flip pair true) |>
+        Seq.map (flip pair true) |>
         dictPlus StringComparer.Ordinal
 
     let rec private memoizable2 level (ty : Type) =
