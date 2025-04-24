@@ -101,6 +101,10 @@ module Hl =
         Gl.BindAPI ()
         glContext
 
+    /// Delete an SDL-created OpenGL context.
+    let DestroySglContext glContext =
+        SDL.SDL_GL_DeleteContext glContext
+
     /// Initialize OpenGL context once created.
     let InitContext attach =
 
