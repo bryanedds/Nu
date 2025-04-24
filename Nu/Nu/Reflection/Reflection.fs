@@ -30,60 +30,11 @@ module Reflection =
     let private MemoizableMemo =
         new ConcurrentDictionary<Type, bool> (HashIdentity.Reference)
 
-    /// A dictionary of properties that are never serialized.
-    let private NonPersistentPropertyNames =
-        dictPlus
-            StringComparer.Ordinal
-            [// simulant properties
-             ("Dispatcher", true)
-             ("Content", true)
-             ("Protected", true)
-             ("Id", true)
-
-             // game properties
-             ("Eye3dFrustumInterior", true)
-             ("Eye3dFrustumExterior", true)
-             ("Eye3dFrustumImposter", true)
-
-             // screen properties
-             ("TransitionState", true)
-             ("Nav3d", true)
-
-             // entity properties
-             ("Facets", true)
-             ("Surnames", true)
-             ("PerimeterCenter", true)
-             ("PerimeterBottom", true)
-             ("PerimeterBottomLeft", true)
-             ("PerimeterMin", true)
-             ("PerimeterMax", true)
-             ("PerimeterCenterLocal", true)
-             ("PerimeterBottomLocal", true)
-             ("PerimeterBottomLeftLocal", true)
-             ("PerimeterMinLocal", true)
-             ("PerimeterMaxLocal", true)
-             ("RotationMatrix", true)
-             ("Angles", true)
-             ("AnglesLocal", true)
-             ("Degrees", true)
-             ("DegreesLocal", true)
-             ("AffineMatrix", true)
-             ("PerimeterUnscaled", true)
-             ("Perimeter", true)
-             ("Bounds", true)
-             ("Imperative", true)
-             ("PresenceOverride", true)
-             ("PublishChangeEvents", true)
-             ("PublishPreUpdates", true)
-             ("PublishUpdates", true)
-             ("PublishPostUpdates", true)
-             ("Mounted", true)
-             ("Is2d", true)
-             ("Is3d", true)
-             ("Physical", true)
-             ("LightProbe", true)
-             ("Light", true)
-             ("Optimized", true)]
+    /// A dictionary of properties and their cached persistence state.
+    let private PropertyPersistence =
+        Constants.Engine.NonPersistentPropertyNames |>
+        Seq.map (flip pair true) |>
+        dictPlus StringComparer.Ordinal
 
     let rec private memoizable2 level (ty : Type) =
         match MemoizableMemo.TryGetValue ty with
@@ -113,15 +64,15 @@ module Reflection =
 
     /// Configure a property to be non-persistent.
     let internal initPropertyNonPersistent nonPersistent propertyName =
-        NonPersistentPropertyNames.[propertyName] <- nonPersistent
+        PropertyPersistence.[propertyName] <- nonPersistent
 
     /// Is a property with the given name not persistent?
     let isPropertyNonPersistentByName (propertyName : string) =
-        match NonPersistentPropertyNames.TryGetValue propertyName with
+        match PropertyPersistence.TryGetValue propertyName with
         | (true, result) -> result
         | (false, _) ->
             let result = false
-            NonPersistentPropertyNames.[propertyName] <- result
+            PropertyPersistence.[propertyName] <- result
             result
 
     /// Is the property of the given target not persistent?

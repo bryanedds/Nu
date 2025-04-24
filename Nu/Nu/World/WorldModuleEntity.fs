@@ -22,30 +22,6 @@ module WorldModuleEntity =
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
 
-    /// Names of properties that will trigger body property changes.
-    let private BodyPropertyAffectingPropertyNames =
-        FrozenSet.ToFrozenSet
-            (["Scale"
-              "Offset"
-              "Size"
-              "BodyEnabled"
-              "BodyType"
-              "SleepingAllowed"
-              "Friction"
-              "Restitution"
-              "LinearDamping"
-              "AngularDamping"
-              "AngularFactor"
-              "Substance"
-              "GravityOverride"
-              "CharacterProperties"
-              "CollisionDetection"
-              "CollisionCategories"
-              "CollisionMask"
-              "BodyShape"
-              "Sensor"],
-            StringComparer.Ordinal)
-
     type World with
 
         static member private entityStateFinder (entity : Entity) world =
@@ -132,7 +108,7 @@ module WorldModuleEntity =
                 let world =
                     // OPTIMIZATION: this works together with RigidBodyFacet to reduce the bookkeeping footprint of its
                     // subscriptions. This does have some run-time performance cost associated with it, however.
-                    if BodyPropertyAffectingPropertyNames.Contains propertyName then
+                    if Constants.Physics.BodyPropertyAffectingPropertyNames.Contains propertyName then
                         let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
                         let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
                         World.publishPlus changeData changeEventAddress eventTrace entity false false world

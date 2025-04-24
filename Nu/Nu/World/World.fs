@@ -30,7 +30,7 @@ type Nu () =
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
 
             // init logging
-            Log.init (Some "Log.txt")
+            Log.init (Some Constants.Paths.LogFilePath)
 
             // init math module
             Math.Init ()
