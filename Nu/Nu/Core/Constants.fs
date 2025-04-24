@@ -377,6 +377,7 @@ module Effects =
 [<RequireQualifiedAccess>]
 module Paths =
 
+    let [<Literal>] LogFilePath = "Log.txt"
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite.glsl"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch.glsl"
     let [<Literal>] SkyBoxShaderFilePath = "Assets/Default/SkyBox.glsl"
