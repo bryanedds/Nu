@@ -89,6 +89,57 @@ module Engine =
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> Pass | value -> scvalue value
     let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment that a static prop
+    let [<Uniform>] NonPersistentPropertyNames =
+        [|// simulant properties
+          "Dispatcher"
+          "Content"
+          "Protected"
+          "Id"
+
+          // game properties
+          "Eye3dFrustumInterior"
+          "Eye3dFrustumExterior"
+          "Eye3dFrustumImposter"
+
+          // screen properties
+          "TransitionState"
+          "Nav3d"
+
+          // entity properties
+          "Facets"
+          "Surnames"
+          "PerimeterCenter"
+          "PerimeterBottom"
+          "PerimeterBottomLeft"
+          "PerimeterMin"
+          "PerimeterMax"
+          "PerimeterCenterLocal"
+          "PerimeterBottomLocal"
+          "PerimeterBottomLeftLocal"
+          "PerimeterMinLocal"
+          "PerimeterMaxLocal"
+          "RotationMatrix"
+          "Angles"
+          "AnglesLocal"
+          "Degrees"
+          "DegreesLocal"
+          "AffineMatrix"
+          "PerimeterUnscaled"
+          "Perimeter"
+          "Bounds"
+          "Imperative"
+          "PresenceOverride"
+          "PublishChangeEvents"
+          "PublishPreUpdates"
+          "PublishUpdates"
+          "PublishPostUpdates"
+          "Mounted"
+          "Is2d"
+          "Is3d"
+          "Physical"
+          "LightProbe"
+          "Light"
+          "Optimized"|]
     let [<Literal>] BuildName =
 #if DEBUG
         "Debug"
