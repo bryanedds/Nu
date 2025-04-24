@@ -72,7 +72,7 @@ module Hl =
         let glContext = SDL.SDL_GL_CreateContext window
         let swapInterval = if Constants.Render.Vsync then 1 else 0
         SDL.SDL_GL_SetSwapInterval swapInterval |> ignore<int>
-        SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
+        if SDL.SDL_GL_MakeCurrent (window, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
         Gl.BindAPI ()
         let versionStr = Gl.GetString StringName.Version
         Log.info ("Initialized OpenGL " + versionStr + ".")
@@ -94,10 +94,10 @@ module Hl =
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
     /// on the given WaitOnce object before continuing processing.
     let CreateSglContextSharedWithCurrentContext (window, sharedContext) =
-        SDL.SDL_GL_MakeCurrent (window, sharedContext) |> ignore<int>
+        if SDL.SDL_GL_MakeCurrent (window, sharedContext) <> 0 then Log.error "Could not make OpenGL context current when required."
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1) |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext window
-        SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
+        if SDL.SDL_GL_MakeCurrent (window, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
         Gl.BindAPI ()
         glContext
 
