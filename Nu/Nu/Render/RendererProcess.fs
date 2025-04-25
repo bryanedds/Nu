@@ -201,7 +201,9 @@ type RendererInline () =
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
                 dependenciesOpt <- None
-                OpenGL.Hl.DestroySglContext glContext
+                match windowOpt with
+                | Some (SglWindow window) -> OpenGL.Hl.DestroySglContext (glContext, window.SglWindow)
+                | None -> ()
                 terminated <- true
             | None -> ()
 
@@ -422,7 +424,7 @@ type RendererThread () =
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
-        OpenGL.Hl.DestroySglContext glContext
+        OpenGL.Hl.DestroySglContext (glContext, match window with SglWindow window -> window.SglWindow)
 
     interface RendererProcess with
 
