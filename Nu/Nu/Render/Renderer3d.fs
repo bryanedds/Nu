@@ -3407,7 +3407,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // start lazy texture server
         let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
-        if SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) <> 0 then Log.error "Could not reset OpenGL context current when desired."
+        if SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) <> 0 then Log.error "Could not clear OpenGL context current when desired."
         let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
         let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, sglWindow)
         textureServer.Start ()

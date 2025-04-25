@@ -550,7 +550,7 @@ module Texture =
             if started && not terminated then
                 let thread = Option.get threadOpt
                 match glContextOpt with
-                | Some glContext -> OpenGL.Hl.DestroySglContext glContext
+                | Some glContext -> OpenGL.Hl.DestroySglContext (glContext, window)
                 | None -> ()
                 terminated <- true
                 thread.Join ()

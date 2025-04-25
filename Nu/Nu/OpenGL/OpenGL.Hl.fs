@@ -102,7 +102,8 @@ module Hl =
         glContext
 
     /// Delete an SDL-created OpenGL context.
-    let DestroySglContext glContext =
+    let DestroySglContext (glContext, sglWindow) =
+        if SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) <> 0 then Log.error "Could not clear OpenGL context current when desired."
         SDL.SDL_GL_DeleteContext glContext
 
     /// Initialize OpenGL context once created.
