@@ -1389,9 +1389,6 @@ module RigidBodyFacetExtensions =
         member this.Awake = lensReadOnly (nameof this.Awake) this this.GetAwake
         member this.GetBodyId world : BodyId = this.Get (nameof this.BodyId) world
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
-        member this.BodyPenetrationEvent = Events.BodyPenetrationEvent --> this
-        member this.BodySeparationEvent = Events.BodySeparationEvent --> this
-        member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
 /// Augments an entity with a physics-driven rigid body.
 type RigidBodyFacet () =

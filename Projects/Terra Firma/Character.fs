@@ -386,17 +386,15 @@ type CharacterDispatcher () =
                         then entity.WeaponCollisions.Map (Set.add penetratee) world
                         else world
                     | _ -> world
-                | BodySeparationData separation ->
-                    match separation with
-                    | BodySeparationExplicitData explicit ->
-                        match explicit.BodyShapeSeparatee.BodyId.BodySource with
-                        | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                            entity.WeaponCollisions.Map (Set.remove separatee) world
-                        | _ -> world
-                    | BodySeparationImplicitData implicit ->
-                        match implicit.BodyId.BodySource with
-                        | :? Entity as separatee -> entity.WeaponCollisions.Map (Set.remove separatee) world
-                        | _ -> world
+                | BodySeparationExplicitData separation ->
+                    match separation.BodyShapeSeparatee.BodyId.BodySource with
+                    | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                        entity.WeaponCollisions.Map (Set.remove separatee) world
+                    | _ -> world
+                | BodySeparationImplicitData separation ->
+                    match separation.BodyId.BodySource with
+                    | :? Entity as separatee -> entity.WeaponCollisions.Map (Set.remove separatee) world
+                    | _ -> world
                 | BodyTransformData _ -> world)
                 world results
 

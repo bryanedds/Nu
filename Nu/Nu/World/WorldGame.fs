@@ -85,6 +85,7 @@ module WorldGameModule =
         member this.ExitRequestEvent = Events.ExitRequestEvent --> Game.Handle
         member this.BodyAddingEvent = Events.BodyAddingEvent --> Game.Handle
         member this.BodyRemovingEvent = Events.BodyRemovingEvent --> Game.Handle
+        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game.Handle
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
