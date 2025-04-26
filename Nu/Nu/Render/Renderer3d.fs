@@ -1523,6 +1523,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
+            // NOTE: there are 8 blends, each of which we account for regardless of TerrainLayersMax.
             let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length 8
             match geometryDescriptor.Material with
             | BlendMaterial blendMaterial ->
