@@ -1523,7 +1523,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
-            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
+            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length 8
             match geometryDescriptor.Material with
             | BlendMaterial blendMaterial ->
                 if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
@@ -1550,7 +1550,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | None -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     let scalar = 1.0f / single Byte.MaxValue
-                    for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
+                    for i in 0 .. dec (min reds.Length 8) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetTextureData false red renderer with
                         | Some (metadata, blockCompressed, bytes) ->
