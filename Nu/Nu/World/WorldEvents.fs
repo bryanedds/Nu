@@ -83,23 +83,20 @@ type BodyPenetrationData =
       BodyShapePenetratee : BodyShapeIndex
       Normal : Vector3 }
 
-/// The data for an explicit body separation event.
+/// The data for an explicit separation event.
+/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
+/// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationExplicitData =
     { BodyShapeSeparator : BodyShapeIndex
       BodyShapeSeparatee : BodyShapeIndex }
 
-/// The data for an implicit body separation event.
+/// The data for an implicit separation event.
+/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
+/// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationImplicitData =
     { BodyId : BodyId }
 
-/// The data for a body separation event.
-/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
-/// frame, we need both an explicit and implicit body separation representation and the user MUST handle both!
-type BodySeparationData =
-    | BodySeparationExplicitData of BodySeparationExplicitData
-    | BodySeparationImplicitData of BodySeparationImplicitData
-
-/// The data for describing a change in transform.
+/// Tje data for describing a change in transform.
 type BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
@@ -109,7 +106,8 @@ type BodyTransformData =
 /// The data for a physics body event.
 type BodyEventData =
     | BodyPenetrationData of BodyPenetrationData
-    | BodySeparationData of BodySeparationData
+    | BodySeparationExplicitData of BodySeparationExplicitData
+    | BodySeparationImplicitData of BodySeparationImplicitData
     | BodyTransformData of BodyTransformData
 
 /// The data of a body joint break event.
@@ -155,7 +153,8 @@ module Events =
     let BodyAddingEvent = stoa<BodyId> "Body/Adding/Event"
     let BodyRemovingEvent = stoa<BodyId> "Body/Removing/Event"
     let BodyPenetrationEvent = stoa<BodyPenetrationData> "BodyPenetration/Event"
-    let BodySeparationEvent = stoa<BodySeparationData> "BodySeparation/Event"
+    let BodySeparationExplicitEvent = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"
+    let BodySeparationImplicitEvent = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
     let BodyTransformEvent = stoa<BodyTransformData> "BodyTransform/Event"
     let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"

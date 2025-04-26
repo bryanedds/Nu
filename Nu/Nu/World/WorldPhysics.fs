@@ -39,34 +39,21 @@ module WorldPhysics =
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "handlePhysicsMessage2d" "DestroyBodyMessage" EventTrace.empty
-                    let world =
-                        match message.BodyId.BodySource with
-                        | :? Entity as entity ->
-                            let data = BodySeparationImplicitData { BodyId = message.BodyId }
-                            World.publishPlus data entity.BodySeparationEvent eventTrace entity false false world
-                        | _ -> world
+                    let world = World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                     let world = World.publishPlus message.BodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "handlePhysicsMessage2d" "DestroyBodiesMessage" EventTrace.empty
                     List.fold (fun world (bodyId : BodyId) ->
-                        let world =
-                            match bodyId.BodySource with
-                            | :? Entity as entity ->
-                                let data = BodySeparationImplicitData { BodyId = bodyId }
-                                World.publishPlus data entity.BodySeparationEvent eventTrace entity false false world
-                            | _ -> world
+                        let world = World.publishPlus { BodyId = bodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                         let world = World.publishPlus bodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
                         world)
                         world message.BodyIds
                 | SetBodyEnabledMessage message ->
                     if not message.Enabled then
-                        match message.BodyId.BodySource with
-                        | :? Entity as entity ->
-                            let data = BodySeparationImplicitData { BodyId = message.BodyId }
-                            let eventTrace = EventTrace.debug "World" "handlePhysicsMessage2d" "SetBodyEnabledMessage" EventTrace.empty
-                            World.publishPlus data entity.BodySeparationEvent eventTrace entity false false world
-                        | _ -> world
+                        let eventTrace = EventTrace.debug "World" "handlePhysicsMessage2d" "SetBodyEnabledMessage" EventTrace.empty
+                        let world = World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                        world
                     else world
                 | _ -> world
             (World.getPhysicsEngine2d world).HandleMessage message
@@ -91,33 +78,22 @@ module WorldPhysics =
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "handlePhysicsMessage3d" "DestroyBodyMessage" EventTrace.empty
-                    let world =
-                        match message.BodyId.BodySource with
-                        | :? Entity as entity ->
-                            let data = BodySeparationImplicitData { BodyId = message.BodyId }
-                            World.publishPlus data entity.BodySeparationEvent eventTrace entity false false world
-                        | _ -> world
+                    let world = World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                     let world = World.publishPlus message.BodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "handlePhysicsMessage3d" "DestroyBodiesMessage" EventTrace.empty
                     List.fold (fun world (bodyId : BodyId) ->
-                        let world =
-                            match bodyId.BodySource with
-                            | :? Entity as entity ->
-                                let data = BodySeparationImplicitData { BodyId = bodyId }
-                                World.publishPlus data entity.BodySeparationEvent eventTrace entity false false world
-                            | _ -> world
+                        let world = World.publishPlus { BodyId = bodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                         let world = World.publishPlus bodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
                         world)
                         world message.BodyIds
                 | SetBodyEnabledMessage message ->
                     if not message.Enabled then
                         match message.BodyId.BodySource with
-                        | :? Entity as entity ->
-                            let data = BodySeparationImplicitData { BodyId = message.BodyId }
+                        | :? Entity ->
                             let eventTrace = EventTrace.debug "World" "handlePhysicsMessage3d" "SetBodyEnabledMessage" EventTrace.empty
-                            World.publishPlus data entity.BodySeparationEvent eventTrace entity false false world
+                            World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                         | _ -> world
                     else world
                 | _ -> world

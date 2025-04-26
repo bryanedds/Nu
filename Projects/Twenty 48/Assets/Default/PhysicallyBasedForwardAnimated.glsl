@@ -83,8 +83,8 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
-const int SHADOW_TEXTURES_MAX = 16;
-const int SHADOW_MAPS_MAX = 16;
+const int SHADOW_TEXTURES_MAX = 9;
+const int SHADOW_MAPS_MAX = 9;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
 
