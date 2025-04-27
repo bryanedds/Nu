@@ -332,7 +332,7 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
         float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         float travel = pow(shadowScalar, lightShadowDensity);
-        return saturate(travel);
+        return travel;
     }
 
     // tracing out of range, return default
