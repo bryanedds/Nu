@@ -2,9 +2,9 @@
   "$schema": "http://json.schemastore.org/template",
   "author": "Bryan Edds",
   "classifications": [ "Nu", "Template" ],
-  "identity": "Nu Template ImNui Game",
-  "name": "Nu Template ImNui Game",
-  "shortName": "nu-template-imnui-game",
+  "identity": "Nu Template ImSim Game",
+  "name": "Nu Template ImSim Game",
+  "shortName": "nu-template-imsim-game",
   "tags": {
     "language": "F#",
     "type": "project"
