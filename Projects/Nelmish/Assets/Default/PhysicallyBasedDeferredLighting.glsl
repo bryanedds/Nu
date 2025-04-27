@@ -319,17 +319,24 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
     // attempt to compute travel average in view space
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-    float shadowZ = shadowTexCoordsProj.z;
-    float shadowZExp = exp(-lightShadowExponent * shadowZ);
+    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        // compute light distance travel through surface (not accounting for incidental surface concavity)
+        float shadowZ = shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
+        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+        vec2 shadowTexelSize = 1.0 / shadowTextureSize;
+        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        float travel = pow(shadowScalar, lightShadowDensity);
+        return saturate(travel);
+    }
 
-    // compute light distance travel through surface (not accounting for incidental surface concavity)
-    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-    vec2 shadowTextureSize = textureSize(shadowTexture, 0);
-    vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-    float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
-    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-    float travel = pow(shadowScalar, lightShadowDensity);
-    return saturate(travel);
+    // tracing out of range, return default
+    return 1.0;
 }
 
 vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
