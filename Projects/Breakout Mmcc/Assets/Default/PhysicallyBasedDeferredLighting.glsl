@@ -316,35 +316,20 @@ float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sample
 
 float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
 {
-    // trace only when shadow far is big enough to yield meaningful computations
-    float shadowFar = lightCutoffs[lightIndex];
-    if (shadowFar > 4.1)
-    {
-        // attempt to compute travel average in view space
-        vec4 positionShadowClip = shadowMatrix * position;
-        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    // attempt to compute travel average in view space
+    vec4 positionShadowClip = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    float shadowZ = shadowTexCoordsProj.z;
+    float shadowZExp = exp(-lightShadowExponent * shadowZ);
 
-        // compute z position in view space
-        float shadowZ = worldToDepthView(shadowNear, shadowFar, shadowMatrix, position);
-
-        // compute light distance travel through surface (not accounting for incidental surface concavity)
-        float travel = 0.0;
-        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
-        vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        for (int i = -1; i <= 1; ++i)
-        {
-            for (int j = -1; j <= 1; ++j)
-            {
-                float shadowDepthScreen = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
-                float shadowDepth = depthScreenToDepthView(shadowNear, shadowFar, shadowDepthScreen);
-                float delta = shadowZ - shadowDepth;
-                travel += delta;
-            }
-        }
-        return 1.0 - saturate(travel / 9.0 * shadowFar * PI_OVER_2); // NOTE: last scalar is an eye-balled adjustment for max scatter depth.
-    }
-    return 1.0;
+    // compute light distance travel through surface (not accounting for incidental surface concavity)
+    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
+    vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+    vec2 shadowTexelSize = 1.0 / shadowTextureSize;
+    float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+    float travel = pow(shadowScalar, lightShadowDensity);
+    return saturate(travel);
 }
 
 vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
