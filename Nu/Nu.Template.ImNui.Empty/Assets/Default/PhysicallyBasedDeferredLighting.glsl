@@ -341,7 +341,7 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
                 travel += delta;
             }
         }
-        return 1.0 - saturate(travel / 9.0);
+        return 1.0 - saturate(travel / 9.0 * shadowFar);
     }
 
     // tracing out of range, return default
