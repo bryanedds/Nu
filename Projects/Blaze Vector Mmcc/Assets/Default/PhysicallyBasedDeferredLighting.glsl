@@ -16,6 +16,7 @@ void main()
 #version 410
 
 const float PI = 3.141592654;
+const float PI_OVER_2 = PI / 2.0;
 const float REFLECTION_LOD_MAX = 7.0;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
@@ -315,15 +316,15 @@ float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sample
 
 float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
 {
-    // attempt to compute travel average in view space
-    vec4 positionShadowClip = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    // trace only when shadow far is big enough to yield meaningful computations
+    float shadowFar = lightCutoffs[lightIndex];
+    if (shadowFar > 4.1)
     {
+        // attempt to compute travel average in view space
+        vec4 positionShadowClip = shadowMatrix * position;
+        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+
         // compute z position in view space
-        float shadowFar = lightCutoffs[lightIndex];
         float shadowZ = worldToDepthView(shadowNear, shadowFar, shadowMatrix, position);
 
         // compute light distance travel through surface (not accounting for incidental surface concavity)
@@ -341,10 +342,8 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
                 travel += delta;
             }
         }
-        return 1.0 - saturate(travel / 9.0 * shadowFar);
+        return 1.0 - saturate(travel / 9.0 * shadowFar * PI_OVER_2); // NOTE: last scalar is an eye-balled adjustment for max scatter depth.
     }
-
-    // tracing out of range, return default
     return 1.0;
 }
 
