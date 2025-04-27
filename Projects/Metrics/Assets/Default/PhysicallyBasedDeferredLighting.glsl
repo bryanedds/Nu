@@ -96,6 +96,11 @@ layout(location = 0) out vec4 color;
 layout(location = 1) out vec4 fogAccum;
 layout(location = 2) out float depth;
 
+float saturate(float v)
+{
+    return max(0.0f, min(1.0, v));
+}
+
 float linstep(float low, float high, float v)
 {
     return clamp((v - low) / (high - low), 0.0, 1.0);
@@ -270,11 +275,7 @@ float geometryTracePoint(vec4 position, int lightIndex, samplerCube shadowMap)
             }
         }
     }
-    travel /= 8.0;
-
-    // negatively exponentiate travel
-    travel = exp(-travel);
-    return travel;
+    return 1.0 - saturate(travel / 8.0);
 }
 
 float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
@@ -305,11 +306,7 @@ float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sample
                 travel += delta;
             }
         }
-        travel /= 9.0;
-
-        // negatively exponentiate travel
-        travel = exp(-travel);
-        return travel;
+        return 1.0 - saturate(travel / 9.0);
     }
 
     // tracing out of range, return default
@@ -344,11 +341,7 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
                 travel += delta;
             }
         }
-        travel /= 9.0;
-
-        // negatively exponentiate travel
-        travel = exp(-travel);
-        return travel;
+        return 1.0 - saturate(travel / 9.0);
     }
 
     // tracing out of range, return default
@@ -827,7 +820,7 @@ void main()
             if (scatterType != 0.0)
             {
                 vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
-                scatterAccum += kD * scatter * radiance * shadowScalar;
+                scatterAccum += kD * scatter * radiance;
             }
 
             // accumulate fog
