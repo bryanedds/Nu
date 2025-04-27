@@ -205,7 +205,7 @@ module WorldScreenModule =
                 let groups = World.getGroups screen world
                 let world = World.unregisterScreen screen world
                 let world = World.removeTasklets screen world
-                let world = World.removeSimulantImNui screen world
+                let world = World.removeSimulantImSim screen world
                 let world = World.destroyGroupsImmediate groups world
                 World.removeScreenState screen world
             else world
@@ -238,7 +238,7 @@ module WorldScreenModule =
             // add the screen's state to the world
             let world = World.addScreen false screenState screen world
 
-            // unconditionally zero-process ImNui screen first time
+            // unconditionally zero-process ImSim screen first time
             let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
@@ -334,7 +334,7 @@ module WorldScreenModule =
             // read the screen's groups
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
 
-            // unconditionally zero-process ImNui screen first time
+            // unconditionally zero-process ImSim screen first time
             let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 

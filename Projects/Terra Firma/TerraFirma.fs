@@ -5,15 +5,15 @@ open Prime
 open Nu
 open TerraFirma
 
-// this determines what state the game is in. To learn about ImNui in Nu, see -
-// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
+// this determines what state the game is in. To learn about ImSim in Nu, see -
+// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImSim
 type GameState =
     | Splash
     | Title
     | Credits
     | Gameplay
 
-// this extends the Game API to expose the above ImNui model as a property.
+// this extends the Game API to expose the above ImSim model as a property.
 [<AutoOpen>]
 module TerraFirmaExtensions =
     type Game with
@@ -23,7 +23,7 @@ module TerraFirmaExtensions =
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type TerraFirmaDispatcher () =
-    inherit GameDispatcherImNui ()
+    inherit GameDispatcherImSim ()
 
     // here we define default property values
     static member Properties =

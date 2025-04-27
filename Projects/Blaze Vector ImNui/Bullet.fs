@@ -13,7 +13,7 @@ module BulletExtensions =
         member this.CreationTime = lens (nameof this.CreationTime) this this.GetCreationTime this.SetCreationTime
 
 type BulletDispatcher () =
-    inherit Entity2dDispatcherImNui (true, false, false)
+    inherit Entity2dDispatcherImSim (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>

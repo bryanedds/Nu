@@ -6,12 +6,12 @@ open Nu
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
-    inherit GameDispatcherImNui ()
+    inherit GameDispatcherImSim ()
 
     // here we define the game's behavior
     override this.Process (_, world) =
 
-        // process in the game's ImNui context
+        // process in the game's ImSim context
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
         let world = World.beginGroup "Scene" [] world
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)

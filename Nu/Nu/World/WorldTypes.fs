@@ -464,7 +464,7 @@ and GameDispatcher () =
     abstract Unregister : game : Game * world : World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui process a game.
+    /// Attempt to ImSim process a game.
     abstract TryProcess : zeroDelta : bool * game : Game * world : World -> World
     default this.TryProcess (_, _, world) = world
 
@@ -520,7 +520,7 @@ and ScreenDispatcher () =
     abstract Unregister : screen : Screen * world : World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui process a screen.
+    /// Attempt to ImSim process a screen.
     abstract TryProcess : zeroDelta : bool * screen : Screen * world : World -> World
     default this.TryProcess (_, _, world) = world
 
@@ -576,7 +576,7 @@ and GroupDispatcher () =
     abstract Unregister : group : Group * world : World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui process a group.
+    /// Attempt to ImSim process a group.
     abstract TryProcess : zeroDelta : bool * group : Group * world : World -> World
     default this.TryProcess (_, _, world) = world
 
@@ -673,7 +673,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     abstract Unregister : entity : Entity * world : World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui process an entity.
+    /// Attempt to ImSim process an entity.
     abstract TryProcess : zeroDelta : bool * entity : Entity * world : World -> World
     default this.TryProcess (_, _, world) = world
 
@@ -1802,21 +1802,21 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-/// Provides simulant bookkeeping information with the ImNui API.
-and [<NoEquality; NoComparison>] internal SimulantImNui =
+/// Provides simulant bookkeeping information with the ImSim API.
+and [<NoEquality; NoComparison>] internal SimulantImSim =
     { mutable SimulantInitializing : bool
       mutable SimulantUtilized : bool
       InitializationTime : int64
       Result : obj }
 
-/// Provides subscription bookkeeping information with the ImNui API.
-and [<NoEquality; NoComparison>] internal SubscriptionImNui =
+/// Provides subscription bookkeeping information with the ImSim API.
+and [<NoEquality; NoComparison>] internal SubscriptionImSim =
     { mutable SubscriptionUtilized : bool
       SubscriptionId : uint64
       Results : obj }
 
-/// Describes an argument used with the ImNui API.
-and [<Struct>] ArgImNui<'s when 's :> Simulant> =
+/// Describes an argument used with the ImSim API.
+and [<Struct>] ArgImSim<'s when 's :> Simulant> =
     { ArgStatic : bool
       ArgLens : Lens
       ArgValue : obj }
@@ -1843,10 +1843,10 @@ and [<ReferenceEquality>] internal Subsystems =
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
-      mutable ContextImNui : Address
-      mutable DeclaredImNui : Address
-      mutable SimulantsImNui : SUMap<Address, SimulantImNui>
-      mutable SubscriptionsImNui : SUMap<string * Address * Address, SubscriptionImNui>
+      mutable ContextImSim : Address
+      mutable DeclaredImSim : Address
+      mutable SimulantsImSim : SUMap<Address, SimulantImSim>
+      mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
       GeometryViewport : Viewport
       RasterViewport : Viewport
       // cache line 2
@@ -1952,93 +1952,93 @@ and [<ReferenceEquality>] World =
     member this.Timers =
         AmbientState.getTimers this.AmbientState
 
-    /// Get the current ImNui context.
-    member this.ContextImNui =
-        this.WorldExtension.ContextImNui
+    /// Get the current ImSim context.
+    member this.ContextImSim =
+        this.WorldExtension.ContextImSim
 
-    /// Get the current ImNui Game context (throwing upon failure).
+    /// Get the current ImSim Game context (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGame =
-        if this.WorldExtension.ContextImNui.Names.Length > 0
+        if this.WorldExtension.ContextImSim.Names.Length > 0
         then Game.Handle
-        else raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
+        else raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
-    /// Get the current ImNui Screen context (throwing upon failure).
+    /// Get the current ImSim Screen context (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextScreen =
-        match this.WorldExtension.ContextImNui with
+        match this.WorldExtension.ContextImSim with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
         | :? (Group Address) as groupAddress -> Screen (Array.take 2 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Screen (Array.take 2 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
-    /// Get the current ImNui Group context (throwing upon failure).
+    /// Get the current ImSim Group context (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGroup =
-        match this.WorldExtension.ContextImNui with
+        match this.WorldExtension.ContextImSim with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Group (Array.take 3 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
-    /// Get the current ImNui Entity context (throwing upon failure).
+    /// Get the current ImSim Entity context (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextEntity =
-        match this.WorldExtension.ContextImNui with
+        match this.WorldExtension.ContextImSim with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
-        | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
-    /// Check that the current ImNui context is initializing this frame.
+    /// Check that the current ImSim context is initializing this frame.
     member this.ContextInitializing =
-        match this.WorldExtension.SimulantsImNui.TryGetValue this.WorldExtension.ContextImNui with
-        | (true, simulantImNui) -> simulantImNui.SimulantInitializing
+        match this.WorldExtension.SimulantsImSim.TryGetValue this.WorldExtension.ContextImSim with
+        | (true, simulantImSim) -> simulantImSim.SimulantInitializing
         | (false, _) -> false
 
-    /// Get the recent ImNui declaration.
-    member this.DeclaredImNui =
-        this.WorldExtension.DeclaredImNui
+    /// Get the recent ImSim declaration.
+    member this.DeclaredImSim =
+        this.WorldExtension.DeclaredImSim
 
-    /// Get the recent ImNui Game declaration (throwing upon failure).
+    /// Get the recent ImSim Game declaration (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGame =
-        if this.WorldExtension.DeclaredImNui.Names.Length > 0
+        if this.WorldExtension.DeclaredImSim.Names.Length > 0
         then Game.Handle
-        else raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
+        else raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
-    /// Get the recent ImNui Screen declaration (throwing upon failure).
+    /// Get the recent ImSim Screen declaration (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredScreen =
-        match this.WorldExtension.DeclaredImNui with
+        match this.WorldExtension.DeclaredImSim with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
         | :? (Group Address) as groupAddress -> Screen (Array.take 2 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Screen (Array.take 2 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
-    /// Get the recent ImNui Group declaration (throwing upon failure).
+    /// Get the recent ImSim Group declaration (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGroup =
-        match this.WorldExtension.DeclaredImNui with
+        match this.WorldExtension.DeclaredImSim with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Group (Array.take 3 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
-    /// Get the recent ImNui Entity declaration (throwing upon failure).
+    /// Get the recent ImSim Entity declaration (throwing upon failure).
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredEntity =
-        match this.WorldExtension.DeclaredImNui with
+        match this.WorldExtension.DeclaredImSim with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
-        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
-    /// Check that the recent ImNui declaration is initializing this frame.
+    /// Check that the recent ImSim declaration is initializing this frame.
     member this.DeclaredInitializing =
-        match this.WorldExtension.SimulantsImNui.TryGetValue this.WorldExtension.DeclaredImNui with
-        | (true, simulantImNui) -> simulantImNui.SimulantInitializing
+        match this.WorldExtension.SimulantsImSim.TryGetValue this.WorldExtension.DeclaredImSim with
+        | (true, simulantImSim) -> simulantImSim.SimulantInitializing
         | (false, _) -> false
 
-    member internal this.SimulantsImNui =
-        this.WorldExtension.SimulantsImNui
+    member internal this.SimulantsImSim =
+        this.WorldExtension.SimulantsImSim
 
-    member internal this.SubscriptionsImNui =
-        this.WorldExtension.SubscriptionsImNui
+    member internal this.SubscriptionsImSim =
+        this.WorldExtension.SubscriptionsImSim
 
     /// Get the currently selected screen, if any.
     member this.SelectedScreenOpt =

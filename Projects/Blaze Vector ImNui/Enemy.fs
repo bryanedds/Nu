@@ -14,7 +14,7 @@ module EnemyExtensions =
         member this.DeathEvent = Events.DeathEvent --> this
 
 type EnemyDispatcher () =
-    inherit Entity2dDispatcherImNui (true, false, false)
+    inherit Entity2dDispatcherImSim (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>

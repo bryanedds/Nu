@@ -32,9 +32,9 @@ module WorldModule2 =
     let mutable private FramePaceIssues = 0
     let mutable private FramePaceChecks = 0
 
-    (* Cached ImNui Collections *)
-    let private ImNuiSimulantsToDestroy = List ()
-    let private SimulantImNuiComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
+    (* Cached ImSim Collections *)
+    let private ImSimSimulantsToDestroy = List ()
+    let private SimulantImSimComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
 
     type World with
 
@@ -362,24 +362,24 @@ module WorldModule2 =
         static member transitionScreen destination world =
             World.tryTransitionScreen destination world |> snd
 
-        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImNui seq) (world : World) : SelectionEventData FQueue * 'r * World =
-            if world.ContextImNui.Names.Length < 1 then raise (InvalidOperationException "ImNui screen declared outside of valid ImNui context (must be called in a Game context).")
-            let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
+        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImSim seq) (world : World) : SelectionEventData FQueue * 'r * World =
+            if world.ContextImSim.Names.Length < 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
+            let screenAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
             let screenCreation = not (screen.GetExists world)
             let (initializing, world) =
-                match world.SimulantsImNui.TryGetValue screen.ScreenAddress with
-                | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen.ScreenAddress screenImNui world)
+                match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
+                | (true, screenImSim) -> (false, World.utilizeSimulantImSim screen.ScreenAddress screenImSim world)
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating screen
-                    let world = World.addSimulantImNui screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
+                    let world = World.addSimulantImSim screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
                     let mapFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) world =
-                        let mapScreenImNui screenImNui =
-                            let (screenResult, userResult) = screenImNui.Result :?> SelectionEventData FQueue * 'r
-                            { screenImNui with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
+                        let mapScreenImSim screenImSim =
+                            let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
+                            { screenImSim with Result = (mapper screenResult, userResult) }
+                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
                     let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Select) world)) screen.SelectEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
@@ -387,10 +387,10 @@ module WorldModule2 =
                     let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
                     let mapSndResult (mapper : 'r -> 'r) world =
-                        let mapScreenImNui screenImNui =
-                            let (screenResult, userResult) = screenImNui.Result :?> SelectionEventData FQueue * 'r
-                            { screenImNui with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
+                        let mapScreenImSim screenImSim =
+                            let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
+                            { screenImSim with Result = (screenResult, mapper userResult) }
+                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
                     let world = init mapSndResult screen world
 
                     // create screen only when needed
@@ -435,35 +435,35 @@ module WorldModule2 =
                             world
                     else transitionScreen screen world
                 else world
-            let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
+            let (screenResult, userResult) = (World.getSimulantImSim screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
+            let world = World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
             (screenResult, userResult, world)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue * World =
             World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> a_c
 
-        /// End the ImNui declaration of a screen.
+        /// End the ImSim declaration of a screen.
         static member endScreen (world : World) =
-            match world.ContextImNui with
+            match world.ContextImSim with
             | :? (Screen Address) -> World.setContext Game.GameAddress world
             | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
 
-        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
+        /// Begin the ImSim declaration of a screen with the given arguments using a child group read from the given file path.
         /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
         static member beginScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath args world =
             World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
 
-        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
+        /// Begin the ImSim declaration of a screen with the given arguments using a child group read from the given file path.
         /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
         static member beginScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath args world =
             World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
 
-        /// Begin the ImNui declaration of a screen with the given arguments.
+        /// Begin the ImSim declaration of a screen with the given arguments.
         /// Note that changing the screen behavior over time has no effect as only the first moment is used.
         static member beginScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior args world =
             World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None args world
 
-        /// Begin the ImNui declaration of a screen with the given arguments.
+        /// Begin the ImSim declaration of a screen with the given arguments.
         /// Note that changing the screen behavior over time has no effect as only the first moment is used.
         static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
             World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
@@ -1061,8 +1061,8 @@ module WorldModule2 =
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world
 
-        static member private processImNui (world : World) =
-            WorldImNui.Reinitializing <- false
+        static member private processImSim (world : World) =
+            WorldImSim.Reinitializing <- false
             World.sweepSimulants world
 
         static member private destroySimulants world =
@@ -1334,7 +1334,7 @@ module WorldModule2 =
             let octree = World.getOctree world
             Octree.sweep octree
 
-        /// Process ImNui for a single frame.
+        /// Process ImSim for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
         /// meaningful time. Do NOT call this in the course of normal operations!
         static member tryProcessSimulants zeroDelta (world : World) =
@@ -1384,43 +1384,43 @@ module WorldModule2 =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
             let world =
-                SUMap.fold (fun world simulantAddress simulantImNui ->
-                    if not simulantImNui.SimulantUtilized then
+                SUMap.fold (fun world simulantAddress simulantImSim ->
+                    if not simulantImSim.SimulantUtilized then
                         let simulant = World.deriveFromAddress simulantAddress
-                        ImNuiSimulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
-                        World.setSimulantsImNui (SUMap.remove simulantAddress world.SimulantsImNui) world
+                        ImSimSimulantsToDestroy.Add (simulantImSim.InitializationTime, simulant)
+                        World.setSimulantsImSim (SUMap.remove simulantAddress world.SimulantsImSim) world
                     else
                         if world.Imperative then
-                            simulantImNui.SimulantUtilized <- false
-                            simulantImNui.SimulantInitializing <- false
+                            simulantImSim.SimulantUtilized <- false
+                            simulantImSim.SimulantInitializing <- false
                             world
                         else
-                            let simulantsImNui = SUMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantsImNui
-                            World.setSimulantsImNui simulantsImNui world)
-                    world world.SimulantsImNui
-            ImNuiSimulantsToDestroy.Sort SimulantImNuiComparer
+                            let simulantsImSim = SUMap.add simulantAddress { simulantImSim with SimulantUtilized = false; SimulantInitializing = false } world.SimulantsImSim
+                            World.setSimulantsImSim simulantsImSim world)
+                    world world.SimulantsImSim
+            ImSimSimulantsToDestroy.Sort SimulantImSimComparer
 
             // destroy simulants
             let world =
                 Seq.fold
                     (fun world (_, simulant) -> World.destroy simulant world)
-                    world ImNuiSimulantsToDestroy
-            ImNuiSimulantsToDestroy.Clear ()
+                    world ImSimSimulantsToDestroy
+            ImSimSimulantsToDestroy.Clear ()
 
             // update subscription bookkeeping
             let world =
-                SUMap.fold (fun world subscriptionKey subscriptionImNui ->
-                    if not subscriptionImNui.SubscriptionUtilized then
-                        let world = World.unsubscribe subscriptionImNui.SubscriptionId world
-                        World.setSubscriptionsImNui (SUMap.remove subscriptionKey world.SubscriptionsImNui) world
+                SUMap.fold (fun world subscriptionKey subscriptionImSim ->
+                    if not subscriptionImSim.SubscriptionUtilized then
+                        let world = World.unsubscribe subscriptionImSim.SubscriptionId world
+                        World.setSubscriptionsImSim (SUMap.remove subscriptionKey world.SubscriptionsImSim) world
                     else
                         if world.Imperative then
-                            subscriptionImNui.SubscriptionUtilized <- false
+                            subscriptionImSim.SubscriptionUtilized <- false
                             world
                         else
-                            let simulantsImNui = SUMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionsImNui
-                            World.setSubscriptionsImNui simulantsImNui world)
-                    world world.SubscriptionsImNui
+                            let simulantsImSim = SUMap.add subscriptionKey { subscriptionImSim with SubscriptionUtilized = false } world.SubscriptionsImSim
+                            World.setSubscriptionsImSim simulantsImSim world)
+                    world world.SubscriptionsImSim
 
             // fin
             world
@@ -1936,7 +1936,7 @@ module WorldModule2 =
 
                                                     // destroy simulants that have been marked for destruction at the end of frame
                                                     world.Timers.DestructionTimer.Restart ()
-                                                    let world = World.processImNui world
+                                                    let world = World.processImSim world
                                                     let world = World.destroySimulants world
                                                     world.Timers.DestructionTimer.Stop ()
                                                     match World.getLiveness world with
@@ -2097,15 +2097,15 @@ module WorldModule2 =
 [<AutoOpen>]
 module EntityDispatcherModule2 =
 
-    /// The ImNui dispatcher for entities.
-    type [<AbstractClass>] EntityDispatcherImNui (is2d, physical, lightProbe, light) =
+    /// The ImSim dispatcher for entities.
+    type [<AbstractClass>] EntityDispatcherImSim (is2d, physical, lightProbe, light) =
         inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
         override this.PresenceOverride =
             ValueSome Omnipresent // by default, we presume Process may produce child entities that may be referred to unconditionally
 
         override this.TryProcess (zeroDelta, entity, world) =
-            let context = world.ContextImNui
+            let context = world.ContextImSim
             let world = World.scopeEntity entity [] world
             let world =
                 if zeroDelta then
@@ -2119,28 +2119,28 @@ module EntityDispatcherModule2 =
                     World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
                 else this.Process (entity, world)
 #if DEBUG
-            if world.ContextImNui <> entity.EntityAddress then
+            if world.ContextImSim <> entity.EntityAddress then
                 Log.warnOnce
-                    ("ImNui context expected to be " +
+                    ("ImSim context expected to be " +
                      scstring entity.EntityAddress + " but was " +
-                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+                     scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
             World.advanceContext entity.EntityAddress context world
 
-        /// ImNui process an entity.
+        /// ImSim process an entity.
         abstract Process : entity : Entity * world : World -> World
         default this.Process (_, world) = world
 
-    /// An ImNui 2d entity dispatcher.
-    type [<AbstractClass>] Entity2dDispatcherImNui (physical, lightProbe, light) =
-        inherit EntityDispatcherImNui (true, physical, lightProbe, light)
+    /// An ImSim 2d entity dispatcher.
+    type [<AbstractClass>] Entity2dDispatcherImSim (physical, lightProbe, light) =
+        inherit EntityDispatcherImSim (true, physical, lightProbe, light)
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
-    /// An ImNui gui entity dispatcher.
-    type [<AbstractClass>] GuiDispatcherImNui () =
-        inherit EntityDispatcherImNui (true, false, false, false)
+    /// An ImSim gui entity dispatcher.
+    type [<AbstractClass>] GuiDispatcherImSim () =
+        inherit EntityDispatcherImSim (true, false, false, false)
 
         static member Facets =
             [typeof<LayoutFacet>]
@@ -2154,16 +2154,16 @@ module EntityDispatcherModule2 =
              define Entity.DockType DockCenter
              define Entity.GridPosition v2iZero]
 
-    /// An ImNui 3d entity dispatcher.
-    type [<AbstractClass>] Entity3dDispatcherImNui (physical, lightProbe, light) =
-        inherit EntityDispatcherImNui (false, physical, lightProbe, light)
+    /// An ImSim 3d entity dispatcher.
+    type [<AbstractClass>] Entity3dDispatcherImSim (physical, lightProbe, light) =
+        inherit EntityDispatcherImSim (false, physical, lightProbe, light)
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
-    /// An ImNui vui dispatcher (gui in 3d).
-    type [<AbstractClass>] VuiDispatcherImNui () =
-        inherit EntityDispatcherImNui (false, false, false, false)
+    /// An ImSim vui dispatcher (gui in 3d).
+    type [<AbstractClass>] VuiDispatcherImSim () =
+        inherit EntityDispatcherImSim (false, false, false, false)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
@@ -2481,12 +2481,12 @@ module EntityPropertyDescriptor =
 [<AutoOpen>]
 module GroupDispatcherModule =
 
-    /// The ImNui dispatcher for groups.
-    type [<AbstractClass>] GroupDispatcherImNui () =
+    /// The ImSim dispatcher for groups.
+    type [<AbstractClass>] GroupDispatcherImSim () =
         inherit GroupDispatcher ()
 
         override this.TryProcess (zeroDelta, group, world) =
-            let context = world.ContextImNui
+            let context = world.ContextImSim
             let world = World.scopeGroup group [] world
             let world =
                 if zeroDelta then
@@ -2500,15 +2500,15 @@ module GroupDispatcherModule =
                     World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
                 else this.Process (group, world)
 #if DEBUG
-            if world.ContextImNui <> group.GroupAddress then
+            if world.ContextImSim <> group.GroupAddress then
                 Log.warnOnce
-                    ("ImNui context expected to be " +
+                    ("ImSim context expected to be " +
                      scstring group.GroupAddress + " but was " +
-                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+                     scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
             World.advanceContext group.GroupAddress context world
 
-        /// ImNui process a group.
+        /// ImSim process a group.
         abstract Process : group : Group * world : World -> World
         default this.Process (_, world) = world
 
@@ -2695,16 +2695,16 @@ module GroupPropertyDescriptor =
 [<AutoOpen>]
 module ScreenDispatcherModule =
 
-    let private ScreenDispatcherImNuiTryProcessSubscriptionName = string Gen.id
+    let private ScreenDispatcherImSimTryProcessSubscriptionName = string Gen.id
 
-    /// The ImNui dispatcher for screens.
-    type [<AbstractClass>] ScreenDispatcherImNui () =
+    /// The ImSim dispatcher for screens.
+    type [<AbstractClass>] ScreenDispatcherImSim () =
         inherit ScreenDispatcher ()
 
         override this.TryProcess (zeroDelta, screen, world) =
-            let context = world.ContextImNui
+            let context = world.ContextImSim
             let world = World.scopeScreen screen [] world
-            let (results, world) = World.doSubscriptionToSelectionEvents ScreenDispatcherImNuiTryProcessSubscriptionName screen world
+            let (results, world) = World.doSubscriptionToSelectionEvents ScreenDispatcherImSimTryProcessSubscriptionName screen world
             let world =
                 if zeroDelta then
                     let advancing = world.Advancing
@@ -2717,15 +2717,15 @@ module ScreenDispatcherModule =
                     World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
                 else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
-            if world.ContextImNui <> screen.ScreenAddress then
+            if world.ContextImSim <> screen.ScreenAddress then
                 Log.warnOnce
-                    ("ImNui context expected to be " +
+                    ("ImSim context expected to be " +
                      scstring screen.ScreenAddress + " but was " +
-                     scstring world.ContextImNui + ". Did you forget to call World.endGroup?")
+                     scstring world.ContextImSim + ". Did you forget to call World.endGroup?")
 #endif
             World.advanceContext screen.ScreenAddress context world
 
-        /// ImNui process a screen.
+        /// ImSim process a screen.
         abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> World
         default this.Process (_, _, world) = world
 
@@ -2912,12 +2912,12 @@ module ScreenPropertyDescriptor =
 [<AutoOpen>]
 module GameDispatcherModule =
 
-    /// The ImNui dispatcher for games.
-    type [<AbstractClass>] GameDispatcherImNui () =
+    /// The ImSim dispatcher for games.
+    type [<AbstractClass>] GameDispatcherImSim () =
         inherit GameDispatcher ()
 
         override this.TryProcess (zeroDelta, game, world) =
-            let context = world.ContextImNui
+            let context = world.ContextImSim
             let world = World.scopeGame [] world
             let world =
                 if zeroDelta then
@@ -2931,15 +2931,15 @@ module GameDispatcherModule =
                     World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
                 else this.Process (game, world)
 #if DEBUG
-            if world.ContextImNui <> game.GameAddress then
+            if world.ContextImSim <> game.GameAddress then
                 Log.warnOnce
-                    ("ImNui context expected to be " +
+                    ("ImSim context expected to be " +
                      scstring game.GameAddress + " but was " +
-                     scstring world.ContextImNui + ". Did you forget to call World.endScreen?")
+                     scstring world.ContextImSim + ". Did you forget to call World.endScreen?")
 #endif
             World.advanceContext game.GameAddress context world
 
-        /// ImNui process a game.
+        /// ImSim process a game.
         abstract Process : game : Game * world : World -> World
         default this.Process (_, world) = world
 

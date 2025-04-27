@@ -2266,8 +2266,8 @@ module WorldModuleEntity =
                 // destroy any scheduled tasklets
                 let world = World.removeTasklets entity world
 
-                // remove from simulant imnui tracking
-                let world = World.removeSimulantImNui entity world
+                // remove from simulant imsim tracking
+                let world = World.removeSimulantImSim entity world
 
                 // mutate respective entity tree if entity is selected
                 if WorldModule.getSelected entity world then

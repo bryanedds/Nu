@@ -16,7 +16,7 @@ module PlayerExtensions =
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
 
 type PlayerDispatcher () =
-    inherit Entity2dDispatcherImNui (true, false, false)
+    inherit Entity2dDispatcherImSim (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>
