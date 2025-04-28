@@ -41,6 +41,7 @@ uniform float lightShadowBias;
 uniform float lightShadowSampleScalar;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
+uniform int sssEnabled;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -717,8 +718,13 @@ void main()
         vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
         vec4 material = texture(materialTexture, texCoordsOut);
         vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-        vec4 subdermalPlus = texture(subdermalPlusTexture, texCoordsOut);
-        vec4 scatterPlus = texture(scatterPlusTexture, texCoordsOut);
+        vec4 subdermalPlus = vec4(0.0);
+        vec4 scatterPlus = vec4(0.0);
+        if (sssEnabled == 1)
+        {
+            subdermalPlus = texture(subdermalPlusTexture, texCoordsOut);
+            scatterPlus = texture(scatterPlusTexture, texCoordsOut);
+        }
 
         // retrieve data from intermediate buffers
         vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
@@ -808,7 +814,7 @@ void main()
 
             // accumulate subsurface scattering
             float scatterType = scatterPlus.a;
-            if (scatterType != 0.0)
+            if (sssEnabled == 1 && scatterType != 0.0)
             {
                 vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
                 scatterAccum += kD * scatter * radiance;

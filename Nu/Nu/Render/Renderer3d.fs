@@ -502,6 +502,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       FogStart : single
       FogFinish : single
       FogColor : Color
+      SssEnabled : bool
       SsaoEnabled : bool
       SsaoIntensity : single
       SsaoBias : single
@@ -565,11 +566,13 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrEdgeHorizontalMargin = Constants.Render.SsrEdgeHorizontalMarginDefault
           SsrEdgeVerticalMargin = Constants.Render.SsrEdgeVerticalMarginDefault
           SsrLightColor = Constants.Render.SsrLightColorDefault
-          SsrLightBrightness = Constants.Render.SsrLightBrightnessDefault }
+          SsrLightBrightness = Constants.Render.SsrLightBrightnessDefault
+          SssEnabled = Constants.Render.SssEnabledLocalDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
     { LightMappingEnabled : bool
+      SssEnabled : bool
       SsaoEnabled : bool
       SsaoSampleCount : int
       SsvfEnabled : bool
@@ -577,6 +580,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
 
     static member defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+          SssEnabled = Constants.Render.SssEnabledGlobalDefault
           SsaoEnabled = Constants.Render.SsaoEnabledGlobalDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
@@ -2887,10 +2891,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render lighting quad to lighting buffers
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
         let ssrEnabled = if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0
+        let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
-             ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
+             sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
              ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
              renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
              renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,

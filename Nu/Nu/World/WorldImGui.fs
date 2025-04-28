@@ -508,6 +508,7 @@ module WorldImGui =
                 let mutable fogStart = lighting3dConfig.FogStart
                 let mutable fogFinish = lighting3dConfig.FogFinish
                 let mutable fogColor = let color = lighting3dConfig.FogColor in color.V4
+                let mutable sssEnabled = lighting3dConfig.SssEnabled
                 let mutable ssaoEnabled = lighting3dConfig.SsaoEnabled
                 let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
                 let mutable ssaoBias = lighting3dConfig.SsaoBias
@@ -544,6 +545,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited
                 lighting3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -582,6 +584,7 @@ module WorldImGui =
                           FogStart = fogStart
                           FogFinish = fogFinish
                           FogColor = Color fogColor
+                          SssEnabled = sssEnabled
                           SsaoEnabled = ssaoEnabled
                           SsaoIntensity = ssaoIntensity
                           SsaoBias = ssaoBias

@@ -454,6 +454,7 @@ module PhysicallyBased =
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
+          SssEnabledUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
@@ -2090,6 +2091,7 @@ module PhysicallyBased =
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
+        let sssEnabledUniform = Gl.GetUniformLocation (shader, "sssEnabled")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
@@ -2182,6 +2184,7 @@ module PhysicallyBased =
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
+          SssEnabledUniform = sssEnabledUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -3395,6 +3398,7 @@ module PhysicallyBased =
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
+         sssEnabled : int,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
@@ -3458,6 +3462,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
+        Gl.Uniform1 (shader.SssEnabledUniform, sssEnabled)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
