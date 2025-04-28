@@ -61,7 +61,7 @@
        [[LightCutoffMargin 0.333]
         [LightShadowSamples 3]
         [LightShadowBias 0.05]
-        [LightShadowSampleScalar 0]
+        [LightShadowSampleScalar 0.02]
         [LightShadowExponent 80]
         [LightShadowDensity 7]
         [FogEnabled False]
