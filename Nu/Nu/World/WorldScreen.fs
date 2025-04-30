@@ -394,12 +394,15 @@ module WorldScreenModule =
         static member internal trySaveNav3dMesh (navBuilderResultData : NavBuilderResultData) dtNavMesh filePathOpt =
             try match filePathOpt with
                 | Some filePath ->
+                    if File.Exists filePath then File.SetAttributes (filePath, FileAttributes.None)
                     use file = new FileStream (filePath, FileMode.Create, FileAccess.Write)
                     use reader = new BinaryWriter (file)
                     let dtMeshSetReader = new DtMeshSetWriter ()
                     dtMeshSetReader.Write (reader, dtNavMesh, RcByteOrder.LITTLE_ENDIAN, true)
                     let prettyPrinter = (SyntaxAttribute.defaultValue typeof<NavBuilderResultData>).PrettyPrinter
-                    File.WriteAllText (PathF.ChangeExtension (filePath, ".nbrd"), PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
+                    let filePathNbrd = PathF.ChangeExtension (filePath, ".nbrd")
+                    if File.Exists filePathNbrd then File.SetAttributes (filePathNbrd, FileAttributes.None)
+                    File.WriteAllText (filePathNbrd, PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
                 | None -> ()
             with exn -> Log.warn ("Failed to save nav mesh due to: " + scstring exn)
 
@@ -518,7 +521,8 @@ module WorldScreenModule =
                     let dtMeshSetReader = new DtMeshSetReader ()
                     let dtNavMesh = dtMeshSetReader.Read (reader, 6) // TODO: introduce constant?
                     let dtQuery = DtNavMeshQuery dtNavMesh
-                    let navBuilderResultData = PathF.ChangeExtension (filePath, ".nbrd") |> File.ReadAllText |> scvalue<NavBuilderResultData>
+                    let filePathNbrd = PathF.ChangeExtension (filePath, ".nbrd")
+                    let navBuilderResultData = filePathNbrd |> File.ReadAllText |> scvalue<NavBuilderResultData>
                     Some (Some filePath, navBuilderResultData, dtNavMesh, dtQuery)
                 with exn ->
                     Log.warn ("Failed to load nav mesh due to: " + scstring exn)
