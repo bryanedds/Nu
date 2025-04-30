@@ -401,7 +401,7 @@ module WorldScreenModule =
                     let prettyPrinter = (SyntaxAttribute.defaultValue typeof<NavBuilderResultData>).PrettyPrinter
                     File.WriteAllText (PathF.ChangeExtension (filePath, ".nbrd"), PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
                 | None -> ()
-            with exn -> Log.warn ("Failed to load nav mesh due to: " + scstring exn)
+            with exn -> Log.warn ("Failed to save nav mesh due to: " + scstring exn)
 
         static member internal tryBuildNav3dMesh filePathOpt contents config =
 
