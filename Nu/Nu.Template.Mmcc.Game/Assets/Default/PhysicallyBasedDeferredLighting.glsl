@@ -371,7 +371,7 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
     float scatterType = scatterPlus.a;
     if (scatterType > 0.09 && scatterType < 0.11) // skin formula
     {
-        const float density = 100.0;
+        const float density = 25.0;
         vec3 radii = finenessSquared * scatter.rgb * clamp(exp(-travel * density), 0.0, 1.0);
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
         float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
