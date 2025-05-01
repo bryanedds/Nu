@@ -929,7 +929,7 @@ module Hl =
             vkc._SwapExtent <- VulkanContext.getSwapExtent vkc._PhysicalDevice.SurfaceCapabilities vkc._Window
         
         /// Begin the frame.
-        static member beginFrame (vkc : VulkanContext) =
+        static member beginFrame (bounds : Box2i) (vkc : VulkanContext) =
 
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
@@ -953,11 +953,16 @@ module Hl =
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
             // clear screen
-            // TODO: DJL: clear viewport as well, as applicable.
             let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
             endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
+
+            // clear viewport
+            let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
+            let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] fence vkc.Device
+            endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] fence
 
         /// End the frame.
         static member endFrame () =
