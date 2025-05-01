@@ -100,7 +100,7 @@ layout(location = 2) out float depth;
 
 float saturate(float v)
 {
-    return max(0.0f, min(1.0, v));
+    return clamp(v, 0.0f, 1.0);
 }
 
 float linstep(float low, float high, float v)
@@ -257,7 +257,7 @@ float computeShadowScalarDirectional(vec4 position, mat4 shadowMatrix, sampler2D
     return 1.0;
 }
 
-float geometryTracePoint(vec4 position, int lightIndex, samplerCube shadowMap)
+float geometryTravelPoint(vec4 position, int lightIndex, samplerCube shadowMap)
 {
     // compute travel average in world space
     vec3 lightOrigin = lightOrigins[lightIndex];
@@ -277,10 +277,10 @@ float geometryTracePoint(vec4 position, int lightIndex, samplerCube shadowMap)
             }
         }
     }
-    return 1.0 - saturate(travel / 8.0);
+    return max(0.0, travel / 8.0);
 }
 
-float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTravelSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     // attempt to compute travel average in view space
     vec4 positionShadowClip = shadowMatrix * position;
@@ -308,14 +308,14 @@ float geometryTraceSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sample
                 travel += delta;
             }
         }
-        return 1.0 - saturate(travel / 9.0);
+        return max(0.0, travel / 9.0);
     }
 
     // tracing out of range, return default
     return 1.0;
 }
 
-float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTravelDirectional(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     // attempt to compute travel average in view space
     vec4 positionShadowClip = shadowMatrix * position;
@@ -325,15 +325,13 @@ float geometryTraceDirectional(vec4 position, int lightIndex, mat4 shadowMatrix,
         shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
     {
         // compute light distance travel through surface (not accounting for incidental surface concavity)
-        float shadowZ = shadowTexCoordsProj.z;
-        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        float shadowFar = lightCutoffs[lightIndex];
+        float shadowZScreen = shadowTexCoordsProj.z * 0.5 + 0.5; // linear, screen space
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
         vec2 shadowTextureSize = textureSize(shadowTexture, 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
-        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-        float travel = pow(shadowScalar, lightShadowDensity);
-        return travel;
+        float shadowDepthScreen = texture(shadowTexture, shadowTexCoords).x; // linear, screen space
+        return (shadowZScreen - shadowDepthScreen) * shadowFar;
     }
 
     // tracing out of range, return default
@@ -346,20 +344,20 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
     int lightType = lightTypes[lightIndex];
     int shadowIndex = lightShadowIndices[lightIndex];
 
-    // compute geometry trace length, defaulting to 1.0 when no shadow present for this light index
-    float trace = 1.0;
+    // compute geometry travel distance through material, defaulting to 1.0 when no shadow present for this light index
+    float travel = 1.0;
     if (shadowIndex >= 0)
     {
         switch (lightType)
         {
         case 0: // point light
-            trace = geometryTracePoint(position, lightIndex, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+            travel = geometryTravelPoint(position, lightIndex, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
             break;
         case 1: // spot light
-            trace = geometryTraceSpot(position, lightIndex, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            travel = geometryTravelSpot(position, lightIndex, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
             break;
         default: // directional light
-            trace = geometryTraceDirectional(position, lightIndex, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            travel = geometryTravelDirectional(position, lightIndex, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
             break;
         }
     }
@@ -369,7 +367,7 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
     float fineness = subdermalPlus.a;
     vec3 scatter = scatterPlus.rgb;
     float scatterType = scatterPlus.a;
-    vec3 radii = fineness * scatter.rgb * trace;
+    vec3 radii = fineness * scatter.rgb * clamp(exp(-travel * 1.0), 0.0, 1.0);
     if (scatterType == 1.0) // skin formula
     {
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
