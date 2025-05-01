@@ -397,7 +397,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 viewport <- viewport_
 
             // get total resolution from imgui
-            // NOTE: DJL: if this ever differs from the swapchain then something is wrong.
+            // TODO: DJL: review current imgui vulkan backend.
             let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
             let framebufferHeight = drawData.DisplaySize.Y * drawData.FramebufferScale.Y
 
