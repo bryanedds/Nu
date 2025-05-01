@@ -273,11 +273,11 @@ float geometryTravelPoint(vec4 position, int lightIndex, samplerCube shadowMap)
                 vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
                 float shadowDepth = texture(shadowMap, positionShadow + offset).x;
                 float delta = shadowZ - shadowDepth;
-                travel += delta;
+                travel += max(0.0, delta);
             }
         }
     }
-    return max(0.0, travel / 8.0);
+    return travel / 8.0;
 }
 
 float geometryTravelSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
@@ -305,10 +305,10 @@ float geometryTravelSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampl
                 float shadowDepthScreen = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
                 float shadowDepth = depthScreenToDepthView(shadowNear, shadowFar, shadowDepthScreen);
                 float delta = shadowZ - shadowDepth;
-                travel += delta;
+                travel += max(0.0, delta);
             }
         }
-        return max(0.0, travel / 9.0);
+        return travel / 9.0;
     }
 
     // tracing out of range, return default
@@ -331,7 +331,8 @@ float geometryTravelDirectional(vec4 position, int lightIndex, mat4 shadowMatrix
         vec2 shadowTextureSize = textureSize(shadowTexture, 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         float shadowDepthScreen = texture(shadowTexture, shadowTexCoords).x; // linear, screen space
-        return (shadowZScreen - shadowDepthScreen) * shadowFar;
+        float delta = shadowZScreen - shadowDepthScreen;
+        return max(0.0, delta * shadowFar);
     }
 
     // tracing out of range, return default
