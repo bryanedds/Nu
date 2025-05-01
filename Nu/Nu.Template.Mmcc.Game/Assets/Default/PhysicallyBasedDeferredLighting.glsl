@@ -371,14 +371,14 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
     float scatterType = scatterPlus.a;
     if (scatterType > 0.09 && scatterType < 0.11) // skin formula
     {
-        const float density = 25.0;
+        const float density = 15.0;
         vec3 radii = finenessSquared * scatter.rgb * clamp(exp(-travel * density), 0.0, 1.0);
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
         float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
         vec3 scalar =
             0.2 *
-            pow(vec3(1.0 - nDotLPos), 3.0 / (radii + 0.001)) *
-            pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
+            pow(vec3(1.0 - nDotLPos), 0.1 / (radii + 0.001)) *
+            pow(vec3(1.0 - nDotLNeg), 0.1 / (radii + 0.001));
         return subdermal * radii * scalar;
     }
     if (scatterType > 0.19 && scatterType < 0.21) // foliage formula
