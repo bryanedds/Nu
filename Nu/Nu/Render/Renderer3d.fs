@@ -2101,7 +2101,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- match scatterType with NoScatter -> 0.0f | SkinScatter -> 1.0f | FoliageScatter -> 2.0f
+            let scatterTypeInt =
+                match scatterType with
+                | NoScatter -> 0.0f
+                | SkinScatter -> 0.1f
+                | FoliageScatter -> 0.2f
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterTypeInt
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
@@ -2152,7 +2157,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- match scatterType with NoScatter -> 0.0f | SkinScatter -> 1.0f | FoliageScatter -> 2.0f
+            let scatterTypeInt =
+                match scatterType with
+                | NoScatter -> 0.0f
+                | SkinScatter -> 1.0f
+                | FoliageScatter -> 2.0f
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterTypeInt
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces

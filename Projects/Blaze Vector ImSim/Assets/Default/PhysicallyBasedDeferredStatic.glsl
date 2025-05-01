@@ -154,7 +154,7 @@ void main()
     float scatterType = subsurfacePlusOut.g;
     if (scatter.a == 0.0)
         scatterPlus.rgb =
-            scatterType == 1.0 ?
+            scatterType > 0.09 && scatterType < 0.11 ?
             vec3(1, 0.25, 0.04) : // skin scatter
             vec3(0.6, 1, 0.06); // foliage scatter
     else scatterPlus.rgb = scatter.rgb;

@@ -366,12 +366,13 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
     float fineness = subdermalPlus.a;
-    float finenessSquared = fineness * fineness; // squaring make fineness more authorable
+    float finenessSquared = fineness * fineness;
     vec3 scatter = scatterPlus.rgb;
     float scatterType = scatterPlus.a;
-    vec3 radii = finenessSquared * scatter.rgb * clamp(exp(-travel), 0.0, 1.0);
-    if (scatterType == 1.0) // skin formula
+    if (scatterType > 0.09 && scatterType < 0.11) // skin formula
     {
+        const float density = 100.0;
+        vec3 radii = finenessSquared * scatter.rgb * clamp(exp(-travel * density), 0.0, 1.0);
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
         float nDotLNeg = clamp(-nDotL, 0.0, 1.0);
         vec3 scalar =
@@ -380,8 +381,10 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
             pow(vec3(1.0 - nDotLNeg), 3.0 / (radii + 0.001));
         return subdermal * radii * scalar;
     }
-    else if (scatterType == 2.0) // foliage formula
+    if (scatterType > 0.19 && scatterType < 0.21) // foliage formula
     {
+        const float density = 5.0;
+        vec3 radii = finenessSquared * scatter.rgb * clamp(exp(-travel * density), 0.0, 1.0);
         vec3 scalar =
             0.2 *
             exp(-3.0 * abs(nDotL) / (radii + 0.001));
