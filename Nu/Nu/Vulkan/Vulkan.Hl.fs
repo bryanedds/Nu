@@ -625,9 +625,6 @@ module Hl =
         /// The render pass.
         member this.RenderPass = this._RenderPass
 
-        /// The swap extent.
-        member this.SwapExtent = this._SwapExtent
-        
         /// The current swapchain framebuffer.
         member this.SwapchainFramebuffer = this._Swapchain.Framebuffer
 
@@ -957,7 +954,7 @@ module Hl =
 
             // clear screen
             // TODO: DJL: clear viewport as well, as applicable.
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
+            let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
             endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
@@ -971,7 +968,7 @@ module Hl =
 
             // transition image layout for presentation
             let mutable renderFinished = vkc.RenderFinishedSemaphore
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent)
+            let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
             beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
             endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
             

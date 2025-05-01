@@ -106,7 +106,7 @@ module SpriteBatch =
             // init render
             let vkc = env.VulkanGlobal
             let cb = vkc.RenderCommandBuffer
-            let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent) // TODO: DJL: review use of swapextent.
+            let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             Hl.beginRenderBlock cb vkc.RenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
 
             // pin uniform arrays

@@ -770,11 +770,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 vkc
                             
                             // init render
+                            let bounds = renderer.Viewport.Bounds
                             Hl.beginRenderBlock
                                 vkc.RenderCommandBuffer
                                 vkc.RenderPass
                                 vkc.SwapchainFramebuffer
-                                (VkRect2D (VkOffset2D.Zero, vkc.SwapExtent))
+                                (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y))
                                 [||]
                                 VkFence.Null
                                 vkc.Device

@@ -138,7 +138,7 @@ module Sprite =
         Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
         // set viewport and scissor
-        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkc.SwapExtent) // TODO: DJL: review use of swapextent.
+        let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
         let mutable vkViewport = Hl.makeViewport renderArea
         let mutable scissor = renderArea
         match clipOpt with
