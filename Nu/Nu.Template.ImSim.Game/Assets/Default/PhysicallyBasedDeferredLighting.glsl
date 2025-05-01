@@ -365,9 +365,10 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
     // compute scattered color
     vec3 subdermal = subdermalPlus.rgb;
     float fineness = subdermalPlus.a;
+    float finenessSquared = fineness * fineness; // squaring make fineness more authorable
     vec3 scatter = scatterPlus.rgb;
     float scatterType = scatterPlus.a;
-    vec3 radii = fineness * scatter.rgb * clamp(exp(-travel * 1.0), 0.0, 1.0);
+    vec3 radii = finenessSquared * scatter.rgb * clamp(exp(-travel), 0.0, 1.0);
     if (scatterType == 1.0) // skin formula
     {
         float nDotLPos = clamp(nDotL, 0.0, 1.0);
