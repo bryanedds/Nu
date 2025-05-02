@@ -164,7 +164,7 @@ type RendererInline () =
             | Some (vkc, renderer3d, renderer2d, rendererImGui) ->
 
                 // begin frame
-                Hl.VulkanContext.beginFrame outerViewport.Bounds vkc
+                Hl.VulkanContext.beginFrame windowSize outerViewport.Bounds vkc
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3d
@@ -375,7 +375,7 @@ type RendererThread () =
             if not terminated then
                 
                 // begin frame
-                Hl.VulkanContext.beginFrame outerViewport.Bounds vkc
+                Hl.VulkanContext.beginFrame windowSize outerViewport.Bounds vkc
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3d

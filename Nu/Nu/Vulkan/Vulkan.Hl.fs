@@ -568,6 +568,7 @@ module Hl =
     type [<ReferenceEquality>] VulkanContext =
         private
             { _Window : nativeint
+              mutable _WindowSizeOpt : Vector2i option
               _Instance : VkInstance
               _Surface : VkSurfaceKHR
               _PhysicalDevice : PhysicalDevice
@@ -929,8 +930,17 @@ module Hl =
             vkc._SwapExtent <- VulkanContext.getSwapExtent vkc._PhysicalDevice.SurfaceCapabilities vkc._Window
         
         /// Begin the frame.
-        static member beginFrame (bounds : Box2i) (vkc : VulkanContext) =
+        static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
 
+            // check for window resize
+            let windowResized =
+                match vkc._WindowSizeOpt with
+                | Some windowSize ->
+                    let windowResized = windowSize <> windowSize_
+                    if windowResized then vkc._WindowSizeOpt <- Some windowSize_ // update window size
+                    windowResized
+                | None -> vkc._WindowSizeOpt <- Some windowSize_; false // init window size
+            
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
@@ -1074,6 +1084,7 @@ module Hl =
                 // make VulkanContext
                 let vulkanContext =
                     { _Window = window
+                      _WindowSizeOpt = None
                       _Instance = instance
                       _Surface = surface
                       _PhysicalDevice = physicalDevice
