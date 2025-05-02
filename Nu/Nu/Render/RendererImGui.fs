@@ -401,8 +401,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
             let framebufferHeight = drawData.DisplaySize.Y * drawData.FramebufferScale.Y
 
-            // only proceed if window is not minimized
-            if int framebufferWidth > 0 && int framebufferHeight > 0 then
+            // only proceed if window is not minimized and render is desired
+            if int framebufferWidth > 0 && int framebufferHeight > 0 && vkc.RenderDesired then
 
                 // init render
                 let cb = vkc.RenderCommandBuffer

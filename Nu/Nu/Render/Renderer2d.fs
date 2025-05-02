@@ -865,18 +865,21 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         renderer.Viewport <- viewport
         
         // begin sprite batch frame
-        let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
-        let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
-        SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.SpriteBatchEnv)
+        if renderer.VulkanContext.RenderDesired then
+            let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
+            let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
+            SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.SpriteBatchEnv)
 
         // render frame
         VulkanRenderer2d.handleRenderMessages renderMessages renderer
-        VulkanRenderer2d.sortLayeredOperations renderer
-        VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
+        if renderer.VulkanContext.RenderDesired then
+            VulkanRenderer2d.sortLayeredOperations renderer
+            VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
         renderer.LayeredOperations.Clear ()
 
         // end sprite batch frame
-        SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
+        if renderer.VulkanContext.RenderDesired then
+            SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
 
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then

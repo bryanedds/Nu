@@ -569,6 +569,7 @@ module Hl =
         private
             { _Window : nativeint
               mutable _WindowSizeOpt : Vector2i option
+              mutable _RenderDesired : bool
               _Instance : VkInstance
               _Surface : VkSurfaceKHR
               _PhysicalDevice : PhysicalDevice
@@ -590,6 +591,9 @@ module Hl =
               _PresentRenderPass : VkRenderPass
               mutable _SwapExtent : VkExtent2D }
 
+        /// Render desired.
+        member this.RenderDesired = this._RenderDesired
+        
         /// The physical device.
         member this.PhysicalDevice = this._PhysicalDevice.VkPhysicalDevice
         
@@ -948,6 +952,8 @@ module Hl =
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
             
+            vkc._RenderDesired <- true
+            
             // swap extent is updated here
             //VulkanContext.updateSwapExtent vkc
             
@@ -956,23 +962,25 @@ module Hl =
 
             // TODO: DJL: find out what's going on with the image available semaphore
             
-            // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
-            Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
+            if vkc.RenderDesired then
+            
+                // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
+                Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
 
-            // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
-            let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+                // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
+                let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
-            // clear screen
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
-            let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
-            endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
+                // clear screen
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
+                let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
+                endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
 
-            // clear viewport
-            let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
-            let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-            beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] fence vkc.Device
-            endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] fence
+                // clear viewport
+                let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
+                let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] fence vkc.Device
+                endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] fence
 
         /// End the frame.
         static member endFrame () =
@@ -980,25 +988,26 @@ module Hl =
 
         /// Present the image back to the swapchain to appear on screen.
         static member present (vkc : VulkanContext) =
-
-            // transition image layout for presentation
-            let mutable renderFinished = vkc.RenderFinishedSemaphore
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
-            beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
-            endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
+            if vkc.RenderDesired then
             
-            // present image
-            let mutable swapchain = vkc._Swapchain.VkSwapchain
-            let mutable info = VkPresentInfoKHR ()
-            info.waitSemaphoreCount <- 1u
-            info.pWaitSemaphores <- asPointer &renderFinished
-            info.swapchainCount <- 1u
-            info.pSwapchains <- asPointer &swapchain
-            info.pImageIndices <- asPointer &ImageIndex
-            Vulkan.vkQueuePresentKHR (vkc._PresentQueue, asPointer &info) |> check
+                // transition image layout for presentation
+                let mutable renderFinished = vkc.RenderFinishedSemaphore
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
+                beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
+                endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
+                
+                // present image
+                let mutable swapchain = vkc._Swapchain.VkSwapchain
+                let mutable info = VkPresentInfoKHR ()
+                info.waitSemaphoreCount <- 1u
+                info.pWaitSemaphores <- asPointer &renderFinished
+                info.swapchainCount <- 1u
+                info.pSwapchains <- asPointer &swapchain
+                info.pImageIndices <- asPointer &ImageIndex
+                Vulkan.vkQueuePresentKHR (vkc._PresentQueue, asPointer &info) |> check
 
-            // advance frame in flight
-            _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
+                // advance frame in flight
+                _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle (vkc : VulkanContext) =
@@ -1085,6 +1094,7 @@ module Hl =
                 let vulkanContext =
                     { _Window = window
                       _WindowSizeOpt = None
+                      _RenderDesired = false
                       _Instance = instance
                       _Surface = surface
                       _PhysicalDevice = physicalDevice
