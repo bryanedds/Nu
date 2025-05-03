@@ -205,7 +205,7 @@ module WorldScreenModule =
                 let groups = World.getGroups screen world
                 let world = World.unregisterScreen screen world
                 let world = World.removeTasklets screen world
-                let world = World.removeSimulantImNui screen world
+                let world = World.removeSimulantImSim screen world
                 let world = World.destroyGroupsImmediate groups world
                 World.removeScreenState screen world
             else world
@@ -238,7 +238,7 @@ module WorldScreenModule =
             // add the screen's state to the world
             let world = World.addScreen false screenState screen world
 
-            // unconditionally zero-process ImNui screen first time
+            // unconditionally zero-process ImSim screen first time
             let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
@@ -334,7 +334,7 @@ module WorldScreenModule =
             // read the screen's groups
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
 
-            // unconditionally zero-process ImNui screen first time
+            // unconditionally zero-process ImSim screen first time
             let world = WorldModule.tryProcessScreen true screen world
             (screen, world)
 
@@ -394,14 +394,17 @@ module WorldScreenModule =
         static member internal trySaveNav3dMesh (navBuilderResultData : NavBuilderResultData) dtNavMesh filePathOpt =
             try match filePathOpt with
                 | Some filePath ->
+                    if File.Exists filePath then File.SetAttributes (filePath, FileAttributes.None)
                     use file = new FileStream (filePath, FileMode.Create, FileAccess.Write)
                     use reader = new BinaryWriter (file)
                     let dtMeshSetReader = new DtMeshSetWriter ()
                     dtMeshSetReader.Write (reader, dtNavMesh, RcByteOrder.LITTLE_ENDIAN, true)
                     let prettyPrinter = (SyntaxAttribute.defaultValue typeof<NavBuilderResultData>).PrettyPrinter
-                    File.WriteAllText (PathF.ChangeExtension (filePath, ".nbrd"), PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
+                    let filePathNbrd = PathF.ChangeExtension (filePath, ".nbrd")
+                    if File.Exists filePathNbrd then File.SetAttributes (filePathNbrd, FileAttributes.None)
+                    File.WriteAllText (filePathNbrd, PrettyPrinter.prettyPrint (scstring navBuilderResultData) prettyPrinter)
                 | None -> ()
-            with exn -> Log.warn ("Failed to load nav mesh due to: " + scstring exn)
+            with exn -> Log.warn ("Failed to save nav mesh due to: " + scstring exn)
 
         static member internal tryBuildNav3dMesh filePathOpt contents config =
 
@@ -518,7 +521,8 @@ module WorldScreenModule =
                     let dtMeshSetReader = new DtMeshSetReader ()
                     let dtNavMesh = dtMeshSetReader.Read (reader, 6) // TODO: introduce constant?
                     let dtQuery = DtNavMeshQuery dtNavMesh
-                    let navBuilderResultData = PathF.ChangeExtension (filePath, ".nbrd") |> File.ReadAllText |> scvalue<NavBuilderResultData>
+                    let filePathNbrd = PathF.ChangeExtension (filePath, ".nbrd")
+                    let navBuilderResultData = filePathNbrd |> File.ReadAllText |> scvalue<NavBuilderResultData>
                     Some (Some filePath, navBuilderResultData, dtNavMesh, dtQuery)
                 with exn ->
                     Log.warn ("Failed to load nav mesh due to: " + scstring exn)

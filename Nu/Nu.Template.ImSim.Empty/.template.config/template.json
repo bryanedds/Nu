@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Bryan Edds",
+  "classifications": [ "Nu", "Template" ],
+  "identity": "Nu Template ImSim Empty",
+  "name": "Nu Template ImSim Empty",
+  "shortName": "nu-template-imsim-empty",
+  "tags": {
+    "language": "F#",
+    "type": "project"
+  }
+}

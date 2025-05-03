@@ -120,7 +120,7 @@
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
 		<Compile Include="World\WorldEntityHierarchy.fs" />
-		<Compile Include="World\WorldImNui.fs" />
+		<Compile Include="World\WorldImSim.fs" />
 		<Compile Include="World\WorldContent.fs" />
 		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\World.fs" />

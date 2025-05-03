@@ -217,7 +217,7 @@ module WorldModule3 =
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
-            WorldImNui.Reinitializing <- true
+            WorldImSim.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
@@ -292,10 +292,10 @@ module WorldModule3 =
                   AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension =
-                { ContextImNui = Address.empty
-                  DeclaredImNui = Address.empty
-                  SimulantsImNui = SUMap.makeEmpty HashIdentity.Structural config
-                  SubscriptionsImNui = SUMap.makeEmpty HashIdentity.Structural config
+                { ContextImSim = Address.empty
+                  DeclaredImSim = Address.empty
+                  SimulantsImSim = SUMap.makeEmpty HashIdentity.Structural config
+                  SubscriptionsImSim = SUMap.makeEmpty HashIdentity.Structural config
                   DestructionListRev = []
                   GeometryViewport = geometryViewport
                   RasterViewport = rasterViewport

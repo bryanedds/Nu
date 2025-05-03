@@ -4,9 +4,9 @@ VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu", "Nu\Nu\Nu.fsproj", "{A7A6F758-E122-4C2C-9525-1F29802D007C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.ImNui.Game", "Nu\Nu.Template.ImNui.Game\Nu.Template.ImNui.Game.fsproj", "{E2AD5158-2483-488D-806C-ABDCBFB7C6C6}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.ImSim.Game", "Nu\Nu.Template.ImSim.Game\Nu.Template.ImSim.Game.fsproj", "{E2AD5158-2483-488D-806C-ABDCBFB7C6C6}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.ImNui.Empty", "Nu\Nu.Template.ImNui.Empty\Nu.Template.ImNui.Empty.fsproj", "{314FF93B-202E-4187-A996-0A4FD8510369}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.ImSim.Empty", "Nu\Nu.Template.ImSim.Empty\Nu.Template.ImSim.Empty.fsproj", "{314FF93B-202E-4187-A996-0A4FD8510369}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.Mmcc.Game", "Nu\Nu.Template.Mmcc.Game\Nu.Template.Mmcc.Game.fsproj", "{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}"
 EndProject
@@ -20,11 +20,11 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Pipe", "Nu\Nu.Pipe\Nu.Pi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nu.Spine", "Nu\Nu.Spine\Nu.Spine.csproj", "{0B4656BB-6912-4F65-BC87-564D43D492AD}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Blaze Vector ImNui", "Projects\Blaze Vector ImNui\Blaze Vector ImNui.fsproj", "{111EC4BB-BE2C-4805-8688-F1047897015B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Blaze Vector ImSim", "Projects\Blaze Vector ImSim\Blaze Vector ImSim.fsproj", "{111EC4BB-BE2C-4805-8688-F1047897015B}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Blaze Vector Mmcc", "Projects\Blaze Vector Mmcc\Blaze Vector Mmcc.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Breakout ImNui", "Projects\Breakout ImNui\Breakout ImNui.fsproj", "{2F02F282-5B5E-4C8D-A096-9BEEA41CF6D1}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Breakout ImSim", "Projects\Breakout ImSim\Breakout ImSim.fsproj", "{2F02F282-5B5E-4C8D-A096-9BEEA41CF6D1}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Breakout Mmcc", "Projects\Breakout Mmcc\Breakout Mmcc.fsproj", "{B35856FD-43F9-4695-88F2-AC4CA2502C6D}"
 EndProject

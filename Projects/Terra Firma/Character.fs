@@ -87,7 +87,7 @@ module CharacterExtensions =
         member this.DeathEvent = Events.DeathEvent --> this
 
 type CharacterDispatcher () =
-    inherit Entity3dDispatcherImNui (true, false, false)
+    inherit Entity3dDispatcherImSim (true, false, false)
 
     static let computeTraversalAnimations (entity : Entity) world =
         match entity.GetActionState world with

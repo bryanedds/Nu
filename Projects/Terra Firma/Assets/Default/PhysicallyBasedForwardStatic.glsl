@@ -535,13 +535,13 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo with alpha
-    vec4 albedoSample = texture(albedoTexture, texCoords);
-    vec4 albedo;
-    albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
-    albedo.a = albedoSample.a * albedoOut.a;
+    // compute albedo with alpha sample
     float opaqueDistance = heightPlusOut.w;
-    albedo.a = mix(albedo.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance));
+    vec4 albedoSample = texture(albedoTexture, texCoords);
+    vec4 albedo =
+        vec4(
+            pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
+            mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute material properties
     float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
@@ -557,7 +557,8 @@ void main()
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(n, v), 0.0);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 lightAccum = vec3(0.0);
+    vec3 lightAccumDiffuse = vec3(0.0);
+    vec3 lightAccumSpecular = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
@@ -621,8 +622,10 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
-        // add to outgoing lightAccum
-        lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * shadowScalar;
+        // add to outgoing lightAccums
+        vec3 lightScalar = radiance * nDotL * shadowScalar;
+        lightAccumDiffuse += (kD * albedo.rgb / PI) * lightScalar;
+        lightAccumSpecular += specular * lightScalar;
 
         // accumulate fog
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
@@ -634,7 +637,7 @@ void main()
                 case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
                 default: { fog = computeFogAccumDirectional(position, i); break; } // directional
             }
-            lightAccum += fog;
+            lightAccumDiffuse += fog;
         }
     }
 
@@ -707,7 +710,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
     // compute color composition
-    vec3 color = lightAccum + diffuse + emission * albedo.rgb + specular;
+    vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular;
 
     // compute and apply global fog when enabled
     if (fogEnabled == 1)
@@ -717,6 +720,15 @@ void main()
         color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
 
+    // HACK: increase alpha when accumulated specular light exceeds albedo alpha so that specular can be seen on pure
+    // alpha surfaces. Also tone map and gamma correct specular light color (doing so seems to look better). Finally,
+    // apply alpha from albedo uniform.
+    lightAccumSpecular = lightAccumSpecular / (lightAccumSpecular + vec3(1.0));
+    lightAccumSpecular = pow(lightAccumSpecular, vec3(1.0 / GAMMA));
+    float lightAccumAlpha = (lightAccumSpecular.r + lightAccumSpecular.g + lightAccumSpecular.b) / 3.0;
+    albedo.a = max(albedo.a, lightAccumAlpha);
+    albedo.a = albedo.a * albedoOut.a;
+    
     // apply tone mapping and gamma correction
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));

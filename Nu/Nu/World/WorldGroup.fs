@@ -211,7 +211,7 @@ module WorldGroupModule =
                 let entities = World.getSovereignEntities group world
                 let world = World.unregisterGroup group world
                 let world = World.removeTasklets group world
-                let world = World.removeSimulantImNui group world
+                let world = World.removeSimulantImSim group world
                 let world = World.destroyEntitiesImmediate entities world
                 World.removeGroupState group world
             else world
@@ -318,7 +318,7 @@ module WorldGroupModule =
             // read the group's entities
             let world = World.readEntities false true groupDescriptor.EntityDescriptors group world |> snd
 
-            // try to process ImNui group first time if in the middle of simulant update phase
+            // try to process ImSim group first time if in the middle of simulant update phase
             let world =
                 if WorldModule.UpdatingSimulants && group.GetSelected world
                 then WorldModule.tryProcessGroup true group world

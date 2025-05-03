@@ -239,152 +239,152 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
-        /// Get the current ImNui context.
-        static member getContextImNui (world : World) =
-            world.ContextImNui
+        /// Get the current ImSim context.
+        static member getContextImSim (world : World) =
+            world.ContextImSim
 
-        /// Get the current ImNui context translated to a Game handle (throwing upon failure).
+        /// Get the current ImSim context translated to a Game handle (throwing upon failure).
         static member getContextGame (world : World) =
             world.ContextGame
 
-        /// Get the current ImNui context translated to a Screen handle (throwing upon failure).
+        /// Get the current ImSim context translated to a Screen handle (throwing upon failure).
         static member getContextScreen (world : World) =
             world.ContextScreen
 
-        /// Get the current ImNui context translated to a Group handle (throwing upon failure).
+        /// Get the current ImSim context translated to a Group handle (throwing upon failure).
         static member getContextGroup (world : World) =
             world.ContextGroup
 
-        /// Get the current ImNui context translated to a Entity handle (throwing upon failure).
+        /// Get the current ImSim context translated to a Entity handle (throwing upon failure).
         static member getContextEntity (world : World) =
             world.ContextEntity
 
-        /// Check that the current ImNui context is initializing this frame.
+        /// Check that the current ImSim context is initializing this frame.
         static member getContextInitializing (world : World) =
             world.ContextInitializing
 
-        /// Get the recent ImNui declaration.
-        static member getDeclaredImNui (world : World) =
-            world.DeclaredImNui
+        /// Get the recent ImSim declaration.
+        static member getDeclaredImSim (world : World) =
+            world.DeclaredImSim
 
-        /// Get the recent ImNui declaration translated to a Game handle (throwing upon failure).
+        /// Get the recent ImSim declaration translated to a Game handle (throwing upon failure).
         static member getDeclaredGame (world : World) =
             world.DeclaredGame
 
-        /// Get the recent ImNui declaration translated to a Screen handle (throwing upon failure).
+        /// Get the recent ImSim declaration translated to a Screen handle (throwing upon failure).
         static member getDeclaredScreen (world : World) =
             world.DeclaredScreen
 
-        /// Get the recent ImNui declaration translated to a Group handle (throwing upon failure).
+        /// Get the recent ImSim declaration translated to a Group handle (throwing upon failure).
         static member getDeclaredGroup (world : World) =
             world.DeclaredGroup
 
-        /// Get the recent ImNui declaration translated to a Entity handle (throwing upon failure).
+        /// Get the recent ImSim declaration translated to a Entity handle (throwing upon failure).
         static member getDeclaredEntity (world : World) =
             world.DeclaredEntity
 
-        /// Check that the recent ImNui declaration is initializing this frame.
+        /// Check that the recent ImSim declaration is initializing this frame.
         static member getDeclaredInitializing (world : World) =
             world.DeclaredInitializing
 
         static member internal setContext context (world : World) =
             if world.Imperative then
-                world.WorldExtension.DeclaredImNui <- world.WorldExtension.ContextImNui
-                world.WorldExtension.ContextImNui <- context
+                world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
+                world.WorldExtension.ContextImSim <- context
                 world
             else
-                let worldExtension = { world.WorldExtension with DeclaredImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
+                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldExtension.ContextImSim; ContextImSim = context }
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal advanceContext declared context (world : World) =
             if world.Imperative then
-                world.WorldExtension.DeclaredImNui <- declared
-                world.WorldExtension.ContextImNui <- context
+                world.WorldExtension.DeclaredImSim <- declared
+                world.WorldExtension.ContextImSim <- context
                 world
             else
-                let worldExtension = { world.WorldExtension with DeclaredImNui = declared; ContextImNui = context }
+                let worldExtension = { world.WorldExtension with DeclaredImSim = declared; ContextImSim = context }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal getSimulantsImNui (world : World) =
-            world.SimulantsImNui
+        static member internal getSimulantsImSim (world : World) =
+            world.SimulantsImSim
 
-        static member internal setSimulantsImNui simulantsImNui (world : World) =
+        static member internal setSimulantsImSim simulantsImSim (world : World) =
             if world.Imperative then
-                world.WorldExtension.SimulantsImNui <- simulantsImNui
+                world.WorldExtension.SimulantsImSim <- simulantsImSim
                 world
             else
-                let worldExtension = { world.WorldExtension with SimulantsImNui = simulantsImNui }
+                let worldExtension = { world.WorldExtension with SimulantsImSim = simulantsImSim }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal getSimulantImNui simulant (world : World) =
-            world.SimulantsImNui.[simulant]
+        static member internal getSimulantImSim simulant (world : World) =
+            world.SimulantsImSim.[simulant]
 
-        static member internal addSimulantImNui simulant simulantImNui (world : World) =
-            let simulantsImNui = SUMap.add simulant simulantImNui world.SimulantsImNui
-            World.setSimulantsImNui simulantsImNui world
+        static member internal addSimulantImSim simulant simulantImSim (world : World) =
+            let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
+            World.setSimulantsImSim simulantsImSim world
 
-        static member internal removeSimulantImNui (simulant : Simulant) (world : World) =
-            World.setSimulantsImNui (SUMap.remove simulant.SimulantAddress world.SimulantsImNui) world
+        static member internal removeSimulantImSim (simulant : Simulant) (world : World) =
+            World.setSimulantsImSim (SUMap.remove simulant.SimulantAddress world.SimulantsImSim) world
 
-        static member internal tryMapSimulantImNui mapper simulant (world : World) =
-            match world.SimulantsImNui.TryGetValue simulant with
-            | (true, simulantImNui) ->
-                let simulantImNui = mapper simulantImNui
-                World.addSimulantImNui simulant simulantImNui world
+        static member internal tryMapSimulantImSim mapper simulant (world : World) =
+            match world.SimulantsImSim.TryGetValue simulant with
+            | (true, simulantImSim) ->
+                let simulantImSim = mapper simulantImSim
+                World.addSimulantImSim simulant simulantImSim world
             | (false, _) -> world
 
-        static member internal mapSimulantImNui mapper simulant world =
-            let simulantImNui = World.getSimulantImNui simulant world
-            let simulantImNui = mapper simulantImNui
-            World.addSimulantImNui simulant simulantImNui world
+        static member internal mapSimulantImSim mapper simulant world =
+            let simulantImSim = World.getSimulantImSim simulant world
+            let simulantImSim = mapper simulantImSim
+            World.addSimulantImSim simulant simulantImSim world
 
-        static member internal utilizeSimulantImNui simulant simulantImNui (world : World) =
+        static member internal utilizeSimulantImSim simulant simulantImSim (world : World) =
             if world.Imperative then
-                simulantImNui.SimulantUtilized <- true
+                simulantImSim.SimulantUtilized <- true
                 world
             else
-                let simulantImNui = { simulantImNui with SimulantUtilized = true }
-                let simulantsImNui = SUMap.add simulant simulantImNui world.SimulantsImNui
-                World.setSimulantsImNui simulantsImNui world
+                let simulantImSim = { simulantImSim with SimulantUtilized = true }
+                let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
+                World.setSimulantsImSim simulantsImSim world
 
-        static member internal getSubscriptionsImNui (world : World) =
-            world.SubscriptionsImNui
+        static member internal getSubscriptionsImSim (world : World) =
+            world.SubscriptionsImSim
 
-        static member internal setSubscriptionsImNui subscriptionsImNui (world : World) =
+        static member internal setSubscriptionsImSim subscriptionsImSim (world : World) =
             if world.Imperative then
-                world.WorldExtension.SubscriptionsImNui <- subscriptionsImNui
+                world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
                 world
             else
-                let worldExtension = { world.WorldExtension with SubscriptionsImNui = subscriptionsImNui }
+                let worldExtension = { world.WorldExtension with SubscriptionsImSim = subscriptionsImSim }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal getSubscriptionImNui subscription (world : World) =
-            world.SubscriptionsImNui.[subscription]
+        static member internal getSubscriptionImSim subscription (world : World) =
+            world.SubscriptionsImSim.[subscription]
 
-        static member internal addSubscriptionImNui subscription subscriptionImNui (world : World) =
-            let subscriptionsImNui = SUMap.add subscription subscriptionImNui world.SubscriptionsImNui
-            World.setSubscriptionsImNui subscriptionsImNui world
+        static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
+            let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
+            World.setSubscriptionsImSim subscriptionsImSim world
 
-        static member internal tryMapSubscriptionImNui mapper subscription (world : World) =
-            match world.SubscriptionsImNui.TryGetValue subscription with
-            | (true, subscriptionImNui) ->
-                let subscriptionImNui = mapper subscriptionImNui
-                World.addSubscriptionImNui subscription subscriptionImNui world
+        static member internal tryMapSubscriptionImSim mapper subscription (world : World) =
+            match world.SubscriptionsImSim.TryGetValue subscription with
+            | (true, subscriptionImSim) ->
+                let subscriptionImSim = mapper subscriptionImSim
+                World.addSubscriptionImSim subscription subscriptionImSim world
             | (false, _) -> world
 
-        static member internal mapSubscriptionImNui mapper subscription world =
-            let subscriptionImNui = World.getSubscriptionImNui subscription world
-            let subscriptionImNui = mapper subscriptionImNui
-            World.addSubscriptionImNui subscription subscriptionImNui world
+        static member internal mapSubscriptionImSim mapper subscription world =
+            let subscriptionImSim = World.getSubscriptionImSim subscription world
+            let subscriptionImSim = mapper subscriptionImSim
+            World.addSubscriptionImSim subscription subscriptionImSim world
 
-        static member internal utilizeSubscriptionImNui subscription subscriptionImNui (world : World) =
+        static member internal utilizeSubscriptionImSim subscription subscriptionImSim (world : World) =
             if world.Imperative then
-                subscriptionImNui.SubscriptionUtilized <- true
+                subscriptionImSim.SubscriptionUtilized <- true
                 world
             else
-                let subscriptionImNui = { subscriptionImNui with SubscriptionUtilized = true }
-                let subscriptionsImNui = SUMap.add subscription subscriptionImNui world.SubscriptionsImNui
-                World.setSubscriptionsImNui subscriptionsImNui world
+                let subscriptionImSim = { subscriptionImSim with SubscriptionUtilized = true }
+                let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
+                World.setSubscriptionsImSim subscriptionsImSim world
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =
