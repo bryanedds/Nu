@@ -1524,6 +1524,12 @@ type ScatterType =
     | SkinScatter
     | FoliageScatter
 
+    member this.Enumerate =
+        match this with
+        | NoScatter -> 0.0f
+        | SkinScatter -> 0.1f
+        | FoliageScatter -> 0.2f
+
 [<RequireQualifiedAccess>]
 module Math =
 
