@@ -183,7 +183,7 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
     return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
 }
 
-vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
+vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eyeCenter;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
@@ -235,7 +235,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
+float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapIndex)
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
@@ -247,15 +247,16 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, samplerCube shad
             for (int k = 0; k < lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias > texture(shadowMap, positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[shadowMapIndex], positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-float computeShadowScalarSpot(vec4 position, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
+float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -265,7 +266,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, mat4 shadowMa
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
@@ -274,8 +275,9 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, mat4 shadowMa
     return 1.0;
 }
 
-float computeShadowScalarDirectional(vec4 position, mat4 shadowMatrix, sampler2D shadowTexture)
+float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
@@ -285,7 +287,7 @@ float computeShadowScalarDirectional(vec4 position, mat4 shadowMatrix, sampler2D
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -598,9 +600,9 @@ void main()
         {
             switch (lightType)
             {
-                case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]); break; } // point
-                case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]); break; } // spot
-                default: { shadowScalar = computeShadowScalarDirectional(position, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]); break; } // directional
+                case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex - SHADOW_TEXTURES_MAX); break; } // point
+                case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
+                default: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
             }
         }
 
@@ -664,7 +666,7 @@ void main()
         ambientColor = lightMapAmbientColors[lm1];
         ambientBrightness = lightMapAmbientBrightnesses[lm1];
         irradiance = texture(irradianceMaps[lm1], n).rgb;
-        vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
+        vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
         environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
     }
     else
@@ -686,8 +688,8 @@ void main()
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
-        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, n);
+        vec3 r1 = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
+        vec3 r2 = parallaxCorrection(lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, n);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
