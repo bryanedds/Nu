@@ -128,6 +128,12 @@ module Hl =
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
             Log.warn "Anisotropic texture filtering required to properly run Nu."
 
+        // assert that at least 32 texture units are available
+        let mutable imageUnits = 0
+        Gl.GetInteger<int> (OpenGL.GetPName.MaxTextureImageUnits, &imageUnits)
+        if imageUnits < 32 then
+            Log.fail ("Max texture image units too low to properly run Nu (" + string imageUnits + " available but 32 required).")
+
     /// Report the fact that a draw call has just been made with the given number of instances.
     let ReportDrawCall drawInstances =
         lock DrawReportLock (fun () ->
