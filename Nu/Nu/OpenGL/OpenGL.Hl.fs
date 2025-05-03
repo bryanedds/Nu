@@ -132,7 +132,7 @@ module Hl =
         let mutable imageUnits = 0
         Gl.GetInteger<int> (OpenGL.GetPName.MaxTextureImageUnits, &imageUnits)
         if imageUnits < Constants.OpenGL.TextureImageUnitsRequired then
-            Log.fail ("Max texture image units too low to properly run Nu (" + string imageUnits + " available but " + string Constants.OpenGL.TextureImageUnitsRequired + " required).")
+            Log.fail ("Max texture image units too low to run Nu (" + string imageUnits + " available but " + string Constants.OpenGL.TextureImageUnitsRequired + " required).")
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let ReportDrawCall drawInstances =
