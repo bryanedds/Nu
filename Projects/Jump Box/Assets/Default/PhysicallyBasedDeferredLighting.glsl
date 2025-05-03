@@ -200,7 +200,7 @@ float worldToDepthView(float near, float far, mat4 viewProjection, vec4 position
     return b / (ndcZ + a);
 }
 
-float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
+float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapIndex)
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
@@ -212,15 +212,16 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, samplerCube shad
             for (int k = 0; k < lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias > texture(shadowMap, positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[shadowMapIndex], positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
     return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
-float computeShadowScalarSpot(vec4 position, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
+float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -230,7 +231,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, mat4 shadowMa
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
@@ -239,8 +240,9 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, mat4 shadowMa
     return 1.0;
 }
 
-float computeShadowScalarDirectional(vec4 position, mat4 shadowMatrix, sampler2D shadowTexture)
+float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
@@ -250,7 +252,7 @@ float computeShadowScalarDirectional(vec4 position, mat4 shadowMatrix, sampler2D
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -258,7 +260,7 @@ float computeShadowScalarDirectional(vec4 position, mat4 shadowMatrix, sampler2D
     return 1.0;
 }
 
-float geometryTravelPoint(vec4 position, int lightIndex, samplerCube shadowMap)
+float geometryTravelPoint(vec4 position, int lightIndex, int shadowMapIndex)
 {
     // compute travel average in world space
     vec3 lightOrigin = lightOrigins[lightIndex];
@@ -272,7 +274,7 @@ float geometryTravelPoint(vec4 position, int lightIndex, samplerCube shadowMap)
             for (int k = -1; k <= 1; k += 2)
             {
                 vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
-                float shadowDepth = texture(shadowMap, positionShadow + offset).x;
+                float shadowDepth = texture(shadowMaps[shadowMapIndex], positionShadow + offset).x;
                 float delta = shadowZ - shadowDepth;
                 travel += max(0.0, delta);
             }
@@ -281,9 +283,10 @@ float geometryTravelPoint(vec4 position, int lightIndex, samplerCube shadowMap)
     return travel / 8.0;
 }
 
-float geometryTravelSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
 {
     // attempt to compute travel average in view space
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -297,13 +300,13 @@ float geometryTravelSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampl
         // compute light distance travel through surface (not accounting for incidental surface concavity)
         float travel = 0.0;
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+        vec2 shadowTextureSize = textureSize(shadowTextures[shadowIndex], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         for (int i = -1; i <= 1; ++i)
         {
             for (int j = -1; j <= 1; ++j)
             {
-                float shadowDepthScreen = texture(shadowTexture, shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
+                float shadowDepthScreen = texture(shadowTextures[shadowIndex], shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
                 float shadowDepth = depthScreenToDepthView(shadowNear, shadowFar, shadowDepthScreen);
                 float delta = shadowZ - shadowDepth;
                 travel += max(0.0, delta);
@@ -316,9 +319,10 @@ float geometryTravelSpot(vec4 position, int lightIndex, mat4 shadowMatrix, sampl
     return 1.0;
 }
 
-float geometryTravelDirectional(vec4 position, int lightIndex, mat4 shadowMatrix, sampler2D shadowTexture)
+float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
 {
     // attempt to compute travel average in view space
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
@@ -329,9 +333,9 @@ float geometryTravelDirectional(vec4 position, int lightIndex, mat4 shadowMatrix
         float shadowFar = lightCutoffs[lightIndex];
         float shadowZScreen = shadowTexCoordsProj.z * 0.5 + 0.5; // linear, screen space
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-        vec2 shadowTextureSize = textureSize(shadowTexture, 0);
+        vec2 shadowTextureSize = textureSize(shadowTextures[shadowIndex], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        float shadowDepthScreen = texture(shadowTexture, shadowTexCoords).x; // linear, screen space
+        float shadowDepthScreen = texture(shadowTextures[shadowIndex], shadowTexCoords).x; // linear, screen space
         float delta = shadowZScreen - shadowDepthScreen;
         return max(0.0, delta * shadowFar);
     }
@@ -353,13 +357,13 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
         switch (lightType)
         {
         case 0: // point light
-            travel = geometryTravelPoint(position, lightIndex, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+            travel = geometryTravelPoint(position, lightIndex, shadowIndex - SHADOW_TEXTURES_MAX);
             break;
         case 1: // spot light
-            travel = geometryTravelSpot(position, lightIndex, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            travel = geometryTravelSpot(position, lightIndex, shadowIndex);
             break;
         default: // directional light
-            travel = geometryTravelDirectional(position, lightIndex, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]);
+            travel = geometryTravelDirectional(position, lightIndex, shadowIndex);
             break;
         }
     }
@@ -790,9 +794,9 @@ void main()
             {
                 switch (lightType)
                 {
-                    case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]); break; } // point
-                    case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]); break; } // spot
-                    default: { shadowScalar = computeShadowScalarDirectional(position, shadowMatrices[shadowIndex], shadowTextures[shadowIndex]); break; } // directional
+                    case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex - SHADOW_TEXTURES_MAX); break; } // point
+                    case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
+                    default: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
                 }
             }
 
