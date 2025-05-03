@@ -130,7 +130,7 @@ module Hl =
 
         // assert that at least 32 texture units are available
         let mutable imageUnits = 0
-        Gl.GetInteger<int> (OpenGL.GetPName.MaxTextureImageUnits, &imageUnits)
+        Gl.GetInteger (GetPName.MaxTextureImageUnits, &imageUnits)
         if imageUnits < Constants.OpenGL.TextureImageUnitsRequired then
             Log.fail ("Max texture image units too low to run Nu (" + string imageUnits + " available but " + string Constants.OpenGL.TextureImageUnitsRequired + " required).")
 
