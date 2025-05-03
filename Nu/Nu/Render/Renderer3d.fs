@@ -2550,6 +2550,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderTasks
         renderer
         (lightOrigin : Vector3)
+        (lightCutoff : single)
         (shadowFace : int)
         (shadowView : Matrix4x4)
         (shadowProjection : Matrix4x4)
@@ -2567,7 +2568,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // setup shadow cube map face for rendering
         let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + shadowFace)
         OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, shadowMap.TextureId, 0)
-        OpenGL.Gl.ClearColor (Single.MaxValue, 0.0f, 0.0f, 0.0f)
+        OpenGL.Gl.ClearColor (lightCutoff, 0.0f, 0.0f, 0.0f)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
         OpenGL.Hl.Assert ()
         
@@ -3326,7 +3327,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
-        for struct (lightId, lightOrigin, _, _, lightDesireShadows, lightBounds) in pointLightsArray do
+        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows, lightBounds) in pointLightsArray do
             if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
@@ -3351,7 +3352,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             if shouldDraw then
                                 let shadowResolution = renderer.GeometryViewport.ShadowResolution
                                 let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowMapBuffersArray.[shadowMapBufferIndex]
-                                GlRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin shadowFace shadowView shadowProjection shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
+                                GlRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
                             // remember the utilized index for the next frame
                             renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax)
