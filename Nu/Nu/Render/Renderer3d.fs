@@ -2536,6 +2536,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Gl.ClearColor (1.0f, 0.0f, 0.0f, 0.0f)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
         OpenGL.Hl.Assert ()
 
@@ -2566,6 +2567,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // setup shadow cube map face for rendering
         let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + shadowFace)
         OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, shadowMap.TextureId, 0)
+        OpenGL.Gl.ClearColor (Single.MaxValue, 0.0f, 0.0f, 0.0f)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
         OpenGL.Hl.Assert ()
         
