@@ -17,6 +17,7 @@ void main()
 #shader fragment
 #version 410
 #extension GL_ARB_bindless_texture : require
+#extension GL_EXT_nonuniform_qualifier : enable
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;

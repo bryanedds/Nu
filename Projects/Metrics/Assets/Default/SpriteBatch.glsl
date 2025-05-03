@@ -55,6 +55,7 @@ void main()
 #shader fragment
 #version 410
 #extension GL_ARB_bindless_texture : require
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(bindless_sampler) uniform sampler2D tex;
 

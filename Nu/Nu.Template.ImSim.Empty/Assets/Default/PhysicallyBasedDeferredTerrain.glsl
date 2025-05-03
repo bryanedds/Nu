@@ -66,6 +66,7 @@ void main()
 #shader fragment
 #version 410
 #extension GL_ARB_bindless_texture : require
+#extension GL_EXT_nonuniform_qualifier : enable
 
 const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 8;
@@ -116,7 +117,7 @@ void main()
 
     // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
-    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * blendsOut[i/4][i%4];
+    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(nonuniformEXT(heightTextures[i]), texCoordsOut).r * blendsOut[i/4][i%4];
     float height = heightBlend * heightPlusOut.x;
 
     // compute tex coords in parallax space
@@ -134,11 +135,11 @@ void main()
     for (int i = 0; i < layersCountCeil; ++i)
     {
         float blend = blendsOut[i/4][i%4];
-        albedoBlend += texture(albedoTextures[i], texCoords) * blend;
-        vec4 roughness = texture(roughnessTextures[i], texCoords);
+        albedoBlend += texture(nonuniformEXT(albedoTextures[i]), texCoords) * blend;
+        vec4 roughness = texture(nonuniformEXT(roughnessTextures[i]), texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
-        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * blend;
-        normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
+        ambientOcclusionBlend += texture(nonuniformEXT(ambientOcclusionTextures[i]), texCoords).b * blend;
+        normalBlend += (texture(nonuniformEXT(normalTextures[i]), texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
     // discard fragment if even partly transparent

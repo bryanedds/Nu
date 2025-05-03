@@ -15,6 +15,7 @@ void main()
 #shader fragment
 #version 410
 #extension GL_ARB_bindless_texture : require
+#extension GL_EXT_nonuniform_qualifier : enable
 
 const float PI = 3.141592654;
 const int LIGHT_MAPS_MAX = 27;
@@ -55,13 +56,13 @@ void main()
         }
         else if (lm2 == -1)
         {
-            irradiance = texture(irradianceMaps[lm1], normal).rgb;
+            irradiance = texture(nonuniformEXT(irradianceMaps[lm1]), normal).rgb;
         }
         else
         {
             // compute blended irradiance
-            vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
-            vec3 irradiance2 = texture(irradianceMaps[lm2], normal).rgb;
+            vec3 irradiance1 = texture(nonuniformEXT(irradianceMaps[lm1]), normal).rgb;
+            vec3 irradiance2 = texture(nonuniformEXT(irradianceMaps[lm2]), normal).rgb;
             irradiance = mix(irradiance1, irradiance2, lmRatio);
         }
 

@@ -57,6 +57,7 @@ void main()
 #shader fragment
 #version 410
 #extension GL_ARB_bindless_texture : require
+#extension GL_EXT_nonuniform_qualifier : enable
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
@@ -248,7 +249,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapInd
             for (int k = 0; k < lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[shadowMapIndex], positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias > texture(nonuniformEXT(shadowMaps[shadowMapIndex]), positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
@@ -267,7 +268,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
+        float shadowDepthExp = texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
@@ -288,7 +289,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
+        float shadowDepthExp = texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -338,7 +339,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
-            float shadowDepth = texture(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], positionShadow).x;
+            float shadowDepth = texture(nonuniformEXT(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]), positionShadow).x;
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -417,7 +418,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).x : 1.0;
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -491,7 +492,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).x : 1.0;
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -666,7 +667,7 @@ void main()
     {
         ambientColor = lightMapAmbientColors[lm1];
         ambientBrightness = lightMapAmbientBrightnesses[lm1];
-        irradiance = texture(irradianceMaps[lm1], n).rgb;
+        irradiance = texture(nonuniformEXT(irradianceMaps[lm1]), n).rgb;
         vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
         environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
     }
@@ -684,8 +685,8 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
-        vec3 irradiance2 = texture(irradianceMaps[lm2], n).rgb;
+        vec3 irradiance1 = texture(nonuniformEXT(irradianceMaps[lm1]), n).rgb;
+        vec3 irradiance2 = texture(nonuniformEXT(irradianceMaps[lm2]), n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter

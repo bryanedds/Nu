@@ -15,6 +15,7 @@ void main()
 #shader fragment
 #version 410
 #extension GL_ARB_bindless_texture : require
+#extension GL_EXT_nonuniform_qualifier : enable
 
 const float FXAA_SPAN_MAX = 8.0;
 const float FXAA_REDUCE_MIN = 1.0 / 128.0;

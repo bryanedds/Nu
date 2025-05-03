@@ -132,6 +132,10 @@ module Hl =
         if not (extensions.Contains "GL_ARB_bindless_texture") then
             Log.fail "Bindless textures required to run Nu."
 
+        // assert that GL_EXT_nonuniform_qualifier is available
+        if not (extensions.Contains "GL_EXT_nonuniform_qualifier") then
+            Log.fail "Non-uniform qualifiers required to run Nu."
+
     /// Report the fact that a draw call has just been made with the given number of instances.
     let ReportDrawCall drawInstances =
         lock DrawReportLock (fun () ->
