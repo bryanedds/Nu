@@ -213,7 +213,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapInd
             for (int k = 0; k < lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias > texture(nonuniformEXT(shadowMaps[shadowMapIndex]), positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[nonuniformEXT(shadowMapIndex)], positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
@@ -232,7 +232,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[nonuniformEXT(shadowIndex)], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
@@ -253,7 +253,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[nonuniformEXT(shadowIndex)], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -275,7 +275,7 @@ float geometryTravelPoint(vec4 position, int lightIndex, int shadowMapIndex)
             for (int k = -1; k <= 1; k += 2)
             {
                 vec3 offset = vec3(i, j, k) * lightShadowSampleScalar;
-                float shadowDepth = texture(nonuniformEXT(shadowMaps[shadowMapIndex]), positionShadow + offset).x;
+                float shadowDepth = texture(shadowMaps[nonuniformEXT(shadowMapIndex)], positionShadow + offset).x;
                 float delta = shadowZ - shadowDepth;
                 travel += max(0.0, delta);
             }
@@ -301,13 +301,13 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
         // compute light distance travel through surface (not accounting for incidental surface concavity)
         float travel = 0.0;
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-        vec2 shadowTextureSize = textureSize(nonuniformEXT(shadowTextures[shadowIndex]), 0);
+        vec2 shadowTextureSize = textureSize(shadowTextures[nonuniformEXT(shadowIndex)], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         for (int i = -1; i <= 1; ++i)
         {
             for (int j = -1; j <= 1; ++j)
             {
-                float shadowDepthScreen = texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
+                float shadowDepthScreen = texture(shadowTextures[nonuniformEXT(shadowIndex)], shadowTexCoords + vec2(i, j) * shadowTexelSize).x;
                 float shadowDepth = depthScreenToDepthView(shadowNear, shadowFar, shadowDepthScreen);
                 float delta = shadowZ - shadowDepth;
                 travel += max(0.0, delta);
@@ -334,9 +334,9 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
         float shadowFar = lightCutoffs[lightIndex];
         float shadowZScreen = shadowTexCoordsProj.z * 0.5 + 0.5; // linear, screen space
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
-        vec2 shadowTextureSize = textureSize(nonuniformEXT(shadowTextures[shadowIndex]), 0);
+        vec2 shadowTextureSize = textureSize(shadowTextures[nonuniformEXT(shadowIndex)], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        float shadowDepthScreen = texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).x; // linear, screen space
+        float shadowDepthScreen = texture(shadowTextures[nonuniformEXT(shadowIndex)], shadowTexCoords).x; // linear, screen space
         float delta = shadowZScreen - shadowDepthScreen;
         return max(0.0, delta * shadowFar);
     }
@@ -438,7 +438,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
-            float shadowDepth = texture(nonuniformEXT(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]), positionShadow).x;
+            float shadowDepth = texture(shadowMaps[nonuniformEXT(shadowIndex - SHADOW_TEXTURES_MAX)], positionShadow).x;
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -517,7 +517,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[nonuniformEXT(shadowIndex)], shadowTexCoords).x : 1.0;
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -591,7 +591,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(nonuniformEXT(shadowTextures[shadowIndex]), shadowTexCoords).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[nonuniformEXT(shadowIndex)], shadowTexCoords).x : 1.0;
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function

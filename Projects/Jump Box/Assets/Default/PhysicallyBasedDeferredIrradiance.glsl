@@ -56,13 +56,13 @@ void main()
         }
         else if (lm2 == -1)
         {
-            irradiance = texture(nonuniformEXT(irradianceMaps[lm1]), normal).rgb;
+            irradiance = texture(irradianceMaps[nonuniformEXT(lm1)], normal).rgb;
         }
         else
         {
             // compute blended irradiance
-            vec3 irradiance1 = texture(nonuniformEXT(irradianceMaps[lm1]), normal).rgb;
-            vec3 irradiance2 = texture(nonuniformEXT(irradianceMaps[lm2]), normal).rgb;
+            vec3 irradiance1 = texture(irradianceMaps[nonuniformEXT(lm1)], normal).rgb;
+            vec3 irradiance2 = texture(irradianceMaps[nonuniformEXT(lm2)], normal).rgb;
             irradiance = mix(irradiance1, irradiance2, lmRatio);
         }
 
