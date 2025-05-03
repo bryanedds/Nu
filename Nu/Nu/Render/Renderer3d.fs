@@ -3246,12 +3246,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match renderPass with
                     | ShadowPass (shadowLightId, shadowFaceInfoOpt, shadowLightType, shadowRotation, _) when lightId = shadowLightId && shadowFaceInfoOpt.IsNone && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
 
-                        // skip index 0 when no lights are directional and there are at least two shadows allowed
-                        if  shadowTextureBufferIndex = 0 &&
-                            shadowTextureBufferIndex < dec Constants.Render.ShadowTexturesMax &&
-                            shadowLightType <> DirectionalLight then
-                            shadowTextureBufferIndex <- 1
-
                         // attempt to set up shadow texture drawing
                         let (shadowOrigin, shadowView, shadowProjection) =
                             match shadowLightType with
@@ -3284,7 +3278,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         if shouldDraw then
 
                             // draw shadow texture
-                            let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex renderer.GeometryViewport
+                            let shadowResolution = renderer.GeometryViewport.ShadowTextureResolution
                             let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
                             GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
 
@@ -3350,7 +3344,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     else true
                                 | (_, _) -> true
                             if shouldDraw then
-                                let shadowResolution = renderer.GeometryViewport.ShadowResolution
+                                let shadowResolution = renderer.GeometryViewport.ShadowMapResolution
                                 let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                 GlRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 

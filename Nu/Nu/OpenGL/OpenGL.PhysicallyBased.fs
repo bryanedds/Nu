@@ -523,16 +523,16 @@ module PhysicallyBased =
 
         // create shadow texture buffers array
         let shadowTextureBuffersArray =
-            [|for shadowTextureBufferIndex in 0 .. dec Constants.Render.ShadowTexturesMax do
-                let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex geometryViewport
+            [|for _ in 0 .. dec Constants.Render.ShadowTexturesMax do
+                let shadowResolution = geometryViewport.ShadowTextureResolution
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
 
         // create second array of shadow texture buffers
         let shadowTextureBuffers2Array =
-            [|for shadoTexturewBufferIndex in 0 .. dec Constants.Render.ShadowTexturesMax do
-                let shadowResolution = Viewport.getShadowTextureBufferResolution shadoTexturewBufferIndex geometryViewport
+            [|for _ in 0 .. dec Constants.Render.ShadowTexturesMax do
+                let shadowResolution = geometryViewport.ShadowTextureResolution
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
@@ -540,7 +540,7 @@ module PhysicallyBased =
         // create shadow map buffers array
         let shadowMapBuffersArray =
             [|for _ in 0 .. dec Constants.Render.ShadowMapsMax do
-                let shadowResolution = geometryViewport.ShadowResolution
+                let shadowResolution = geometryViewport.ShadowMapResolution
                 match OpenGL.Framebuffer.TryCreateShadowMapBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowMapBuffers -> shadowMapBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
