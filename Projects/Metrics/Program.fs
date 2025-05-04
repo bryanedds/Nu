@@ -76,7 +76,7 @@ type MmccGameDispatcher () =
         else world
 #else
 type MyGameDispatcher () =
-#if IMNUI
+#if IMSIM
     inherit GameDispatcherImSim ()
 
     static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
