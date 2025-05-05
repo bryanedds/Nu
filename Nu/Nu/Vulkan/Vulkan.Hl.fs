@@ -943,6 +943,10 @@ module Hl =
                     vkc._WindowSizeOpt <- Some windowSize_ // update window size
             | None -> vkc._WindowSizeOpt <- Some windowSize_ // init window size
             
+            // TODO: DJL: figure out whether and how to use swap extent.
+            let ws = vkc._WindowSizeOpt.Value
+            let windowExtent = VkExtent2D (ws.X, ws.Y)
+            
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
@@ -951,13 +955,13 @@ module Hl =
             if vkc._WindowResized then
                 vkc._RenderDesired <- false
                 VulkanContext.updateSwapExtent vkc
-                Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                Swapchain.refresh windowExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
             else
                 let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                 if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then
                     vkc._RenderDesired <- false
                     VulkanContext.updateSwapExtent vkc
-                    Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                    Swapchain.refresh windowExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
                 else
                     vkc._RenderDesired <- true
                     check result
@@ -971,7 +975,7 @@ module Hl =
                 let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
                 // clear screen
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
+                let renderArea = VkRect2D (VkOffset2D.Zero, windowExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
                 beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
                 endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
@@ -990,9 +994,12 @@ module Hl =
         static member present (vkc : VulkanContext) =
             if vkc.RenderDesired then
             
+                let ws = vkc._WindowSizeOpt.Value
+                let windowExtent = VkExtent2D (ws.X, ws.Y)
+                
                 // transition image layout for presentation
                 let mutable renderFinished = vkc.RenderFinishedSemaphore
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
+                let renderArea = VkRect2D (VkOffset2D.Zero, windowExtent)
                 beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
                 endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
                 
@@ -1009,7 +1016,7 @@ module Hl =
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR then
                     VulkanContext.updateSwapExtent vkc
-                    Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                    Swapchain.refresh windowExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
                 else check result
 
                 // advance frame in flight
