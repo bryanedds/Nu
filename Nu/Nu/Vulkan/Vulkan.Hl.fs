@@ -697,11 +697,7 @@ module Hl =
             let mutable aInfo = VkApplicationInfo ()
 
             // this is the *maximum* Vulkan version
-#if DEBUG
             aInfo.apiVersion <- VkVersion.Version_1_1 // as conservative as possible for dev; 1.1 to enable features in Nsight Graphics
-#else
-            aInfo.apiVersion <- VkVersion.Version_1_4 // as unrestricted as possible for release
-#endif
 
             // create instance
             let mutable info = VkInstanceCreateInfo ()
@@ -943,24 +939,28 @@ module Hl =
             match vkc._WindowSizeOpt with
             | Some windowSize ->
                 vkc._WindowResized <- windowSize <> windowSize_
-                if vkc._WindowResized then vkc._WindowSizeOpt <- Some windowSize_ // update window size
+                if vkc._WindowResized then
+                    vkc._WindowSizeOpt <- Some windowSize_ // update window size
             | None -> vkc._WindowSizeOpt <- Some windowSize_ // init window size
             
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
 
-            // try to acquire image from swapchain to draw onto
-            let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-            
-            // refresh swapchain here only if image acquisition fails (not signaling semaphore)
-            if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then
+            // must refresh swapchain immediately upon screen resize, otherwise try to acquire image from swapchain to draw onto, refreshing if swapchain out of date
+            if vkc._WindowResized then
                 vkc._RenderDesired <- false
                 VulkanContext.updateSwapExtent vkc
                 Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
             else
-                vkc._RenderDesired <- true
-                check result
+                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then
+                    vkc._RenderDesired <- false
+                    VulkanContext.updateSwapExtent vkc
+                    Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                else
+                    vkc._RenderDesired <- true
+                    check result
 
             if vkc.RenderDesired then
             
@@ -1006,14 +1006,14 @@ module Hl =
                 info.pImageIndices <- asPointer &ImageIndex
                 let result = Vulkan.vkQueuePresentKHR (vkc._PresentQueue, asPointer &info)
 
-                // refresh swapchain if screen resized or framebuffer otherwise out of date or suboptimal
-                if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR || vkc._WindowResized then
+                // refresh swapchain if framebuffer out of date or suboptimal
+                if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR then
                     VulkanContext.updateSwapExtent vkc
                     Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
                 else check result
 
-            // advance frame in flight
-            _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
+                // advance frame in flight
+                _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle (vkc : VulkanContext) =
