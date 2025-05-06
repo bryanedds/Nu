@@ -122,8 +122,9 @@ module ImGui =
 
             let mutable complete = false
 
+            let windowSize = v2 900.0f 500.0f
             ImGui.PushID (dialogState.GetHashCode ())
-            ImGui.SetNextWindowSize (v2 740.0f 410.0f, ImGuiCond.Appearing)
+            ImGui.SetNextWindowSize (windowSize, ImGuiCond.Appearing)
             ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             if not (ImGui.IsPopupOpen dialogState.Title) then ImGui.OpenPopup dialogState.Title
             if ImGui.BeginPopupModal (dialogState.Title, &opened, ImGuiWindowFlags.NoDocking) then
@@ -134,9 +135,10 @@ module ImGui =
                 // Draw path
                 ImGui.Text ("Path: " + PathF.Normalize dialogState.DirectoryPath.FullName)
 
+                let fontSize = ImGui.GetFontSize ()
                 let contentRegionWidth = ImGui.GetContentRegionAvail().X
 
-                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+                ImGui.BeginChild ("##browser", v2 contentRegionWidth (windowSize.Y - fontSize * 7.5f), ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
                 ImGui.Columns 4
 
                 // Columns size
@@ -285,7 +287,7 @@ module ImGui =
 
                 fileNameBuffer <- fileNameStr.Substring(0, fileNameSize)
 
-                ImGui.PushItemWidth (ImGui.GetContentRegionAvail().X - 65.0f)
+                ImGui.PushItemWidth (ImGui.GetContentRegionAvail().X - fontSize * 5.0f)
                 if ImGui.InputText ("File Name", &fileNameBuffer, uint fileNameBufferSize, ImGuiInputTextFlags.AutoSelectAll) then
                     dialogState.FileName <- fileNameBuffer
                     dialogState.CurrentIndex <- 0UL
