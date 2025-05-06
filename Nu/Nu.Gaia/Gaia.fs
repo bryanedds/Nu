@@ -3635,9 +3635,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     for assetEntry in packageEntry.Value |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                         let assetName = assetEntry.Key
                         if (assetName.ToLowerInvariant ()).Contains (AssetViewerSearchStr.ToLowerInvariant ()) then
+                            let assetImageSize = v2Dup (ImGui.GetFontSize () + 3.0f)
                             match World.imGuiTryGetTextureId (asset packageEntry.Key assetName) world with
                             | ValueSome textureId ->
-                                ImGui.Image (nativeint textureId, v2Dup 16.0f)
+                                ImGui.Image (nativeint textureId, assetImageSize)
                                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayShort then
                                     let zoom = ImGui.IsShiftDown ()
                                     let size = if zoom then v2Dup 256.0f else v2Dup 128.0f
@@ -3647,7 +3648,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     if ImGui.BeginTooltip () then
                                         ImGui.Image (nativeint textureId, size)
                                         ImGui.EndTooltip ()
-                            | ValueNone -> ImGui.Dummy (v2Dup 16.0f)
+                            | ValueNone -> ImGui.Dummy assetImageSize
                             ImGui.SameLine ()
                             ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
                             if ImGui.BeginDragDropSource () then // NOTE: it appears that drag-dropping only works from nodes in Dear ImGui.
