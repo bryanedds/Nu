@@ -331,6 +331,11 @@ module Physics =
              StringComparer.Ordinal)
 
 [<RequireQualifiedAccess>]
+module ImGui =
+
+    let [<Uniform>] mutable FontSize = match ConfigurationManager.AppSettings.["ImGuiFontSize"] with null -> 13.0f | value -> scvalue value
+
+[<RequireQualifiedAccess>]
 module Nav =
     
     let [<Literal>] Bounds3dMagnitudeMax = 256.0f

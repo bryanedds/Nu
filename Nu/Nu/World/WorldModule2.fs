@@ -2016,7 +2016,6 @@ module WorldModule2 =
                                                                 // process imgui frame
                                                                 world.Timers.ImGuiTimer.Restart ()
                                                                 let imGui = World.getImGui world
-                                                                if not firstFrame then imGui.EndFrame ()
                                                                 imGui.BeginFrame (single world.DateDelta.TotalSeconds)
                                                                 let world = World.imGuiProcess world
                                                                 let (world : World) = imGuiProcess world
