@@ -11,17 +11,6 @@ open SDL2
 open Prime
 open Nu
 
-module OpenGL =
-
-    let [<Literal>] VersionMajor = 4
-    let [<Literal>] VersionMinor = 1
-    let [<Literal>] Profile = SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE
-    let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" // TODO: consider added "core" profile specifier here and in the glsl asset files.
-    let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
-    let [<Literal>] BlockCompressedTextureFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
-    let [<Literal>] TextureImageUnitsRequired = 32
-    let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings.["HlDebug"] with null -> false | value -> scvalue value
-
 [<RequireQualifiedAccess>]
 module Assimp =
 
@@ -35,6 +24,23 @@ module Assimp =
     let [<Literal>] ScatterTypePropertyName = RawPropertyPrefix + "ScatterType"
     let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
     let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
+
+// NOTE: no qualification specifier here as module exists as an extension.
+module OpenGL =
+
+    let [<Literal>] VersionMajor = 4
+    let [<Literal>] VersionMinor = 1
+    let [<Literal>] Profile = SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE
+    let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" // TODO: consider added "core" profile specifier here and in the glsl asset files.
+    let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
+    let [<Literal>] BlockCompressedTextureFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+    let [<Literal>] TextureImageUnitsRequired = 32
+    let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings.["HlDebug"] with null -> false | value -> scvalue value
+
+[<RequireQualifiedAccess>]
+module ImGui =
+
+    let [<Uniform>] mutable FontSize = match ConfigurationManager.AppSettings.["ImGuiFontSize"] with null -> 13.0f | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Engine =
@@ -329,11 +335,6 @@ module Physics =
               "BodyShape"
               "Sensor"],
              StringComparer.Ordinal)
-
-[<RequireQualifiedAccess>]
-module ImGui =
-
-    let [<Uniform>] mutable FontSize = match ConfigurationManager.AppSettings.["ImGuiFontSize"] with null -> 13.0f | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Nav =
