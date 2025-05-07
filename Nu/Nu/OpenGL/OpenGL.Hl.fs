@@ -186,6 +186,8 @@ module Hl =
         match OpenGL.Gl.GetGraphicsResetStatus () with
         | OpenGL.GraphicsResetStatus.NoError -> ()
         | status -> Log.fail ("Unexpected OpenGL graphics reset (GraphicResetStatus = " + string status + ").")
+#else
+        ()
 #endif
 
     /// Save the current bound RGBA framebuffer to an image file.
