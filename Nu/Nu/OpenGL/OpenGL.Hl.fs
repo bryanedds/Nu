@@ -182,13 +182,11 @@ module Hl =
 
     /// End an OpenGL frame.
     let EndFrame () =
-        // NOTE: on some deployments, this API call appears to not be available, so this is dummied out. Apparently,
-        // this call requires the KHR_robustness extension -
-        // https://github.com/KhronosGroup/OpenGL-Registry/blob/main/extensions/KHR/KHR_robustness.txt
-        //match OpenGL.Gl.GetGraphicsResetStatus () with
-        //| OpenGL.GraphicsResetStatus.NoError -> ()
-        //| status -> Log.fail ("Unexpected OpenGL graphics reset (GraphicResetStatus = " + string status + ").")
-        ()
+#if DEBUG
+        match OpenGL.Gl.GetGraphicsResetStatus () with
+        | OpenGL.GraphicsResetStatus.NoError -> ()
+        | status -> Log.fail ("Unexpected OpenGL graphics reset (GraphicResetStatus = " + string status + ").")
+#endif
 
     /// Save the current bound RGBA framebuffer to an image file.
     /// Only works on Windows platforms for now.
