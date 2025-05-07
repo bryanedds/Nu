@@ -15,6 +15,7 @@ This repository hosts several projects, including -
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
 - the 2D action game tutorial, ['Blaze Vector'](https://github.com/bryanedds/Nu/tree/master/Projects/Blaze%20Vector).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Nu/releases/download/v18.15.0/Project.5.Prototype.Sample.v0.1.0.zip).
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade), full game available now here - https://store.steampowered.com/app/3089800/Omni_Blade/
 
 Getting Started with Nu
