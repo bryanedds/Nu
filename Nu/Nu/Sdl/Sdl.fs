@@ -131,7 +131,7 @@ module SdlDeps =
                 let result = SDL.SDL_Init initConfig
                 if result = 0 then
                     let mutable sdlVersion = Unchecked.defaultof<_>
-                    SDL.SDL_GetVersion (&sdlVersion)
+                    SDL.SDL_GetVersion &sdlVersion
                     Log.info ("Initialized SDL " + string sdlVersion.major + "." + string sdlVersion.minor + "." + string sdlVersion.patch + ".")
                 result)
             (fun () -> SDL.SDL_Quit ()) with
