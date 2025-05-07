@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int BONES_MAX = 128;
 const int BONES_INFLUENCE_MAX = 4;
@@ -31,7 +31,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform float lightShadowExponent;
 

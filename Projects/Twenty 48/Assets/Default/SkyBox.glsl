@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -15,7 +15,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform vec3 color;
 uniform float brightness;

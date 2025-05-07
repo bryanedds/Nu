@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 
@@ -55,7 +55,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;

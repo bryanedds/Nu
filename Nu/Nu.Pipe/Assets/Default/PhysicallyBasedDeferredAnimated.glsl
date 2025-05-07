@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 const int BONES_MAX = 128;
@@ -77,7 +77,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float GAMMA = 2.2;
 
