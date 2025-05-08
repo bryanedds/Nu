@@ -431,6 +431,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
+        float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
@@ -462,10 +463,11 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 
                 // accumulate
                 result += fogMoment * intensity;
+                validSteps += intensity > 0.0 ? 1.0 : 0.0;
             }
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
@@ -490,8 +492,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 
         // compute ray info
         vec3 startPosition = eyeCenter;
-        vec3 stopPosition = position.xyz;
-        vec3 rayVector = stopPosition - startPosition;
+        vec3 rayVector = position.xyz - startPosition;
         float rayLength = length(rayVector);
         vec3 rayDirection = rayVector / rayLength;
 
@@ -507,6 +508,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
+        float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
@@ -541,10 +543,11 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 
                 // accumulate
                 result += fogMoment * intensity;
+                validSteps += intensity > 0.0 ? 1.0 : 0.0;
             }
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
@@ -564,8 +567,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 
         // compute ray info
         vec3 startPosition = eyeCenter;
-        vec3 stopPosition = position.xyz;
-        vec3 rayVector = stopPosition - startPosition;
+        vec3 rayVector = position.xyz - startPosition;
         float rayLength = length(rayVector);
         vec3 rayDirection = rayVector / rayLength;
 
@@ -830,14 +832,12 @@ void main()
             // accumulate fog
             if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
             {
-                vec3 fog = vec3(0.0);
                 switch (lightType)
                 {
-                    case 0: { fog = computeFogAccumPoint(position, i); break; } // point
-                    case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
-                    default: { fog = computeFogAccumDirectional(position, i); break; } // directional
+                    case 0: { fogAccum.rgb += computeFogAccumPoint(position, i); break; } // point
+                    case 1: { fogAccum.rgb += computeFogAccumSpot(position, i); break; } // spot
+                    default: { fogAccum.rgb += computeFogAccumDirectional(position, i); break; } // directional
                 }
-                fogAccum += vec4(fog, 0.0);
             }
         }
 

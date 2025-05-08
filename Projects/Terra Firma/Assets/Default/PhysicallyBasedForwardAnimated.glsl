@@ -329,9 +329,6 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
         float lightConeInner = lightConeInners[lightIndex];
         float lightConeOuter = lightConeOuters[lightIndex];
 
-        // compute shadow space
-        mat4 shadowMatrix = shadowMatrices[shadowIndex];
-
         // compute ray info
         vec3 startPosition = eyeCenter;
         vec3 stopPosition = position.xyz;
@@ -351,6 +348,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
+        float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
@@ -382,10 +380,11 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 
                 // accumulate
                 result += fogMoment * intensity;
+                validSteps += intensity > 0.0 ? 1.0 : 0.0;
             }
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
@@ -410,8 +409,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 
         // compute ray info
         vec3 startPosition = eyeCenter;
-        vec3 stopPosition = position.xyz;
-        vec3 rayVector = stopPosition - startPosition;
+        vec3 rayVector = position.xyz - startPosition;
         float rayLength = length(rayVector);
         vec3 rayDirection = rayVector / rayLength;
 
@@ -427,6 +425,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
+        float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // step through ray, accumulating fog light moment
@@ -461,10 +460,11 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 
                 // accumulate
                 result += fogMoment * intensity;
+                validSteps += intensity > 0.0 ? 1.0 : 0.0;
             }
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
@@ -484,8 +484,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 
         // compute ray info
         vec3 startPosition = eyeCenter;
-        vec3 stopPosition = position.xyz;
-        vec3 rayVector = stopPosition - startPosition;
+        vec3 rayVector = position.xyz - startPosition;
         float rayLength = length(rayVector);
         vec3 rayDirection = rayVector / rayLength;
 
@@ -579,6 +578,7 @@ void main()
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
+    vec3 fogAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
@@ -650,14 +650,12 @@ void main()
         // accumulate fog
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
-            vec3 fog = vec3(0.0);
             switch (lightType)
             {
-                case 0: { fog = computeFogAccumPoint(position, i); break; } // point
-                case 1: { fog = computeFogAccumSpot(position, i); break; } // spot
-                default: { fog = computeFogAccumDirectional(position, i); break; } // directional
+                case 0: { fogAccum += computeFogAccumPoint(position, i); break; } // point
+                case 1: { fogAccum += computeFogAccumSpot(position, i); break; } // spot
+                default: { fogAccum += computeFogAccumDirectional(position, i); break; } // directional
             }
-            lightAccumDiffuse += fog;
         }
     }
 
@@ -730,7 +728,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
     // compute color composition
-    vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular;
+    vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;
 
     // compute and apply global fog when enabled
     if (fogEnabled == 1)
@@ -740,13 +738,13 @@ void main()
         color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
 
-    // HACK: increase alpha when accumulated specular light exceeds albedo alpha so that specular can be seen on pure
-    // alpha surfaces. Also tone map and gamma correct specular light color (doing so seems to look better). Finally,
-    // apply alpha from albedo uniform.
+    // increase alpha when accumulated specular light or fog exceeds albedo alpha. Also tone map and gamma-correct
+    // specular light color (doing so seems to look better). Finally, apply alpha from albedo uniform.
     lightAccumSpecular = lightAccumSpecular / (lightAccumSpecular + vec3(1.0));
     lightAccumSpecular = pow(lightAccumSpecular, vec3(1.0 / GAMMA));
     float lightAccumAlpha = (lightAccumSpecular.r + lightAccumSpecular.g + lightAccumSpecular.b) / 3.0;
-    albedo.a = max(albedo.a, lightAccumAlpha);
+    float fogAccumAlpha = (fogAccum.r + fogAccum.g + fogAccum.b) / 3.0;
+    albedo.a = max(albedo.a, max(lightAccumAlpha, fogAccumAlpha * 2.0));
     albedo.a = albedo.a * albedoOut.a;
 
     // apply tone mapping and gamma correction
