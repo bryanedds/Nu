@@ -351,37 +351,39 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
         float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
-            // step through ray, accumulating fog light moment
+            // compute depths
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
             float shadowDepth = texture(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], positionShadow).x;
+
+            // compute intensity inside light volume
+            vec3 v = normalize(eyeCenter - currentPosition);
+            vec3 d = lightOrigin - currentPosition;
+            vec3 l = normalize(d);
+            vec3 h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float distance = sqrt(distanceSquared);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
+            float angle = acos(dot(l, -lightDirection));
+            float halfConeInner = lightConeInner * 0.5;
+            float halfConeOuter = lightConeOuter * 0.5;
+            float halfConeDelta = halfConeOuter - halfConeInner;
+            float halfConeBetween = angle - halfConeInner;
+            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+            float intensity = attenuation * halfConeScalar * cutoffScalar;
+
+            // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
-
-                // compute intensity inside light volume
-                vec3 v = normalize(eyeCenter - currentPosition);
-                vec3 d = lightOrigin - currentPosition;
-                vec3 l = normalize(d);
-                vec3 h = normalize(v + l);
-                float distanceSquared = dot(d, d);
-                float distance = sqrt(distanceSquared);
-                float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
-                float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
-                float angle = acos(dot(l, -lightDirection));
-                float halfConeInner = lightConeInner * 0.5;
-                float halfConeOuter = lightConeOuter * 0.5;
-                float halfConeDelta = halfConeOuter - halfConeInner;
-                float halfConeBetween = angle - halfConeInner;
-                float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                float intensity = attenuation * halfConeScalar * cutoffScalar;
-
-                // accumulate
                 result += fogMoment * intensity;
-                validSteps += intensity > 0.0 ? 1.0 : 0.0;
             }
+            
+            // step
+            validSteps += intensity > 0.0 ? 1.0 : 0.0;
             currentPosition += step;
         }
         result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
@@ -428,40 +430,42 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
         float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
-            // step through ray, accumulating fog light moment
+            // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
             vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+
+            // compute intensity inside light volume
+            vec3 v = normalize(eyeCenter - currentPosition);
+            vec3 d = lightOrigin - currentPosition;
+            vec3 l = normalize(d);
+            vec3 h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float distance = sqrt(distanceSquared);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
+            float angle = acos(dot(l, -lightDirection));
+            float halfConeInner = lightConeInner * 0.5;
+            float halfConeOuter = lightConeOuter * 0.5;
+            float halfConeDelta = halfConeOuter - halfConeInner;
+            float halfConeBetween = angle - halfConeInner;
+            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+            float intensity = attenuation * halfConeScalar * cutoffScalar;
+
+            // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
-
-                // compute intensity inside light volume
-                vec3 v = normalize(eyeCenter - currentPosition);
-                vec3 d = lightOrigin - currentPosition;
-                vec3 l = normalize(d);
-                vec3 h = normalize(v + l);
-                float distanceSquared = dot(d, d);
-                float distance = sqrt(distanceSquared);
-                float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
-                float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
-                float angle = acos(dot(l, -lightDirection));
-                float halfConeInner = lightConeInner * 0.5;
-                float halfConeOuter = lightConeOuter * 0.5;
-                float halfConeDelta = halfConeOuter - halfConeInner;
-                float halfConeBetween = angle - halfConeInner;
-                float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                float intensity = attenuation * halfConeScalar * cutoffScalar;
-
-                // accumulate
                 result += fogMoment * intensity;
-                validSteps += intensity > 0.0 ? 1.0 : 0.0;
             }
+
+            // step
+            validSteps += intensity > 0.0 ? 1.0 : 0.0;
             currentPosition += step;
         }
         result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
@@ -502,13 +506,15 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         vec3 currentPosition = startPosition + step * dithering;
         for (int i = 0; i < ssvfSteps; ++i)
         {
-            // step through ray, accumulating fog light moment
+            // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
             vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+
+            // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -516,6 +522,8 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment;
             }
+
+            // step
             currentPosition += step;
         }
         result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
