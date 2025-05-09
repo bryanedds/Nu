@@ -178,7 +178,7 @@ module Material =
           ScatterImageOpt = ValueNone
           TwoSidedOpt = ValueNone }
 
-/// A mutable 3d light probe value.
+/// A mutable 3d light probe value type.
 type [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
       mutable Enabled : bool
@@ -186,7 +186,7 @@ type [<Struct>] LightProbe3dValue =
       mutable Bounds : Box3
       mutable Stale : bool }
 
-/// A mutable 3d light value.
+/// A mutable 3d light value type.
 type [<Struct>] Light3dValue =
     { mutable LightId : uint64
       mutable Origin : Vector3
@@ -202,7 +202,7 @@ type [<Struct>] Light3dValue =
       mutable DesireShadows : bool
       mutable Bounds : Box3 }
 
-/// A mutable billboard value.
+/// A mutable billboard value type.
 type [<Struct>] BillboardValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -214,7 +214,7 @@ type [<Struct>] BillboardValue =
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
-/// A mutable static model value.
+/// A mutable static model value type.
 type [<Struct>] StaticModelValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -225,7 +225,7 @@ type [<Struct>] StaticModelValue =
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
-/// A mutable static model surface value.
+/// A mutable static model surface value type.
 type [<Struct>] StaticModelSurfaceValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool

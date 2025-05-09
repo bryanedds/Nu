@@ -3092,7 +3092,7 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
-        ///
+        /// TODO: document this!
         member this.AnimateBones (world : World) =
             let time = world.GameTime
             let animations = this.GetAnimations world
