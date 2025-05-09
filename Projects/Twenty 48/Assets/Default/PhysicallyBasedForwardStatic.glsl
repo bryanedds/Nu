@@ -732,7 +732,8 @@ void main()
     lightAccumSpecular = lightAccumSpecular / (lightAccumSpecular + vec3(1.0));
     lightAccumSpecular = pow(lightAccumSpecular, vec3(1.0 / GAMMA));
     float lightAccumAlpha = (lightAccumSpecular.r + lightAccumSpecular.g + lightAccumSpecular.b) / 3.0;
-    float fogAccumAlpha = (fogAccum.r + fogAccum.g + fogAccum.b) / 3.0;
+    float fogAccumAlphaScalar = 6.0; // arbitrary scalar
+    float fogAccumAlpha = (fogAccum.r + fogAccum.g + fogAccum.b) / 3.0 * fogAccumAlphaScalar;
     albedo.a = max(albedo.a, max(lightAccumAlpha, fogAccumAlpha));
     albedo.a = albedo.a * albedoOut.a;
     
