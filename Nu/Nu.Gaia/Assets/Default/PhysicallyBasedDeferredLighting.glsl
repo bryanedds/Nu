@@ -852,7 +852,10 @@ void main()
         // compute ambient light
         vec3 ambientColor = ambientColorAndBrightness.rgb;
         float ambientBrightness = ambientColorAndBrightness.a;
-        vec3 ambientLight = ambientColor * ambientBrightness * ambientOcclusion;
+        float ambientBoostCutoff = 0.25; // TODO: make lighting uniform.
+        float ambientBoostFactor = smoothstep(1.0 - ambientBoostCutoff, 1.0, 1.0 - roughness);
+        float ambientBoost = 1.0 + ambientBoostFactor * (ambientBoostCutoff * 2.0);
+        vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
 
         // compute diffuse term
         vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);

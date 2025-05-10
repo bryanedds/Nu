@@ -721,7 +721,10 @@ void main()
     }
 
     // compute ambient terms
-    vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientOcclusion;
+    float ambientBoostCutoff = 0.25; // TODO: make lighting uniform.
+    float ambientBoostFactor = smoothstep(1.0 - ambientBoostCutoff, 1.0, 1.0 - roughness);
+    float ambientBoost = 1.0 + ambientBoostFactor * (ambientBoostCutoff * 2.0);
+    vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
     vec3 ambientSpecular = ambientDiffuse * ambientOcclusion;
 
     // compute diffuse term
