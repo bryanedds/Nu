@@ -667,13 +667,13 @@ module WorldEntityModule =
             | (true, childrenOpt) ->
                 match childrenOpt with
                 | Some children ->
-                        seq {
+                    seq {
                         for child in children do
                             let childEntity = child :?> Entity
                             yield childEntity
                             yield! childEntity.GetDescendants world }
-                    | None -> Seq.empty
-                | (false, _) -> Seq.empty
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         /// Get all the entities directly parented by the group.
         static member getSovereignEntities (group : Group) world =
