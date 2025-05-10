@@ -802,19 +802,20 @@ module WorldEntityModule =
                 | None -> next.GetOrder world / 2L
             World.setEntityOrder order entity world |> snd'
 
-        static member private generateEntitySequentialName2 dispatcherName existingEntityNames =
+        static member private generateEntitySequentialName2 dispatcherName (entityNames : string HashSet) =
             let mutable name = Gen.nameForEditor dispatcherName
-            if Set.contains name existingEntityNames
-            then World.generateEntitySequentialName2 dispatcherName existingEntityNames
+            if entityNames.Contains name 
+            then World.generateEntitySequentialName2 dispatcherName entityNames
             else name
 
         /// Generate a sequential, editor-friendly entity name.
         static member generateEntitySequentialName dispatcherName group world =
-            let existingEntityNames =
-                World.getEntities group world |>
-                Seq.map (fun entity -> entity.Name) |>
-                Set.ofSeq
-            World.generateEntitySequentialName2 dispatcherName existingEntityNames
+            let entityNames =
+                world.EntityStates |> // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
+                Seq.filter (fun (entity, _) -> entity.Group = group) |>
+                Seq.map (fun (entity, _) -> entity.Name) |>
+                hashSetPlus StringComparer.Ordinal
+            World.generateEntitySequentialName2 dispatcherName entityNames
 
         /// Clear any entity on the world's clipboard.
         static member clearEntityFromClipboard (_ : World) =
