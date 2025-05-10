@@ -96,11 +96,14 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member equals<'a> (left : 'a Address) (right : 'a Address) =
         refEq left right || // OPTIMIZATION: first check ref equality.
         left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
-        String.equateMany left.Names right.Names
+        String.equateManyBack left.Names right.Names // OPTIMIZATION: later names in an address tend to have higher variance.
 
     /// Compare Addresses.
     static member compare<'a> (left : 'a Address) (right : 'a Address) =
-        String.compareMany left.Names right.Names
+        if  refEq left right || // OPTIMIZATION: first check ref equality.
+            left.HashCode = right.HashCode then // OPTIMIZATION: check hash equality to bail as quickly as possible.
+            0
+        else String.compareMany left.Names right.Names
 
     /// Convert any address to an obj Address.
     static member generalize<'a> (address : 'a Address) : obj Address =

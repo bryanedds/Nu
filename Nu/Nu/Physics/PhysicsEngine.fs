@@ -184,14 +184,22 @@ type [<CustomEquality; CustomComparison>] BodyId =
 
     /// Equate BodyIds.
     static member equals bid bid2 =
-        String.equateMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names &&
-        bid.BodyIndex = bid2.BodyIndex
+        if  refEq bid.BodySource.SimulantAddress bid2.BodySource.SimulantAddress || // OPTIMIZATION: first check ref equality.
+            bid.BodySource.SimulantAddress.HashCode = bid2.BodySource.SimulantAddress.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
+            String.equateManyBack bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names then // OPTIMIZATION: later names in an address tend to have higher variance.
+            bid.BodyIndex = bid2.BodyIndex
+        else false
 
     /// Compare BodyIds.
     static member compare bid bid2 =
-        let result = String.compareMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names
-        if result <> 0 then result
-        else bid.BodyIndex.CompareTo bid2.BodyIndex
+        if  refEq bid.BodySource.SimulantAddress bid2.BodySource.SimulantAddress || // OPTIMIZATION: first check ref equality.
+            bid.BodySource.SimulantAddress.HashCode = bid2.BodySource.SimulantAddress.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
+            String.equateManyBack bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names then // OPTIMIZATION: later names in an address tend to have higher variance.
+            bid.BodyIndex.CompareTo bid2.BodyIndex
+        else
+            let result = String.compareMany bid.BodySource.SimulantAddress.Names bid2.BodySource.SimulantAddress.Names
+            if result <> 0 then result
+            else bid.BodyIndex.CompareTo bid2.BodyIndex
 
     interface BodyId IEquatable with
         member this.Equals that =
