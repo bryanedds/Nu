@@ -663,16 +663,15 @@ module WorldEntityModule =
 
         /// Get all the entities in a group.
         static member getEntities (group : Group) world =
-            let rec getEntitiesRec parent world =
-                let simulants = World.getSimulants world
-                match simulants.TryGetValue parent with
-                | (true, entitiesOpt) ->
-                    match entitiesOpt with
-                    | Some entities ->
+            match world.Simulants.TryGetValue group with
+            | (true, childrenOpt) ->
+                match childrenOpt with
+                | Some children ->
                         seq {
-                            yield! Seq.map cast<Entity> entities
-                            for entity in entities do
-                                yield! getEntitiesRec entity world }
+                        for child in children do
+                            let childEntity = child :?> Entity
+                            yield childEntity
+                            yield! childEntity.GetDescendants world }
                     | None -> Seq.empty
                 | (false, _) -> Seq.empty
             getEntitiesRec (group :> Simulant) world
