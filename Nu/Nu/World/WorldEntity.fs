@@ -674,7 +674,6 @@ module WorldEntityModule =
                             yield! childEntity.GetDescendants world }
                     | None -> Seq.empty
                 | (false, _) -> Seq.empty
-            getEntitiesRec (group :> Simulant) world
 
         /// Get all the entities directly parented by the group.
         static member getSovereignEntities (group : Group) world =
