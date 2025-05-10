@@ -679,9 +679,9 @@ module WorldEntityModule =
         static member getSovereignEntities (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
-            | (true, entitiesOpt) ->
-                match entitiesOpt with
-                | Some entities -> entities |> Seq.map cast<Entity> |> seq
+            | (true, childrenOpt) ->
+                match childrenOpt with
+                | Some children -> children |> Seq.map cast<Entity>
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 

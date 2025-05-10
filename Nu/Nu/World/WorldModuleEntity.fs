@@ -516,20 +516,20 @@ module WorldModuleEntity =
         /// Check that an entity has any children.
         static member getEntityHasChildren (entity : Entity) world =
             let simulants = World.getSimulants world
-            match simulants.TryGetValue (entity :> Simulant) with
-            | (true, entitiesOpt) ->
-                match entitiesOpt with
-                | Some entities -> Seq.notEmpty entities 
+            match simulants.TryGetValue entity with
+            | (true, childrenOpt) ->
+                match childrenOpt with
+                | Some children -> Seq.notEmpty children 
                 | None -> false
             | (false, _) -> false
 
         /// Get all of the entities directly parented by an entity.
         static member getEntityChildren (entity : Entity) world =
             let simulants = World.getSimulants world
-            match simulants.TryGetValue (entity :> Simulant) with
-            | (true, entitiesOpt) ->
-                match entitiesOpt with
-                | Some entities -> Seq.map cast<Entity> entities
+            match simulants.TryGetValue entity with
+            | (true, childrenOpt) ->
+                match childrenOpt with
+                | Some children -> Seq.map cast<Entity> children
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
@@ -540,10 +540,18 @@ module WorldModuleEntity =
 
         /// Get all of the entities descending from an entity.
         static member getEntityDescendants (entity : Entity) world =
+            let simulants = World.getSimulants world
             seq {
-                for child in World.getEntityChildren entity world do
-                    yield child
-                    yield! World.getEntityDescendants child world }
+                match simulants.TryGetValue entity with
+                | (true, childrenOpt) ->
+                    match childrenOpt with
+                    | Some children ->
+                        for child in children do
+                            let childEntity = child :?> Entity
+                            yield childEntity
+                            yield! World.getEntityDescendants childEntity world
+                    | None -> ()
+                | (false, _) -> () }
 
         /// Get all of the entities parenting an entity.
         static member getEntityAncestors (entity : Entity) world =
