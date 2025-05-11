@@ -36,6 +36,8 @@ uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float lightCutoffMargin;
+uniform float lightAmbientBoostCutoff;
+uniform float lightAmbientBoostScalar;
 uniform int lightShadowSamples;
 uniform float lightShadowBias;
 uniform float lightShadowSampleScalar;
@@ -852,7 +854,9 @@ void main()
         // compute ambient light
         vec3 ambientColor = ambientColorAndBrightness.rgb;
         float ambientBrightness = ambientColorAndBrightness.a;
-        vec3 ambientLight = ambientColor * ambientBrightness * ambientOcclusion;
+        float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
+        float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
+        vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
 
         // compute diffuse term
         vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);

@@ -499,6 +499,8 @@ module WorldImGui =
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dEdited = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
+                let mutable lightAmbientBoostCutoff = lighting3dConfig.LightAmbientBoostCutoff
+                let mutable lightAmbientBoostScalar = lighting3dConfig.LightAmbientBoostScalar
                 let mutable lightShadowSamples = lighting3dConfig.LightShadowSamples
                 let mutable lightShadowBias = lighting3dConfig.LightShadowBias
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
@@ -536,6 +538,8 @@ module WorldImGui =
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.V4
                 let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Light Shadow Samples", &lightShadowSamples, 0, 5) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Bias", &lightShadowBias, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -575,6 +579,8 @@ module WorldImGui =
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
+                          LightAmbientBoostCutoff = lightAmbientBoostCutoff
+                          LightAmbientBoostScalar = lightAmbientBoostScalar
                           LightShadowSamples = lightShadowSamples
                           LightShadowBias = lightShadowBias
                           LightShadowSampleScalar = lightShadowSampleScalar
