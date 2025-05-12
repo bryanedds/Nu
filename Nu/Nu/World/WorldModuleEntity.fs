@@ -23,10 +23,6 @@ module WorldModuleEntity =
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
 
-    /// Publishing IDs.
-    let internal EntityChangeCountsId = Gen.id
-    let internal EntityBindingCountsId = Gen.id
-
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
@@ -46,14 +42,10 @@ module WorldModuleEntity =
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue () =
         let mutable entityStateOpt = Unchecked.defaultof<_>
-        let _ = SUMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
+        SUMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt) |> ignore<bool>
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
-
-    // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
-    let mutable changeEventNamesFree = true
-    let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
     type World with
 
@@ -71,7 +63,8 @@ module WorldModuleEntity =
             getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
             match entityStateOpt :> obj with
             | null ->
-                Unchecked.defaultof<EntityState>
+                entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
+                entity.EntityStateOpt
             | _ ->
                 if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
                 entityStateOpt
