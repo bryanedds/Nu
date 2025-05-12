@@ -80,6 +80,7 @@ void main()
 #version 460 core
 
 const float GAMMA = 2.2;
+const float ALBEDO_ALPHA_MIN = 0.3;
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
@@ -149,7 +150,7 @@ void main()
 
     // compute albedo, discarding fragment if even partly transparent
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.w < 0.5) discard;
+    if (albedoSample.w < ALBEDO_ALPHA_MIN) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties

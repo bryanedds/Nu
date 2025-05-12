@@ -67,6 +67,7 @@ void main()
 #version 460 core
 
 const float GAMMA = 2.2;
+const float ALBEDO_ALPHA_MIN = 0.3;
 const int TERRAIN_LAYERS_MAX = 6;
 
 uniform vec3 eyeCenter;
@@ -141,7 +142,7 @@ void main()
     }
 
     // discard fragment if even partly transparent
-    if (albedoBlend.w < 0.5) discard;
+    if (albedoBlend.w < ALBEDO_ALPHA_MIN) discard;
 
     // populate albedo, material, and normalPlus
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
