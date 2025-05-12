@@ -63,8 +63,10 @@ module WorldModuleEntity =
             getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
             match entityStateOpt :> obj with
             | null ->
-                entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
-                entity.EntityStateOpt
+                if world.Imperative then // no entity state, so must assume from world state
+                    entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
+                    Unchecked.defaultof<EntityState>
+                else Unchecked.defaultof<EntityState>
             | _ ->
                 if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
                 entityStateOpt
