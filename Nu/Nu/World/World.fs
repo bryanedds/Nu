@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.Reflection
 open System.Threading
@@ -306,6 +307,7 @@ module WorldModule3 =
             let world =
                 { ChooseCount = 0
                   EventGraph = eventGraph
+                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
                   ScreenStates = screenStates
