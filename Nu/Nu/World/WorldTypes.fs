@@ -1200,7 +1200,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
     member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
-    member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
     member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
     member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
     member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
@@ -1220,7 +1219,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.LightProbe = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
     member this.Light = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-    member this.Optimized = this.Transform.Optimized
+    member this.Optimized imperative = this.Transform.Optimized imperative
     member internal this.VisibleInView = this.Visible || this.AlwaysRender
     member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
     member internal this.PresenceInPlay = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
@@ -1246,7 +1245,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
+        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
         match Xtension.trySetProperty propertyName property entityState.Xtension with
         | struct (true, xtension) ->
             entityState.Xtension <- xtension // redundant if xtension is imperative
@@ -1255,21 +1254,21 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
+        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
         let xtension = Xtension.setProperty propertyName property entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
 
     /// Attach an xtension property.
     static member attachProperty name property (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
+        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
         let xtension = Xtension.attachProperty name property entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
 
     /// Detach an xtension property.
     static member detachProperty name (entityState : EntityState) =
-        let entityState = if entityState.Imperative then entityState else EntityState.copy entityState
+        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
         let xtension = Xtension.detachProperty name entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
@@ -1277,7 +1276,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     /// Make an entity state value.
     static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
         let mutable transform = Transform.makeDefault ()
-        transform.Imperative <- imperative
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
           Dispatcher = dispatcher
