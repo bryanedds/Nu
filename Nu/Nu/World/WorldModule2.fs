@@ -1854,7 +1854,7 @@ module WorldModule2 =
 
         /// Clean-up the resources held by the world.
         static member cleanUp world =
-            world.JobGraph.CleanUp ()
+            world.WorldExtension.JobGraph.CleanUp ()
             let world = World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
             world.WorldExtension.Plugin.CleanUp ()

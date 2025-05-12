@@ -297,10 +297,11 @@ module WorldModule3 =
                   DeclaredImSim = Address.empty
                   SimulantsImSim = SUMap.makeEmpty HashIdentity.Structural config
                   SubscriptionsImSim = SUMap.makeEmpty HashIdentity.Structural config
-                  DestructionListRev = []
+                  JobGraph = jobGraph
                   GeometryViewport = geometryViewport
                   RasterViewport = rasterViewport
                   OuterViewport = outerViewport
+                  DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
@@ -318,7 +319,6 @@ module WorldModule3 =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
-                  JobGraph = jobGraph
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world

@@ -1845,9 +1845,10 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable DeclaredImSim : Address
       mutable SimulantsImSim : SUMap<Address, SimulantImSim>
       mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
+      JobGraph : JobGraph
       GeometryViewport : Viewport
-      RasterViewport : Viewport
       // cache line 2
+      RasterViewport : Viewport
       OuterViewport : Viewport
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
@@ -1865,15 +1866,14 @@ and [<ReferenceEquality>] World =
           EntityStates : SUMap<Entity, EntityState>
           GroupStates : UMap<Group, GroupState>
           ScreenStates : UMap<Screen, ScreenState>
-          GameState : GameState
           // cache line 2
+          GameState : GameState
           EntityMounts : UMap<Entity, Entity USet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
-          JobGraph : JobGraph
           WorldExtension : WorldExtension }
 
     /// Check that the world is executing with imperative semantics where applicable.
