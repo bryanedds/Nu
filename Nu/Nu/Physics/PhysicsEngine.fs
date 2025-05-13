@@ -431,11 +431,12 @@ type BodyType =
     | KinematicCharacter
     | Dynamic
     | DynamicCharacter
+    | Vehicle
 
     // Check that this body type is some sort of character.
     member this.IsCharacter =
         match this with
-        | Static | Kinematic | Dynamic -> false
+        | Static | Kinematic | Dynamic | Vehicle -> false
         | KinematicCharacter | DynamicCharacter -> true
 
 /// The way in which an entity's motion is driven by a corresponding body.

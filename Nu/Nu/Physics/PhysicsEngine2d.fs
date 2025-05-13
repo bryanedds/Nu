@@ -51,6 +51,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | KinematicCharacter -> Log.infoOnce "KinematicCharacter not supported by PhysicsEngine2d. Using Kinematic configuration instead."; Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
         | DynamicCharacter -> Log.infoOnce "DynamicCharacter not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
+        | Vehicle -> Log.infoOnce "Vehicle not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
 
     static member private handlePenetration
         (bodyShape : Dynamics.Fixture)
