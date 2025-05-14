@@ -495,6 +495,27 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
+    static member private createWheelSettingsWV position =
+        new WheelSettingsWV
+            (position = position,
+             suspensionForcePoint = v3Zero,
+             suspensionDirection = v3Down,
+             steeringAxis = v3Up,
+             wheelUp = v3Up,
+             wheelForward = v3Forward,
+             suspensionMinLength = 0.3f,
+             suspensionMaxLength = 0.5f,
+             suspensionPreloadLength = 0.0f,
+             suspensionSpring = SpringSettings(SpringMode.FrequencyAndDamping, 1.5f, 0.5f),
+             radius = 0.3f,
+             width = 0.1f,
+             enableSuspensionForcePoint = false,
+             inertia = 0.9f,
+             angularDamping = 0.2f,
+             maxSteerAngle = Math.DegreesToRadians(70.0f),
+             maxBrakeTorque = 1500.0f,
+             maxHandBrakeTorque = 4000.0f)
+
     static member private createBodyNonCharacter mass layer motionType (scShapeSettings : StaticCompoundShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
 
         // ensure we have at least one shape child in order to avoid jolt error
@@ -656,6 +677,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
             // vehicle config
 
+            let wheelSettingsWVs =
+                [|for i in 0 .. dec 4 do
+                    let position =
+                        match i with
+                        | 0 -> v3 -1.0f -1.0f -1.5f // front left
+                        | 1 -> v3 1.0f -1.0f -1.5f // front right
+                        | 2 -> v3 -1.0f -1.0f 1.5f // back left
+                        | 3 -> v3 1.0f -1.0f 1.5f // back right
+                        | _ -> failwithumf ()
+                    PhysicsEngine3d.createWheelSettingsWV position|]
+
             use vehicleEngineSettings =
                 new VehicleEngineSettings
                     (maxTorque = 500.0f,
@@ -685,6 +717,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                    (up = v3Up,
                     forward = v3Forward,
                     maxPitchRollAngle = MathF.PI,
+                    wheels = wheelSettingsWVs,
                     settings = wheeledVehicleControllerSettings)
 
             // create wheeled vehicle controller
@@ -695,7 +728,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.WheeledVehicleControllers.Add (bodyId, wheeledVehicleController)
             physicsEngine.PhysicsContext.AddConstraint wheeledVehicleController.Constraint
 
-            // configuure collision tester
+            // configure collision tester
             //mVehicleConstraint->SetVehicleCollisionTester(new VehicleCollisionTesterCastCylinder(Layers::MOVING, 1.0f)); // Use half wheel width as convex radius so we get a rounded cylinder
 
             // register step listener
