@@ -675,8 +675,34 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         | Choice3Of3 () ->
 
-            // vehicle config
+            // vehicle engine config
+            use vehicleEngineSettings =
+                new VehicleEngineSettings
+                    (maxTorque = 500.0f,
+                     minRPM = 1000.0f,
+                     maxRPM = 6000.0f,
+                     inertia = 0.5f,
+                     angularDamping = 0.2f)
 
+            // vehicle transmission config
+            use vehicleTransmissionSettings =
+                new VehicleTransmissionSettings
+                    (mode = TransmissionMode.Auto,
+                     switchTime = 0.5f,
+                     clutchReleaseTime = 0.3f,
+                     switchLatency = 0.5f,
+                     shiftUpRPM = 4000.0f,
+                     shiftDownRPM = 2000.0f,
+                     clutchStrength = 10.0f)
+
+            // vehicle controller config
+            use wheeledVehicleControllerSettings =
+                new WheeledVehicleControllerSettings
+                    (engine = vehicleEngineSettings,
+                     transmission = vehicleTransmissionSettings,
+                     differentialLimitedSlipRatio = 1.4f)
+
+            // vehicle wheels config
             let wheelSettingsWVs =
                 [|for i in 0 .. dec 4 do
                     let position =
@@ -688,30 +714,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         | _ -> failwithumf ()
                     PhysicsEngine3d.createWheelSettingsWV position|]
 
-            use vehicleEngineSettings =
-                new VehicleEngineSettings
-                    (maxTorque = 500.0f,
-                     minRPM = 1000.0f,
-                     maxRPM = 6000.0f,
-                     inertia = 0.5f,
-                     angularDamping = 0.2f)
-
-            use vehicleTransmissionSettings =
-                new VehicleTransmissionSettings
-                    (mode = TransmissionMode.Auto,
-                     switchTime = 0.5f,
-                     clutchReleaseTime = 0.3f,
-                     switchLatency = 0.5f,
-                     shiftUpRPM = 4000.0f,
-                     shiftDownRPM = 2000.0f,
-                     clutchStrength = 10.0f)
-
-            use wheeledVehicleControllerSettings =
-                new WheeledVehicleControllerSettings
-                    (engine = vehicleEngineSettings,
-                     transmission = vehicleTransmissionSettings,
-                     differentialLimitedSlipRatio = 1.4f)
-
+            // vehicle constraint config
             use vehicleConstraintSettings =
                 new VehicleConstraintSettings
                    (up = v3Up,
@@ -725,13 +728,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             
             // create wheeled vehicle controller
             let wheeledVehicleController = new WheeledVehicleController(body, wheeledVehicleControllerSettings, vehicleConstraintSettings)
+            wheeledVehicleController.Constraint.SetVehicleCollisionTester(new VehicleCollisionTesterCastCylinder(layer, 1.0f))
             physicsEngine.WheeledVehicleControllers.Add (bodyId, wheeledVehicleController)
             physicsEngine.PhysicsContext.AddConstraint wheeledVehicleController.Constraint
 
-            // configure collision tester
-            //mVehicleConstraint->SetVehicleCollisionTester(new VehicleCollisionTesterCastCylinder(Layers::MOVING, 1.0f)); // Use half wheel width as convex radius so we get a rounded cylinder
-
-            // register step listener
+            // create step listener
             let stepListener = new PhysicsStepListener (wheeledVehicleController.Constraint.Handle)
             physicsEngine.PhysicsContext.AddStepListener stepListener
 
