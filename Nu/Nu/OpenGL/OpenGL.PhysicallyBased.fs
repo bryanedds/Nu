@@ -32,7 +32,9 @@ module PhysicallyBased =
           SpecularScreenUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
           FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
-          CompositionBuffers : OpenGL.Texture.Texture * uint * uint }
+          CompositionBuffers : OpenGL.Texture.Texture * uint * uint
+          Filter0Buffers : OpenGL.Texture.Texture * uint * uint
+          Filter1Buffers : OpenGL.Texture.Texture * uint * uint }
 
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -636,7 +638,21 @@ module PhysicallyBased =
         // create composition buffers
         let compositionBuffers =
             match OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
-            | Right filterFogAccumBuffers -> filterFogAccumBuffers
+            | Right compositionBuffers -> compositionBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create filter 0 buffers
+        let filter0Buffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right filterBuffers0 -> filterBuffers0
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create filter 1 buffers
+        let filter1Buffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right filterBuffers1 -> filterBuffers1
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -656,7 +672,9 @@ module PhysicallyBased =
           SpecularScreenUpSampleBuffers = specularScreenUpSampleBuffers
           FogAccumDownSampleBuffers = fogAccumDownSampleBuffers
           FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
-          CompositionBuffers = compositionBuffers }
+          CompositionBuffers = compositionBuffers
+          Filter0Buffers = filter0Buffers
+          Filter1Buffers = filter1Buffers }
 
     /// Destroy the physically-based buffers.
     let DestroyPhysicallyBasedBuffers buffers =
@@ -673,6 +691,8 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.FogAccumDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
         for shadowTextureBuffers in buffers.ShadowTextureBuffersArray do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers
         for shadowTextureBuffers2 in buffers.ShadowTextureBuffers2Array do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers2
         for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
