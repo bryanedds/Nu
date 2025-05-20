@@ -44,8 +44,8 @@ type GamepadButton =
 [<RequireQualifiedAccess>]
 module internal MouseState =
 
-    let mutable MouseButtonStatePrevious = 0u
-    let mutable MouseButtonStateCurrent = 0u
+    let mutable private MouseButtonStatePrevious = 0u
+    let mutable private MouseButtonStateCurrent = 0u
 
     /// Convert a MouseButton to SDL's representation.
     let internal toSdlButton mouseButton =
