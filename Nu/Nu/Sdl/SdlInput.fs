@@ -15,8 +15,25 @@ type MouseButton =
     | MouseRight
     | MouseX1
     | MouseX2
-    static member toEventName this = this.ToString().Substring "Mouse".Length
-    static member ofEventName eventName = scvalue<MouseButton> ("Mouse" + eventName)
+
+    /// Extract the respective event name identifying the given mouse button.
+    static member toEventName this =
+        match this with
+        | MouseLeft -> "Left"
+        | MouseMiddle -> "Middle"
+        | MouseRight -> "Right"
+        | MouseX1 -> "X1"
+        | MouseX2 -> "X2"
+
+    /// Extract the respective mouse button identified by the given event name.
+    static member ofEventName eventName =
+        match eventName with
+        | "Left" -> MouseLeft
+        | "Middle" -> MouseMiddle
+        | "Right" -> MouseRight
+        | "X1" -> MouseX1
+        | "X2" -> MouseX2
+        | _ -> failwithumf ()
 
 /// Describes a gamepad direction.
 type GamepadDirection =
