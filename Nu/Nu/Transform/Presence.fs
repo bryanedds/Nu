@@ -7,12 +7,16 @@ open Prime
 
 /// Describes the form of an element's presence.
 type [<StructuralEquality; StructuralComparison; Struct>] Presence =
+
     /// An interior element so you have to be closer to see them.
     | Interior
+
     /// An exterior element so you can see them from a distance.
     | Exterior
+
     /// Always visible except when as close as Exterior or Interior.
     | Imposter
+
     /// Always visible.
     | Omnipresent
 

@@ -81,7 +81,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
 
         // load cube maps directly
         for cubeMap in cubeMapAssets do
-            match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
+            match cubeMap.FilePath |> File.ReadAllLines |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
                 let dirPath = PathF.GetDirectoryName cubeMap.FilePath
                 let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()
