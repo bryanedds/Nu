@@ -28,8 +28,8 @@ type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val DirectoryPath : DirectoryInfo = DirectoryInfo (if String.notEmpty directoryPath then directoryPath else ".") with get, set
     member val ResultPath : string = "" with get, set
     member val RefreshInfo : bool = false with get, set
-    member val CurrentDirectories : list<DirectoryInfo> = [] with get, set
-    member val CurrentFiles : list<FileInfo> = [] with get, set
+    member val CurrentDirectories : DirectoryInfo list = [] with get, set
+    member val CurrentFiles : FileInfo list = [] with get, set
     member val CurrentIndex : UInt64 = 0UL with get, set
     member this.FilePath
         with get () = PathF.Normalize this.DirectoryPath.FullName + "/" + this.FileName
