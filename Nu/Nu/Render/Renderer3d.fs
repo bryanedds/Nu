@@ -391,6 +391,7 @@ type RenderBillboard =
       CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
+      PlanarBillboard : bool
       MaterialProperties : MaterialProperties
       Material : Material
       ShadowOffset : single
