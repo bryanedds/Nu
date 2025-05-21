@@ -84,13 +84,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
           UnscaledPointsCache : Dictionary<UnscaledPointsKey, Vector3 array>
-          WheeledVehicleControllers : Dictionary<BodyId, WheeledVehicleController>
           CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
           CharacterContactLock : obj
           CharacterContactEvents : CharacterContactEvent HashSet
           CharacterCollisions : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterID, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
+          WheeledVehicleControllers : Dictionary<BodyId, WheeledVehicleController>
+          StepListeners : Dictionary<BodyId, PhysicsStepListener>
           mutable BodyUnoptimizedCreationCount : int
           BodyContactLock : obj
           BodyContactEvents : BodyContactEvent HashSet
@@ -495,27 +496,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
-    static member private createWheelSettingsWV position =
-        new WheelSettingsWV
-            (position = position,
-             suspensionForcePoint = v3Zero,
-             suspensionDirection = v3Down,
-             steeringAxis = v3Up,
-             wheelUp = v3Up,
-             wheelForward = v3Forward,
-             suspensionMinLength = 0.3f,
-             suspensionMaxLength = 0.5f,
-             suspensionPreloadLength = 0.0f,
-             suspensionSpring = SpringSettings(SpringMode.FrequencyAndDamping, 1.5f, 0.5f),
-             radius = 0.3f,
-             width = 0.1f,
-             enableSuspensionForcePoint = false,
-             inertia = 0.9f,
-             angularDamping = 0.2f,
-             maxSteerAngle = Math.DegreesToRadians(70.0f),
-             maxBrakeTorque = 1500.0f,
-             maxHandBrakeTorque = 4000.0f)
-
     static member private createBodyNonCharacter mass layer motionType (scShapeSettings : StaticCompoundShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
 
         // ensure we have at least one shape child in order to avoid jolt error
@@ -675,60 +655,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         | Choice3Of3 () ->
 
-            // vehicle engine config
-            use vehicleEngineSettings =
-                new VehicleEngineSettings
-                    (maxTorque = 500.0f,
-                     minRPM = 1000.0f,
-                     maxRPM = 6000.0f,
-                     inertia = 0.5f,
-                     angularDamping = 0.2f)
-
-            // vehicle transmission config
-            use vehicleTransmissionSettings =
-                new VehicleTransmissionSettings
-                    (mode = TransmissionMode.Auto,
-                     switchTime = 0.5f,
-                     clutchReleaseTime = 0.3f,
-                     switchLatency = 0.5f,
-                     shiftUpRPM = 4000.0f,
-                     shiftDownRPM = 2000.0f,
-                     clutchStrength = 10.0f)
-
-            // vehicle controller config
-            use wheeledVehicleControllerSettings =
-                new WheeledVehicleControllerSettings
-                    (engine = vehicleEngineSettings,
-                     transmission = vehicleTransmissionSettings,
-                     differentialLimitedSlipRatio = 1.4f)
-
-            // vehicle wheels config
-            let wheelSettingsWVs =
-                [|for i in 0 .. dec 4 do
-                    let position =
-                        match i with
-                        | 0 -> v3 -1.0f -1.0f -1.5f // front left
-                        | 1 -> v3 1.0f -1.0f -1.5f // front right
-                        | 2 -> v3 -1.0f -1.0f 1.5f // back left
-                        | 3 -> v3 1.0f -1.0f 1.5f // back right
-                        | _ -> failwithumf ()
-                    PhysicsEngine3d.createWheelSettingsWV position|]
-
-            // vehicle constraint config
-            use vehicleConstraintSettings =
-                new VehicleConstraintSettings
-                   (up = v3Up,
-                    forward = v3Forward,
-                    maxPitchRollAngle = MathF.PI,
-                    wheels = wheelSettingsWVs,
-                    settings = wheeledVehicleControllerSettings)
-
             // create wheeled vehicle controller
             let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine
             
             // create wheeled vehicle controller
-            let wheeledVehicleController = new WheeledVehicleController(body, wheeledVehicleControllerSettings, vehicleConstraintSettings)
-            wheeledVehicleController.Constraint.SetVehicleCollisionTester(new VehicleCollisionTesterCastCylinder(layer, 1.0f))
+            let (wvcs, vcs) =
+                match bodyProperties.VehicleProperties with
+                | VehicleWheeledJoltProperties properties -> (properties.WheeledVehicleControllerSettings, properties.VehicleConstraintSettings)
+                | _ -> failwithumf () // NOTE: no path should lead here.
+            let wheeledVehicleController = new WheeledVehicleController (body, wvcs, vcs)
+            wheeledVehicleController.Constraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (layer, 1.0f))
             physicsEngine.WheeledVehicleControllers.Add (bodyId, wheeledVehicleController)
             physicsEngine.PhysicsContext.AddConstraint wheeledVehicleController.Constraint
 
@@ -791,13 +727,24 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             character.Dispose ()
         | (false, _) ->
 
-            // otherwise, attempt to destroy non-character body
-            match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, bodyID) ->
-                physicsEngine.Bodies.Remove bodyId |> ignore<bool>
-                physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
-                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
-            | (false, _) -> ()
+            // otherwise, attempt to destroy wheeled vehicle controller
+            match physicsEngine.WheeledVehicleControllers.TryGetValue bodyId with
+            | (true, wheeledVehicleController) ->
+                let stepListener = physicsEngine.StepListeners.[bodyId]
+                physicsEngine.PhysicsContext.RemoveStepListener stepListener                
+                physicsEngine.StepListeners.Remove bodyId |> ignore<bool>
+                physicsEngine.PhysicsContext.RemoveConstraint wheeledVehicleController.Constraint
+                physicsEngine.WheeledVehicleControllers.Remove bodyId |> ignore<bool>
+                wheeledVehicleController.Dispose ()
+            | (false, _) ->
+
+                // otherwise, attempt to destroy non-character body
+                match physicsEngine.Bodies.TryGetValue bodyId with
+                | (true, bodyID) ->
+                    physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+                    physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
+                    physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
+                | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
@@ -1201,13 +1148,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
           UnscaledPointsCache = dictPlus UnscaledPointsKey.comparer []
-          WheeledVehicleControllers = dictPlus HashIdentity.Structural []
           CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
           CharacterContactLock = obj ()
           CharacterContactEvents = hashSetPlus HashIdentity.Structural []
           CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
+          WheeledVehicleControllers = dictPlus HashIdentity.Structural []
+          StepListeners = dictPlus HashIdentity.Structural []
           BodyUnoptimizedCreationCount = 0
           BodyContactLock = bodyContactLock
           BodyContactEvents = bodyContactEvents
@@ -1223,7 +1171,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     interface PhysicsEngine with
 
-        member physicsEngine.GetBodyExists bodyId =
+        member physicsEngine.GetBodyExists bodyId = 
             physicsEngine.Characters.ContainsKey bodyId ||
             physicsEngine.Bodies.ContainsKey bodyId
 

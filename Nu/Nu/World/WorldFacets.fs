@@ -1434,6 +1434,80 @@ type RigidBodyFacet () =
         let world = entity.PropagatePhysics world
         (Cascade, world)
 
+    static let createWheelSettingsWV position =
+        new JoltPhysicsSharp.WheelSettingsWV
+            (position = position,
+             suspensionForcePoint = v3Zero,
+             suspensionDirection = v3Down,
+             steeringAxis = v3Up,
+             wheelUp = v3Up,
+             wheelForward = v3Forward,
+             suspensionMinLength = 0.3f,
+             suspensionMaxLength = 0.5f,
+             suspensionPreloadLength = 0.0f,
+             suspensionSpring = JoltPhysicsSharp.SpringSettings (JoltPhysicsSharp.SpringMode.FrequencyAndDamping, 1.5f, 0.5f),
+             radius = 0.3f,
+             width = 0.1f,
+             enableSuspensionForcePoint = false,
+             inertia = 0.9f,
+             angularDamping = 0.2f,
+             maxSteerAngle = Math.DegreesToRadians(70.0f),
+             maxBrakeTorque = 1500.0f,
+             maxHandBrakeTorque = 4000.0f)
+
+    static let createVehicleSettings () =
+
+        // vehicle engine config
+        let vehicleEngineSettings =
+            new JoltPhysicsSharp.VehicleEngineSettings
+                (maxTorque = 500.0f,
+                 minRPM = 1000.0f,
+                 maxRPM = 6000.0f,
+                 inertia = 0.5f,
+                 angularDamping = 0.2f)
+
+        // vehicle transmission config
+        let vehicleTransmissionSettings =
+            new JoltPhysicsSharp.VehicleTransmissionSettings
+                (mode = JoltPhysicsSharp.TransmissionMode.Auto,
+                 switchTime = 0.5f,
+                 clutchReleaseTime = 0.3f,
+                 switchLatency = 0.5f,
+                 shiftUpRPM = 4000.0f,
+                 shiftDownRPM = 2000.0f,
+                 clutchStrength = 10.0f)
+
+        // vehicle controller config
+        let wheeledVehicleControllerSettings =
+            new JoltPhysicsSharp.WheeledVehicleControllerSettings
+                (engine = vehicleEngineSettings,
+                 transmission = vehicleTransmissionSettings,
+                 differentialLimitedSlipRatio = 1.4f)
+
+        // vehicle wheels config
+        let wheelSettingsWVs =
+            [|for i in 0 .. dec 4 do
+                let position =
+                    match i with
+                    | 0 -> v3 -1.0f -1.0f -1.5f // front left
+                    | 1 -> v3 1.0f -1.0f -1.5f // front right
+                    | 2 -> v3 -1.0f -1.0f 1.5f // back left
+                    | 3 -> v3 1.0f -1.0f 1.5f // back right
+                    | _ -> failwithumf ()
+                createWheelSettingsWV position|]
+
+        // vehicle constraint config
+        let vehicleConstraintSettings =
+            new JoltPhysicsSharp.VehicleConstraintSettings
+               (up = v3Up,
+                forward = v3Forward,
+                maxPitchRollAngle = MathF.PI,
+                wheels = wheelSettingsWVs,
+                settings = wheeledVehicleControllerSettings)
+
+        // fin
+        (wheeledVehicleControllerSettings, vehicleConstraintSettings)
+
     static member Properties =
         [define Entity.BodyEnabled true
          define Entity.BodyType Static
@@ -1484,7 +1558,15 @@ type RigidBodyFacet () =
         world
 
     override this.RegisterPhysics (entity, world) =
+        let is2d = entity.GetIs2d world
+        let bodyId = entity.GetBodyId world
         let mutable transform = entity.GetTransform world
+        let vehicleProperties =
+            match entity.GetBodyType world with
+            | Vehicle when not is2d ->
+                let (wvcs, vcs) = createVehicleSettings ()
+                VehicleWheeledJoltProperties { WheeledVehicleControllerSettings = wvcs; VehicleConstraintSettings = vcs }
+            | _ -> VehicleAbsent
         let bodyProperties =
             { Enabled = entity.GetBodyEnabled world
               Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
@@ -1503,13 +1585,14 @@ type RigidBodyFacet () =
               Substance = entity.GetSubstance world
               GravityOverride = entity.GetGravityOverride world
               CharacterProperties = entity.GetCharacterProperties world
+              VehicleProperties = vehicleProperties
               CollisionDetection = entity.GetCollisionDetection world
               CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
               CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
               Sensor = entity.GetSensor world
               Awake = entity.GetAwake world
-              BodyIndex = (entity.GetBodyId world).BodyIndex }
-        World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+              BodyIndex = bodyId.BodyIndex }
+        World.createBody is2d bodyId bodyProperties world
 
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
@@ -3329,6 +3412,7 @@ type TerrainFacet () =
     override this.RegisterPhysics (entity, world) =
         match entity.TryGetTerrainResolution world with
         | Some resolution ->
+            let bodyId = entity.GetBodyId world
             let mutable transform = entity.GetTransform world
             let terrainShape =
                 { Resolution = resolution
@@ -3354,13 +3438,14 @@ type TerrainFacet () =
                   Substance = Mass 0.0f
                   GravityOverride = None
                   CharacterProperties = CharacterProperties.defaultProperties
+                  VehicleProperties = VehicleAbsent
                   CollisionDetection = Discontinuous
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
                   Awake = entity.GetAwake world
-                  BodyIndex = (entity.GetBodyId world).BodyIndex }
-            World.createBody false (entity.GetBodyId world) bodyProperties world
+                  BodyIndex = bodyId.BodyIndex }
+            World.createBody false bodyId bodyProperties world
         | None -> world
 
     override this.UnregisterPhysics (entity, world) =
