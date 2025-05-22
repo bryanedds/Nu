@@ -14,7 +14,7 @@ type [<Struct>] Endianness =
     | BigEndian
 
 /// The format of a raw asset.
-/// NOTE: [<Struct>] attribute was removed in order to work around an F# regression where calling GetUnionCases on this
+/// NOTE: [<Struct>] attribute was removed in order to work around an F# regression where calling GetUnionFields on this
 /// type's cases can result in an InvalidOperationException "Multiple CompilationMappingAttributes, expected at most
 /// one".
 type RawFormat =
