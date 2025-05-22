@@ -20,9 +20,25 @@ type [<Struct>] private CharacterUserData =
       CharacterGravityOverride : Vector3 option
       CharacterProperties : CharacterProperties }
 
-type [<Struct>] private BodyContactEvent =
+type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
     | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
     | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
+    override this.Equals (that : obj) =
+        match that with
+        | :? BodyContactEvent as that ->
+            match this, that with
+            | BodyContactAdded (bodyID, body2ID, contactNormal), BodyContactAdded (bodyID2, body2ID2, contactNormal2) ->
+                bodyID.ID = bodyID2.ID && body2ID.ID = body2ID2.ID && contactNormal = contactNormal2
+            | BodyContactRemoved (bodyID, body2ID), BodyContactRemoved (bodyID2, body2ID2) ->
+                bodyID.ID = bodyID2.ID && body2ID.ID = body2ID2.ID
+            | _ -> false
+        | _ -> false
+    override this.GetHashCode () =
+        match this with
+        | BodyContactAdded (bodyID, body2ID, contactNormal) ->
+            int bodyID.ID ^^^ int body2ID.ID * 131 ^^^ contactNormal.GetHashCode ()
+        | BodyContactRemoved (bodyID, body2ID) ->
+            int bodyID.ID ^^^ int body2ID.ID * 131
 
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
@@ -670,6 +686,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
             // create step listener
             let stepListener = new PhysicsStepListener (wheeledVehicleController.Constraint.Handle)
+            physicsEngine.StepListeners.Add (bodyId, stepListener)
             physicsEngine.PhysicsContext.AddStepListener stepListener
 
         // HACK: optimize broad phase if we've taken in a lot of bodies.
@@ -727,7 +744,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             character.Dispose ()
         | (false, _) ->
 
-            // otherwise, attempt to destroy wheeled vehicle controller
+            // attempt to destroy wheeled vehicle controller
             match physicsEngine.WheeledVehicleControllers.TryGetValue bodyId with
             | (true, wheeledVehicleController) ->
                 let stepListener = physicsEngine.StepListeners.[bodyId]
@@ -736,15 +753,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.PhysicsContext.RemoveConstraint wheeledVehicleController.Constraint
                 physicsEngine.WheeledVehicleControllers.Remove bodyId |> ignore<bool>
                 wheeledVehicleController.Dispose ()
-            | (false, _) ->
+            | (false, _) -> ()
 
-                // otherwise, attempt to destroy non-character body
-                match physicsEngine.Bodies.TryGetValue bodyId with
-                | (true, bodyID) ->
-                    physicsEngine.Bodies.Remove bodyId |> ignore<bool>
-                    physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
-                    physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
-                | (false, _) -> ()
+            // attempt to destroy non-character body
+            match physicsEngine.Bodies.TryGetValue bodyId with
+            | (true, bodyID) ->
+                physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+                physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
+                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
+            | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
@@ -1074,6 +1091,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = bodyInterface.GetAngularVelocity &bodyID }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
+        for vehiclesEntry in physicsEngine.WheeledVehicleControllers do
+            vehiclesEntry.Value.SetForwardInput 100.0f
+
     static member make (gravity : Vector3) =
 
         // initialize Jolt foundation layer
@@ -1106,7 +1126,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         // create some physics engine bookkeeping fields that will be used by body contact handlers
         let bodyContactLock = obj ()
         let bodyContactEvents = HashSet ()
-        let bodyUserData = dictPlus HashIdentity.Structural []
+        let bodyUserData = dictPlus (HashIdentity.FromFunctions (fun (bodyID : BodyID) -> int bodyID.ID) (fun (bodyID : BodyID) (bodyID2 : BodyID) -> bodyID.ID = bodyID2.ID)) []
 
         // validate contact with category and mask
         physicsSystem.add_OnContactValidate (fun _ body body2 _ _ ->
@@ -1137,12 +1157,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let body2ID = subShapeIDPair.Body2ID
             lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
-        // create thread job system
-        let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
-        jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
-        jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dBarriersMax
-        jobSystemConfig.numThreads <- Constants.Physics.Collision3dThreads
-        let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
+        // create threaded job system
+        let jobSystem =
+            // TODO: P1: expose this from the wrapper and then uncomment.
+            //if Constants.Engine.RunSynchronously
+            //then new JobSystemSingleThreaded ()
+            //else
+                let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
+                jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
+                jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dBarriersMax
+                jobSystemConfig.numThreads <- Constants.Physics.Collision3dThreads
+                new JobSystemThreadPool (&jobSystemConfig)
 
         // make physics engine
         { PhysicsContext = physicsSystem
@@ -1407,6 +1432,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyConstraintEvents.Clear ()
             physicsEngine.BodyConstraintUserData.Clear ()
             physicsEngine.BodyConstraints.Clear ()
+
+            // clear step listeners
+            for stepListener in physicsEngine.StepListeners.Values do
+                physicsEngine.PhysicsContext.RemoveStepListener stepListener
+            physicsEngine.StepListeners.Clear ()
+
+            // clear wheeled vehicle controllers and vehicle constraints
+            for controller in physicsEngine.WheeledVehicleControllers.Values do
+                physicsEngine.PhysicsContext.RemoveConstraint controller.Constraint
+            physicsEngine.WheeledVehicleControllers.Clear ()
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
