@@ -685,7 +685,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.PhysicsContext.AddConstraint wheeledVehicleController.Constraint
 
             // create step listener
-            let stepListener = new PhysicsStepListener (wheeledVehicleController.Constraint.Handle)
+            let stepListener = wheeledVehicleController.Constraint.AsPhysicsStepListener
             physicsEngine.StepListeners.Add (bodyId, stepListener)
             physicsEngine.PhysicsContext.AddStepListener stepListener
 
