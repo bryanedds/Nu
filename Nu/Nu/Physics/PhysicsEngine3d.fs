@@ -1091,9 +1091,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = bodyInterface.GetAngularVelocity &bodyID }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
-        for vehiclesEntry in physicsEngine.WheeledVehicleControllers do
-            vehiclesEntry.Value.SetForwardInput 100.0f
-
     static member make (gravity : Vector3) =
 
         // initialize Jolt foundation layer
@@ -1157,7 +1154,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let body2ID = subShapeIDPair.Body2ID
             lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
-        // create threaded job system
+        // create job system
         let jobSystem =
             // TODO: P1: expose this from the wrapper and then uncomment.
             //if Constants.Engine.RunSynchronously
