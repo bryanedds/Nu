@@ -15,8 +15,8 @@ type [<Struct>] Endianness =
 
 /// The format of a raw asset.
 /// NOTE: [<Struct>] attribute was removed in order to work around an F# regression where calling GetUnionCases on this
-/// type's cases can result in an System.InvalidOperationException: 'Multiple CompilationMappingAttributes, expected at
-/// most one'.
+/// type's cases can result in an InvalidOperationException "Multiple CompilationMappingAttributes, expected at most
+/// one".
 type RawFormat =
     | RawUInt8
     | RawUInt16 of Endianness : Endianness
