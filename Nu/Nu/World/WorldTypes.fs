@@ -46,141 +46,6 @@ type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling *
 /// Represents an unsubscription operation for an event.
 and Unsubscription = World -> World
 
-/// Describes the type of snapshot taken for operation tracking.
-and SnapshotType =
-    | WipePropagationTargets
-    | TranslateEntity
-    | RotateEntity
-    | ScaleEntity
-    | AutoBoundsEntity
-    | MoveEntityToOrigin
-    | PropagateEntity
-    | ReorderEntities
-    | SetEntityFrozen of bool
-    | SetEntityFamilyStatic of bool
-    | ChangeEntityDispatcher
-    | RenameEntity
-    | CreateEntity
-    | DeleteEntity
-    | CutEntity
-    | PasteEntity
-    | LoadEntity
-    | DuplicateEntity
-    | CreateGroup
-    | RenameGroup
-    | OpenGroup
-    | CloseGroup
-    | ChangeProperty of int64 option * string
-    | Evaluate of string
-    | RestorePoint
-    | NormalizeAttenuation
-    | RencenterInProbeBounds
-    | ResetProbeBounds
-    | VolumeEdit of string
-    | FreezeEntities
-    | ThawEntities
-    | Permafreeze
-    | Permasplit
-    | ReregisterPhysics
-    | SynchronizeNav
-    | SetEditMode of int
-    | ReloadCode
-    | Advance
-    | Halt
-    | UserDefinedSnapshot of Image AssetTag * string // a user-defined type of snapshot
-
-    member this.Label =
-        match this with
-        | WipePropagationTargets -> (scstringMemo this).Spaced
-        | TranslateEntity -> (scstringMemo this).Spaced
-        | RotateEntity -> (scstringMemo this).Spaced
-        | ScaleEntity -> (scstringMemo this).Spaced
-        | AutoBoundsEntity -> (scstringMemo this).Spaced
-        | MoveEntityToOrigin -> (scstringMemo this).Spaced
-        | PropagateEntity -> (scstringMemo this).Spaced
-        | ReorderEntities -> (scstringMemo this).Spaced
-        | SetEntityFrozen frozen -> if frozen then "Freeze Entity" else "Thaw Entity"
-        | SetEntityFamilyStatic static_ -> if static_ then "Staticize Entity Family" else "Dynamize Entity Family"
-        | ChangeEntityDispatcher -> (scstringMemo this).Spaced
-        | RenameEntity -> (scstringMemo this).Spaced
-        | CreateEntity -> (scstringMemo this).Spaced
-        | DeleteEntity -> (scstringMemo this).Spaced
-        | CutEntity -> (scstringMemo this).Spaced
-        | PasteEntity -> (scstringMemo this).Spaced
-        | LoadEntity -> (scstringMemo this).Spaced
-        | DuplicateEntity -> (scstringMemo this).Spaced
-        | RenameGroup -> (scstringMemo this).Spaced
-        | CreateGroup -> (scstringMemo this).Spaced
-        | OpenGroup -> (scstringMemo this).Spaced
-        | CloseGroup -> (scstringMemo this).Spaced
-        | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
-        | Evaluate _ -> "Evaluate F# Expression"
-        | RestorePoint -> (scstringMemo this).Spaced
-        | NormalizeAttenuation -> (scstringMemo this).Spaced
-        | RencenterInProbeBounds -> (scstringMemo this).Spaced
-        | ResetProbeBounds -> (scstringMemo this).Spaced
-        | VolumeEdit volumeEditType -> "Volume Edit " + volumeEditType
-        | FreezeEntities -> (scstringMemo this).Spaced
-        | ThawEntities -> (scstringMemo this).Spaced
-        | Permafreeze -> (scstringMemo this).Spaced
-        | Permasplit -> (scstringMemo this).Spaced
-        | ReregisterPhysics -> (scstringMemo this).Spaced
-        | SynchronizeNav -> (scstringMemo this).Spaced
-        | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
-        | ReloadCode -> (scstringMemo this).Spaced
-        | Advance -> (scstringMemo this).Spaced
-        | Halt -> (scstringMemo this).Spaced
-        | UserDefinedSnapshot (_, label) -> label
-
-/// Context for editing behavior.
-and EditContext =
-    { Snapshot : SnapshotType -> World -> World
-      FocusProperty : unit -> unit
-      UnfocusProperty : unit -> unit
-      SearchAssetViewer : unit -> unit
-      DragDropPayloadOpt : string option
-      SnapDrag : single
-      SelectedScreen : Screen
-      SelectedGroup : Group
-      SelectedEntityOpt : Entity option
-      ToSymbolMemo : IDictionary<struct (Type * obj), Symbol>
-      OfSymbolMemo : IDictionary<struct (Type * Symbol), obj> }
-
-/// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
-/// replaced.
-and [<ReferenceEquality>] ReplaceProperty =
-    { IndicateReplaced : unit -> unit
-      PropertyDescriptor : PropertyDescriptor
-      EditContext : EditContext }
-
-/// Details additional editing behavior for a simulant's properties.
-and AppendProperties =
-    { EditContext : EditContext }
-
-/// Details additional editing behavior for hierarchy context menu.
-and HierarchyContext =
-    { EditContext : EditContext }
-
-/// Details additional editing behavior for viewport context menu.
-and ViewportContext =
-    { RightClickPosition : Vector2
-      EditContext : EditContext }
-
-/// Details the additional editing behavior for a simulant in a viewport.
-and [<ReferenceEquality>] ViewportOverlay =
-    { ViewportView : Matrix4x4
-      ViewportProjection : Matrix4x4
-      ViewportBounds : Box2
-      EditContext : EditContext }
-
-/// Specifies an aspect of simulant editing to perform.
-and [<ReferenceEquality>] EditOperation =
-    | ReplaceProperty of ReplaceProperty
-    | AppendProperties of AppendProperties
-    | HierarchyContext of HierarchyContext
-    | ViewportContext of ViewportContext
-    | ViewportOverlay of ViewportOverlay
-
 /// The data for a change in a simulant.
 and ChangeData =
     { Name : string
@@ -345,19 +210,6 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         member lens.ChangeEvent = lens.ChangeEvent
         member lens.Type = typeof<'a>
 
-/// A model-message-command-content (MMCC) signal tag type.
-and Signal = interface end
-
-/// A model-message-command-content (MMCC) message tag type.
-and Message = inherit Signal
-
-/// A model-message-command-content (MMCC) command tag type.
-and Command = inherit Signal
-
-/// The data for a change in the world's ambient state.
-and AmbientChangeData = 
-    { OldWorldWithOldState : World }
-
 /// Describes the information needed to sort simulants.
 /// OPTIMIZATION: carries related simulant to avoid GC pressure.
 /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
@@ -442,6 +294,141 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
           Nav3dConfig = Nav3dConfig.defaultConfig
           Nav3dConfigOldOpt = None
           Nav3dMeshOpt = None }
+
+/// Context for editing behavior.
+and EditContext =
+    { Snapshot : SnapshotType -> World -> World
+      FocusProperty : unit -> unit
+      UnfocusProperty : unit -> unit
+      SearchAssetViewer : unit -> unit
+      DragDropPayloadOpt : string option
+      SnapDrag : single
+      SelectedScreen : Screen
+      SelectedGroup : Group
+      SelectedEntityOpt : Entity option
+      ToSymbolMemo : IDictionary<struct (Type * obj), Symbol>
+      OfSymbolMemo : IDictionary<struct (Type * Symbol), obj> }
+
+/// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
+/// replaced.
+and [<ReferenceEquality>] ReplaceProperty =
+    { IndicateReplaced : unit -> unit
+      PropertyDescriptor : PropertyDescriptor
+      EditContext : EditContext }
+
+/// Details additional editing behavior for a simulant's properties.
+and AppendProperties =
+    { EditContext : EditContext }
+
+/// Details additional editing behavior for hierarchy context menu.
+and HierarchyContext =
+    { EditContext : EditContext }
+
+/// Details additional editing behavior for viewport context menu.
+and ViewportContext =
+    { RightClickPosition : Vector2
+      EditContext : EditContext }
+
+/// Details the additional editing behavior for a simulant in a viewport.
+and [<ReferenceEquality>] ViewportOverlay =
+    { ViewportView : Matrix4x4
+      ViewportProjection : Matrix4x4
+      ViewportBounds : Box2
+      EditContext : EditContext }
+
+/// Specifies an aspect of simulant editing to perform.
+and [<ReferenceEquality>] EditOperation =
+    | ReplaceProperty of ReplaceProperty
+    | AppendProperties of AppendProperties
+    | HierarchyContext of HierarchyContext
+    | ViewportContext of ViewportContext
+    | ViewportOverlay of ViewportOverlay
+
+/// Describes the type of snapshot taken for operation tracking.
+and SnapshotType =
+    | WipePropagationTargets
+    | TranslateEntity
+    | RotateEntity
+    | ScaleEntity
+    | AutoBoundsEntity
+    | MoveEntityToOrigin
+    | PropagateEntity
+    | ReorderEntities
+    | SetEntityFrozen of bool
+    | SetEntityFamilyStatic of bool
+    | ChangeEntityDispatcher
+    | RenameEntity
+    | CreateEntity
+    | DeleteEntity
+    | CutEntity
+    | PasteEntity
+    | LoadEntity
+    | DuplicateEntity
+    | CreateGroup
+    | RenameGroup
+    | OpenGroup
+    | CloseGroup
+    | ChangeProperty of int64 option * string
+    | Evaluate of string
+    | RestorePoint
+    | NormalizeAttenuation
+    | RencenterInProbeBounds
+    | ResetProbeBounds
+    | VolumeEdit of string
+    | FreezeEntities
+    | ThawEntities
+    | Permafreeze
+    | Permasplit
+    | ReregisterPhysics
+    | SynchronizeNav
+    | SetEditMode of int
+    | ReloadCode
+    | Advance
+    | Halt
+    | UserDefinedSnapshot of Image AssetTag * string // a user-defined type of snapshot
+
+    member this.Label =
+        match this with
+        | WipePropagationTargets -> (scstringMemo this).Spaced
+        | TranslateEntity -> (scstringMemo this).Spaced
+        | RotateEntity -> (scstringMemo this).Spaced
+        | ScaleEntity -> (scstringMemo this).Spaced
+        | AutoBoundsEntity -> (scstringMemo this).Spaced
+        | MoveEntityToOrigin -> (scstringMemo this).Spaced
+        | PropagateEntity -> (scstringMemo this).Spaced
+        | ReorderEntities -> (scstringMemo this).Spaced
+        | SetEntityFrozen frozen -> if frozen then "Freeze Entity" else "Thaw Entity"
+        | SetEntityFamilyStatic static_ -> if static_ then "Staticize Entity Family" else "Dynamize Entity Family"
+        | ChangeEntityDispatcher -> (scstringMemo this).Spaced
+        | RenameEntity -> (scstringMemo this).Spaced
+        | CreateEntity -> (scstringMemo this).Spaced
+        | DeleteEntity -> (scstringMemo this).Spaced
+        | CutEntity -> (scstringMemo this).Spaced
+        | PasteEntity -> (scstringMemo this).Spaced
+        | LoadEntity -> (scstringMemo this).Spaced
+        | DuplicateEntity -> (scstringMemo this).Spaced
+        | RenameGroup -> (scstringMemo this).Spaced
+        | CreateGroup -> (scstringMemo this).Spaced
+        | OpenGroup -> (scstringMemo this).Spaced
+        | CloseGroup -> (scstringMemo this).Spaced
+        | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
+        | Evaluate _ -> "Evaluate F# Expression"
+        | RestorePoint -> (scstringMemo this).Spaced
+        | NormalizeAttenuation -> (scstringMemo this).Spaced
+        | RencenterInProbeBounds -> (scstringMemo this).Spaced
+        | ResetProbeBounds -> (scstringMemo this).Spaced
+        | VolumeEdit volumeEditType -> "Volume Edit " + volumeEditType
+        | FreezeEntities -> (scstringMemo this).Spaced
+        | ThawEntities -> (scstringMemo this).Spaced
+        | Permafreeze -> (scstringMemo this).Spaced
+        | Permasplit -> (scstringMemo this).Spaced
+        | ReregisterPhysics -> (scstringMemo this).Spaced
+        | SynchronizeNav -> (scstringMemo this).Spaced
+        | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
+        | ReloadCode -> (scstringMemo this).Spaced
+        | Advance -> (scstringMemo this).Spaced
+        | Halt -> (scstringMemo this).Spaced
+        | UserDefinedSnapshot (_, label) -> label
 
 /// Generalized interface tag for late-bound objects.
 and LateBindings = interface end
@@ -793,7 +780,16 @@ and Facet (physical, lightProbe, light) =
 
     interface LateBindings
 
-/// Describes property content to the MMCC content system.
+/// A model-message-command-content (MMCC) signal tag type.
+and Signal = interface end
+
+/// A model-message-command-content (MMCC) message tag type.
+and Message = inherit Signal
+
+/// A model-message-command-content (MMCC) command tag type.
+and Command = inherit Signal
+
+/// Describes property content to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] PropertyContent =
     { PropertyStatic : bool
       PropertyLens : Lens
@@ -803,13 +799,13 @@ and [<ReferenceEquality>] PropertyContent =
           PropertyLens = lens
           PropertyValue = value }
 
-/// Describes definition content to the MMCC content system.
+/// Describes definition content to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] DefinitionContent<'s when 's :> Simulant> =
     | PropertyContent of PropertyContent
     | EventSignalContent of obj Address * obj
     | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
 
-/// Describes a simulant to the MMCC content system.
+/// Describes a simulant to the model-message-command-content (MMCC) content system.
 and SimulantContent =
     abstract DispatcherNameOpt : string option
     abstract SimulantNameOpt : string option
@@ -819,7 +815,7 @@ and SimulantContent =
     abstract PropertyContentsOpt : List<PropertyContent>
     abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
-/// Describes a game to the MMCC content system.
+/// Describes a game to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] GameContent =
     { InitialScreenNameOpt : string option
       mutable SimulantCachedOpt : Simulant
@@ -843,7 +839,7 @@ and [<ReferenceEquality>] GameContent =
           PropertyContentsOpt = null
           ScreenContents = OrderedDictionary StringComparer.Ordinal }
 
-/// Describes a screen to the MMCC content system.
+/// Describes a screen to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] ScreenContent =
     { ScreenDispatcherName : string
       ScreenName : string
@@ -873,7 +869,7 @@ and [<ReferenceEquality>] ScreenContent =
           PropertyContentsOpt = null
           GroupContents = OrderedDictionary StringComparer.Ordinal }
 
-/// Describes a group to the MMCC content system.
+/// Describes a group to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] GroupContent =
     { GroupDispatcherName : string
       GroupName : string
@@ -2324,7 +2320,6 @@ module Signal =
 module SignalOperators =
 
     /// Signal constructor.
-    /// Wonky name because F# reserve `sig` as a keyword.
     let inline signal<'s when 's :> Signal> (signal : 's) = signal :> Signal
 
     /// Singleton signal-value pair constructor.

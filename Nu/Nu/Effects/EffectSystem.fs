@@ -14,8 +14,7 @@ module EffectSystem =
     /// Evaluates effect descriptors.
     type [<ReferenceEquality>] EffectSystem =
         private
-            { EffectDelta : GameTime
-              EffectTime : GameTime
+            { EffectTime : GameTime
               EffectTimeOriginal : GameTime
               EffectProgressOffset : single
               EffectAbsolute : bool
@@ -746,16 +745,14 @@ module EffectSystem =
         else release effectSystem
     
     /// Creates a new EffectSystem with the following parameters -
-    ///   - time: The time basis of the effect.
-    ///   - delta: The delta time for the effect.
+    ///   - localTime: The time basis of the effect.
     ///   - absolute: A flag indicating if the effect is absolute.
     ///   - presence: The presence of the effect.
     ///   - shadowOffset: How far to offset shadows of any billboards.
     ///   - renderType: The render type of the effect.
     ///   - globalEnv: The global environment for the effect.
-    let make localTime delta absolute castShadow presence shadowOffset renderType globalEnv =
-        { EffectDelta = delta
-          EffectTime = localTime
+    let make localTime absolute castShadow presence shadowOffset renderType globalEnv =
+        { EffectTime = localTime
           EffectTimeOriginal = localTime
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
