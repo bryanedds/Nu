@@ -99,22 +99,19 @@ module Engine =
     let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment that a static prop
     let [<Uniform>] NonPersistentPropertyNames =
         FrozenSet.ToFrozenSet
-            ([// simulant properties
+            ([(* Simulant Properties *)
               "Dispatcher"
               "Content"
               "Protected"
               "Id"
-             
-              // game properties
+              (* Game Properties *)
               "Eye3dFrustumInterior"
               "Eye3dFrustumExterior"
               "Eye3dFrustumImposter"
-             
-              // screen properties
+              (* Screen Properties *)
               "TransitionState"
               "Nav3d"
-             
-              // entity properties
+              (* Entity Properties *)
               "Facets"
               "Surnames"
               "PerimeterCenter"
