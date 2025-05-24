@@ -367,11 +367,12 @@ module WorldImSim =
             | (true, entityImSim) -> (false, entity, World.utilizeSimulantImSim entity.EntityAddress entityImSim world)
             | (false, _) -> (true, entity, World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world)
 
-        /// Begin the ImSim declaration of a group read from the given file path with the given arguments.
+        /// Begin the ImSim declaration of a entity read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
-        static member internal beginEntityFromFile entityFilePath args world =
+        static member beginEntityFromFile name entityFilePath args world =
             let entityDescriptorStr = File.ReadAllText entityFilePath
             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+            let entityDescriptor = EntityDescriptor.setNameOpt (Some name) entityDescriptor
             let (initializing, entity, world) = World.beginEntityFromDescriptor entityDescriptor world
             let initializing = initializing || Reinitializing
             Seq.fold
@@ -402,6 +403,12 @@ module WorldImSim =
         /// ImSim declare an entity with the given arguments.
         static member doEntity<'d when 'd :> EntityDispatcher> name args world =
             let world = World.beginEntity<'d> name args world
+            World.endEntity world
+
+        /// ImSim declare an entity read from the given file path with the given arguments.
+        /// Note that changing the file path over time has no effect as only the first moment is used.
+        static member doEntityFromFile name entityFilePath args world =
+            let world = World.beginEntityFromFile name entityFilePath args world
             World.endEntity world
 
         /// Make an entity the current ImSim context.
