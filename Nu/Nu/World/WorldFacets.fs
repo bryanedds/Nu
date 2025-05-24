@@ -1434,7 +1434,7 @@ type RigidBodyFacet () =
         let world = entity.PropagatePhysics world
         (Cascade, world)
 
-    static let createWheelSettingsWV position =
+    static let createWheelSettingsWV front position =
         new JoltPhysicsSharp.WheelSettingsWV
             (position = position,
              suspensionForcePoint = v3Zero,
@@ -1451,11 +1451,11 @@ type RigidBodyFacet () =
              enableSuspensionForcePoint = false,
              inertia = 0.9f,
              angularDamping = 0.2f,
-             maxSteerAngle = Math.DegreesToRadians(70.0f),
+             maxSteerAngle = (if front then Math.DegreesToRadians(70.0f) else 0.0f),
              maxBrakeTorque = 1500.0f,
-             maxHandBrakeTorque = 4000.0f)
+             maxHandBrakeTorque = (if front then 0.0f else 4000.0f))
 
-    static let createVehicleSettings () =
+    static let createVehicleConstraintSettings () =
 
         // vehicle engine config
         let vehicleEngineSettings =
@@ -1494,7 +1494,7 @@ type RigidBodyFacet () =
                     | 2 -> v3 -1.0f 0.0f 1.5f // back left
                     | 3 -> v3 1.0f 0.0f 1.5f // back right
                     | _ -> failwithumf ()
-                createWheelSettingsWV position|]
+                createWheelSettingsWV (i < 2) position|]
 
         // vehicle constraint config
         let vehicleConstraintSettings =
@@ -1506,7 +1506,7 @@ type RigidBodyFacet () =
                 settings = wheeledVehicleControllerSettings)
 
         // fin
-        (wheeledVehicleControllerSettings, vehicleConstraintSettings)
+        vehicleConstraintSettings
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1564,8 +1564,8 @@ type RigidBodyFacet () =
         let vehicleProperties =
             match entity.GetBodyType world with
             | Vehicle when not is2d ->
-                let (wvcs, vcs) = createVehicleSettings ()
-                VehicleWheeledJoltProperties { WheeledVehicleControllerSettings = wvcs; VehicleConstraintSettings = vcs }
+                let settings = createVehicleConstraintSettings ()
+                VehicleWheeledJoltProperties settings
             | _ -> VehicleAbsent
         let bodyProperties =
             { Enabled = entity.GetBodyEnabled world

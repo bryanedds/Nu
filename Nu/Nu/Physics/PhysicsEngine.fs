@@ -478,15 +478,10 @@ type [<SymbolicExpansion>] CharacterProperties =
           StairStepForwardMin = 0.02f
           StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
 
-/// The properties specific to the utilization of the wheeled vehicle body type in Jolt 3D physics.
-type VehicleWheeledJoltProperties =
-    { WheeledVehicleControllerSettings: JoltPhysicsSharp.WheeledVehicleControllerSettings
-      VehicleConstraintSettings : JoltPhysicsSharp.VehicleConstraintSettings }
-
 /// The properties need to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehicleAbsent
-    | VehicleWheeledJoltProperties of VehicleWheeledJoltProperties
+    | VehicleWheeledJoltProperties of JoltPhysicsSharp.VehicleConstraintSettings
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =

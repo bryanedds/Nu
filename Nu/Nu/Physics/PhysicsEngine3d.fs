@@ -106,7 +106,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterID, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
-          WheeledVehicleControllers : Dictionary<BodyId, WheeledVehicleController>
+          VehicleConstraints : Dictionary<BodyId, VehicleConstraint>
           StepListeners : Dictionary<BodyId, PhysicsStepListener>
           mutable BodyUnoptimizedCreationCount : int
           BodyContactLock : obj
@@ -671,21 +671,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         | Choice3Of3 () ->
 
-            // create wheeled vehicle controller
+            // create vehicle body
             let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine
             
-            // create wheeled vehicle controller
-            let (wvcs, vcs) =
-                match bodyProperties.VehicleProperties with
-                | VehicleWheeledJoltProperties properties -> (properties.WheeledVehicleControllerSettings, properties.VehicleConstraintSettings)
-                | _ -> failwithumf () // NOTE: no path should lead here.
-            let wheeledVehicleController = new WheeledVehicleController (body, wvcs, vcs)
-            wheeledVehicleController.Constraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (layer, 1.0f))
-            physicsEngine.WheeledVehicleControllers.Add (bodyId, wheeledVehicleController)
-            physicsEngine.PhysicsContext.AddConstraint wheeledVehicleController.Constraint
+            // create vehicle constraint
+            let vehicleConstraintSettings = match bodyProperties.VehicleProperties with VehicleWheeledJoltProperties vcs -> vcs | _ -> failwithumf () // NOTE: no path should lead here.
+            let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
+            vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (layer, 1.0f))
+            physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
+            physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
 
-            // create step listener
-            let stepListener = wheeledVehicleController.Constraint.AsPhysicsStepListener
+            // register step listener
+            let stepListener = vehicleConstraint.AsPhysicsStepListener
             physicsEngine.StepListeners.Add (bodyId, stepListener)
             physicsEngine.PhysicsContext.AddStepListener stepListener
 
@@ -745,14 +742,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (false, _) ->
 
             // attempt to destroy wheeled vehicle controller
-            match physicsEngine.WheeledVehicleControllers.TryGetValue bodyId with
-            | (true, wheeledVehicleController) ->
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, vehicleConstraint) ->
                 let stepListener = physicsEngine.StepListeners.[bodyId]
                 physicsEngine.PhysicsContext.RemoveStepListener stepListener                
                 physicsEngine.StepListeners.Remove bodyId |> ignore<bool>
-                physicsEngine.PhysicsContext.RemoveConstraint wheeledVehicleController.Constraint
-                physicsEngine.WheeledVehicleControllers.Remove bodyId |> ignore<bool>
-                wheeledVehicleController.Dispose ()
+                physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
+                physicsEngine.VehicleConstraints.Remove bodyId |> ignore<bool>
+                vehicleConstraint.Dispose ()
             | (false, _) -> ()
 
             // attempt to destroy non-character body
@@ -1091,6 +1088,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = bodyInterface.GetAngularVelocity &bodyID }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
+        for vehiclesEntry in physicsEngine.VehicleConstraints do
+            vehiclesEntry.Value.WheeledVehicleController.SetForwardInput 0.5f
+
     static member make (gravity : Vector3) =
 
         // initialize Jolt foundation layer
@@ -1176,7 +1176,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
-          WheeledVehicleControllers = dictPlus HashIdentity.Structural []
+          VehicleConstraints = dictPlus HashIdentity.Structural []
           StepListeners = dictPlus HashIdentity.Structural []
           BodyUnoptimizedCreationCount = 0
           BodyContactLock = bodyContactLock
@@ -1436,9 +1436,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.StepListeners.Clear ()
 
             // clear wheeled vehicle controllers and vehicle constraints
-            for controller in physicsEngine.WheeledVehicleControllers.Values do
-                physicsEngine.PhysicsContext.RemoveConstraint controller.Constraint
-            physicsEngine.WheeledVehicleControllers.Clear ()
+            for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
+                physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
+            physicsEngine.VehicleConstraints.Clear ()
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
