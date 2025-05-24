@@ -1492,10 +1492,10 @@ type RigidBodyFacet () =
             [|for i in 0 .. dec 4 do
                 let position =
                     match i with
-                    | 0 -> v3 -1.0f 0.0f -1.5f // front left
-                    | 1 -> v3 1.0f 0.0f -1.5f // front right
-                    | 2 -> v3 -1.0f 0.0f 1.5f // back left
-                    | 3 -> v3 1.0f 0.0f 1.5f // back right
+                    | 0 -> v3 -0.8f 0.6f -3.0f // front left
+                    | 1 -> v3 0.8f 0.6f -3.0f // front right
+                    | 2 -> v3 -0.8f 0.6f 1.5f // back left
+                    | 3 -> v3 0.8f 0.6f 1.5f // back right
                     | _ -> failwithumf ()
                 createWheelSettingsWV (i < 2) position|]
 
