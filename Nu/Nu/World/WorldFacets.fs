@@ -1599,24 +1599,6 @@ type RigidBodyFacet () =
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
-    override this.Edit (op, entity, world) =
-        match op with
-        | AppendProperties _ ->
-            match entity.GetBodyType world with
-            | Vehicle ->
-                let bodyId = entity.GetBodyId world
-                let world =
-                    if ImGui.Button "Forward"
-                    then World.setBodyVehicleForwardInput 1.0f bodyId world
-                    else world
-                let world =
-                    if ImGui.Button "Right"
-                    then World.setBodyVehicleRightInput 1.0f bodyId world
-                    else world
-                world
-            | _ -> world
-        | _ -> world
-
 [<AutoOpen>]
 module BodyJointFacetExtensions =
     type Entity with
