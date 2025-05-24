@@ -294,8 +294,56 @@ module WorldImSim =
                     else world)
                 world args
 
+        /// Begin the ImSim declaration of a entity read from the given file path with the given arguments.
+        /// Note that changing the file path over time has no effect as only the first moment is used.
+        static member beginEntityFromFile name entityFilePath args (world : World) =
+
+            // create entity as and when appropriate
+            if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in a Group or Entity context).")
+            let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
+            let world = World.setContext entityAddress world
+            let entity = Nu.Entity entityAddress
+            let entityCreation = not (entity.GetExists world)
+            let (initializing, world) =
+                match world.SimulantsImSim.TryGetValue entity.EntityAddress with
+                | (true, entityImSim) ->
+                    (false, World.utilizeSimulantImSim entity.EntityAddress entityImSim world)
+                | (false, _) ->
+                    let world =
+                        if entityCreation then
+                            let entityDescriptorStr = File.ReadAllText entityFilePath
+                            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+                            let world = World.readEntity false true entityDescriptor None entity.Group world |> snd
+                            World.setEntityProtected true entity world |> snd'
+                        else world
+                    let world = World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    (true, world)
+
+            // entity-specific initialization
+            let initializing = initializing || Reinitializing
+            let mutable mountArgApplied = false
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if (initializing || not arg.ArgStatic) && entity.GetExists world then
+                            mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                            entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let world =
+                if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1
+                then entity.SetMountOpt (Some (Relation.makeParent ())) world
+                else world
+            let world =
+                if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
+                then WorldModule.tryProcessEntity true entity world
+                else world
+            world
+
         /// Begin the ImSim declaration of an entity with the given arguments.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r * World =
+
+            // create entity as and when appropriate
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             let world = World.setContext entityAddress world
@@ -326,6 +374,7 @@ module WorldImSim =
                     // fin
                     (true, world)
 
+            // entity-specific initialization
             let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
             let world =
@@ -344,6 +393,8 @@ module WorldImSim =
                 if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
                 then WorldModule.tryProcessEntity true entity world
                 else world
+
+            // update result
             let result = match (World.getSimulantImSim entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) entity.EntityAddress world
             (result, world)
@@ -351,36 +402,6 @@ module WorldImSim =
         /// Begin the ImSim declaration of an entity with the given arguments.
         static member beginEntity<'d when 'd :> EntityDispatcher> name args world =
             World.beginEntityPlus<'d, unit> () (fun _ _ world -> world) name args world |> snd
-
-        static member internal beginEntityFromDescriptor entityDescriptor (world : World) : bool * Entity * World =
-            if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in either Group or Entity context).")
-            let entityName = match EntityDescriptor.getNameOpt entityDescriptor with Some name -> name | None -> "Entity"
-            let entityAddress = Address.makeFromArray (Array.add entityName world.ContextImSim.Names)
-            let world = World.setContext entityAddress world
-            let entity = Nu.Entity entityAddress
-            let world =
-                if not (entity.GetExists world) then
-                    let world = World.readEntity false true entityDescriptor None entity.Group world |> snd
-                    World.setEntityProtected true entity world |> snd'
-                else world
-            match world.SimulantsImSim.TryGetValue entity.EntityAddress with
-            | (true, entityImSim) -> (false, entity, World.utilizeSimulantImSim entity.EntityAddress entityImSim world)
-            | (false, _) -> (true, entity, World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world)
-
-        /// Begin the ImSim declaration of a entity read from the given file path with the given arguments.
-        /// Note that changing the file path over time has no effect as only the first moment is used.
-        static member beginEntityFromFile name entityFilePath args world =
-            let entityDescriptorStr = File.ReadAllText entityFilePath
-            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-            let entityDescriptor = EntityDescriptor.setNameOpt (Some name) entityDescriptor
-            let (initializing, entity, world) = World.beginEntityFromDescriptor entityDescriptor world
-            let initializing = initializing || Reinitializing
-            Seq.fold
-                (fun world arg ->
-                    if (initializing || not arg.ArgStatic) && entity.GetExists world
-                    then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
 
         /// End the ImSim declaration of an entity.
         static member endEntity (world : World) =
@@ -394,6 +415,12 @@ module WorldImSim =
                 World.setContext currentAddress world
             | _ -> raise (InvalidOperationException "World.beginEntity mismatch.")
 
+        /// ImSim declare an entity read from the given file path with the given arguments.
+        /// Note that changing the file path over time has no effect as only the first moment is used.
+        static member doEntityFromFile name entityFilePath args world =
+            let world = World.beginEntityFromFile name entityFilePath args world
+            World.endEntity world
+
         /// ImSim declare an entity with the given arguments.
         static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name args world =
             let (result, world) = World.beginEntityPlus<'d, 'r> zero init name args world
@@ -403,12 +430,6 @@ module WorldImSim =
         /// ImSim declare an entity with the given arguments.
         static member doEntity<'d when 'd :> EntityDispatcher> name args world =
             let world = World.beginEntity<'d> name args world
-            World.endEntity world
-
-        /// ImSim declare an entity read from the given file path with the given arguments.
-        /// Note that changing the file path over time has no effect as only the first moment is used.
-        static member doEntityFromFile name entityFilePath args world =
-            let world = World.beginEntityFromFile name entityFilePath args world
             World.endEntity world
 
         /// Make an entity the current ImSim context.
