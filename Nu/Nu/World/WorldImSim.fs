@@ -249,7 +249,7 @@ module WorldImSim =
                         if groupCreation then
                             let groupDescriptorStr = File.ReadAllText groupFilePath
                             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                            let world = World.readGroup groupDescriptor None group.Screen world |> snd
+                            let world = World.readGroup groupDescriptor (Some name) group.Screen world |> snd
                             World.setGroupProtected true group world |> snd'
                         else world
                     let world = World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
@@ -313,7 +313,7 @@ module WorldImSim =
                         if entityCreation then
                             let entityDescriptorStr = File.ReadAllText entityFilePath
                             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                            let world = World.readEntity false true entityDescriptor None entity.Group world |> snd
+                            let world = World.readEntity false true entityDescriptor (Some name) entity.Parent world |> snd
                             World.setEntityProtected true entity world |> snd'
                         else world
                     let world = World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
