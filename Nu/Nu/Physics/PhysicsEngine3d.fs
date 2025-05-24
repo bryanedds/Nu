@@ -576,7 +576,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | KinematicCharacter -> (MotionType.Kinematic, Choice2Of3 ())
             | Dynamic -> (MotionType.Dynamic, Choice1Of3 ())
             | DynamicCharacter -> (MotionType.Dynamic, Choice2Of3 ())
-            | Vehicle -> (MotionType.Dynamic, Choice3Of3 ())
+            | Vehicle ->
+                match bodyProperties.VehicleProperties with
+                | VehiclePropertiesJolt vehicleConstraintSettings -> (MotionType.Dynamic, Choice3Of3 vehicleConstraintSettings)
+                | _ -> (MotionType.Dynamic, Choice1Of3 ())
         match representationType with
         | Choice1Of3 () ->
 
@@ -669,13 +672,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
-        | Choice3Of3 () ->
+        | Choice3Of3 vehicleConstraintSettings ->
 
             // create vehicle body
             let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine
             
             // create vehicle constraint
-            let vehicleConstraintSettings = match bodyProperties.VehicleProperties with VehicleWheeledJoltProperties vcs -> vcs | _ -> failwithumf () // NOTE: no path should lead here.
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
             vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (layer, 1.0f))
             physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
@@ -909,6 +911,26 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.PhysicsContext.BodyInterface.SetAngularVelocity (&bodyID, &setBodyAngularVelocityMessage.AngularVelocity)
         | ValueNone -> ()
 
+    static member private setBodyVehicleForwardInput (setBodyVehicleForwardInputMessage : SetBodyVehicleForwardInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleForwardInputMessage.BodyId with
+        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetForwardInput setBodyVehicleForwardInputMessage.ForwardInput
+        | (false, _) -> ()
+
+    static member private setBodyVehicleRightInput (setBodyVehicleRightInputMessage : SetBodyVehicleRightInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleRightInputMessage.BodyId with
+        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetRightInput setBodyVehicleRightInputMessage.RightInput
+        | (false, _) -> ()
+
+    static member private setBodyVehicleBrakeInput (setBodyVehicleBrakeInputMessage : SetBodyVehicleBrakeInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleBrakeInputMessage.BodyId with
+        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetBrakeInput setBodyVehicleBrakeInputMessage.BrakeInput
+        | (false, _) -> ()
+
+    static member private setBodyVehicleHandBrakeInput (setBodyVehicleHandBrakeInputMessage : SetBodyVehicleHandBrakeInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleHandBrakeInputMessage.BodyId with
+        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetHandBrakeInput setBodyVehicleHandBrakeInputMessage.HandBrakeInput
+        | (false, _) -> ()
+
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match PhysicsEngine3d.tryGetBodyID applyBodyLinearImpulseMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
@@ -977,6 +999,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine3d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine3d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | SetBodyVehicleForwardInputMessage setBodyVehicleForwardInputMessage -> PhysicsEngine3d.setBodyVehicleForwardInput setBodyVehicleForwardInputMessage physicsEngine
+        | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> PhysicsEngine3d.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
+        | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
+        | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -1087,9 +1113,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           LinearVelocity = bodyInterface.GetLinearVelocity &bodyID
                           AngularVelocity = bodyInterface.GetAngularVelocity &bodyID }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
-
-        for vehiclesEntry in physicsEngine.VehicleConstraints do
-            vehiclesEntry.Value.WheeledVehicleController.SetForwardInput 0.5f
 
     static member make (gravity : Vector3) =
 

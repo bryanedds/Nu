@@ -506,7 +506,7 @@ type RigidModelDispatcher () =
         let world =
             match entity.GetBodyType world with
             | Static -> entity.SetNavShape BoundsNavShape world
-            | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter -> entity.SetNavShape NavShape.EmptyNavShape world
+            | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape NavShape.EmptyNavShape world
         (Cascade, world)
 
     static member Facets =

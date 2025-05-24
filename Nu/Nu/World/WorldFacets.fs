@@ -1367,6 +1367,9 @@ module RigidBodyFacetExtensions =
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
+        member this.GetVehicleProperties world : VehicleProperties = this.Get (nameof this.VehicleProperties) world
+        member this.SetVehicleProperties (value : VehicleProperties) world = this.Set (nameof this.VehicleProperties) value world
+        member this.VehicleProperties = lens (nameof this.VehicleProperties) this this.GetVehicleProperties this.SetVehicleProperties
         member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
         member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
         member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
@@ -1455,7 +1458,7 @@ type RigidBodyFacet () =
              maxBrakeTorque = 1500.0f,
              maxHandBrakeTorque = (if front then 0.0f else 4000.0f))
 
-    static let createVehicleConstraintSettings () =
+    static let createVehiclePropertiesJolt () =
 
         // vehicle engine config
         let vehicleEngineSettings =
@@ -1506,7 +1509,7 @@ type RigidBodyFacet () =
                 settings = wheeledVehicleControllerSettings)
 
         // fin
-        vehicleConstraintSettings
+        VehiclePropertiesJolt vehicleConstraintSettings
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1523,6 +1526,7 @@ type RigidBodyFacet () =
          define Entity.Substance (Mass 1.0f)
          define Entity.GravityOverride None
          define Entity.CharacterProperties CharacterProperties.defaultProperties
+         nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discontinuous
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
@@ -1563,10 +1567,8 @@ type RigidBodyFacet () =
         let mutable transform = entity.GetTransform world
         let vehicleProperties =
             match entity.GetBodyType world with
-            | Vehicle when not is2d ->
-                let settings = createVehicleConstraintSettings ()
-                VehicleWheeledJoltProperties settings
-            | _ -> VehicleAbsent
+            | Vehicle -> if is2d then VehiclePropertiesAether else createVehiclePropertiesJolt ()
+            | _ -> VehiclePropertiesAbsent
         let bodyProperties =
             { Enabled = entity.GetBodyEnabled world
               Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
@@ -1596,6 +1598,24 @@ type RigidBodyFacet () =
 
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+
+    override this.Edit (op, entity, world) =
+        match op with
+        | AppendProperties _ ->
+            match entity.GetBodyType world with
+            | Vehicle ->
+                let bodyId = entity.GetBodyId world
+                let world =
+                    if ImGui.Button "Forward"
+                    then World.setBodyVehicleForwardInput 1.0f bodyId world
+                    else world
+                let world =
+                    if ImGui.Button "Right"
+                    then World.setBodyVehicleRightInput 1.0f bodyId world
+                    else world
+                world
+            | _ -> world
+        | _ -> world
 
 [<AutoOpen>]
 module BodyJointFacetExtensions =
@@ -3438,7 +3458,7 @@ type TerrainFacet () =
                   Substance = Mass 0.0f
                   GravityOverride = None
                   CharacterProperties = CharacterProperties.defaultProperties
-                  VehicleProperties = VehicleAbsent
+                  VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = Discontinuous
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
