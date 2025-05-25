@@ -1448,13 +1448,13 @@ type RigidBodyFacet () =
              suspensionMinLength = 0.3f,
              suspensionMaxLength = 0.5f,
              suspensionPreloadLength = 0.0f,
-             suspensionSpring = JoltPhysicsSharp.SpringSettings (JoltPhysicsSharp.SpringMode.FrequencyAndDamping, 1.5f, 0.5f),
+             suspensionSpring = JoltPhysicsSharp.SpringSettings (JoltPhysicsSharp.SpringMode.FrequencyAndDamping, 3.0f, 0.5f),
              radius = 0.3f,
              width = 0.1f,
              enableSuspensionForcePoint = false,
              inertia = 0.9f,
              angularDamping = 0.2f,
-             maxSteerAngle = (if front then Math.DegreesToRadians(70.0f) else 0.0f),
+             maxSteerAngle = (if front then Math.DegreesToRadians 70.0f else 0.0f),
              maxBrakeTorque = 1500.0f,
              maxHandBrakeTorque = (if front then 0.0f else 4000.0f))
 
@@ -1598,6 +1598,24 @@ type RigidBodyFacet () =
 
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+
+    override this.Edit (op, entity, world) =
+        match op with
+        | AppendProperties _ ->
+            match entity.GetBodyType world with
+            | Vehicle ->
+                let bodyId = entity.GetBodyId world
+                let world =
+                    if ImGui.Button "Forward"
+                    then World.setBodyVehicleForwardInput 1.0f bodyId world
+                    else world
+                let world =
+                    if ImGui.Button "Right"
+                    then World.setBodyVehicleRightInput 1.0f bodyId world
+                    else world
+                world
+            | _ -> world
+        | _ -> world
 
 [<AutoOpen>]
 module BodyJointFacetExtensions =

@@ -512,17 +512,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
-    static member private createBodyNonCharacter mass layer motionType (scShapeSettings : StaticCompoundShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
-
-        // ensure we have at least one shape child in order to avoid jolt error
-        if scShapeSettings.NumSubShapes = 0u then
-            let position = v3Zero
-            let rotation = quatIdentity
-            let centerOfMass = v3Zero
-            scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
+    static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
 
         // configure and create non-character body
-        let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
+        let mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
         bodyCreationSettings.Friction <- bodyProperties.Friction
         bodyCreationSettings.Restitution <- bodyProperties.Restitution
@@ -559,10 +552,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
 
-        // create either a character or a non-character body
+        // create either a character or a non-character body, ensuring we have at least one shape child in order to
+        // avoid jolt error
         use scShapeSettings = new StaticCompoundShapeSettings ()
-        let masses = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
-        let mass = List.sum masses
+        let mass = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine |> List.sum
+        if scShapeSettings.NumSubShapes = 0u then
+            let position = v3Zero
+            let rotation = quatIdentity
+            let centerOfMass = v3Zero
+            scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
         let layer =
             if bodyProperties.Enabled then
                 if bodyProperties.BodyType.IsStatic
@@ -674,8 +672,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         | Choice3Of3 vehicleConstraintSettings ->
 
+            // create vehicle offset COM shape
+            let offset = v3Down * 1.25f // TODO: P0: expose this as parameter.
+            let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
+
             // create vehicle body
-            let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine
+            let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
             
             // create vehicle constraint
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
