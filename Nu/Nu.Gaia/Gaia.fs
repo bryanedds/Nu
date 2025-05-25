@@ -194,6 +194,7 @@ module Gaia =
     let private FsiInStream = new StringReader ""
     let private FsiOutStream = new StringWriter ()
     let mutable private FsiSession = Unchecked.defaultof<Shell.FsiEvaluationSession>
+    let mutable private FsiSessionEvalNeedsInitialization = true
 
     (* Initial imgui.ini File Content *)
 
@@ -1300,7 +1301,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             World.switch worldOld
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
-                    
+
                     // issue code reload event
                     World.publishPlus () Nu.Game.Handle.CodeReloadEvent (EventTrace.debug "Gaia" "tryReloadCode" "" EventTrace.empty) Nu.Game.Handle false false world
 
@@ -3344,8 +3345,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let world =
                     if eval || enter then
                         let world = snapshot (Evaluate InteractiveInputStr) world
-                        let initialEntry = FsiSession.DynamicAssemblies.Length = 0
-                        if initialEntry then
+                        let initialEval = FsiSessionEvalNeedsInitialization
+                        if FsiSessionEvalNeedsInitialization then
 
                             // run initialization script
                             let projectDllPathValid = File.Exists ProjectDllPath
@@ -3386,6 +3387,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 let namespaceName = PathF.GetFileNameWithoutExtension (ProjectDllPath.Replace (" ", ""))
                                 FsiSession.EvalInteractionNonThrowing ("open " + namespaceName) |> ignore<Choice<_, _> * _>
 
+                            // eval initialization finished
+                            FsiSessionEvalNeedsInitialization <- false
+
                         let world =
                             if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
                             if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
@@ -3402,7 +3406,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 let errorStr = string FsiErrorStream
                                 let outStr = string FsiOutStream
                                 let outStr =
-                                    if initialEntry then
+                                    if initialEval then
                                         let outStr = outStr.Replace ("\r\n> ", "") // TODO: ensure the use of \r\n also works on linux.
                                         let outStrLines = outStr.Split "\r\n"
                                         let outStrLines = Array.filter (fun (line : string) -> not (line.Contains "--> Referenced '")) outStrLines
