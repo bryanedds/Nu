@@ -86,6 +86,7 @@ module Gaia =
     let mutable private EyeChangedElsewhere = false
     let mutable private FpsStartDateTime = DateTimeOffset.Now
     let mutable private FpsStartUpdateTime = 0L
+    let mutable private InteractiveNeedsInitialization = true
     let mutable private InteractiveInputFocusRequested = false
     let mutable private InteractiveInputStr = ""
     let mutable private InteractiveOutputStr = ""
@@ -194,7 +195,6 @@ module Gaia =
     let private FsiInStream = new StringReader ""
     let private FsiOutStream = new StringWriter ()
     let mutable private FsiSession = Unchecked.defaultof<Shell.FsiEvaluationSession>
-    let mutable private FsiSessionEvalNeedsInitialization = true
 
     (* Initial imgui.ini File Content *)
 
@@ -1275,6 +1275,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                     // notify user fsi session has been reset
                     InteractiveOutputStr <- "(fsi session reset)"
+
+                    // mark interactive as needing initialization
+                    InteractiveNeedsInitialization <- true
 
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
@@ -3345,8 +3348,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let world =
                     if eval || enter then
                         let world = snapshot (Evaluate InteractiveInputStr) world
-                        let initialEval = FsiSessionEvalNeedsInitialization
-                        if FsiSessionEvalNeedsInitialization then
+                        let initialEval = InteractiveNeedsInitialization
+                        if InteractiveNeedsInitialization then
 
                             // run initialization script
                             let projectDllPathValid = File.Exists ProjectDllPath
@@ -3388,7 +3391,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 FsiSession.EvalInteractionNonThrowing ("open " + namespaceName) |> ignore<Choice<_, _> * _>
 
                             // eval initialization finished
-                            FsiSessionEvalNeedsInitialization <- false
+                            InteractiveNeedsInitialization <- false
 
                         let world =
                             if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
