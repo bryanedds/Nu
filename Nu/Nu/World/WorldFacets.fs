@@ -1398,8 +1398,8 @@ type RigidBodyFacet () =
         let scalar = entity.GetScale world * entity.GetSize world
         let bodyShape = entity.GetBodyShape world
         if entity.GetIs2d world
-        then World.localizeBodyShape scalar bodyShape
-        else bodyShape
+        then World.localizePrimitiveBodyShape scalar bodyShape
+        else bodyShape // NOTE: localization does not apply to 3D bodies.
 
     static let propagatePhysicsCenter (entity : Entity) (_ : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
