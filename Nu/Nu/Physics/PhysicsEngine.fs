@@ -791,8 +791,8 @@ module Physics =
         | Constants.Physics.CollisionWildcard -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a body shape to a specific size.
-    let rec localizeBodyShape (size : Vector3) bodyShape =
+    /// Localize a primitive body shape to a specific size; non-primitive shapes are unaffected.
+    let rec localizePrimitiveBodyShape (size : Vector3) bodyShape =
         let scaleTranslation (scalar : Vector3) (transformOpt : Affine option) =
             match transformOpt with
             | Some transform -> Some { transform with Translation = transform.Translation * scalar }
@@ -808,4 +808,4 @@ module Physics =
         | StaticModelShape _ as staticModelShape -> staticModelShape
         | StaticModelSurfaceShape _ as staticModelSurfaceShape -> staticModelSurfaceShape
         | TerrainShape _ as terrainShape -> terrainShape
-        | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)
+        | BodyShapes bodyShapes -> BodyShapes (List.map (localizePrimitiveBodyShape size) bodyShapes)
