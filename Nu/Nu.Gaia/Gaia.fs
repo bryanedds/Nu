@@ -1687,7 +1687,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then NewEntityParentOpt <- SelectedEntityOpt; world
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then NewEntityParentOpt <- None; world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowOpenEntityDialog <- true; world
-            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowSaveEntityDialog <- true; world
+            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then (match SelectedEntityOpt with Some entity when entity.GetExists world -> ShowSaveEntityDialog <- true | _ -> ()); world
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy (); world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ShowOpenProjectDialog <- true; world
@@ -3980,15 +3980,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         else world
 
     let private imGuiSaveEntityDialog world =
-        EntityFileDialogState.Title <- "Save a nuentity file..."
-        EntityFileDialogState.FilePattern <- "*.nuentity"
-        EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
-        if ImGui.FileDialog (&ShowSaveEntityDialog, EntityFileDialogState) then
-            if not (PathF.HasExtension EntityFileDialogState.FilePath) then EntityFileDialogState.FilePath <- EntityFileDialogState.FilePath + ".nuentity"
-            let saved = trySaveSelectedEntity EntityFileDialogState.FilePath world
-            ShowSaveEntityDialog <- not saved
-            world
-        else world
+        match SelectedEntityOpt with
+        | Some entity when entity.GetExists world ->
+            EntityFileDialogState.Title <- "Save a nuentity file..."
+            EntityFileDialogState.FilePattern <- "*.nuentity"
+            EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+            if ImGui.FileDialog (&ShowSaveEntityDialog, EntityFileDialogState) then
+                if not (PathF.HasExtension EntityFileDialogState.FilePath) then EntityFileDialogState.FilePath <- EntityFileDialogState.FilePath + ".nuentity"
+                let saved = trySaveSelectedEntity EntityFileDialogState.FilePath world
+                ShowSaveEntityDialog <- not saved
+                world
+            else world
+        | Some _ | None -> ShowSaveEntityDialog <- false; world
 
     let private imGuiRenameEntityDialog world =
         match SelectedEntityOpt with
