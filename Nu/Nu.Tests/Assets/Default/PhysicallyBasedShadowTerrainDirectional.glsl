@@ -13,7 +13,7 @@ void main()
 {
 	vec4 positionOut = model * vec4(position, 1.0);
 	gl_Position = projection * view * positionOut;
-	depthDirectionalOut = gl_Position.z / gl_Position.w;
+	depthDirectionalOut = gl_Position.z;
 }
 
 #shader fragment
