@@ -2500,6 +2500,41 @@ module Light3dFacetExtensions =
         member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
         member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
 
+        member this.ComputeLightView world =
+            match this.GetLightType world with
+            | PointLight ->
+                Matrix4x4.CreateTranslation (-this.GetPosition world)
+            | SpotLight (_, _) ->
+                let lightRotation = this.GetRotation world
+                let mutable lightView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
+                lightView.Translation <- this.GetPosition world
+                lightView <- lightView.Inverted
+                lightView
+            | DirectionalLight ->
+                let lightRotation = this.GetRotation world
+                let mutable lightView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
+                lightView.Translation <- this.GetPosition world
+                lightView <- lightView.Inverted
+                lightView
+
+        member this.ComputeLightProjection world =
+            match this.GetLightType world with
+            | PointLight ->
+                let lightCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreateOrthographic (lightCutoff * 2.0f, lightCutoff * 2.0f, -lightCutoff, lightCutoff)
+            | SpotLight (_, coneOuter) ->
+                let lightFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
+                let lightCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, lightCutoff)
+            | DirectionalLight ->
+                let lightCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreateOrthographic (lightCutoff * 2.0f, lightCutoff * 2.0f, -lightCutoff, lightCutoff)
+
+        member this.ComputeLightFrustum world =
+            let lightView = this.ComputeLightView world
+            let lightProjection = this.ComputeLightProjection world
+            Frustum (lightView * lightProjection)
+
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
     inherit Facet (false, false, true)
@@ -2591,6 +2626,11 @@ type Light3dFacet () =
                 let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
                 world
             else world
+        | ViewportOverlay _ ->
+            let lightFrustum = entity.ComputeLightFrustum world
+            for segment in lightFrustum.Segments do
+                World.imGuiSegment3d segment 1.0f Color.Yellow world
+            world
         | _ -> world
 
 [<AutoOpen>]

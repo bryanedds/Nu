@@ -66,7 +66,7 @@ const int LIGHTS_MAX = 8;
 const int SHADOW_TEXTURES_MAX = 9;
 const int SHADOW_MAPS_MAX = 9;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.001;
+const float SHADOW_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -261,17 +261,17 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
-        shadowTexCoordsProj.y > -1.0 && shadowTexCoordsProj.y < 1.0 &&
-        shadowTexCoordsProj.z > -1.0 && shadowTexCoordsProj.z < 1.0)
+    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+    if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+        shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+        shadowTexCoords.z > 0.0 && shadowTexCoords.z < 1.0)
     {
-        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-        float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+        float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
-        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
         return shadowScalar;
     }
     return 1.0;
@@ -282,14 +282,14 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    if (shadowTexCoordsProj.x > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoordsProj.y > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoordsProj.z > -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+    if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoords.z > SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET)
     {
-        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;

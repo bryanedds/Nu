@@ -30,7 +30,7 @@ void main()
     vec4 positionOut = model * positionBlended;
     positionOut /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
     gl_Position = projection * view * positionOut;
-	depthDirectionalOut = gl_Position.z / gl_Position.w;
+	depthDirectionalOut = gl_Position.z;
 }
 
 #shader fragment
