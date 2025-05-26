@@ -104,7 +104,35 @@ namespace Nu
         /// Returns a copy of internal corners array.
         /// </summary>
         /// <returns>The array of corners.</returns>
-        public Vector3[] Corners => (Vector3[])this._corners.Clone();
+        public Vector3[] Corners
+        {
+            get
+            {
+                return (Vector3[])this._corners.Clone();
+            }
+        }
+
+        public Segment3[] Segments
+        {
+            get
+            {
+                return new Segment3[]
+                {
+                    new Segment3(_corners[0], _corners[1]),
+                    new Segment3(_corners[1], _corners[2]),
+                    new Segment3(_corners[2], _corners[3]),
+                    new Segment3(_corners[3], _corners[0]),
+                    new Segment3(_corners[4], _corners[5]),
+                    new Segment3(_corners[5], _corners[6]),
+                    new Segment3(_corners[6], _corners[7]),
+                    new Segment3(_corners[7], _corners[4]),
+                    new Segment3(_corners[0], _corners[4]),
+                    new Segment3(_corners[1], _corners[5]),
+                    new Segment3(_corners[2], _corners[6]),
+                    new Segment3(_corners[3], _corners[7])
+                };
+            }
+        }
 
         /// <summary>
         /// Constructs the frustum by extracting the view planes from a matrix.
