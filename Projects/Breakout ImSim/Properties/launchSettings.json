@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Breakout ImNui": {
+    "Breakout ImSim": {
       "commandName": "Project",
       "nativeDebugging": true
     }
