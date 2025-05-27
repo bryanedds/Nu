@@ -2397,40 +2397,40 @@ module Light3dFacetExtensions =
         member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
         member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
 
-        member this.ComputeLightView world =
+        member this.ComputeShadowView world =
             match this.GetLightType world with
             | PointLight ->
                 Matrix4x4.CreateTranslation (-this.GetPosition world)
             | SpotLight (_, _) ->
-                let lightRotation = this.GetRotation world
-                let mutable lightView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
-                lightView.Translation <- this.GetPosition world
-                lightView <- lightView.Inverted
-                lightView
+                let shadowRotation = this.GetRotation world
+                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                shadowView.Translation <- this.GetPosition world
+                shadowView <- shadowView.Inverted
+                shadowView
             | DirectionalLight ->
-                let lightRotation = this.GetRotation world
-                let mutable lightView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
-                lightView.Translation <- this.GetPosition world
-                lightView <- lightView.Inverted
-                lightView
+                let shadowRotation = this.GetRotation world
+                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                shadowView.Translation <- this.GetPosition world
+                shadowView <- shadowView.Inverted
+                shadowView
 
-        member this.ComputeLightProjection world =
+        member this.ComputeShadowProjection world =
             match this.GetLightType world with
             | PointLight ->
-                let lightCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-                Matrix4x4.CreateOrthographic (lightCutoff * 2.0f, lightCutoff * 2.0f, -lightCutoff, lightCutoff)
+                let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
             | SpotLight (_, coneOuter) ->
-                let lightFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
-                let lightCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-                Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, lightCutoff)
+                let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
+                let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
             | DirectionalLight ->
-                let lightCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-                Matrix4x4.CreateOrthographic (lightCutoff * 2.0f, lightCutoff * 2.0f, -lightCutoff, lightCutoff)
+                let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
 
-        member this.ComputeLightFrustum world =
-            let lightView = this.ComputeLightView world
-            let lightProjection = this.ComputeLightProjection world
-            Frustum (lightView * lightProjection)
+        member this.ComputeShadowFrustum world =
+            let shadowView = this.ComputeShadowView world
+            let shadowProjection = this.ComputeShadowProjection world
+            Frustum (shadowView * shadowProjection)
 
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
@@ -2524,8 +2524,8 @@ type Light3dFacet () =
                 world
             else world
         | ViewportOverlay _ ->
-            let lightFrustum = entity.ComputeLightFrustum world
-            for segment in lightFrustum.Segments do
+            let shadowFrustum = entity.ComputeShadowFrustum world
+            for segment in shadowFrustum.Segments do
                 World.imGuiSegment3d segment 1.0f Color.Yellow world
             world
         | _ -> world
