@@ -13,8 +13,6 @@ layout(location = 3) in vec4 boneIds;
 layout(location = 4) in vec4 weights;
 layout(location = 5) in mat4 model;
 
-out float depthDirectionalOut;
-
 void main()
 {
     // compute blended bone influences
@@ -30,7 +28,6 @@ void main()
     vec4 positionOut = model * positionBlended;
     positionOut /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
     gl_Position = projection * view * positionOut;
-	depthDirectionalOut = gl_Position.z;
 }
 
 #shader fragment
@@ -40,10 +37,8 @@ uniform float lightShadowExponent;
 
 layout(location = 0) out vec2 depths;
 
-in float depthDirectionalOut;
-
 void main()
 {
 	depths.x = gl_FragCoord.z; // linear, screen space depth
-	depths.y = exp(lightShadowExponent * depthDirectionalOut);
+	depths.y = exp(lightShadowExponent * depths.x);
 }
