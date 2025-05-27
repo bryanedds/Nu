@@ -332,12 +332,12 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
         shadowTexCoords.z > SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET)
     {
         // compute light distance travel through surface (not accounting for incidental surface concavity)
-        float shadowFar = lightCutoffs[lightIndex];
-        float shadowZScreen = shadowTexCoordsProj.z * 0.5 + 0.5; // linear, screen space
+        float shadowZScreen = shadowTexCoords.z; // linear, screen space
         vec2 shadowTextureSize = textureSize(shadowTextures[shadowIndex], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         float shadowDepthScreen = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x; // linear, screen space
         float delta = shadowZScreen - shadowDepthScreen;
+        float shadowFar = lightCutoffs[lightIndex];
         return max(0.0, delta * shadowFar);
     }
 
