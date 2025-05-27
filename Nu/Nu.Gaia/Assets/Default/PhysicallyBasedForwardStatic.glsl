@@ -285,7 +285,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
     if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
         shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.z > SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET)
+        shadowTexCoordsProj.z > SHADOW_SEAM_INSET * 2.0 && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET * 2.0)
     {
         float shadowZ = shadowTexCoordsProj.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
@@ -494,7 +494,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
-            float shadowZ = shadowTexCoords;
+            float shadowZ = shadowTexCoords.z;
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x : 1.0;
             
             // step through ray, accumulating fog light moment

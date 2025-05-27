@@ -249,7 +249,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
     if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
         shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.z > SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET)
+        shadowTexCoordsProj.z > SHADOW_SEAM_INSET * 2.0 && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET * 2.0)
     {
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
@@ -327,17 +327,17 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5; // adj-ndc space
-    if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.z > SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET)
+    if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+        shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+        shadowTexCoordsProj.z > 0.0 && shadowTexCoordsProj.z < 1.0)
     {
         // compute light distance travel through surface (not accounting for incidental surface concavity)
-        float shadowFar = lightCutoffs[lightIndex];
-        float shadowZScreen = shadowTexCoordsProj.z * 0.5 + 0.5; // linear, screen space
+        float shadowZScreen = shadowTexCoords.z; // linear, screen space
         vec2 shadowTextureSize = textureSize(shadowTextures[shadowIndex], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         float shadowDepthScreen = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x; // linear, screen space
         float delta = shadowZScreen - shadowDepthScreen;
+        float shadowFar = lightCutoffs[lightIndex];
         return max(0.0, delta * shadowFar);
     }
 
