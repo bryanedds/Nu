@@ -1710,7 +1710,7 @@ module WorldModule2 =
                     [|for light in lights do
                         if light.GetDesireShadows world then
                             let shadowFrustum =
-                                light.ComputeLightFrustum world
+                                light.ComputeShadowFrustum world
                             let shadowInView =
                                 let frustumInterior = world.Eye3dFrustumInterior
                                 let frustumExterior = world.Eye3dFrustumExterior
