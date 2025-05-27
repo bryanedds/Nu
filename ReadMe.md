@@ -61,6 +61,9 @@ Screenshot from our current game in early development.
 ![image](https://github.com/user-attachments/assets/048e8933-41cc-4a39-b3b6-4ad87b616779)
 Another screenshot from same.
 
+![image](https://github.com/user-attachments/assets/f45aa11d-4131-4011-9755-2c6599eabd36)
+A racing game we're prototyping with Nu and Jolt Physics.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
