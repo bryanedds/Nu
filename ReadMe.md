@@ -37,7 +37,7 @@ Real-time WYSIWYG editing with hot asset and live code reloading, and the abilit
 ![image](https://github.com/user-attachments/assets/fa88a1a5-e793-44cb-8113-4a6bf8468d4c)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
-![image](https://github.com/user-attachments/assets/d8406232-2bb9-4b60-b7a0-4a49cfa29236)
+![image](https://github.com/user-attachments/assets/ce2e2ff6-dd28-43d9-a865-652b977fcf81)
 Rendering made efficient with instancing-by-default.
 
 ![image](https://github.com/user-attachments/assets/b715c8d1-4765-426f-8551-0ebd24e65088)
