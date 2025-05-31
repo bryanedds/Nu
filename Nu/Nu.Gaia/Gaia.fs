@@ -279,7 +279,7 @@ DockId=0x00000002,0
 
 [Window][Full Screen Enabled]
 Pos=20,23
-Size=171,77
+Size=169,77
 Collapsed=0
 
 [Window][Message!]
@@ -344,8 +344,8 @@ Collapsed=0
 DockId=0x00000001,0
 
 [Window][Dear ImGui Debug Log]
-Pos=1185,628
-Size=398,211
+Pos=563,268
+Size=418,212
 Collapsed=0
 
 [Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
@@ -451,7 +451,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         DockNode    ID=0x00000009 Parent=0x00000004 SizeRef=284,426 Selected=0xAE464409
         DockNode    ID=0x0000000A Parent=0x00000004 SizeRef=284,236 Selected=0x0F18B61B
       DockNode      ID=0x0000000B Parent=0x0000000C SizeRef=693,1080 Split=Y
-        DockNode    ID=0x0000000D Parent=0x0000000B SizeRef=1327,426 CentralNode=1
+        DockNode    ID=0x0000000D Parent=0x0000000B SizeRef=1327,426 CentralNode=1 Selected=0xB80FFB58
         DockNode    ID=0x00000003 Parent=0x0000000B SizeRef=1327,236 Split=X Selected=0xB205577F
           DockNode  ID=0x0000000E Parent=0x00000003 SizeRef=335,205 Selected=0x9CF3CB04
           DockNode  ID=0x00000002 Parent=0x00000003 SizeRef=356,205 Selected=0xD92922EC
@@ -4425,14 +4425,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         let world = imGuiAssetGraphWindow world
                         let world = imGuiOverlayerWindow world
                         let world = imGuiPropagationSourcesWindow world
+                        imGuiEditorConfigWindow ()
                         let world = imGuiAudioPlayerWindow world
                         let world = imGuiRendererWindow world
                         let world = imGuiEventTracingWindow world
                         let world = imGuiInteractiveWindow world
                         let world = imGuiMetricsWindow world
                         let world = imGuiLogWindow world
-                        imGuiEditorConfigWindow ()
-                        imGuiAssetViewerWindow world
+                        imGuiAssetViewerWindow world // HACK: for some reason, this window must be processed last in order for it to be selected by default.
                         imGuiDebugWindow ()
                         (entityHierarchyFocused, world)
 
