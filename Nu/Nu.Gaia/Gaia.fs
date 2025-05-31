@@ -3381,7 +3381,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 "open Prime\n" +
                                 "open Nu\n" +
                                 "open Nu.Gaia"
-                            match FsiSession.EvalInteractionNonThrowing initial with
+                            File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
+                            File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, initial)
+                            File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
+                            match FsiSession.EvalInteractionNonThrowing (initial, Constants.Gaia.InteractiveInputFilePath) with
                             | (Choice1Of2 _, _) -> ()
                             | (Choice2Of2 exn, _) -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
 
@@ -3393,6 +3396,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             // eval initialization finished
                             InteractiveNeedsInitialization <- false
 
+                        // attempt to run interactive input
                         let world =
                             if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
                             if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
@@ -3404,7 +3408,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 then FsiSession.EvalInteractionNonThrowing "let selectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
                                 else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
                             if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
-                            match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;") with
+                            File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
+                            File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
+                            File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
+                            match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;", Constants.Gaia.InteractiveInputFilePath) with
                             | (Choice1Of2 _, _) ->
                                 let errorStr = string FsiErrorStream
                                 let outStr = string FsiOutStream
@@ -3442,6 +3449,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                         toBottom <- true
                         world
+
                     else world
                 ImGui.SameLine ()
                 if ImGui.Button "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then InteractiveOutputStr <- ""
