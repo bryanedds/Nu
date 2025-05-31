@@ -3381,10 +3381,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 "open Prime\n" +
                                 "open Nu\n" +
                                 "open Nu.Gaia"
-                            File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
-                            File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, initial)
-                            File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
-                            match FsiSession.EvalInteractionNonThrowing (initial, Constants.Gaia.InteractiveInputFilePath) with
+                            match FsiSession.EvalInteractionNonThrowing initial with
                             | (Choice1Of2 _, _) -> ()
                             | (Choice2Of2 exn, _) -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
 
@@ -4424,16 +4421,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         let world = imGuiScreenPropertiesWindow world 
                         let world = imGuiGroupPropertiesWindow world 
                         let world = imGuiEntityPropertiesWindow world 
-                        let world = imGuiPropagationSourcesWindow world
-                        let world = imGuiOverlayerWindow world
-                        let world = imGuiAssetGraphWindow world
                         let world = imGuiEditPropertyWindow world
-                        let world = imGuiLogWindow world
-                        let world = imGuiMetricsWindow world
-                        let world = imGuiInteractiveWindow world
-                        let world = imGuiEventTracingWindow world
+                        let world = imGuiAssetGraphWindow world
+                        let world = imGuiOverlayerWindow world
+                        let world = imGuiPropagationSourcesWindow world
                         let world = imGuiAudioPlayerWindow world
                         let world = imGuiRendererWindow world
+                        let world = imGuiEventTracingWindow world
+                        let world = imGuiInteractiveWindow world
+                        let world = imGuiMetricsWindow world
+                        let world = imGuiLogWindow world
                         imGuiEditorConfigWindow ()
                         imGuiAssetViewerWindow world
                         imGuiDebugWindow ()
