@@ -26,6 +26,12 @@ module WorldRender =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
             world
 
+        /// Map the configuration of the 3d renderer.
+        static member mapRenderer3dConfig mapper world =
+            let config = World.getRenderer3dConfig world
+            let config = mapper config
+            World.setRenderer3dConfig config world
+
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
             (World.getRendererProcess world).EnqueueMessage3d message
