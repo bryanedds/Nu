@@ -727,6 +727,202 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
     currentProgressA = currentProgressB;
 }
 
+
+
+
+
+
+
+
+// converts depth to linear depth ranging from near clip to far clip
+float linearEyeDepth(float depthSample)
+{
+    float div = CameraParams.w / CameraParams.z;
+    float x = 1 - div;
+    float y = div;
+    float z = x / CameraParams.w;
+    float w = y / CameraParams.w;
+
+    float zLinear = 1.0 / (z * depthSample + w);
+
+    return zLinear;
+}
+
+// converts depth to linear depth ranging form 0 to 1
+float linear01Depth(float depth)
+{
+    float led = linearEyeDepth(depth);
+    
+    float min1 = CameraParams.z;
+    float max1 = CameraParams.w;
+
+    float min2 = 0;
+    float max2 = 1;
+
+    float ld = min2 + (led - min1) * (max2 - min2) / (max1 - min1);
+
+    return ld;
+}
+
+void GetDepthAtViewPosition(vec3 worldPosition, out vec3 uv)
+{
+    vec4 p = vec4(worldPosition, 1.0);
+    p = projection * p;
+    p /= p.w;
+    p.xy = p.xy * 0.5 + 0.5;
+    uv = p.xyz;
+}
+
+vec3 OrientToNormal(vec3 vector, vec3 normal)
+{
+    float s = sign(dot(vector, normal));
+    return vector * s;
+}
+
+float CalculateMask(vec3 uv)
+{
+    if (uv.x < 0 || uv.x > 1 || uv.y > 1 || uv.y < 0 || uv.z < 0) return 0;
+
+    float xDist = min((1 - abs(uv.x * 2 - 1)) * 8, 1);
+    float yDist = min((1 - abs(uv.y * 2 - 1)) * 8, 1);
+
+    return xDist * yDist;
+}
+
+vec3 TraceRay(
+    vec3 startViewPosition, 
+    vec3 viewRayDirection, 
+    float maxRayLength, 
+    int maxSamples, 
+    float maxThickness,
+    out int samplesTook, 
+    out float hit)
+{
+    vec3 retUv = vec3(0.0);
+    float scale = maxRayLength / float(maxSamples);
+    viewRayDirection *= scale;
+    vec3 currentPosition = startViewPosition;
+    int count = 0;
+    hit = 0.0;
+
+    //initial 3d ray march
+    while (count < maxSamples)
+    {
+        count++;
+        currentPosition += viewRayDirection;
+        vec3 newUv;
+        GetDepthAtViewPosition(currentPosition, newUv.xyz);
+        float currentDepth = newUv.z;
+        float actualDepth = get_depth(newUv.xy);
+
+        if(currentDepth < 0 || actualDepth == 1) break;
+
+        float depthDiff = linear01Depth(currentDepth) - linear01Depth(actualDepth);
+        if(abs(depthDiff) >= maxThickness){
+            continue;
+        }
+        if(depthDiff > 0)
+        {
+            hit = 1.0;
+            retUv = newUv;
+            break;
+        }
+    }
+    hit *= CalculateMask(retUv);
+    samplesTook = count;
+    return retUv;
+}
+
+vec4 DDARayTrace(vec4 viewPos, vec3 view_rayDir, int steps, float maxThickness, float scale)
+{
+    viewPos.w = 1;
+    vec4 startFrag = viewPos;
+    startFrag = ProjectionMatrix * startFrag;
+    startFrag.xyz /= startFrag.w;
+    startFrag.xy = startFrag.xy * 0.5 + 0.5;
+
+    vec4 endFrag = viewPos + vec4(view_rayDir, 0);
+    endFrag.z = min(endFrag.z, CameraParams.z);
+    endFrag = ProjectionMatrix * endFrag;
+    endFrag.xyz /= endFrag.w;
+    if(endFrag.z < 0)
+    {
+        return vec4(0);
+    }
+    endFrag.xy = endFrag.xy * 0.5 + 0.5;
+
+    vec2 px = (startFrag.xy / MainTex_TexelSize);
+    vec2 endpx = (endFrag.xy / MainTex_TexelSize);
+
+    int hit = 0;
+    int i = 0;
+
+    float pxDist = length(endpx - px);
+    float pxStep = scale / max(pxDist, 1);
+    float pxStepUnscaled = 1 / max(pxDist, 1);
+    float t = 0.0;
+    vec2 curPx = px;
+    vec2 uv = px * MainTex_TexelSize;
+    while(i < steps)
+    {
+        t += pxStep;
+        curPx = mix(px, endpx, t);
+        uv = curPx * MainTex_TexelSize;
+        if(uv.x > 1. || uv.y > 1. || uv.x < 0. || uv.y < 0.){
+            break;
+        }
+
+        float curD = interpolateDepth(startFrag.z, endFrag.z, t);
+        float sampled_depth = get_depth(uv.xy);
+        if(sampled_depth == 1 || curD < 0){
+            break;
+        }
+        float td = curD - sampled_depth;
+        if(td > 0.0 && td < maxThickness){
+            hit = 1;
+            break;
+        }
+        i++;
+    }
+
+    if(hit == 1 && pxStepUnscaled != pxStep)
+    {
+        //linear refinement
+        //we don't do binary refinement because the step size will be generally small
+        int i2 = 0;
+        while(i2 < ceil(scale))
+        {
+            i2++;
+            t -= pxStepUnscaled;
+            curPx = mix(px, endpx, t);
+            vec2 tuv = curPx * MainTex_TexelSize;
+            float curD = interpolateDepth(startFrag.z, endFrag.z, t);
+            float sampled_depth = get_depth(tuv.xy);
+            float td = curD - sampled_depth;
+            if(td <= 0.0 || td >= maxThickness){
+                break;
+            }
+            uv = tuv;
+        }
+    }
+
+    float visibility = hit 
+        * (uv.x < 0 || uv.x > 1 ? 0 : 1)
+        * (uv.y < 0 || uv.y > 1 ? 0 : 1)
+        * ((i > 0) ? 1 : 0);
+    return vec4(uv, i, visibility);
+}
+
+
+
+
+
+
+
+
+
+
+
 void main()
 {
     // ensure position was written
@@ -858,18 +1054,36 @@ void main()
         float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
         vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
 
+        // diffuse global illumination
+        vec4 positionView = view * position;
+        vec2 uv = gl_FragCoord.xy * MainTex_TexelSize;
+        vec3 normalView = mat3(view) * normal;
+        vec3 viewDir = normalize(positionView.xyz);
+        vec3 viewReflect = reflect(viewDir, normalView);
+        vec4 diffuseGi = vec4(0.0);
+        float rayDepth = linearEyeDepth(positionView.z);
+        float scaledH = 1024.0 / rayDepth; // scaled steps at rayDepth meters
+        scaledH *= 2.0;
+        scaledH = min(256.0, scaledH);
+        vec3 reflection = normalize((view * vec4(random, 0)).xyz);
+        vec4 hitPoint = DDARayTrace(positionView, reflection, int(scaledH), 0.004, 4.0);
+        if (hitPoint.w == 1.0) diffuseGi = texture(albedoTexture, hitPoint.xy, 0);
+        diffuseGi = max(diffuseGi, vec4(0.0));
+        diffuseGi = min(diffuseGi, vec4(65536.0));
+
+
+
         // compute diffuse term
         vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
         vec3 kS = f;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
-        vec3 diffuse = kD * irradiance * albedo * ambientLight;
+        vec3 diffuse = kD * irradiance * albedo * ambientLight + diffuseGi;
 
         // compute specular term and weight from screen-space
         vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
         float towardEye = dot(forward, normal);
         float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-        vec4 positionView = view * position;
         vec3 specularScreen = vec3(0.0);
         float specularScreenWeight = 0.0;
         if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
