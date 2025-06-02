@@ -949,6 +949,12 @@ type [<ReferenceEquality>] GlRenderer3d =
           WhiteTexture : OpenGL.Texture.Texture
           BlackTexture : OpenGL.Texture.Texture
           BrdfTexture : OpenGL.Texture.Texture
+          ReflectionRenderbuffer : uint
+          ReflectionFramebuffer : uint
+          IrradianceMapRenderbuffer : uint
+          IrradianceMapFramebuffer : uint
+          EnvironmentFilterRenderbuffer : uint
+          EnvironmentFilterFramebuffer : uint
           IrradianceMap : OpenGL.Texture.Texture
           EnvironmentFilterMap : OpenGL.Texture.Texture
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
@@ -2569,7 +2575,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Hl.Assert ()
-        
+
         // setup shadow cube map face for rendering
         let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + shadowFace)
         OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, shadowMap.TextureId, 0)
@@ -3185,14 +3191,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                         OpenGL.LightMap.CreateIrradianceMap
                             (Constants.Render.IrradianceMapResolution,
                              renderer.IrradianceShader,
-                             OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                             OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                             renderer.IrradianceMapRenderbuffer,
+                             renderer.IrradianceMapFramebuffer)
 
                     // render fallback env filter map
                     let environmentFilterMap =
                         OpenGL.LightMap.CreateEnvironmentFilterMap
                             (Constants.Render.EnvironmentFilterResolution,
                              renderer.EnvironmentFilterShader,
-                             OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                             OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                             renderer.EnvironmentFilterRenderbuffer,
+                             renderer.EnvironmentFilterFramebuffer)
 
                     // add to cache and create light map
                     irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
@@ -3223,21 +3233,27 @@ type [<ReferenceEquality>] GlRenderer3d =
                                  Constants.Render.ReflectionMapResolution,
                                  lightProbeOrigin,
                                  lightProbeAmbientColor,
-                                 lightProbeAmbientBrightness)
+                                 lightProbeAmbientBrightness,
+                                 renderer.ReflectionRenderbuffer,
+                                 renderer.ReflectionFramebuffer)
 
                         // create irradiance map
                         let irradianceMap =
                             OpenGL.LightMap.CreateIrradianceMap
                                 (Constants.Render.IrradianceMapResolution,
                                  renderer.IrradianceShader,
-                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
+                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                 renderer.IrradianceMapRenderbuffer,
+                                 renderer.IrradianceMapFramebuffer)
 
                         // create env filter map
                         let environmentFilterMap =
                             OpenGL.LightMap.CreateEnvironmentFilterMap
                                 (Constants.Render.EnvironmentFilterResolution,
                                  renderer.EnvironmentFilterShader,
-                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
+                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                 renderer.EnvironmentFilterRenderbuffer,
+                                 renderer.EnvironmentFilterFramebuffer)
 
                         // destroy reflection map
                         reflectionMap.Destroy ()
@@ -3553,13 +3569,59 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
                 OpenGL.Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureId = brdfTextureId }
             finally brdfBufferPtr.Free ()
+        
+        // create reflection renderbuffer
+        let reflectionRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
+        OpenGL.Hl.Assert ()
+
+        // create reflection framebuffer
+        let reflectionFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionFramebuffer)
+        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, reflectionRenderbuffer)
+        OpenGL.Hl.Assert ()
+        
+        // create irradiance map renderbuffer
+        let irradianceMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceMapRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
+        OpenGL.Hl.Assert ()
+
+        // create irradiance map framebuffer
+        let irradianceMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceMapFramebuffer)
+        OpenGL.Hl.Assert ()
+
+        // create environment filter renderbuffer
+        let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
+        OpenGL.Hl.Assert ()
+
+        // create environment filter framebuffer
+        let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
+        OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap = OpenGL.LightMap.CreateIrradianceMap (Constants.Render.IrradianceMapResolution, irradianceShader, cubeMapSurface)
+        let irradianceMap =
+            OpenGL.LightMap.CreateIrradianceMap
+                (Constants.Render.IrradianceMapResolution,
+                 irradianceShader,
+                 cubeMapSurface,
+                 irradianceMapRenderbuffer,
+                 irradianceMapFramebuffer)
         OpenGL.Hl.Assert ()
 
         // create default environment filter map
-        let environmentFilterMap = OpenGL.LightMap.CreateEnvironmentFilterMap (Constants.Render.EnvironmentFilterResolution, environmentFilterShader, cubeMapSurface)
+        let environmentFilterMap =
+            OpenGL.LightMap.CreateEnvironmentFilterMap
+                (Constants.Render.EnvironmentFilterResolution,
+                 environmentFilterShader,
+                 cubeMapSurface,
+                 environmentFilterRenderbuffer,
+                 environmentFilterFramebuffer)
         OpenGL.Hl.Assert ()
 
         // get albedo metadata and texture
@@ -3665,6 +3727,12 @@ type [<ReferenceEquality>] GlRenderer3d =
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
               BrdfTexture = brdfTexture
+              ReflectionRenderbuffer = reflectionRenderbuffer
+              ReflectionFramebuffer = reflectionFramebuffer
+              IrradianceMapRenderbuffer = irradianceMapRenderbuffer
+              IrradianceMapFramebuffer = irradianceMapFramebuffer
+              EnvironmentFilterRenderbuffer = environmentFilterRenderbuffer
+              EnvironmentFilterFramebuffer = environmentFilterFramebuffer
               IrradianceMap = irradianceMap
               EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
@@ -3713,6 +3781,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.PhysicallyBasedQuad
             renderer.CubeMap.Destroy ()
             renderer.BrdfTexture.Destroy ()
+            OpenGL.Gl.DeleteRenderbuffers [|renderer.ReflectionRenderbuffer|]
+            OpenGL.Gl.DeleteFramebuffers [|renderer.ReflectionFramebuffer|]
+            OpenGL.Gl.DeleteRenderbuffers [|renderer.IrradianceMapRenderbuffer|]
+            OpenGL.Gl.DeleteFramebuffers [|renderer.IrradianceMapFramebuffer|]
+            OpenGL.Gl.DeleteRenderbuffers [|renderer.EnvironmentFilterRenderbuffer|]
+            OpenGL.Gl.DeleteFramebuffers [|renderer.EnvironmentFilterFramebuffer|]
             renderer.IrradianceMap.Destroy ()
             renderer.EnvironmentFilterMap.Destroy ()
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy ()
