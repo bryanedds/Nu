@@ -1524,6 +1524,7 @@ type ScatterType =
     | SkinScatter
     | FoliageScatter
 
+    /// Convert to a float tag that can be utilized by a shader.
     member this.Enumerate =
         match this with
         | NoScatter -> 0.0f
