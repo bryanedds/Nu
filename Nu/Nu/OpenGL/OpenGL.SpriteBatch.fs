@@ -59,7 +59,7 @@ module SpriteBatch =
               Rotations : single array
               TexCoordses : single array
               Colors : single array
-              Vao : uint
+              Vao' : uint
               mutable State : SpriteBatchState }
               
     /// Create a sprite batch shader.
@@ -111,10 +111,6 @@ module SpriteBatch =
                      int sizeScissor.X,
                      int sizeScissor.Y)
             | ValueNone -> ()
-            Hl.Assert ()
-
-            // setup vao
-            Gl.BindVertexArray env.Vao
             Hl.Assert ()
 
             // setup shader
@@ -223,12 +219,12 @@ module SpriteBatch =
     /// Destroy the given sprite batch environment.
     let CreateSpriteBatchEnv shaderFilePath =
 
-        // create vao
-        let vao = Gl.GenVertexArray ()
-        Hl.Assert ()
-
         // create shader
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader shaderFilePath
+        Hl.Assert ()
+
+        // create vao
+        let vao = Gl.GenVertexArray ()
         Hl.Assert ()
 
         // create env
@@ -241,7 +237,7 @@ module SpriteBatch =
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
           TexCoordses = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Colors = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
-          Vao = vao
+          Vao' = vao
           State = SpriteBatchState.defaultState }
 
     /// Destroy the given sprite batch environment.

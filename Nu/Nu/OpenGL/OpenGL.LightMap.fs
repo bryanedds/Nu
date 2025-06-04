@@ -104,7 +104,7 @@ module LightMap =
         let rasterCubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = rasterCubeMapId }
         rasterCubeMap
 
-    let CreateIrradianceMap (resolution, irradianceShader, cubeMapSurface : CubeMap.CubeMapSurface, renderbuffer, framebuffer) =
+    let CreateIrradianceMap (resolution, cubeMapSurface : CubeMap.CubeMapSurface, irradianceShader, cubeMapVao, renderbuffer, framebuffer) =
 
         // setup buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
@@ -155,7 +155,7 @@ module LightMap =
             // render face
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
-            CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
+            CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader, cubeMapVao)
             Hl.Assert ()
 
             // take a snapshot for testing
@@ -214,8 +214,12 @@ module LightMap =
          resolution : single,
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
-         shader : EnvironmentFilterShader) =
+         shader : EnvironmentFilterShader,
+         vao : uint) =
 
+        // setup vao
+        Gl.BindVertexArray vao
+        
         // setup shader
         Gl.UseProgram shader.EnvironmentFilterShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
@@ -228,18 +232,13 @@ module LightMap =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.CubeMapVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, CubeMap.VertexSize)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown shader
@@ -248,8 +247,11 @@ module LightMap =
         Gl.UseProgram 0u
         Hl.Assert ()
 
+        // tear down vao
+        Gl.BindVertexArray vao
+
     /// Create an environment filter map.
-    let CreateEnvironmentFilterMap (resolution, environmentFilterShader, environmentFilterSurface : CubeMap.CubeMapSurface, renderbuffer, framebuffer) =
+    let CreateEnvironmentFilterMap (resolution, environmentFilterSurface : CubeMap.CubeMapSurface, environmentFilterShader, cubeMapVao, renderbuffer, framebuffer) =
 
         // setup buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
@@ -302,7 +304,7 @@ module LightMap =
                 // draw mip face
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
                 Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, mip)
-                DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
+                DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader, cubeMapVao)
                 Hl.Assert ()
 
                 // take a snapshot for testing
