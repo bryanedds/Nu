@@ -1267,43 +1267,53 @@ module PhysicallyBased =
     let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
 
     let CreatePhysicallyBasedStaticVao () =
-        let vao = Gl.GenVertexArray ()
-        Gl.BindVertexArray vao
-        Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, StaticVertexSize, nativeint 0)
-        Gl.EnableVertexAttribArray 1u
-        Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, StaticVertexSize, nativeint StaticTexCoordsOffset)
-        Gl.EnableVertexAttribArray 2u
-        Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, StaticVertexSize, nativeint StaticNormalOffset)
-        Gl.EnableVertexAttribArray 3u
-        let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
-        Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint 0)
-        Gl.VertexAttribDivisor (3u, 1u)
-        Gl.EnableVertexAttribArray 4u
-        Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (4 * sizeof<single>))
-        Gl.VertexAttribDivisor (4u, 1u)
-        Gl.EnableVertexAttribArray 5u
-        Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (8 * sizeof<single>))
-        Gl.VertexAttribDivisor (5u, 1u)
-        Gl.EnableVertexAttribArray 6u
-        Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (12 * sizeof<single>))
-        Gl.VertexAttribDivisor (6u, 1u)
-        Gl.EnableVertexAttribArray 7u
-        Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (16 * sizeof<single>))
-        Gl.VertexAttribDivisor (7u, 1u)
-        Gl.EnableVertexAttribArray 8u
-        Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (20 * sizeof<single>))
-        Gl.VertexAttribDivisor (8u, 1u)
-        Gl.EnableVertexAttribArray 9u
-        Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
-        Gl.VertexAttribDivisor (9u, 1u)
-        Gl.EnableVertexAttribArray 10u
-        Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
-        Gl.VertexAttribDivisor (10u, 1u)
-        Gl.EnableVertexAttribArray 11u
-        Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
-        Gl.VertexAttribDivisor (11u, 1u)
-        Gl.BindVertexArray 0u
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint StaticTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint StaticNormalOffset)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 1u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 2u)
+
+        // per instance
+        Gl.VertexArrayAttribFormat (vao, 3u, 4, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 4u, 4, VertexAttribType.Float, false, uint (4 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint (8 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 6u, 4, VertexAttribType.Float, false, uint (12 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 7u, 4, VertexAttribType.Float, false, uint (16 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 8u, 4, VertexAttribType.Float, false, uint (20 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribBinding (vao, 3u, 1u) // NOTE: different index for instance!
+        Gl.VertexArrayAttribBinding (vao, 4u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 5u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 6u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 7u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 8u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 9u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 10u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 3u)
+        Gl.EnableVertexArrayAttrib (vao, 4u)
+        Gl.EnableVertexArrayAttrib (vao, 5u)
+        Gl.EnableVertexArrayAttrib (vao, 6u)
+        Gl.EnableVertexArrayAttrib (vao, 7u)
+        Gl.EnableVertexArrayAttrib (vao, 8u)
+        Gl.EnableVertexArrayAttrib (vao, 9u)
+        Gl.EnableVertexArrayAttrib (vao, 10u)
+        Gl.EnableVertexArrayAttrib (vao, 11u)
+
+        // fin
         vao
 
     /// Create physically-based static geometry from a mesh.
@@ -1389,47 +1399,55 @@ module PhysicallyBased =
     let AnimatedVertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
 
     let CreatePhysicallyBasedAnimatedVao () =
-        let vao = Gl.GenVertexArray ()
-        Gl.BindVertexArray vao
-        Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, AnimatedVertexSize, nativeint 0)
-        Gl.EnableVertexAttribArray 1u
-        Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, AnimatedVertexSize, nativeint AnimatedTexCoordsOffset)
-        Gl.EnableVertexAttribArray 2u
-        Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, AnimatedVertexSize, nativeint AnimatedNormalOffset)
-        Gl.EnableVertexAttribArray 3u
-        Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, AnimatedVertexSize, nativeint AnimatedBoneIdsOffset)
-        Gl.EnableVertexAttribArray 4u
-        Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, AnimatedVertexSize, nativeint AnimatedWeightsOffset)
-        let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
-        Gl.EnableVertexAttribArray 5u
-        Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint 0)
-        Gl.VertexAttribDivisor (5u, 1u)
-        Gl.EnableVertexAttribArray 6u
-        Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (4 * sizeof<single>))
-        Gl.VertexAttribDivisor (6u, 1u)
-        Gl.EnableVertexAttribArray 7u
-        Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (8 * sizeof<single>))
-        Gl.VertexAttribDivisor (7u, 1u)
-        Gl.EnableVertexAttribArray 8u
-        Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (12 * sizeof<single>))
-        Gl.VertexAttribDivisor (8u, 1u)
-        Gl.EnableVertexAttribArray 9u
-        Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (16 * sizeof<single>))
-        Gl.VertexAttribDivisor (9u, 1u)
-        Gl.EnableVertexAttribArray 10u
-        Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (20 * sizeof<single>))
-        Gl.VertexAttribDivisor (10u, 1u)
-        Gl.EnableVertexAttribArray 11u
-        Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
-        Gl.VertexAttribDivisor (11u, 1u)
-        Gl.EnableVertexAttribArray 12u
-        Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
-        Gl.VertexAttribDivisor (12u, 1u)
-        Gl.EnableVertexAttribArray 13u
-        Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
-        Gl.VertexAttribDivisor (13u, 1u)
-        Gl.BindVertexArray 0u
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint AnimatedTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint AnimatedNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint AnimatedBoneIdsOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint AnimatedWeightsOffset)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 1u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 2u)
+
+        // per instance
+        Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 6u, 4, VertexAttribType.Float, false, uint (4 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 7u, 4, VertexAttribType.Float, false, uint (8 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 8u, 4, VertexAttribType.Float, false, uint (12 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (16 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (20 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 12u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 13u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribBinding (vao, 5u, 1u) // NOTE: different index for instance!
+        Gl.VertexArrayAttribBinding (vao, 6u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 7u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 8u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 9u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 10u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 12u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 13u, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 5u)
+        Gl.EnableVertexArrayAttrib (vao, 6u)
+        Gl.EnableVertexArrayAttrib (vao, 7u)
+        Gl.EnableVertexArrayAttrib (vao, 8u)
+        Gl.EnableVertexArrayAttrib (vao, 9u)
+        Gl.EnableVertexArrayAttrib (vao, 10u)
+        Gl.EnableVertexArrayAttrib (vao, 11u)
+        Gl.EnableVertexArrayAttrib (vao, 12u)
+        Gl.EnableVertexArrayAttrib (vao, 13u)
+
+        // fin
         vao
 
     /// Create physically-based animated geometry from a mesh.
@@ -1517,49 +1535,62 @@ module PhysicallyBased =
     let TerrainVertexSize =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*) + 4 (*blends2*)) * sizeof<single>
 
     let CreatePhysicallyBasedTerrainVao () =
-        let vao = Gl.GenVertexArray ()
-        Gl.BindVertexArray vao
-        Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, TerrainVertexSize, nativeint 0)
-        Gl.EnableVertexAttribArray 1u
-        Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, TerrainVertexSize, nativeint TerrainTexCoordsOffset)
-        Gl.EnableVertexAttribArray 2u
-        Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, TerrainVertexSize, nativeint TerrainNormalOffset)
-        Gl.EnableVertexAttribArray 3u
-        Gl.VertexAttribPointer (3u, 3, VertexAttribPointerType.Float, false, TerrainVertexSize, nativeint TerrainTintOffset)
-        Gl.EnableVertexAttribArray 4u
-        Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, TerrainVertexSize, nativeint TerrainBlendsOffset)
-        Gl.EnableVertexAttribArray 5u
-        Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, TerrainVertexSize, nativeint TerrainBlends2Offset)
-        let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
-        Gl.EnableVertexAttribArray 6u
-        Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint 0) // model fields
-        Gl.VertexAttribDivisor (6u, 1u)
-        Gl.EnableVertexAttribArray 7u
-        Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (4 * sizeof<single>))
-        Gl.VertexAttribDivisor (7u, 1u)
-        Gl.EnableVertexAttribArray 8u
-        Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (8 * sizeof<single>))
-        Gl.VertexAttribDivisor (8u, 1u)
-        Gl.EnableVertexAttribArray 9u
-        Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (12 * sizeof<single>))
-        Gl.VertexAttribDivisor (9u, 1u)
-        Gl.EnableVertexAttribArray 10u
-        Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (16 * sizeof<single>))
-        Gl.VertexAttribDivisor (10u, 1u)
-        Gl.EnableVertexAttribArray 11u
-        Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (20 * sizeof<single>))
-        Gl.VertexAttribDivisor (11u, 1u)
-        Gl.EnableVertexAttribArray 12u
-        Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
-        Gl.VertexAttribDivisor (12u, 1u)
-        Gl.EnableVertexAttribArray 13u
-        Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
-        Gl.VertexAttribDivisor (13u, 1u)
-        Gl.EnableVertexAttribArray 14u
-        Gl.VertexAttribPointer (14u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
-        Gl.VertexAttribDivisor (14u, 1u)
-        Gl.BindVertexArray 0u
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint TerrainTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint TerrainNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint TerrainTintOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint TerrainBlendsOffset)
+        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint TerrainBlends2Offset)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 1u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 3u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 4u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 5u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 2u)
+        Gl.EnableVertexArrayAttrib (vao, 3u)
+        Gl.EnableVertexArrayAttrib (vao, 4u)
+        Gl.EnableVertexArrayAttrib (vao, 5u)
+
+        // per instance
+        Gl.VertexArrayAttribFormat (vao, 6u, 4, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 7u, 4, VertexAttribType.Float, false, uint (4 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 8u, 4, VertexAttribType.Float, false, uint (8 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (12 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (16 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (20 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 12u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 13u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 14u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribBinding (vao, 6u, 1u) // NOTE: different index for instance!
+        Gl.VertexArrayAttribBinding (vao, 7u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 8u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 9u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 10u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 12u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 13u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 14u, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 6u)
+        Gl.EnableVertexArrayAttrib (vao, 7u)
+        Gl.EnableVertexArrayAttrib (vao, 8u)
+        Gl.EnableVertexArrayAttrib (vao, 9u)
+        Gl.EnableVertexArrayAttrib (vao, 10u)
+        Gl.EnableVertexArrayAttrib (vao, 11u)
+        Gl.EnableVertexArrayAttrib (vao, 12u)
+        Gl.EnableVertexArrayAttrib (vao, 13u)
+        Gl.EnableVertexArrayAttrib (vao, 14u)
+
+        // fin
         vao
 
     /// Create physically-based terrain geometry from a mesh.
@@ -2306,6 +2337,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -2350,6 +2382,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -2393,6 +2426,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -2442,6 +2476,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -2485,6 +2520,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -2556,6 +2592,7 @@ module PhysicallyBased =
 
             // setup geometry
             Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+            Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
             Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
             Hl.Assert ()
 
@@ -2678,6 +2715,7 @@ module PhysicallyBased =
 
             // setup geometry
             Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+            Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
             Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
             Hl.Assert ()
 
@@ -2952,6 +2990,7 @@ module PhysicallyBased =
 
             // setup geometry
             Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+            Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
             Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
             Hl.Assert ()
 
@@ -3092,6 +3131,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, TerrainVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single> * elementsCount)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3156,6 +3196,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3215,6 +3256,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3277,6 +3319,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3361,6 +3404,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3434,6 +3478,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3639,6 +3684,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
@@ -3725,6 +3771,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 

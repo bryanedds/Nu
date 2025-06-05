@@ -30,11 +30,18 @@ module Sprite =
     let VertexSize = sizeof<single> * 2
 
     let CreateSpriteVao () =
-        let vao = Gl.GenVertexArray ()
-        Gl.BindVertexArray vao
-        Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 2, VertexAttribPointerType.Float, false, VertexSize, nativeint 0)
-        Gl.BindVertexArray 0u
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+
+        // fin
         vao
 
     /// Create a sprite quad for rendering to a shader matching the one created with Hl.CreateSpriteShader.

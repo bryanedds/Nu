@@ -156,11 +156,18 @@ module CubeMap =
         (3 (*position*)) * sizeof<single>
 
     let CreateCubeMapVao () =
-        let vao = Gl.GenVertexArray ()
-        Gl.BindVertexArray vao
-        Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, VertexSize, nativeint 0)
-        Gl.BindVertexArray 0u
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+
+        // fin
         vao
 
     /// Create cube map geometry from a mesh.
