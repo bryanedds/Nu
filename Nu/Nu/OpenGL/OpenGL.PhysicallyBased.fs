@@ -1275,8 +1275,8 @@ module PhysicallyBased =
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
-        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint StaticTexCoordsOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint StaticNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 1u, 2, VertexAttribType.Float, false, uint StaticTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 2u, 3, VertexAttribType.Float, false, uint StaticNormalOffset)
         Gl.VertexArrayAttribBinding (vao, 0u, 0u)
         Gl.VertexArrayAttribBinding (vao, 1u, 0u)
         Gl.VertexArrayAttribBinding (vao, 2u, 0u)
@@ -1407,16 +1407,20 @@ module PhysicallyBased =
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
-        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint AnimatedTexCoordsOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint AnimatedNormalOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint AnimatedBoneIdsOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint AnimatedWeightsOffset)
+        Gl.VertexArrayAttribFormat (vao, 1u, 2, VertexAttribType.Float, false, uint AnimatedTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 2u, 3, VertexAttribType.Float, false, uint AnimatedNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 3u, 4, VertexAttribType.Float, false, uint AnimatedBoneIdsOffset)
+        Gl.VertexArrayAttribFormat (vao, 4u, 4, VertexAttribType.Float, false, uint AnimatedWeightsOffset)
         Gl.VertexArrayAttribBinding (vao, 0u, 0u)
         Gl.VertexArrayAttribBinding (vao, 1u, 0u)
         Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 3u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 4u, 0u)
         Gl.EnableVertexArrayAttrib (vao, 0u)
         Gl.EnableVertexArrayAttrib (vao, 1u)
         Gl.EnableVertexArrayAttrib (vao, 2u)
+        Gl.EnableVertexArrayAttrib (vao, 3u)
+        Gl.EnableVertexArrayAttrib (vao, 4u)
 
         // per instance
         Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint 0)
@@ -1543,11 +1547,11 @@ module PhysicallyBased =
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
-        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint TerrainTexCoordsOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint TerrainNormalOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint TerrainTintOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint TerrainBlendsOffset)
-        Gl.VertexArrayAttribFormat (vao, 0u, 4, VertexAttribType.Float, false, uint TerrainBlends2Offset)
+        Gl.VertexArrayAttribFormat (vao, 1u, 2, VertexAttribType.Float, false, uint TerrainTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 2u, 3, VertexAttribType.Float, false, uint TerrainNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 3u, 3, VertexAttribType.Float, false, uint TerrainTintOffset)
+        Gl.VertexArrayAttribFormat (vao, 4u, 4, VertexAttribType.Float, false, uint TerrainBlendsOffset)
+        Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint TerrainBlends2Offset)
         Gl.VertexArrayAttribBinding (vao, 0u, 0u)
         Gl.VertexArrayAttribBinding (vao, 1u, 0u)
         Gl.VertexArrayAttribBinding (vao, 2u, 0u)
