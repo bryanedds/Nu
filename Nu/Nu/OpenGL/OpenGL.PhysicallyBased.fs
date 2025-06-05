@@ -1313,6 +1313,10 @@ module PhysicallyBased =
         Gl.EnableVertexArrayAttrib (vao, 10u)
         Gl.EnableVertexArrayAttrib (vao, 11u)
 
+        // divisors
+        Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
+        Gl.VertexArrayBindingDivisor (vao, 1u, 1u)
+
         // fin
         vao
 
@@ -1450,6 +1454,10 @@ module PhysicallyBased =
         Gl.EnableVertexArrayAttrib (vao, 11u)
         Gl.EnableVertexArrayAttrib (vao, 12u)
         Gl.EnableVertexArrayAttrib (vao, 13u)
+
+        // divisors
+        Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
+        Gl.VertexArrayBindingDivisor (vao, 1u, 1u)
 
         // fin
         vao
@@ -1593,6 +1601,10 @@ module PhysicallyBased =
         Gl.EnableVertexArrayAttrib (vao, 12u)
         Gl.EnableVertexArrayAttrib (vao, 13u)
         Gl.EnableVertexArrayAttrib (vao, 14u)
+
+        // divisors
+        Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
+        Gl.VertexArrayBindingDivisor (vao, 1u, 1u)
 
         // fin
         vao
