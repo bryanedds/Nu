@@ -3147,7 +3147,7 @@ module PhysicallyBased =
 
         // setup geometry
         Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, TerrainVertexSize)
-        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single> * elementsCount)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
