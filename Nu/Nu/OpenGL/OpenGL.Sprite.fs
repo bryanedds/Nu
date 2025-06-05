@@ -163,6 +163,9 @@ module Sprite =
         | ValueNone -> ()
         Hl.Assert ()
 
+        // setup vao
+        Gl.BindVertexArray vao
+
         // setup shader
         Gl.UseProgram shader
         Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
@@ -193,6 +196,9 @@ module Sprite =
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
         // teardown state
         Gl.BlendEquation BlendEquationMode.FuncAdd
