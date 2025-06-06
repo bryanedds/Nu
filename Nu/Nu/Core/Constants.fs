@@ -308,9 +308,9 @@ module Physics =
     let [<Uniform>] mutable GroundAngleMax = match ConfigurationManager.AppSettings.["GroundAngleMax"] with null -> single (Math.PI * 0.25) | value -> scvalue value
     let [<Uniform>] internal BroadPhaseLayerNonMoving = byte 0
     let [<Uniform>] internal BroadPhaseLayerMoving = byte 1
-    let [<Uniform>] internal ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0us
-    let [<Uniform>] internal ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us
-    let [<Uniform>] internal ObjectLayerDisabled = JoltPhysicsSharp.ObjectLayer 2us
+    let [<Uniform>] internal ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0u
+    let [<Uniform>] internal ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1u
+    let [<Uniform>] internal ObjectLayerDisabled = JoltPhysicsSharp.ObjectLayer 2u
     let [<Literal>] internal InternalIndex = -1
     let [<Uniform>] BodyPropertyAffectingPropertyNames =
         FrozenSet.ToFrozenSet
