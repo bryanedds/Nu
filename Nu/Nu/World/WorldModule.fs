@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Reflection
 open Prime
 
@@ -34,11 +35,11 @@ module WorldModule =
     let mutable internal TaskletProcessingStarted = false
 
     /// F# reach-around for adding script unsubscriptions to simulants.
-    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
+    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unsubscribing script subscriptions of simulants.
-    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
+    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for checking that a simulant is selected.
@@ -50,50 +51,50 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for sorting subscriptions by elevation.
-    let mutable internal sortSubscriptionsByElevation : (uint64 * SubscriptionEntry) seq -> obj -> (uint64 * SubscriptionEntry) seq =
+    let mutable internal sortSubscriptionsByElevation : KeyValuePair<uint64, SubscriptionEntry> seq -> obj -> KeyValuePair<uint64, SubscriptionEntry> seq =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
-    let mutable internal evictScreenElements : Screen -> World -> World =
+    let mutable internal evictScreenElements : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unregistering physics entities of an entire screen.
-    let mutable internal admitScreenElements : Screen -> World -> World =
+    let mutable internal admitScreenElements : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
-    let mutable internal registerScreenPhysics : Screen -> World -> World =
+    let mutable internal registerScreenPhysics : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unregistering physics entities of an entire screen.
-    let mutable internal unregisterScreenPhysics : Screen -> World -> World =
+    let mutable internal unregisterScreenPhysics : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal register : Simulant -> World -> World =
+    let mutable internal register : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal unregister : Simulant -> World -> World =
+    let mutable internal unregister : Simulant -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGame : bool -> Game -> World -> World =
+    let mutable internal tryProcessGame : bool -> Game -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessScreen : bool -> Screen -> World -> World =
+    let mutable internal tryProcessScreen : bool -> Screen -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGroup : bool -> Group -> World -> World =
+    let mutable internal tryProcessGroup : bool -> Group -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessEntity : bool -> Entity -> World -> World =
+    let mutable internal tryProcessEntity : bool -> Entity -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal signal : obj -> Simulant -> World -> World =
+    let mutable internal signal : obj -> Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal destroyImmediate : Simulant -> World -> World =
+    let mutable internal destroyImmediate : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal destroy : Simulant -> World -> World =
+    let mutable internal destroy : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
     let mutable internal getEmptyEffect : unit -> obj =
@@ -173,9 +174,6 @@ module WorldModule =
         static member internal getAmbientStateBy by world =
             by world.AmbientState
 
-        static member internal mapAmbientState mapper world =
-            World.choose { world with AmbientState = mapper world.AmbientState }
-
         /// Check that the update rate is non-zero.
         static member getAdvancing (world : World) =
             world.Advancing
@@ -186,19 +184,11 @@ module WorldModule =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing world =
-            World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            World.defer (fun world -> AmbientState.setAdvancing advancing world.AmbientState) Game.Handle world
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing world =
-            World.mapAmbientState (AmbientState.setFramePacing clockPacing) world
-
-        /// Check that the world is executing with imperative semantics where applicable.
-        static member getImperative (world : World) =
-            world.Imperative
-
-        /// Check that the world is executing with functional semantics.
-        static member getFunctional (world : World) =
-            world.Functional
+            AmbientState.setFramePacing clockPacing world.AmbientState
 
         /// Get whether the engine is running accompanied, such as in an editor.
         static member getAccompanied (world : World) =
@@ -208,16 +198,12 @@ module WorldModule =
         static member getUnaccompanied (world : World) =
             world.Unaccompanied
 
-        /// Get collection config value.
-        static member getCollectionConfig world =
-            World.getAmbientStateBy AmbientState.getConfig world
-
         /// Get the the liveness state of the engine.
         static member getLiveness world =
             World.getAmbientStateBy AmbientState.getLiveness world
 
         static member internal updateTime world =
-            World.mapAmbientState AmbientState.updateTime world
+            AmbientState.updateTime world.AmbientState
 
         /// Get the world's update delta time.
         static member getUpdateDelta world =
@@ -292,33 +278,18 @@ module WorldModule =
             world.DeclaredInitializing
 
         static member internal setContext context (world : World) =
-            if world.Imperative then
-                world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
-                world.WorldExtension.ContextImSim <- context
-                world
-            else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldExtension.ContextImSim; ContextImSim = context }
-                World.choose { world with WorldExtension = worldExtension }
+            world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
+            world.WorldExtension.ContextImSim <- context
 
         static member internal advanceContext declared context (world : World) =
-            if world.Imperative then
-                world.WorldExtension.DeclaredImSim <- declared
-                world.WorldExtension.ContextImSim <- context
-                world
-            else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = declared; ContextImSim = context }
-                World.choose { world with WorldExtension = worldExtension }
+            world.WorldExtension.DeclaredImSim <- declared
+            world.WorldExtension.ContextImSim <- context
 
         static member internal getSimulantsImSim (world : World) =
             world.SimulantsImSim
 
         static member internal setSimulantsImSim simulantsImSim (world : World) =
-            if world.Imperative then
-                world.WorldExtension.SimulantsImSim <- simulantsImSim
-                world
-            else
-                let worldExtension = { world.WorldExtension with SimulantsImSim = simulantsImSim }
-                World.choose { world with WorldExtension = worldExtension }
+            world.WorldExtension.SimulantsImSim <- simulantsImSim
 
         static member internal getSimulantImSim simulant (world : World) =
             world.SimulantsImSim.[simulant]
@@ -335,7 +306,7 @@ module WorldModule =
             | (true, simulantImSim) ->
                 let simulantImSim = mapper simulantImSim
                 World.addSimulantImSim simulant simulantImSim world
-            | (false, _) -> world
+            | (false, _) -> ()
 
         static member internal mapSimulantImSim mapper simulant world =
             let simulantImSim = World.getSimulantImSim simulant world
@@ -343,24 +314,13 @@ module WorldModule =
             World.addSimulantImSim simulant simulantImSim world
 
         static member internal utilizeSimulantImSim simulant simulantImSim (world : World) =
-            if world.Imperative then
-                simulantImSim.SimulantUtilized <- true
-                world
-            else
-                let simulantImSim = { simulantImSim with SimulantUtilized = true }
-                let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
-                World.setSimulantsImSim simulantsImSim world
+            simulantImSim.SimulantUtilized <- true
 
         static member internal getSubscriptionsImSim (world : World) =
             world.SubscriptionsImSim
 
         static member internal setSubscriptionsImSim subscriptionsImSim (world : World) =
-            if world.Imperative then
-                world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
-                world
-            else
-                let worldExtension = { world.WorldExtension with SubscriptionsImSim = subscriptionsImSim }
-                World.choose { world with WorldExtension = worldExtension }
+            world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
 
         static member internal getSubscriptionImSim subscription (world : World) =
             world.SubscriptionsImSim.[subscription]
@@ -374,7 +334,7 @@ module WorldModule =
             | (true, subscriptionImSim) ->
                 let subscriptionImSim = mapper subscriptionImSim
                 World.addSubscriptionImSim subscription subscriptionImSim world
-            | (false, _) -> world
+            | (false, _) -> ()
 
         static member internal mapSubscriptionImSim mapper subscription world =
             let subscriptionImSim = World.getSubscriptionImSim subscription world
@@ -382,37 +342,27 @@ module WorldModule =
             World.addSubscriptionImSim subscription subscriptionImSim world
 
         static member internal utilizeSubscriptionImSim subscription subscriptionImSim (world : World) =
-            if world.Imperative then
-                subscriptionImSim.SubscriptionUtilized <- true
-                world
-            else
-                let subscriptionImSim = { subscriptionImSim with SubscriptionUtilized = true }
-                let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
-                World.setSubscriptionsImSim subscriptionsImSim world
-
-        /// Switch simulation to use this ambient state.
-        static member internal switchAmbientState world =
-            World.choose { world with AmbientState = AmbientState.switch world.AmbientState }
+            subscriptionImSim.SubscriptionUtilized <- true
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =
-            World.mapAmbientState AmbientState.exit world
+            AmbientState.exit world.AmbientState
 
         static member internal getTasklets world =
             World.getAmbientStateBy AmbientState.getTasklets world
 
         static member internal removeTasklets simulant world =
-            World.mapAmbientState (AmbientState.removeTasklets simulant) world
+            AmbientState.removeTasklets simulant
 
         static member internal clearTasklets world =
-            World.mapAmbientState AmbientState.clearTasklets world
+            AmbientState.clearTasklets world.AmbientState
 
         static member internal restoreTasklets tasklets world =
-            World.mapAmbientState (AmbientState.restoreTasklets tasklets) world
+            AmbientState.restoreTasklets tasklets world.AmbientState
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
         static member addTasklet simulant tasklet world =
-            World.mapAmbientState (AmbientState.addTasklet simulant tasklet) world
+            AmbientState.addTasklet simulant tasklet world.AmbientState
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member schedule delay operation (simulant : Simulant) (world : World) =
@@ -424,7 +374,7 @@ module WorldModule =
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
-        static member defer operation (simulant : Simulant) (world : World) =
+        static member defer (operation : World -> unit) (simulant : Simulant) (world : World) =
             let time = if TaskletProcessingStarted && world.Advancing then UpdateTime 1L else UpdateTime 0L
             World.schedule time operation simulant world
 
@@ -446,11 +396,11 @@ module WorldModule =
 
         /// Attempt to set the window's full screen state.
         static member trySetWindowFullScreen fullScreen world =
-            World.mapAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
+            AmbientState.trySetWindowFullScreen fullScreen world.AmbientState
 
         /// Attempt to toggle the window's full screen state.
         static member tryToggleWindowFullScreen world =
-            World.mapAmbientState AmbientState.tryToggleWindowFullScreen world
+            AmbientState.tryToggleWindowFullScreen world.AmbientState
 
         /// Attempt to get the window position.
         static member tryGetWindowPosition world =
@@ -500,25 +450,18 @@ module WorldModule =
         static member setOuterViewport viewport (world : World) =
             { world with WorldExtension = { world.WorldExtension with OuterViewport = viewport }}
 
-        static member internal getSymbolicsBy by world =
-            World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world
-
         static member internal getSymbolics world =
             World.getAmbientStateBy AmbientState.getSymbolics world
 
-        static member internal setSymbolics symbolics world =
-            World.mapAmbientState (AmbientState.setSymbolics symbolics) world
-
-        static member internal mapSymbolics mapper world =
-            World.mapAmbientState (AmbientState.mapSymbolics mapper) world
-
         /// Try to load a symbol package with the given name.
-        static member tryLoadSymbolPackage implicitDelimiters packageName world =
-            World.getSymbolicsBy (Symbolics.tryLoadSymbolPackage implicitDelimiters packageName) world
+        static member tryLoadSymbolPackage implicitDelimiters packageName (world : World) =
+            let symbolics = World.getSymbolics world
+            Symbolics.tryLoadSymbolPackage implicitDelimiters packageName symbolics
 
         /// Unload a symbol package with the given name.
         static member unloadSymbolPackage packageName world =
-            World.getSymbolicsBy (Symbolics.unloadSymbolPackage packageName) world
+            let symbolics = World.getSymbolics world
+            Symbolics.unloadSymbolPackage packageName symbolics
 
         /// Try to find a symbol with the given asset tag.
         static member tryGetSymbol assetTag metadata world =
@@ -532,8 +475,8 @@ module WorldModule =
 
         /// Reload all the symbols in symbolics.
         static member reloadSymbols world =
-            World.getSymbolicsBy Symbolics.reloadSymbols world
-            world
+            let symbolics = World.getSymbolics world
+            Symbolics.reloadSymbols symbolics
 
         static member internal getOverlayerBy by world =
             let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
@@ -543,7 +486,7 @@ module WorldModule =
             World.getOverlayerBy id world
 
         static member internal setOverlayer overlayer world =
-            World.mapAmbientState (AmbientState.setOverlayer overlayer) world
+            AmbientState.setOverlayer overlayer world.AmbientState
 
         static member internal tryGetOverlayerPropertyValue propertyName propertyType overlayName facetNames world =
             World.getOverlayerBy (Overlayer.tryGetPropertyValue propertyName propertyType overlayName facetNames) world
@@ -557,7 +500,7 @@ module WorldModule =
             World.getOverlayerBy (Overlayer.tryGetOverlayNameOpt dispatcherName) world
 
         static member internal acknowledgeLightMapRenderRequest world =
-            World.mapAmbientState AmbientState.acknowledgeLightMapRenderRequest world
+            AmbientState.acknowledgeLightMapRenderRequest world.AmbientState
 
         /// Get whether a light map render was requested.
         static member getLightMapRenderRequested world =
@@ -565,7 +508,7 @@ module WorldModule =
 
         /// Request a light map render for the current frame, such as when a light probe needs to be rendered.
         static member requestLightMapRender world =
-            World.mapAmbientState AmbientState.requestLightMapRender world
+            AmbientState.requestLightMapRender world.AmbientState
 
     type World with // Quadtree
 
@@ -622,22 +565,18 @@ module WorldModule =
             EventGraph.getEventState key (World.getEventGraph world)
 
         static member internal addEventState<'a> key (state : 'a) world =
-            World.mapEventGraph (EventGraph.addEventState key state) world
+            let eventGraph = World.getEventGraph world
+            EventGraph.addEventState key state eventGraph
 
         static member internal removeEventState key world =
-            World.mapEventGraph (EventGraph.removeEventState key) world
+            let eventGraph = World.getEventGraph world
+            EventGraph.removeEventState key eventGraph
 
         static member internal getSubscriptions world =
             EventGraph.getSubscriptions (World.getEventGraph world)
 
-        static member internal setSubscriptions subscriptions world =
-            World.mapEventGraph (EventGraph.setSubscriptions subscriptions) world
-
         static member internal getUnsubscriptions world =
             EventGraph.getUnsubscriptions (World.getEventGraph world)
-
-        static member internal setUnsubscriptions unsubscriptions world =
-            World.mapEventGraph (EventGraph.setUnsubscriptions unsubscriptions) world
 
         /// Get how events are being traced.
         static member getEventTracerOpt (world : World) =
@@ -645,7 +584,8 @@ module WorldModule =
 
         /// Set how events are being traced, if at all.
         static member setEventTracerOpt tracerOpt (world : World) =
-            World.mapEventGraph (EventGraph.setEventTracerOpt tracerOpt) world
+            let eventGraph = World.getEventGraph world
+            EventGraph.setEventTracerOpt tracerOpt eventGraph
 
         /// Get the state of the event filter.
         static member getEventFilter (world : World) =
@@ -681,18 +621,18 @@ module WorldModule =
                         sortSubscriptionsByElevation eventAddressObj world.EventGraph world
                 else
                     let subscriptions = EventGraph.getSubscriptions world.EventGraph
-                    match UMap.tryFind eventAddressObj subscriptions with
-                    | Some subscriptions -> OMap.toSeq subscriptions
-                    | None -> null
+                    match subscriptions.TryGetValue eventAddressObj with
+                    | (true, subscriptions) -> subscriptions
+                    | (false, _) -> null
 
             // publish to each subscription
             // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
             // OPTIMIZATION: fused PublishEventHook for speed.
             if notNull subscriptionsOpt then
                 let mutable (going, enr) = (true, subscriptionsOpt.GetEnumerator ())
-                let mutable (handling, world) = (Cascade, world)
+                let mutable handling = Cascade
                 while going && enr.MoveNext () do
-                    let (_, subscriptionEntry) = enr.Current
+                    let subscriptionEntry = enr.Current.Value
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
@@ -708,17 +648,14 @@ module WorldModule =
                                         match subscriber with
                                         | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); (Cascade, world)
+                                        | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); Cascade
                                     | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); (Cascade, world)
-                            handling <- fst result
-                            world <- snd result
+                                    | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); Cascade
+                            handling <- result
                             world |> World.choose |> ignore
                         else () // nothing to do
                     else going <- false
-                world
-            else world
 
         /// Publish an event with no subscription sorting or wildcard utilization.
         static member inline publishUnsorted<'a, 'p when 'p :> Simulant>
@@ -734,86 +671,76 @@ module WorldModule =
         static member unsubscribe subscriptionId world =
             let subscriptions = World.getSubscriptions world
             let unsubscriptions = World.getUnsubscriptions world
-            match UMap.tryFind subscriptionId unsubscriptions with
-            | Some (eventAddress, _) ->
-                match UMap.tryFind eventAddress subscriptions with
-                | Some subscriptionEntries ->
-                    let subscriptions =
-                        let subscriptionEntries = OMap.remove subscriptionId subscriptionEntries
-                        if OMap.isEmpty subscriptionEntries
-                        then UMap.remove eventAddress subscriptions
-                        else UMap.add eventAddress subscriptionEntries subscriptions
-                    let unsubscriptions = UMap.remove subscriptionId unsubscriptions
-                    let world = World.setSubscriptions subscriptions world
-                    let world = World.setUnsubscriptions unsubscriptions world
-                    let world = WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Game.Handle world :?> World
-                    world
-                | None -> world
-            | None -> world
+            match unsubscriptions.TryGetValue subscriptionId with
+            | (true, struct (eventAddress, _)) ->
+                match subscriptions.TryGetValue eventAddress with
+                | (true, subscriptionEntries) ->
+                    subscriptionEntries.Remove subscriptionId |> ignore<bool>
+                    if subscriptionEntries.Count = 0 then subscriptions.Remove eventAddress |> ignore<bool>
+                    unsubscriptions.Remove subscriptionId |> ignore<bool>
+                    WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Game.Handle world
+                | (false, _) -> ()
+            | (false, _) -> ()
 
         /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
             (subscriptionId : uint64)
-            (callback : Event<'a, 's> -> World -> Handling * World)
+            (callback : Event<'a, 's> -> World -> Handling)
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
             if not (Address.isEmpty eventAddress) then
                 let eventAddressObj = atooa eventAddress
                 let (subscriptions, unsubscriptions) = (World.getSubscriptions world, World.getUnsubscriptions world)
-                let subscriptions =
-                    match UMap.tryFind eventAddressObj subscriptions with
-                    | Some subscriptionEntries ->
-                        match OMap.tryFind subscriptionId subscriptionEntries with
-                        | Some subscriptionEntry ->
-                            let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
-                            let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
-                            UMap.add eventAddressObj subscriptionEntries subscriptions
-                        | None ->
-                            let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
-                            let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
-                            UMap.add eventAddressObj subscriptionEntries subscriptions
-                    | None ->
+                match subscriptions.TryGetValue eventAddressObj with
+                | (true, subscriptionEntries) ->
+                    match subscriptionEntries.TryGetValue subscriptionId with
+                    | (true, subscriptionEntry) ->
+                        let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
+                        subscriptionEntries.[subscriptionId] <- subscriptionEntry
+                    | (false, _) ->
                         let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
-                        UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
-                let unsubscriptions = UMap.add subscriptionId struct (eventAddressObj, subscriber :> Simulant) unsubscriptions
-                let world = World.setSubscriptions subscriptions world
-                let world = World.setUnsubscriptions unsubscriptions world
-                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world :?> World
-                (World.unsubscribe subscriptionId, world)
+                        subscriptionEntries.[subscriptionId] <- subscriptionEntry
+                | (false, _) ->
+                    let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
+                    let subscriptionEntries = OrderedDictionary HashIdentity.Structural
+                    subscriptionEntries.[subscriptionId] <- subscriptionEntry
+                    subscriptions.[eventAddressObj] <- subscriptionEntries
+                unsubscriptions.[subscriptionId] <- struct (eventAddressObj, subscriber :> Simulant) 
+                WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world
+                World.unsubscribe subscriptionId
             else failwith "Event name cannot be empty."
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.subscribePlus Gen.id64 callback eventAddress subscriber world |> snd
+            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.subscribePlus Gen.id64 callback eventAddress subscriber world
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitorPlus<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling * World)
+            (callback : Event<'a, 's> -> World -> Handling)
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
             let removalId = Gen.id64
             let monitorId = Gen.id64
-            let world = World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> snd
+            World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> ignore
             let unsubscribe = fun (world : World) ->
-                let world = World.unsubscribe removalId world
-                let world = World.unsubscribe monitorId world
-                world
-            let callback' = fun _ world -> (Cascade, unsubscribe world)
+                World.unsubscribe removalId world
+                World.unsubscribe monitorId world
+            let callback' = fun _ world -> unsubscribe world; Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> itoa subscriber.SimulantAddress
-            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> snd
-            (unsubscribe, world)
+            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> ignore
+            unsubscribe
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
-            World.monitorPlus<'a, 's> callback eventAddress subscriber world |> snd
+            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
+            World.monitorPlus<'a, 's> callback eventAddress subscriber world |> ignore
 
         /// Keep active a subscription for the life span of an entity and a given facet.
         static member sensePlus<'a>
-            (callback : Event<'a, Entity> -> World -> Handling * World)
+            (callback : Event<'a, Entity> -> World -> Handling)
             (eventAddress : 'a Address)
             (entity : Entity)
             (facetName : string)
@@ -821,43 +748,33 @@ module WorldModule =
             let removalId = Gen.id64
             let fastenId = Gen.id64
             let senseId = Gen.id64
-            let world = World.subscribePlus<'a, Entity> senseId callback eventAddress entity world |> snd
+            World.subscribePlus<'a, Entity> senseId callback eventAddress entity world |> ignore
             let unsubscribe = fun (world : World) ->
-                let world = World.unsubscribe removalId world
-                let world = World.unsubscribe fastenId world
-                let world = World.unsubscribe senseId world
-                world
-            let callback' = fun _ world -> (Cascade, unsubscribe world)
+                World.unsubscribe removalId world
+                World.unsubscribe fastenId world
+                World.unsubscribe senseId world
+            let callback' = fun _ world -> unsubscribe world; Cascade
             let callback'' = fun changeEvent world ->
                 let previous = changeEvent.Data.Previous :?> string Set
                 let value = changeEvent.Data.Value :?> string Set
                 if previous.Contains facetName && not (value.Contains facetName)
-                then (Cascade, unsubscribe world)
-                else (Cascade, world)
+                then unsubscribe world; Cascade
+                else Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
             let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
-            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> snd
-            let world = World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> snd
+            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
+            World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
             (unsubscribe, world)
 
         /// Keep active a subscription for the life span of an entity and a given facet.
         static member sense<'a>
-            (callback : Event<'a, Entity> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
+            (callback : Event<'a, Entity> -> World -> Handling) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
             World.sensePlus callback eventAddress subscriber facetName world |> snd
 
     type World with // KeyValueStore (tho part of AmbientState, must come after EventGraph definitions since it publishes)
 
         static member internal getKeyValueStore world =
             World.getAmbientStateBy AmbientState.getKeyValueStore world
-
-        static member internal getKeyValueStoreBy by world =
-            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
-
-        static member internal setKeyValueStore symbolics world =
-            World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
-
-        static member internal mapKeyValueStore mapper world =
-            World.mapAmbientState (AmbientState.mapKeyValueStore mapper) world
 
         static member internal tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
             let ambientState = World.getAmbientState world
@@ -870,35 +787,37 @@ module WorldModule =
 
         /// Attempt to look up a value from the world's key value store.
         static member tryGetKeyedValue<'a> key world =
-            match World.getKeyValueStoreBy (SUMap.tryFind key) world with
-            | Some value -> Some (value :?> 'a)
-            | None -> None
+            let keyValueStore = World.getKeyValueStore world
+            match keyValueStore.TryGetValue key with
+            | (true, value) -> Some (value :?> 'a)
+            | (false, _) -> None
 
         /// Look up a value from the world's key value store, throwing an exception if it is not found.
         static member getKeyedValue<'a> key world =
-            World.getKeyValueStoreBy (SUMap.find key) world :?> 'a
+            let keyValueStore = World.getKeyValueStore world
+            keyValueStore.[key] :?> 'a
 
         /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
             let previousOpt = World.tryGetKeyedValue key world
             let valueOpt = Some (value :> obj)
             let data = { Key = key; PreviousOpt = previousOpt; ValueOpt = valueOpt }
-            let world = World.mapKeyValueStore (SUMap.add key (value :> obj)) world
+            let keyValueStore = World.getKeyValueStore world
+            keyValueStore.[key] <- value :> obj
             match previousOpt with
-            | Some previous ->
-                if previous =/= value
-                then World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
-                else world
+            | Some previous when previous =/= value -> World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
             | None -> World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+            | Some _ -> ()
 
         /// Remove a value from the world's key value store.
         static member removeKeyedValue key world =
             let previousOpt = World.tryGetKeyedValue key world
             match previousOpt with
             | Some _ ->
-                let world = World.mapKeyValueStore (SUMap.remove key) world
-                World.publish { Key = key; PreviousOpt = previousOpt; ValueOpt = None } (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
-            | None -> world
+                let keyValueStore = World.getKeyValueStore world
+                if keyValueStore.Remove key then
+                    World.publish { Key = key; PreviousOpt = previousOpt; ValueOpt = None } (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+            | None -> ()
 
         /// Transform a value in the world's key value store if it exists.
         static member mapKeyedValue<'a> (mapper : 'a -> 'a) key world =
@@ -918,7 +837,7 @@ module WorldModule =
         static member trySetEditMode editMode world =
             match (World.getEditModes world).TryGetValue editMode with
             | (true, callback) -> callback world
-            | (false, _) -> world
+            | (false, _) -> ()
 
         /// Invoke a user-defined callback.
         static member invoke name args world =

@@ -35,16 +35,16 @@ module internal WorldTypes =
     // EventGraph F# reach-arounds.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
     let mutable internal getSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
-    let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
+    let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> unit = Unchecked.defaultof<_>
 
     // Simulant F# reach-arounds.
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
 
 /// The type of a subscription callback.
-type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling * World
+type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling
 
 /// Represents an unsubscription operation for an event.
-and Unsubscription = World -> World
+and Unsubscription = World -> unit
 
 /// The data for a change in a simulant.
 and ChangeData =
@@ -63,9 +63,9 @@ and Lens =
         /// Get the value of the property accessed by the lens.
         abstract Get : world : World -> obj
         /// Get an optional setter function that updates the property accessed by the lens.
-        abstract SetOpt : (obj -> World -> World) voption
+        abstract SetOpt : (obj -> World -> unit) voption
         /// Attempt to set the lensed property to the given value.
-        abstract TrySet : value : obj -> world : World -> struct (bool * World)
+        abstract TrySet : value : obj -> world : World -> bool
         /// The change event associated with the lensed property.
         abstract ChangeEvent : ChangeData Address
         /// The type of the lensed property.
@@ -78,7 +78,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     { Name : string
       This : 's
       Get : World -> 'a
-      SetOpt : ('a -> World -> World) voption }
+      SetOpt : ('a -> World -> unit) voption }
 
     /// Get the lensed value mapped by the `by` function.
     member lens.GetBy by world =
@@ -91,11 +91,13 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     /// Attempt to set the property in the world to the given value.
     member lens.TrySet value world =
         match lens.SetOpt with
-        | ValueSome setter -> (true, setter value world)
-        | ValueNone -> (false, world)
+        | ValueSome setter ->
+            setter value world
+            true
+        | ValueNone -> false
 
     /// Set the lensed property to the given value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     member lens.Set value world =
         match lens.SetOpt with
         | ValueSome setter -> setter value world
@@ -104,32 +106,28 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     /// Attempt to transform the lensed property's value using the given updater function that also receives the world as input.
     member lens.TryMapWorld (mapper : 'a -> World -> 'a) world =
         match lens.SetOpt with
-        | ValueSome setter -> struct (true, setter (mapper (lens.Get world) world) world)
-        | ValueNone -> struct (false, world)
-
-    /// Attempt to transform the lensed property's value using the given updater function, optionally updating the world value in the process.
-    member lens.TryMapEffect (mapper : 'a -> World -> ('a * World)) (world : World) =
-        match lens.SetOpt with
         | ValueSome setter ->
-            let (value, world) = mapper (lens.Get world) world
-            struct (true, setter value world)
-        | ValueNone -> struct (false, world)
+            setter (mapper (lens.Get world) world) world
+            true
+        | ValueNone -> false
 
     /// Attempt to transform the lensed property's value using the given updater function.
     member lens.TryMap (mapper : 'a -> 'a) world =
         match lens.SetOpt with
-        | ValueSome setter -> struct (true, setter (mapper (lens.Get world)) world)
-        | ValueNone -> struct (false, world)
+        | ValueSome setter ->
+            setter (mapper (lens.Get world)) world
+            true
+        | ValueNone -> false
 
     /// Update the lensed property's value using the given updater function that also receives the world as input.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     member lens.MapWorld mapper world =
         match lens.SetOpt with
         | ValueSome setter -> setter (mapper (lens.Get world) world) world
         | ValueNone -> failwithumf ()
 
     /// Update the lensed property's value using the given updater function, optionally updating the world value in the process.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     member lens.MapEffect mapper world =
         match lens.SetOpt with
         | ValueSome setter ->
@@ -138,7 +136,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueNone -> failwithumf ()
 
     /// Update the lensed property's value using the given updater function.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     member lens.Map mapper world =
         match lens.SetOpt with
         | ValueSome setter -> setter (mapper (lens.Get world)) world
@@ -159,43 +157,43 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     member inline lens.Type = typeof<'a>
 
     /// Adds the specified value to the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( += ) (lens : Lens<_, _>, value) = lens.Map (flip (+) value)
 
     /// Subtracts the specified value from the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( -= ) (lens : Lens<_, _>, value) = lens.Map (flip (-) value)
 
     /// Multiplies the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( *= ) (lens : Lens<_, _>, value) = lens.Map (flip (*) value)
 
     /// Divides the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( /= ) (lens : Lens<_, _>, value) = lens.Map (flip (/) value)
 
     /// Computes the modulus of the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( %= ) (lens : Lens<_, _>, value) = lens.Map (flip (%) value)
 
     /// Negates the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( ~+ ) (lens : Lens<_, _>) = lens.Map (~+)
 
     /// Negates the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( ~- ) (lens : Lens<_, _>) = lens.Map (~-)
 
     /// Increments the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( !+ ) (lens : Lens<_, _>) = lens.Map inc
 
     /// Decrements the lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( !- ) (lens : Lens<_, _>) = lens.Map dec
 
     /// Set a lensed property's value.
-    /// Returns the updated world or throws an exception if the lens is readonly.
+    /// Throws an exception if the lens is readonly.
     static member inline ( <-- ) (lens : Lens<_, _>, value) = lens.Set value
 
     /// Get a lensed property's value.
@@ -206,7 +204,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         member lens.This = lens.This :> Simulant
         member lens.Get world = lens.Get world :> obj
         member lens.SetOpt = ValueOption.map (fun set -> fun (value : obj) world -> set (value :?> 'a) world) lens.SetOpt
-        member lens.TrySet value world = match lens.SetOpt with ValueSome set -> (true, set (value :?> 'a) world) | ValueNone -> (false, world)
+        member lens.TrySet value world = match lens.SetOpt with ValueSome set -> set (value :?> 'a) world; true | ValueNone -> false
         member lens.ChangeEvent = lens.ChangeEvent
         member lens.Type = typeof<'a>
 
@@ -297,7 +295,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
 
 /// Context for editing behavior.
 and EditContext =
-    { Snapshot : SnapshotType -> World -> World
+    { Snapshot : SnapshotType -> World -> unit
       FocusProperty : unit -> unit
       UnfocusProperty : unit -> unit
       SearchAssetViewer : unit -> unit
@@ -444,48 +442,48 @@ and GameDispatcher () =
     inherit SimulantDispatcher ()
 
     /// Register a game when adding it to the world.
-    abstract Register : game : Game * world : World -> World
-    default this.Register (_, world) = world
+    abstract Register : game : Game * world : World -> unit
+    default this.Register (_, _) = ()
 
     /// Unregister a game when finished with the world.
-    abstract Unregister : game : Game * world : World -> World
-    default this.Unregister (_, world) = world
+    abstract Unregister : game : Game * world : World -> unit
+    default this.Unregister (_, _) = ()
 
     /// Attempt to ImSim process a game.
-    abstract TryProcess : zeroDelta : bool * game : Game * world : World -> World
-    default this.TryProcess (_, _, world) = world
+    abstract TryProcess : zeroDelta : bool * game : Game * world : World -> unit
+    default this.TryProcess (_, _, _) = ()
 
     /// Pre-update a game.
-    abstract PreUpdate : game : Game * world : World -> World
-    default this.PreUpdate (_, world) = world
+    abstract PreUpdate : game : Game * world : World -> unit
+    default this.PreUpdate (_, _) = ()
 
     /// Update a game.
-    abstract Update : game : Game * world : World -> World
-    default this.Update (_, world) = world
+    abstract Update : game : Game * world : World -> unit
+    default this.Update (_, _) = ()
 
     /// Post-update a game.
-    abstract PostUpdate : game : Game * world : World -> World
-    default this.PostUpdate (_, world) = world
+    abstract PostUpdate : game : Game * world : World -> unit
+    default this.PostUpdate (_, _) = ()
 
     /// Render a game.
     abstract Render : renderPass : RenderPass * game : Game * world : World -> unit
     default this.Render (_, _, _) = ()
 
     /// Send a signal to a game.
-    abstract Signal : signalObj : obj * game : Game * world : World -> World
-    default this.Signal (_, _, world) = world
+    abstract Signal : signalObj : obj * game : Game * world : World -> unit
+    default this.Signal (_, _, _) = ()
 
     /// Attempt to get the fallback model value if the dispatcher defines one.
     abstract TryGetFallbackModel<'a> : modelSymbol : Symbol * game : Game * world : World -> 'a option
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a game.
-    abstract TrySynchronize : initializing : bool * game : Game * world : World -> World
-    default this.TrySynchronize (_, _, world) = world
+    abstract TrySynchronize : initializing : bool * game : Game * world : World -> unit
+    default this.TrySynchronize (_, _, _) = ()
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : op : EditOperation * game : Game * world : World -> World
-    default this.Edit (_, _, world) = world
+    abstract Edit : op : EditOperation * game : Game * world : World -> unit
+    default this.Edit (_, _, _) = ()
 
     /// Attempt to truncate a game model.
     abstract TryTruncateModel<'a> : model : 'a -> 'a option
@@ -500,48 +498,48 @@ and ScreenDispatcher () =
     inherit SimulantDispatcher ()
 
     /// Register a screen when adding it to the world.
-    abstract Register : screen : Screen * world : World -> World
-    default this.Register (_, world) = world
+    abstract Register : screen : Screen * world : World -> unit
+    default this.Register (_, _) = ()
 
     /// Unregister a screen when removing it from the world.
-    abstract Unregister : screen : Screen * world : World -> World
-    default this.Unregister (_, world) = world
+    abstract Unregister : screen : Screen * world : World -> unit
+    default this.Unregister (_, _) = ()
 
     /// Attempt to ImSim process a screen.
-    abstract TryProcess : zeroDelta : bool * screen : Screen * world : World -> World
-    default this.TryProcess (_, _, world) = world
+    abstract TryProcess : zeroDelta : bool * screen : Screen * world : World -> unit
+    default this.TryProcess (_, _, _) = ()
 
     /// Pre-update a screen.
-    abstract PreUpdate : screen : Screen * world : World -> World
-    default this.PreUpdate (_, world) = world
+    abstract PreUpdate : screen : Screen * world : World -> unit
+    default this.PreUpdate (_, _) = ()
 
     /// Update a screen.
-    abstract Update : screen : Screen * world : World -> World
-    default this.Update (_, world) = world
+    abstract Update : screen : Screen * world : World -> unit
+    default this.Update (_, _) = ()
 
     /// Post-update a screen.
-    abstract PostUpdate : screen : Screen * world : World -> World
-    default this.PostUpdate (_, world) = world
+    abstract PostUpdate : screen : Screen * world : World -> unit
+    default this.PostUpdate (_, _) = ()
 
     /// Render a screen.
     abstract Render : renderPass : RenderPass * screen : Screen * world : World -> unit
     default this.Render (_, _, _) = ()
 
     /// Send a signal to a screen.
-    abstract Signal : signalObj : obj * screen : Screen * world : World -> World
-    default this.Signal (_, _, world) = world
+    abstract Signal : signalObj : obj * screen : Screen * world : World -> unit
+    default this.Signal (_, _, _) = ()
 
     /// Attempt to get the fallback model value if the dispatcher defines one.
     abstract TryGetFallbackModel<'a> : modelSymbol : Symbol * screen : Screen * world : World -> 'a option
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a screen.
-    abstract TrySynchronize : initializing : bool * screen : Screen * world : World -> World
-    default this.TrySynchronize (_, _, world) = world
+    abstract TrySynchronize : initializing : bool * screen : Screen * world : World -> unit
+    default this.TrySynchronize (_, _, _) = ()
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : op : EditOperation * screen : Screen * world : World -> World
-    default this.Edit (_, _, world) = world
+    abstract Edit : op : EditOperation * screen : Screen * world : World -> unit
+    default this.Edit (_, _, _) = ()
 
     /// Attempt to truncate a screen model.
     abstract TryTruncateModel<'a> : model : 'a -> 'a option
@@ -556,48 +554,48 @@ and GroupDispatcher () =
     inherit SimulantDispatcher ()
 
     /// Register a group when adding it to a screen.
-    abstract Register : group : Group * world : World -> World
-    default this.Register (_, world) = world
+    abstract Register : group : Group * world : World -> unit
+    default this.Register (_, _) = ()
 
     /// Unregister a group when removing it from a screen.
-    abstract Unregister : group : Group * world : World -> World
-    default this.Unregister (_, world) = world
+    abstract Unregister : group : Group * world : World -> unit
+    default this.Unregister (_, _) = ()
 
     /// Attempt to ImSim process a group.
-    abstract TryProcess : zeroDelta : bool * group : Group * world : World -> World
-    default this.TryProcess (_, _, world) = world
+    abstract TryProcess : zeroDelta : bool * group : Group * world : World -> unit
+    default this.TryProcess (_, _, _) = ()
 
     /// Pre-update a group.
-    abstract PreUpdate : group : Group * world : World -> World
-    default this.PreUpdate (_, world) = world
+    abstract PreUpdate : group : Group * world : World -> unit
+    default this.PreUpdate (_, _) = ()
 
     /// Update a group.
-    abstract Update : group : Group * world : World -> World
-    default this.Update (_, world) = world
+    abstract Update : group : Group * world : World -> unit
+    default this.Update (_, _) = ()
 
     /// Post-update a group.
-    abstract PostUpdate : group : Group * world : World -> World
-    default this.PostUpdate (_, world) = world
+    abstract PostUpdate : group : Group * world : World -> unit
+    default this.PostUpdate (_, _) = ()
 
     /// Render a group.
     abstract Render : renderPass : RenderPass * group : Group * world : World -> unit
     default this.Render (_, _, _) = ()
 
     /// Send a signal to a group.
-    abstract Signal : signalObj : obj * group : Group * world : World -> World
-    default this.Signal (_, _, world) = world
+    abstract Signal : signalObj : obj * group : Group * world : World -> unit
+    default this.Signal (_, _, _) = ()
 
     /// Attempt to get the fallback model value if the dispatcher defines one.
     abstract TryGetFallbackModel<'a> : modelSymbol : Symbol * group : Group * world : World -> 'a option
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a group.
-    abstract TrySynchronize : initializing : bool * group : Group * world : World -> World
-    default this.TrySynchronize (_, _, world) = world
+    abstract TrySynchronize : initializing : bool * group : Group * world : World -> unit
+    default this.TrySynchronize (_, _, _) = ()
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : op : EditOperation * group : Group * world : World -> World
-    default this.Edit (_, _, world) = world
+    abstract Edit : op : EditOperation * group : Group * world : World -> unit
+    default this.Edit (_, _, _) = ()
 
     /// Attempt to truncate a group model.
     abstract TryTruncateModel<'a> : model : 'a -> 'a option
@@ -653,40 +651,40 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     default this.PresenceOverride = ValueNone
 
     /// Register an entity when adding it to a group.
-    abstract Register : entity : Entity * world : World -> World
-    default this.Register (_, world) = world
+    abstract Register : entity : Entity * world : World -> unit
+    default this.Register (_, _) = ()
 
     /// Unregister an entity when removing it from a group.
-    abstract Unregister : entity : Entity * world : World -> World
-    default this.Unregister (_, world) = world
+    abstract Unregister : entity : Entity * world : World -> unit
+    default this.Unregister (_, _) = ()
 
     /// Attempt to ImSim process an entity.
-    abstract TryProcess : zeroDelta : bool * entity : Entity * world : World -> World
-    default this.TryProcess (_, _, world) = world
+    abstract TryProcess : zeroDelta : bool * entity : Entity * world : World -> unit
+    default this.TryProcess (_, _, _) = ()
 
     /// Update an entity.
-    abstract Update : entity : Entity * world : World -> World
-    default this.Update (_, world) = world
+    abstract Update : entity : Entity * world : World -> unit
+    default this.Update (_, _) = ()
 
     /// Render an entity.
     abstract Render : renderPass : RenderPass * entity : Entity * world : World -> unit
     default this.Render (_, _, _) = ()
 
     /// Apply physics changes from a physics engine to an entity.
-    abstract ApplyPhysics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> World
-    default this.ApplyPhysics (_, _, _, _, _, world) = world
+    abstract ApplyPhysics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
+    default this.ApplyPhysics (_, _, _, _, _, _) = ()
 
     /// Send a signal to an entity.
-    abstract Signal : signalObj : obj * entity : Entity * world : World -> World
-    default this.Signal (_, _, world) = world
+    abstract Signal : signalObj : obj * entity : Entity * world : World -> unit
+    default this.Signal (_, _, _) = ()
 
     /// Attempt to get the fallback model value if the dispatcher defines one.
     abstract TryGetFallbackModel<'a> : modelSymbol : Symbol * entity : Entity * world : World -> 'a option
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize content of an entity.
-    abstract TrySynchronize : initializing : bool * entity : Entity * world : World -> World
-    default this.TrySynchronize (_, _, world) = world
+    abstract TrySynchronize : initializing : bool * entity : Entity * world : World -> unit
+    default this.TrySynchronize (_, _, _) = ()
 
     /// Get the default size of an entity.
     abstract GetAttributesInferred : entity : Entity * world : World -> AttributesInferred
@@ -700,8 +698,8 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     default this.RayCast (_, _, _) = [||]
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : op : EditOperation * entity : Entity * world : World -> World
-    default this.Edit (_, _, world) = world
+    abstract Edit : op : EditOperation * entity : Entity * world : World -> unit
+    default this.Edit (_, _, _) = ()
 
     /// Attempt to truncate an entity model.
     abstract TryTruncateModel<'a> : model : 'a -> 'a option
@@ -734,24 +732,24 @@ and Facet (physical, lightProbe, light) =
     default this.PresenceOverride = ValueNone
 
     /// Register a facet when adding it to an entity.
-    abstract Register : entity : Entity * world : World -> World
-    default this.Register (_, world) = world
+    abstract Register : entity : Entity * world : World -> unit
+    default this.Register (_, _) = ()
 
     /// Unregister a facet when removing it from an entity.
-    abstract Unregister : entity : Entity * world : World -> World
-    default this.Unregister (_, world) = world
+    abstract Unregister : entity : Entity * world : World -> unit
+    default this.Unregister (_, _) = ()
 
     /// Participate in the registration of an entity's physics with the physics subsystem.
-    abstract RegisterPhysics : entity : Entity * world : World -> World
-    default this.RegisterPhysics (_, world) = world
+    abstract RegisterPhysics : entity : Entity * world : World -> unit
+    default this.RegisterPhysics (_, _) = ()
 
     /// Participate in the unregistration of an entity's physics from the physics subsystem.
-    abstract UnregisterPhysics : entity : Entity * world : World -> World
-    default this.UnregisterPhysics (_, world) = world
+    abstract UnregisterPhysics : entity : Entity * world : World -> unit
+    default this.UnregisterPhysics (_, _) = ()
 
     /// Update a facet.
-    abstract Update : entity : Entity * world : World -> World
-    default this.Update (_, world) = world
+    abstract Update : entity : Entity * world : World -> unit
+    default this.Update (_, _) = ()
 
     /// Render a facet.
     abstract Render : renderPass : RenderPass * entity : Entity * world : World -> unit
@@ -766,8 +764,8 @@ and Facet (physical, lightProbe, light) =
     default this.GetAttributesInferred (_, _) = AttributesInferred.unimportant
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : op : EditOperation * entity : Entity * world : World -> World
-    default this.Edit (_, _, world) = world
+    abstract Edit : op : EditOperation * entity : Entity * world : World -> unit
+    default this.Edit (_, _, _) = ()
 
     /// Whether a facet participates in a physics system.
     member this.Physical = physical
@@ -936,19 +934,19 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     { Dispatcher : GameDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
-      Content : GameContent
-      SelectedScreenOpt : Screen option
-      DesiredScreen : DesiredScreen
-      ScreenTransitionDestinationOpt : Screen option
-      Eye2dCenter : Vector2
-      Eye2dSize : Vector2
-      Eye3dCenter : Vector3
-      Eye3dRotation : Quaternion
-      Eye3dFieldOfView : single
-      Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
-      Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
-      Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
-      Order : int64
+      mutable Content : GameContent
+      mutable SelectedScreenOpt : Screen option
+      mutable DesiredScreen : DesiredScreen
+      mutable ScreenTransitionDestinationOpt : Screen option
+      mutable Eye2dCenter : Vector2
+      mutable Eye2dSize : Vector2
+      mutable Eye3dCenter : Vector3
+      mutable Eye3dRotation : Quaternion
+      mutable Eye3dFieldOfView : single
+      mutable Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
+      mutable Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
+      mutable Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
+      mutable Order : int64
       Id : uint64 }
 
     /// Copy a game state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
@@ -965,22 +963,19 @@ and [<ReferenceEquality; CLIMutable>] GameState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property gameState =
-        match Xtension.trySetProperty propertyName property gameState.Xtension with
-        | struct (true, xtension) -> struct (true, { gameState with Xtension = xtension })
-        | struct (false, _) -> struct (false, gameState)
+        Xtension.trySetProperty propertyName property gameState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property gameState =
-        { gameState with GameState.Xtension = Xtension.setProperty propertyName property gameState.Xtension }
+        Xtension.setProperty propertyName property gameState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property gameState =
-        { gameState with GameState.Xtension = Xtension.attachProperty name property gameState.Xtension }
+        Xtension.attachProperty name property gameState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name gameState =
-        let xtension = Xtension.detachProperty name gameState.Xtension
-        { gameState with GameState.Xtension = xtension }
+        Xtension.detachProperty name gameState.Xtension
 
     /// Make a game state value.
     static member make (dispatcher : GameDispatcher) =
@@ -991,7 +986,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
         let viewportExterior = Viewport.makeExterior ()
         let viewportImposter = Viewport.makeImposter ()
         { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGameContent :?> GameContent
           SelectedScreenOpt = None
@@ -1016,16 +1011,16 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
     { Dispatcher : ScreenDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
-      Content : ScreenContent
-      TransitionState : TransitionState
-      Incoming : Transition
-      Outgoing : Transition
-      RequestedSong : RequestedSong
-      SlideOpt : Slide option
-      Nav3d : Nav3d
-      Protected : bool
-      Persistent : bool
-      Order : int64
+      mutable Content : ScreenContent
+      mutable TransitionState : TransitionState
+      mutable Incoming : Transition
+      mutable Outgoing : Transition
+      mutable RequestedSong : RequestedSong
+      mutable SlideOpt : Slide option
+      mutable Nav3d : Nav3d
+      mutable Protected : bool
+      mutable Persistent : bool
+      mutable Order : int64
       Id : uint64
       Name : string }
 
@@ -1043,28 +1038,25 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property screenState =
-        match Xtension.trySetProperty propertyName property screenState.Xtension with
-        | struct (true, xtension) -> struct (true, { screenState with Xtension = xtension })
-        | struct (false, _) -> struct (false, screenState)
+        Xtension.trySetProperty propertyName property screenState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property screenState =
-        { screenState with ScreenState.Xtension = Xtension.setProperty propertyName property screenState.Xtension }
+        Xtension.setProperty propertyName property screenState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property screenState =
-        { screenState with ScreenState.Xtension = Xtension.attachProperty name property screenState.Xtension }
+        Xtension.attachProperty name property screenState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name screenState =
-        let xtension = Xtension.detachProperty name screenState.Xtension
-        { screenState with ScreenState.Xtension = xtension }
+        Xtension.detachProperty name screenState.Xtension
 
     /// Make a screen state value.
     static member make time nameOpt (dispatcher : ScreenDispatcher) =
         let (id, name) = Gen.id64AndNameIf nameOpt
         { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyScreenContent :?> ScreenContent
           TransitionState = IdlingState time
@@ -1087,11 +1079,11 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
     { Dispatcher : GroupDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
-      Content : GroupContent
-      Visible : bool
-      Protected : bool
-      Persistent : bool
-      Order : int64
+      mutable Content : GroupContent
+      mutable Visible : bool
+      mutable Protected : bool
+      mutable Persistent : bool
+      mutable Order : int64
       Id : uint64
       Name : string }
 
@@ -1109,28 +1101,25 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property groupState =
-        match Xtension.trySetProperty propertyName property groupState.Xtension with
-        | struct (true, xtension) -> struct (true, { groupState with Xtension = xtension })
-        | struct (false, _) -> struct (false, groupState)
+        Xtension.trySetProperty propertyName property groupState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property groupState =
-        { groupState with GroupState.Xtension = Xtension.setProperty propertyName property groupState.Xtension }
+        Xtension.setProperty propertyName property groupState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property groupState =
-        { groupState with GroupState.Xtension = Xtension.attachProperty name property groupState.Xtension }
+        Xtension.attachProperty name property groupState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name groupState =
-        let xtension = Xtension.detachProperty name groupState.Xtension
-        { groupState with GroupState.Xtension = xtension }
+        Xtension.detachProperty name groupState.Xtension
 
     /// Make a group state value.
     static member make nameOpt (dispatcher : GroupDispatcher) =
         let (id, name) = Gen.id64AndNameIf nameOpt
         { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
           Visible = true
@@ -1241,33 +1230,19 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        match Xtension.trySetProperty propertyName property entityState.Xtension with
-        | struct (true, xtension) ->
-            entityState.Xtension <- xtension // redundant if xtension is imperative
-            struct (true, entityState)
-        | struct (false, _) -> struct (false, entityState)
+        Xtension.trySetProperty propertyName property entityState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        let xtension = Xtension.setProperty propertyName property entityState.Xtension
-        entityState.Xtension <- xtension // redundant if xtension is imperative
-        entityState
+        Xtension.setProperty propertyName property entityState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        let xtension = Xtension.attachProperty name property entityState.Xtension
-        entityState.Xtension <- xtension // redundant if xtension is imperative
-        entityState
+        Xtension.attachProperty name property entityState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        let xtension = Xtension.detachProperty name entityState.Xtension
-        entityState.Xtension <- xtension // redundant if xtension is imperative
-        entityState
+        Xtension.detachProperty name entityState.Xtension
 
     /// Make an entity state value.
     static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
@@ -1872,14 +1847,6 @@ and [<ReferenceEquality>] World =
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
           WorldExtension : WorldExtension }
 
-    /// Check that the world is executing with imperative semantics where applicable.
-    member this.Imperative =
-        this.AmbientState.Imperative
-
-    /// Check that the world is executing with functional semantics.
-    member this.Functional =
-        not this.AmbientState.Imperative
-
     /// Check that the world is accompanied (such as by an editor program that controls it).
     member this.Accompanied =
         this.AmbientState.Accompanied
@@ -2128,7 +2095,7 @@ and [<AbstractClass>] NuPlugin () =
     default this.AllowCodeReload = true
 
     /// Provides a list of modes for setting game state via the editor.
-    abstract EditModes : Map<string, World -> World>
+    abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
 
     /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
@@ -2141,8 +2108,8 @@ and [<AbstractClass>] NuPlugin () =
     default this.CleanUp () = ()
 
     /// Invoke a user-defined callback.
-    abstract Invoke : callbackName : string -> callbackArgs : obj list -> world : World -> World
-    default this.Invoke _ _ world = world
+    abstract Invoke : callbackName : string -> callbackArgs : obj list -> world : World -> unit
+    default this.Invoke _ _ world = ()
 
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : world : World -> ((string * obj) list) * World
@@ -2157,24 +2124,24 @@ and [<AbstractClass>] NuPlugin () =
         | _ -> None
 
     /// A call-back at the beginning of each frame.
-    abstract PreProcess : world : World -> World
-    default this.PreProcess world = world
+    abstract PreProcess : world : World -> unit
+    default this.PreProcess world = ()
 
     /// A call-back during each frame.
-    abstract PerProcess : world : World -> World
-    default this.PerProcess world = world
+    abstract PerProcess : world : World -> unit
+    default this.PerProcess world = ()
 
     /// A call-back at the end of each frame.
-    abstract PostProcess : world : World -> World
-    default this.PostProcess world = world
+    abstract PostProcess : world : World -> unit
+    default this.PostProcess world = ()
 
     /// A call-back for imgui processing.
-    abstract ImGuiProcess : world : World -> World
-    default this.ImGuiProcess world = world
+    abstract ImGuiProcess : world : World -> unit
+    default this.ImGuiProcess world = ()
 
     /// A call-back for imgui post-processing.
-    abstract ImGuiPostProcess : world : World -> World
-    default this.ImGuiPostProcess world = world
+    abstract ImGuiPostProcess : world : World -> unit
+    default this.ImGuiPostProcess world = ()
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =
@@ -2208,16 +2175,13 @@ module Lens =
     let setOpt<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         match lens.SetOpt with
         | ValueSome set -> set a world
-        | ValueNone -> world
+        | ValueNone -> ()
 
     let trySet<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.TrySet a world
 
     let set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.Set a world
-
-    let tryMapEffect<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
-        lens.TryMapEffect mapper world
 
     let tryMapWorld<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.TryMapWorld mapper world
@@ -2272,7 +2236,7 @@ module LensOperators =
         PropertyDefinition.makeValidated lens.Name typeof<'a> (VariableExpr (fun world -> var (world :?> World) :> obj))
 
     /// Define a computed property.
-    let computed (lens : Lens<'a, 's>) (get : 't -> World -> 'a) (setOpt : ('a -> 't -> World -> World) option) =
+    let computed (lens : Lens<'a, 's>) (get : 't -> World -> 'a) (setOpt : ('a -> 't -> World -> unit) option) =
         Reflection.initPropertyNonPersistent true lens.Name
         let computedProperty =
             ComputedProperty.make
@@ -2289,32 +2253,30 @@ module Signal =
     let rec [<DebuggerHidden>]
         processSignal<'model, 'message, 'command, 's when 'message :> Message and 'command :> Command and 's :> Simulant>
         (processMessage : 'model * 'message * 's * World -> Signal list * 'model)
-        (processCommand : 'model * 'command * 's * World -> Signal list * World)
+        (processCommand : 'model * 'command * 's * World -> Signal list)
         (modelLens : Lens<'model, 's>)
         (signal : Signal)
         (simulant : 's)
-        (world : World) :
-        World =
+        (world : World) =
         match signal :> obj with
         | :? 'message as message ->
             let model = Lens.get modelLens world
             let (signals, model) = processMessage (model, message, simulant, world)
-            let world = Lens.set model modelLens world
+            Lens.set model modelLens world
             match signals with
             | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
-            | [] -> world
+            | [] -> ()
         | :? 'command as command ->
             let model = Lens.get modelLens world
-            let (signals, world) = processCommand (model, command, simulant, world)
+            let signals = processCommand (model, command, simulant, world)
             match signals with
             | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
-            | [] -> world
+            | [] -> ()
         | _ -> failwithumf ()
 
     and [<DebuggerHidden>] processSignals processMessage processCommand modelLens signals simulant world =
-        let mutable world = world // NOTE: inlined fold for speed and to shorten stack trace.
-        for signal in signals do world <- processSignal processMessage processCommand modelLens signal simulant world
-        world
+        for signal in signals do
+            processSignal processMessage processCommand modelLens signal simulant world
 
 [<AutoOpen>]
 module SignalOperators =
@@ -2330,3 +2292,14 @@ module SignalOperators =
 
     /// Signaless signals-value pair constructor.
     let inline just value = (([] : Signal list), value)
+
+type WorldRef =
+    private
+        { mutable WorldState : World }
+
+    static member choose worldState world =
+        world.WorldState <- worldState
+        World.choose world
+
+    static member snapshot world =
+        { WorldState = world.WorldState }

@@ -23,19 +23,19 @@ type [<ReferenceEquality>] SubscriptionEntry =
 
 /// Abstracts over a subscription sorting procedure.
 type SubscriptionSorter =
-    (uint64 * SubscriptionEntry) seq -> obj -> (uint64 * SubscriptionEntry) seq
+    KeyValuePair<uint64, SubscriptionEntry> seq -> obj -> KeyValuePair<uint64, SubscriptionEntry> seq
 
 /// Describes an event subscription that can be boxed / unboxed.
 type 'w BoxableSubscription =
-    Event<obj, Simulant> -> 'w -> Handling * 'w
+    Event<obj, Simulant> -> 'w -> Handling
 
 /// A map of event subscriptions.
 type SubscriptionEntries =
-    UMap<obj Address, OMap<uint64, SubscriptionEntry>>
+    Dictionary<obj Address, OrderedDictionary<uint64, SubscriptionEntry>>
 
 /// A map of subscription keys to unsubscription data.
 type UnsubscriptionEntries =
-    UMap<uint64, struct (obj Address * Simulant)>
+    Dictionary<uint64, struct (obj Address * Simulant)>
 
 [<RequireQualifiedAccess>]
 module EventGraph =
@@ -52,8 +52,8 @@ module EventGraph =
             { // cache line 1 (assuming 16 byte header)
               Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
-              EventStates : SUMap<uint64, obj>
-              EventTracerOpt : (string -> unit) option
+              EventStates : SDictionary<uint64, obj>
+              mutable EventTracerOpt : (string -> unit) option
               EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 
@@ -63,16 +63,16 @@ module EventGraph =
 
     /// Get event state.
     let getEventState<'a> key (eventGraph : EventGraph) =
-        let state = SUMap.find key eventGraph.EventStates
+        let state = eventGraph.EventStates.[key]
         state :?> 'a
 
     /// Add event state.
     let addEventState<'a> key (state : 'a) (eventGraph : EventGraph) =
-        { eventGraph with EventStates = SUMap.add key (state :> obj) eventGraph.EventStates }
+        eventGraph.EventStates.[key] <- state :> obj
 
     /// Remove event state.
     let removeEventState key (eventGraph : EventGraph) =
-        { eventGraph with EventStates = SUMap.remove key eventGraph.EventStates }
+        eventGraph.EventStates.Remove key
 
     /// Get subscriptions.
     let getSubscriptions (eventGraph : EventGraph) =
@@ -82,21 +82,13 @@ module EventGraph =
     let getUnsubscriptions (eventGraph : EventGraph) =
         eventGraph.Unsubscriptions
 
-    /// Set subscriptions.
-    let internal setSubscriptions subscriptions (eventGraph : EventGraph) =
-        { eventGraph with Subscriptions = subscriptions }
-
-    /// Set unsubscriptions.
-    let internal setUnsubscriptions unsubscriptions (eventGraph : EventGraph) =
-        { eventGraph with Unsubscriptions = unsubscriptions }
-
     /// Get how events are being traced.
     let getEventTracerOpt (eventGraph : EventGraph) =
         eventGraph.EventTracerOpt
 
     /// Set how events are being traced.
     let setEventTracerOpt tracing (eventGraph : EventGraph) =
-        { eventGraph with EventTracerOpt = tracing }
+        eventGraph.EventTracerOpt <- tracing
 
     /// Get the state of the event filter.
     let getEventFilter (eventGraph : EventGraph) =
@@ -200,8 +192,8 @@ module EventGraph =
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress (eventGraph : EventGraph) (world : 'w) =
         let eventSubscriptions = getSubscriptions eventGraph
         let eventAddresses = getEventAddresses2 eventAddress eventGraph
-        let subscriptionOpts = Array.map (fun eventAddress -> UMap.tryFind eventAddress eventSubscriptions) eventAddresses
-        let subscriptions = subscriptionOpts |> Array.definitize |> Array.map OMap.toSeq |> Seq.concat
+        let subscriptionOpts = Array.map (fun eventAddress -> Dictionary.tryFind eventAddress eventSubscriptions) eventAddresses
+        let subscriptions = subscriptionOpts |> Array.definitize |> Array.map seq |> Seq.concat
         publishSorter subscriptions world
 
     /// Log an event.
@@ -214,11 +206,11 @@ module EventGraph =
         | None -> ()
 
     /// Make an event delegate.
-    let make eventTracerOpt eventFilter globalSimulantGeneralized config =
+    let make eventTracerOpt eventFilter globalSimulantGeneralized =
         let eventGraph =
-            { Subscriptions = UMap.makeEmpty HashIdentity.Structural config
-              Unsubscriptions = UMap.makeEmpty HashIdentity.Structural config
-              EventStates = SUMap.makeEmpty HashIdentity.Structural config
+            { Subscriptions = dictPlus HashIdentity.Structural []
+              Unsubscriptions = dictPlus HashIdentity.Structural []
+              EventStates = SDictionary.make HashIdentity.Structural
               EventTracerOpt = eventTracerOpt
               EventFilter = eventFilter
               GlobalSimulantGeneralized = globalSimulantGeneralized }

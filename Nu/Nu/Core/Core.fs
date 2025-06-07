@@ -40,3 +40,19 @@ module CoreOperators =
     /// Test for object inequality.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
+
+/// A computed property.
+type [<ReferenceEquality>] ComputedProperty =
+    { ComputedType : Type
+      ComputedGet : obj -> obj -> obj
+      ComputedSetOpt : (obj -> obj -> obj -> unit) option }
+
+    /// Make a computed property.
+    static member make ty get setOpt =
+        { ComputedType = ty
+          ComputedGet = get
+          ComputedSetOpt = setOpt }
+
+    /// Make a readonly computed property.
+    static member makeReadOnly ty get =
+        ComputedProperty.make ty get None

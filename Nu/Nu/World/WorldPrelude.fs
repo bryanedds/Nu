@@ -326,7 +326,7 @@ type OverlayNameDescriptor =
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
-      ScheduledOp : 'w -> 'w }
+      ScheduledOp : 'w -> unit }
 
 /// Configuration parameters for the world.
 type [<ReferenceEquality>] WorldConfig =
@@ -427,40 +427,38 @@ type Timers =
 [<AutoOpen>]
 module AmbientState =
 
-    let [<Literal>] private ImperativeMask =            0b00001u
-    let [<Literal>] private AccompaniedMask =           0b00010u
-    let [<Literal>] private AdvancingMask =             0b00100u
-    let [<Literal>] private FramePacingMask =           0b01000u
-    let [<Literal>] private AdvancementClearedMask =    0b10000u
+    let [<Literal>] private AccompaniedMask =           0b0001u
+    let [<Literal>] private AdvancingMask =             0b0010u
+    let [<Literal>] private FramePacingMask =           0b0100u
+    let [<Literal>] private AdvancementClearedMask =    0b1000u
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
-              Flags : uint
-              Liveness : Liveness
-              UpdateDelta : int64
-              UpdateTime : int64
-              ClockDelta : single
-              ClockTime : single
+              mutable Flags : uint
+              mutable Liveness : Liveness
+              mutable UpdateDelta : int64
+              mutable UpdateTime : int64
+              mutable ClockDelta : single
+              mutable ClockTime : single
               // cache line 2
-              TickDelta : int64
-              KeyValueStore : SUMap<string, obj>
+              mutable TickDelta : int64
+              KeyValueStore : SDictionary<string, obj>
               TickTime : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
-              Tasklets : OMap<Simulant, 'w Tasklet UList>
-              SdlDepsOpt : SdlDeps option
+              Tasklets : OrderedDictionary<Simulant, 'w Tasklet List>
+              mutable SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
-              Overlayer : Overlayer
+              mutable Overlayer : Overlayer
               Timers : Timers
               // cache line 4
-              LightMapRenderRequested : bool }
+              mutable LightMapRenderRequested : bool }
 
-        member this.Imperative = this.Flags &&& ImperativeMask <> 0u
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
         member this.Advancing = this.Flags &&& AdvancingMask <> 0u
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
@@ -474,16 +472,11 @@ module AmbientState =
     let setAdvancing advancing (state : _ AmbientState) =
         if advancing <> state.Advancing then
             if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
-            { state with Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask }
-        else state
+            state.Flags <- if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask
 
     /// Set whether the world's frame rate is being explicitly paced based on clock progression.
     let setFramePacing framePacing (state : _ AmbientState) =
-        { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
-
-    /// Get the collection config value.
-    let getConfig (state : _ AmbientState) =
-        if state.Imperative then TConfig.Imperative else TConfig.Functional
+        state.Flags <- if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask
 
     let internal clearAdvancement (state : _ AmbientState) =
         { state with
@@ -580,24 +573,11 @@ module AmbientState =
 
     /// Place the engine into a state such that the app will exit at the end of the current frame.
     let exit state =
-        { state with Liveness = Dead }
+        state.Liveness <- Dead
 
     /// Get the key-value store.
     let getKeyValueStore state =
         state.KeyValueStore
-
-    /// Get the key-value store with the by map.
-    let getKeyValueStoreBy by state =
-        by state.KeyValueStore
-
-    /// Set the key-value store.
-    let setKeyValueStore store state =
-        { state with KeyValueStore = store }
-
-    /// Update the key-value store.
-    let mapKeyValueStore mapper state =
-        let store = mapper (getKeyValueStore state)
-        { state with KeyValueStore = store }
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -605,11 +585,11 @@ module AmbientState =
 
     /// Remove all tasklets associated with a simulant.
     let removeTasklets simulant state =
-        { state with Tasklets = OMap.remove simulant state.Tasklets }
+        state.Tasklets.Remove simulant
 
     /// Clear the tasklets from future processing.
     let clearTasklets state =
-        { state with Tasklets = OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets) }
+        state.Tasklets.Clear ()
 
     /// Restore the given tasklets from future processing.
     let restoreTasklets tasklets state =
@@ -617,11 +597,11 @@ module AmbientState =
 
     /// Add a tasklet to be executed at the scheduled time.
     let addTasklet simulant tasklet state =
-        { state with
-            Tasklets =
-                match state.Tasklets.TryGetValue simulant with
-                | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) state.Tasklets
-                | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig state.Tasklets) tasklet) state.Tasklets }
+            match state.Tasklets.TryGetValue simulant with
+            | (true, taskletList) -> taskletList.Add tasklet
+            | (false, _) ->
+                let taskletList = List [tasklet]
+                state.Tasklets.Add (simulant, taskletList)
 
     /// Attempt to get the window flags.
     let tryGetWindowFlags state =
@@ -651,14 +631,14 @@ module AmbientState =
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =
         match state.SdlDepsOpt with
-        | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
-        | None -> state
+        | Some deps -> SdlDeps.trySetWindowFullScreen fullScreen deps
+        | None -> ()
 
     /// Attempt to toggle the window's full screen state.
     let tryToggleWindowFullScreen state =
         match tryGetWindowFullScreen state with
         | Some fullScreen -> trySetWindowFullScreen (not fullScreen) state
-        | None -> state
+        | None -> ()
 
     /// Attempt to get the window position.
     let tryGetWindowPosition state =
@@ -690,22 +670,9 @@ module AmbientState =
         | Some (SglWindow window) -> SDL.SDL_SetWindowSize (window.SglWindow, size.X, size.Y) |> ignore
         | None -> ()
 
-    /// Get symbolics with the by map.
-    let getSymbolicsBy by state =
-        by state.Symbolics
-
     /// Get symbolics.
     let getSymbolics state =
-        getSymbolicsBy id state
-
-    /// Set symbolics.
-    let setSymbolics symbolics state =
-        { state with Symbolics = symbolics }
-
-    /// Update symbolics.
-    let mapSymbolics mapper state =
-        let store = mapper (getSymbolics state)
-        { state with Symbolics = store }
+        state.Symbolics
 
     /// Get the overlayer.
     let getOverlayer state =
@@ -713,7 +680,7 @@ module AmbientState =
 
     /// Set the overlayer.
     let setOverlayer overlayer state =
-        { state with Overlayer = overlayer }
+        state.Overlayer <- overlayer
 
     /// Get the timers.
     let getTimers state =
@@ -721,7 +688,7 @@ module AmbientState =
 
     /// Acknowledge a light map render request.
     let acknowledgeLightMapRenderRequest state =
-        { state with LightMapRenderRequested = false }
+        state.LightMapRenderRequested <- false
 
     /// Get whether a light map render was requested.
     let getLightMapRenderRequested state =
@@ -729,16 +696,14 @@ module AmbientState =
 
     /// Request a light map render for the current frame.
     let requestLightMapRender state =
-        { state with LightMapRenderRequested = true }
+        state.LightMapRenderRequested <- true
 
     /// Make an ambient state value.
-    let make imperative accompanied advancing framePacing symbolics overlayer timers sdlDepsOpt =
+    let make accompanied advancing framePacing symbolics overlayer timers sdlDepsOpt =
         let flags =
-            (if imperative then ImperativeMask else 0u) |||
             (if accompanied then AccompaniedMask else 0u) |||
             (if advancing then AdvancingMask else 0u) |||
             (if framePacing then FramePacingMask else 0u)
-        let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Flags = flags
           Liveness = Live
           UpdateDelta = 0L
@@ -746,13 +711,13 @@ module AmbientState =
           ClockDelta = 0.0f
           ClockTime = 0.0f
           TickDelta = 0L
-          KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
+          KeyValueStore = SDictionary.make StringComparer.Ordinal
           TickTime = 0L
           TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
-          Tasklets = OMap.makeEmpty HashIdentity.Structural config
+          Tasklets = OrderedDictionary HashIdentity.Structural
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
           Overlayer = overlayer

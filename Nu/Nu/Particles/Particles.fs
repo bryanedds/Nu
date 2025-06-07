@@ -3,6 +3,7 @@
 
 namespace Nu.Particles
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
@@ -181,13 +182,13 @@ and Emitter =
     abstract GetLiveness : time : GameTime -> Liveness
 
     /// Run the emitter.
-    abstract Run : delta : GameTime -> time : GameTime -> Output * Emitter
+    abstract Run : delta : GameTime -> time : GameTime -> Output
 
     /// Convert the emitted particles to a ParticlesDescriptor.
     abstract ToParticlesDescriptor : time : GameTime -> ParticlesDescriptor
 
     /// Change the maximum number of allowable particles.
-    abstract Resize : particleMax : int -> Emitter
+    abstract Resize : particleMax : int -> unit
 
 /// Transforms a constrained value.
 type 'a Transformer =
@@ -693,47 +694,43 @@ module BasicParticle =
 /// A particle system.
 /// TODO: consider making this an abstract data type?
 type [<ReferenceEquality>] ParticleSystem =
-    { Emitters : Map<string, Emitter> }
+    { mutable Emitters : Dictionary<string, Emitter> }
     
     /// Get the liveness of the particle system.
     static member getLiveness time particleSystem =
         let emittersLiveness =
-            Map.exists (fun _ (emitter : Emitter) ->
-                match emitter.GetLiveness time with Live -> true | Dead -> false)
-                particleSystem.Emitters
+            particleSystem.Emitters |>
+            Seq.exists (fun kvp -> match kvp.Value.GetLiveness time with Live -> true | Dead -> false)
         if emittersLiveness then Live else Dead
 
     /// Add an emitter to the particle system.
     static member add emitterId emitter particleSystem =
-        { particleSystem with Emitters = Map.add emitterId emitter particleSystem.Emitters }
+        particleSystem.Emitters.[emitterId] <- emitter particleSystem.Emitters
 
     /// Remove an emitter from the particle system.
     static member remove emitterId particleSystem =
-        { particleSystem with Emitters = Map.remove emitterId particleSystem.Emitters }
+        particleSystem.Emitters.Remove emitterId |> ignore<bool>
 
     /// Run the particle system.
     static member run delta time particleSystem =
-        let (output, emitters) =
-            Map.fold (fun (output, emitters) emitterId (emitter : Emitter) ->
-                let (output2, emitter) = emitter.Run delta time
-                let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
-                (output + output2, emitters))
-                (Output.empty, Map.empty)
-                particleSystem.Emitters
-        let particleSystem = { Emitters = emitters }
-        (particleSystem, output)
+        particleSystem.Emitters.Pairs' |>
+        Array.ofSeq |> // allows for removal
+        Seq.fold (fun output struct (emitterId, emitter : Emitter) ->
+            let output2 = emitter.Run delta time
+            let liveness = emitter.GetLiveness time
+            if liveness.IsDead then particleSystem.Emitters.Remove emitterId |> ignore<bool>
+            output + output2)
+            Output.empty
 
     /// Convert the emitted particles to ParticlesDescriptors.
     static member toParticlesDescriptors time particleSystem =
-        let descriptorsRev =
-            Map.fold (fun descriptors _ (emitter : Emitter) ->
-                (emitter.ToParticlesDescriptor time :: descriptors))
-                [] particleSystem.Emitters
-        List.rev descriptorsRev
+        Seq.map (fun struct (_, emitter : Emitter) ->
+            emitter.ToParticlesDescriptor time)
+            particleSystem.Emitters.Pairs'
 
     /// The empty particle system.
     static member empty =
-        { Emitters = Map.empty }
+        { Emitters = dictPlus StringComparer.Ordinal [] }
 
 /// The static sprite-based particle emitter.
 type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
@@ -747,7 +744,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       ParticleRate : single
       mutable ParticleIndex : int // the current particle buffer insertion point
       mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-      ParticleRing : 'a SArray // operates as a ring-buffer
+      mutable ParticleRing : 'a SArray // operates as a ring-buffer
       ParticleSeed : 'a
       Constraint : Constraint
       ParticleInitializer : GameTime -> 'a StaticSpriteEmitter -> 'a
@@ -805,7 +802,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
         let output4 = Behaviors.runMany delta time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
 
         // fin
-        (output + output2 + output3 + output4, emitter)
+        output + output2 + output3 + output4
 
     /// Make a basic particle emitter.
     static member make<'a>
@@ -835,16 +832,14 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
         member this.GetLiveness time =
             StaticSpriteEmitter<'a>.getLiveness time this
         member this.Run delta time =
-            let (output, emitter) = StaticSpriteEmitter<'a>.run delta time this
-            (output, emitter :> Emitter)
+            StaticSpriteEmitter<'a>.run delta time this
         member this.ToParticlesDescriptor time =
             SpriteParticlesDescriptor (this.ToParticlesDescriptor time this)
         member this.Resize particleMax =
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
-                { this with ParticleRing = SArray.zeroCreate<'a> particleMax } :> Emitter
-            else this :> Emitter
+                this.ParticleRing <- SArray.zeroCreate<'a> particleMax
 
 /// A static sprite particle emitter.
 type BasicStaticSpriteEmitter =
@@ -886,7 +881,7 @@ module BasicStaticSpriteEmitter =
     /// Resize the emitter.
     let resize particleMax (emitter : BasicStaticSpriteEmitter) =
         let particleMax = max 1 particleMax
-        (emitter :> Emitter).Resize particleMax :?> BasicStaticSpriteEmitter
+        (emitter :> Emitter).Resize particleMax
 
     /// Make a basic static sprite particle emitter.
     let make
@@ -1001,7 +996,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       ParticleRate : single
       mutable ParticleIndex : int // the current particle buffer insertion point
       mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-      ParticleRing : 'a SArray // operates as a ring-buffer
+      mutable ParticleRing : 'a SArray // operates as a ring-buffer
       ParticleSeed : 'a
       Constraint : Constraint
       ParticleInitializer : GameTime -> 'a StaticBillboardEmitter -> 'a
@@ -1059,7 +1054,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         let output4 = Behaviors.runMany delta time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
 
         // fin
-        (output + output2 + output3 + output4, emitter)
+        output + output2 + output3 + output4
 
     /// Make a basic particle emitter.
     static member make<'a>
@@ -1092,8 +1087,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         member this.GetLiveness time =
             StaticBillboardEmitter<'a>.getLiveness time this
         member this.Run delta time =
-            let (output, emitter) = StaticBillboardEmitter<'a>.run delta time this
-            (output, emitter :> Emitter)
+            StaticBillboardEmitter<'a>.run delta time this
         member this.ToParticlesDescriptor time =
             BillboardParticlesDescriptor (this.ToParticlesDescriptor time this)
         member this.Resize particleMax =
@@ -1101,8 +1095,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
-                { this with ParticleRing = SArray.zeroCreate<'a> particleMax } :> Emitter
-            else this :> Emitter
+                this.ParticleRing <- SArray.zeroCreate<'a> particleMax
 
 /// A static billboard particle emitter.
 type BasicStaticBillboardEmitter =
@@ -1143,7 +1136,7 @@ module BasicStaticBillboardEmitter =
 
     /// Resize the emitter.
     let resize particleMax (emitter : BasicStaticBillboardEmitter) =
-        (emitter :> Emitter).Resize particleMax :?> BasicStaticBillboardEmitter
+        (emitter :> Emitter).Resize particleMax
 
     /// Make a basic static billboard particle emitter.
     let make
