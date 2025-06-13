@@ -678,7 +678,7 @@ module WorldModuleGame =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box game) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue game world
+                            computedSet property.PropertyValue game world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -717,29 +717,29 @@ module WorldModuleGame =
             let propertyOld = GameState.getProperty propertyName gameState
             let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
             let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            let world =
-                match propertyOld.PropertyValue with
-                | :? DesignerProperty as dp ->
-                    previous <- dp.DesignerValue
+            match propertyOld.PropertyValue with
+            | :? DesignerProperty as dp ->
+                previous <- dp.DesignerValue
+                if value =/= previous then
+                    changed <- true
+                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                    GameState.setProperty propertyName property gameState
+            | :? ComputedProperty as cp ->
+                match cp.ComputedSetOpt with
+                | Some computedSet ->
+                    previous <- cp.ComputedGet (box game) (box world)
                     if value =/= previous then
                         changed <- true
-                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                        GameState.setProperty propertyName property gameState
-                | :? ComputedProperty as cp ->
-                    match cp.ComputedSetOpt with
-                    | Some computedSet ->
-                        previous <- cp.ComputedGet (box game) (box world)
-                        if value =/= previous then
-                            changed <- true
-                            computedSet propertyOld.PropertyValue game world
-                    | None -> ()
-                | _ ->
-                    previous <- propertyOld.PropertyValue
-                    if value =/= previous then
-                        changed <- true
-                        let property = { propertyOld with PropertyValue = value }
-                        GameState.setProperty propertyName property gameState
-            if changed then World.publishGameChange propertyName previous value game world
+                        computedSet propertyOld.PropertyValue game world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                | None -> ()
+            | _ ->
+                previous <- propertyOld.PropertyValue
+                if value =/= previous then
+                    changed <- true
+                    let property = { propertyOld with PropertyValue = value }
+                    GameState.setProperty propertyName property gameState
+            if changed then
+                World.publishGameChange propertyName previous value game world
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world

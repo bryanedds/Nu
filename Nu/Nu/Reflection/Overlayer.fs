@@ -184,44 +184,39 @@ module Overlayer =
                 | Some propertySymbol -> tryApplyOverlayToRecordProperty property propertySymbol target overlaySymbolsOld
                 | None -> ()
 
-    let internal applyOverlayToXtension target overlaySymbolsOld overlaySymbolsNew =
+    let internal applyOverlayToXtension target overlaySymbolsOld (overlaySymbolsNew : Map<_, _>) =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> ()
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xtension =
-                    Map.foldBack (fun propertyName propertySymbol xtension ->
-                        let mutable property = Unchecked.defaultof<_>
-                        match Xtension.tryGetProperty (propertyName, xtension, &property) with
-                        | true ->
-                            let propertyType = property.PropertyType
-                            match getPropertyState propertyName propertyType target overlaySymbolsOld with
-                            | Bare | Overlaid ->
-                                let converter = Reflection.makeSymbolicConverterMemo false None propertyType
-                                let propertyValue = converter.ConvertFrom propertySymbol
-                                let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
-                                Xtension.attachProperty propertyName property xtension
-                            | Altered | NonPersistent -> xtension
-                        | false ->
-                            let recordProperties = targetType.GetProperties true
-                            if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
-                                match propertySymbol with
-                                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
-                                    let propertyType = typeof<DesignerProperty>
-                                    match getPropertyState propertyName propertyType target overlaySymbolsOld with
-                                    | Bare | Overlaid ->
-                                        let converter = Reflection.makeSymbolicConverterMemo false None propertyType
-                                        let propertyValue = converter.ConvertFrom propertySymbol
-                                        let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
-                                        Xtension.attachProperty propertyName property xtension
-                                    | Altered | NonPersistent -> xtension
-                                | _ -> xtension
-                            else xtension)
-                        overlaySymbolsNew
-                        xtension
-                xtensionProperty.SetValue (target, xtension)
+                for (propertyName, propertySymbol) in overlaySymbolsNew.Pairs do
+                    let mutable property = Unchecked.defaultof<_>
+                    match Xtension.tryGetProperty (propertyName, xtension, &property) with
+                    | true ->
+                        let propertyType = property.PropertyType
+                        match getPropertyState propertyName propertyType target overlaySymbolsOld with
+                        | Bare | Overlaid ->
+                            let converter = Reflection.makeSymbolicConverterMemo false None propertyType
+                            let propertyValue = converter.ConvertFrom propertySymbol
+                            let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
+                            Xtension.attachProperty propertyName property xtension
+                        | Altered | NonPersistent -> ()
+                    | false ->
+                        let recordProperties = targetType.GetProperties true
+                        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
+                            match propertySymbol with
+                            | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
+                                let propertyType = typeof<DesignerProperty>
+                                match getPropertyState propertyName propertyType target overlaySymbolsOld with
+                                | Bare | Overlaid ->
+                                    let converter = Reflection.makeSymbolicConverterMemo false None propertyType
+                                    let propertyValue = converter.ConvertFrom propertySymbol
+                                    let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
+                                    Xtension.attachProperty propertyName property xtension
+                                | Altered | NonPersistent -> ()
+                            | _ -> ()
             | _ -> ()
 
     let internal applyOverlayToFacetNames4 (copyTarget : 'a -> 'a) target overlaySymbolsOld overlaySymbolsNew =

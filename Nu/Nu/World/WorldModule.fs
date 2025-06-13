@@ -313,7 +313,7 @@ module WorldModule =
             let simulantImSim = mapper simulantImSim
             World.addSimulantImSim simulant simulantImSim world
 
-        static member internal utilizeSimulantImSim simulant simulantImSim (world : World) =
+        static member internal utilizeSimulantImSim _ simulantImSim (_ : World) =
             simulantImSim.SimulantUtilized <- true
 
         static member internal getSubscriptionsImSim (world : World) =
@@ -341,7 +341,7 @@ module WorldModule =
             let subscriptionImSim = mapper subscriptionImSim
             World.addSubscriptionImSim subscription subscriptionImSim world
 
-        static member internal utilizeSubscriptionImSim subscription subscriptionImSim (world : World) =
+        static member internal utilizeSubscriptionImSim _ subscriptionImSim (_ : World) =
             subscriptionImSim.SubscriptionUtilized <- true
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
@@ -352,7 +352,7 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.getTasklets world
 
         static member internal removeTasklets simulant world =
-            AmbientState.removeTasklets simulant
+            AmbientState.removeTasklets simulant world.AmbientState
 
         static member internal clearTasklets world =
             AmbientState.clearTasklets world.AmbientState

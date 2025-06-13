@@ -242,7 +242,7 @@ module Reflection =
                 if converter.CanConvertFrom typeof<Symbol> then
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                     Xtension.attachProperty propertyName property xtension
-                else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
+                else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'.")
             | None ->
                 match propertySymbol with
                 | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
@@ -251,17 +251,14 @@ module Reflection =
                     if converter.CanConvertFrom typeof<Symbol> then
                         let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                         Xtension.attachProperty propertyName property xtension
-                    else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
-                | _ -> xtension
-        else xtension
+                    else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'.")
+                | _ -> ()
 
     /// Read a target's xtension properties from property descriptors.
     let private readXtensionProperties xtension (propertyDescriptors : Map<string, Symbol>) (target : 'a) =
         let definitions = getReflectivePropertyDefinitions target
-        Map.fold
-            (fun xtension -> readXtensionProperty xtension definitions target)
-            xtension
-            propertyDescriptors
+        for (propertyName, propertySymbol) in propertyDescriptors.Pairs do
+            readXtensionProperty xtension definitions target propertyName propertySymbol
 
     /// Read a target's Xtension from property descriptors.
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
@@ -415,13 +412,12 @@ module Reflection =
             | xtensionProperty ->
                 match xtensionProperty.GetValue target with
                 | :? Xtension as xtension ->
-                    let mutable xtension = xtension
                     for definition in definitions do
                         let propertyValue = PropertyExpr.eval definition.PropertyExpr world
                         match targetType.GetPropertyWritable definition.PropertyName with
                         | null ->
                             let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
-                            xtension <- Xtension.attachProperty definition.PropertyName property xtension
+                            Xtension.attachProperty definition.PropertyName property xtension
                         | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
                     xtensionProperty.SetValue (target, xtension)
                 | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
@@ -436,12 +432,9 @@ module Reflection =
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let mutable xtension = xtension
                 for propertyName in propertyNames do
                     match targetType.GetPropertyWritable propertyName with
-                    | null ->
-                        xtension <- Xtension.detachProperty propertyName xtension
-                        xtensionProperty.SetValue (target, xtension)
+                    | null -> Xtension.detachProperty propertyName xtension
                     | _ -> failwith ("Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'.")
             | _ -> ()
         target

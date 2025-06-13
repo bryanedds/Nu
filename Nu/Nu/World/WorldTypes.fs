@@ -2109,7 +2109,7 @@ and [<AbstractClass>] NuPlugin () =
 
     /// Invoke a user-defined callback.
     abstract Invoke : callbackName : string -> callbackArgs : obj list -> world : World -> unit
-    default this.Invoke _ _ world = ()
+    default this.Invoke _ _ _ = ()
 
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : world : World -> ((string * obj) list) * World
@@ -2125,23 +2125,23 @@ and [<AbstractClass>] NuPlugin () =
 
     /// A call-back at the beginning of each frame.
     abstract PreProcess : world : World -> unit
-    default this.PreProcess world = ()
+    default this.PreProcess _ = ()
 
     /// A call-back during each frame.
     abstract PerProcess : world : World -> unit
-    default this.PerProcess world = ()
+    default this.PerProcess _ = ()
 
     /// A call-back at the end of each frame.
     abstract PostProcess : world : World -> unit
-    default this.PostProcess world = ()
+    default this.PostProcess _ = ()
 
     /// A call-back for imgui processing.
     abstract ImGuiProcess : world : World -> unit
-    default this.ImGuiProcess world = ()
+    default this.ImGuiProcess _ = ()
 
     /// A call-back for imgui post-processing.
     abstract ImGuiPostProcess : world : World -> unit
-    default this.ImGuiPostProcess world = ()
+    default this.ImGuiPostProcess _ = ()
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =
@@ -2292,14 +2292,3 @@ module SignalOperators =
 
     /// Signaless signals-value pair constructor.
     let inline just value = (([] : Signal list), value)
-
-type WorldRef =
-    private
-        { mutable WorldState : World }
-
-    static member choose worldState world =
-        world.WorldState <- worldState
-        World.choose world
-
-    static member snapshot world =
-        { WorldState = world.WorldState }
