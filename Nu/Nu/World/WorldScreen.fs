@@ -133,7 +133,7 @@ module WorldScreenModule =
 
             // pre-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
-            let world = dispatcher.PreUpdate (screen, world)
+            dispatcher.PreUpdate (screen, world)
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
@@ -143,7 +143,7 @@ module WorldScreenModule =
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
-            let world = dispatcher.Update (screen, world)
+            dispatcher.Update (screen, world)
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
@@ -153,7 +153,7 @@ module WorldScreenModule =
 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
-            let world = dispatcher.PostUpdate (screen, world)
+            dispatcher.PostUpdate (screen, world)
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
@@ -192,23 +192,21 @@ module WorldScreenModule =
         /// Set the dissolve aspects of a screen.
         static member setScreenDissolve dissolveDescriptor songOpt (screen : Screen) world =
             let dissolveImageOpt = Some dissolveDescriptor.DissolveImage
-            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifeTime = dissolveDescriptor.IncomingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
-            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifeTime = dissolveDescriptor.OutgoingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
-            world
+            screen.SetIncoming { Transition.make Incoming with TransitionLifeTime = dissolveDescriptor.IncomingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
+            screen.SetOutgoing { Transition.make Outgoing with TransitionLifeTime = dissolveDescriptor.OutgoingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate (screen : Screen) world =
-            let world = World.tryRemoveSimulantFromDestruction screen world
+            World.tryRemoveSimulantFromDestruction screen world
             EventGraph.cleanEventAddressCache screen.ScreenAddress
             if World.getScreenExists screen world then
                 let groups = World.getGroups screen world
-                let world = World.unregisterScreen screen world
-                let world = World.removeTasklets screen world
-                let world = World.removeSimulantImSim screen world
-                let world = World.destroyGroupsImmediate groups world
+                World.unregisterScreen screen world
+                World.removeTasklets screen world
+                World.removeSimulantImSim screen world
+                World.destroyGroupsImmediate groups world
                 World.removeScreenState screen world
-            else world
 
         /// Destroy a screen in the world at the end of the current update.
         static member destroyScreen (screen : Screen) world =
@@ -226,40 +224,34 @@ module WorldScreenModule =
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime nameOpt dispatcher
-            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
+            Reflection.attachProperties screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
-            let world =
-                if World.getScreenExists screen world then
-                    if screen.GetDestroying world
-                    then World.destroyScreenImmediate screen world
-                    else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
-                else world
+            if World.getScreenExists screen world then
+                if screen.GetDestroying world
+                then World.destroyScreenImmediate screen world
+                else failwith ("Screen '" + scstring screen + "' already exists and cannot be created.")
 
             // add the screen's state to the world
-            let world = World.addScreen false screenState screen world
+            World.addScreen false screenState screen world
 
             // unconditionally zero-process ImSim screen first time
-            let world = WorldModule.tryProcessScreen true screen world
-            (screen, world)
+            WorldModule.tryProcessScreen true screen world
+            screen
 
         /// Create a screen from a simulant descriptor.
         static member createScreen2 descriptor world =
-            let (screen, world) =
+            let screen =
                 let screenNameOpt =
                     match descriptor.SimulantSurnamesOpt with
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Screen cannot have multiple names."
                 World.createScreen4 descriptor.SimulantDispatcherName screenNameOpt world
-            let world =
-                List.fold (fun world (propertyName, property) ->
-                    World.setScreenProperty propertyName property screen world |> ignore<bool>)
-                    world descriptor.SimulantProperties
-            let world =
-                List.fold (fun world childDescriptor ->
-                    World.createGroup3 childDescriptor screen world |> snd)
-                    world descriptor.SimulantChildren
-            (screen, world)
+            for (propertyName, property) in descriptor.SimulantProperties do
+                World.setScreenProperty propertyName property screen world |> ignore<bool>
+            for childDescriptor in descriptor.SimulantChildren do
+                World.createGroup3 childDescriptor screen world |> ignore<Group>
+            screen
 
         /// Create a screen and add it to the world.
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
@@ -267,9 +259,9 @@ module WorldScreenModule =
 
         /// Create a screen with a dissolving transition, and add it to the world.
         static member createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world =
-            let (screen, world) = World.createScreen4 dispatcherName nameOpt world
-            let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
-            (screen, world)
+            let screen = World.createScreen4 dispatcherName nameOpt world
+            World.setScreenDissolve dissolveDescriptor songOpt screen world
+            screen
         
         /// Create a screen with a dissolving transition, and add it to the world.
         static member createDissolveScreen<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt world =
@@ -318,37 +310,33 @@ module WorldScreenModule =
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime None dispatcher
-            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
-            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
+            Reflection.attachProperties screenState.Dispatcher screenState world
+            Reflection.readPropertiesToTarget screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
             let screenState =
                 match nameOpt with
-                | Some name -> { screenState with Name = name }
+                | Some name -> { screenState with Name = name } // TODO: P0: consider making Name mutable.
                 | None -> screenState
 
             // add the screen's state to the world
             let screen = Screen (ntoa screenState.Name)
-            let world = World.addScreen true screenState screen world
+            World.addScreen true screenState screen world
             
             // read the screen's groups
-            let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
+            World.readGroups screenDescriptor.GroupDescriptors screen world |> ignore<Group list>
 
             // unconditionally zero-process ImSim screen first time
-            let world = WorldModule.tryProcessScreen true screen world
-            (screen, world)
+            WorldModule.tryProcessScreen true screen world
+
+            // fin
+            screen
 
         /// Read multiple screens from a game descriptor.
         static member readScreens screenDescriptors world =
-            let (screensRev, world) =
-                List.fold
-                    (fun (screens, world) screenDescriptor ->
-                        let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
-                        let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
-                        (screen :: screens, world))
-                    ([], world)
-                    screenDescriptors
-            (List.rev screensRev, world)
+            [for screenDescriptor in screenDescriptors do
+                let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
+                World.readScreen screenDescriptor screenNameOpt world]
 
         /// Read a screen from a file.
         static member readScreenFromFile (filePath : string) nameOpt world =
@@ -360,11 +348,11 @@ module WorldScreenModule =
         static member applyScreenBehavior setScreenSlide behavior (screen : Screen) world =
             match behavior with
             | Vanilla ->
-                world
+                ()
             | Dissolve (dissolveDescriptor, songOpt) ->
                 World.setScreenDissolve dissolveDescriptor songOpt screen world
             | Slide (dissolveDescriptor, slideDescriptor, songOpt, destination) ->
-                let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
+                World.setScreenDissolve dissolveDescriptor songOpt screen world
                 setScreenSlide slideDescriptor destination screen world
 
         static member internal getNav3dDescriptors contents =
@@ -537,14 +525,13 @@ module WorldScreenModule =
                 if body' <> body then // OPTIMIZATION: preserve map reference if no content changes detected.
                     let nav3d = { nav3d with Nav3dBodies = Map.add navId body' nav3d.Nav3dBodies }
                     World.setScreenNav3d nav3d screen world |> ignore<bool>
-                else world
             | (None, Some body) ->
                 let nav3d = { nav3d with Nav3dBodies = Map.add navId body nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> ignore<bool>
             | (Some _, None) ->
                 let nav3d = { nav3d with Nav3dBodies = Map.remove navId nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> ignore<bool>
-            | (None, None) -> world
+            | (None, None) -> ()
 
         /// Set the given screen's 3d navigation configuration.
         static member setNav3dConfig config screen world =
@@ -552,7 +539,6 @@ module WorldScreenModule =
             if config <> nav3d.Nav3dConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
                 let nav3d = { nav3d with Nav3dConfig = config }
                 World.setScreenNav3d nav3d screen world |> ignore<bool>
-            else world
 
         /// Attempt to synchronize the given screen's 3d navigation information.
         static member synchronizeNav3d forceRebuild filePathOpt screen world =
@@ -580,7 +566,6 @@ module WorldScreenModule =
                             Nav3dMeshOpt = Some navMesh }
                     | None -> nav3d
                 World.setScreenNav3d nav3d screen world |> ignore<bool>
-            else world
 
         /// Query the given screen's 3d navigation information if it exists.
         static member tryQueryNav3d query screen world =
