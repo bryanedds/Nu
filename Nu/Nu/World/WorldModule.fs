@@ -289,23 +289,10 @@ module WorldModule =
             world.SimulantsImSim.[simulant]
 
         static member internal addSimulantImSim simulant simulantImSim (world : World) =
-            let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
-            World.setSimulantsImSim simulantsImSim world
+            world.SimulantsImSim.[simulant] <- simulantImSim
 
         static member internal removeSimulantImSim (simulant : Simulant) (world : World) =
-            World.setSimulantsImSim (SUMap.remove simulant.SimulantAddress world.SimulantsImSim) world
-
-        static member internal tryMapSimulantImSim mapper simulant (world : World) =
-            match world.SimulantsImSim.TryGetValue simulant with
-            | (true, simulantImSim) ->
-                let simulantImSim = mapper simulantImSim
-                World.addSimulantImSim simulant simulantImSim world
-            | (false, _) -> ()
-
-        static member internal mapSimulantImSim mapper simulant world =
-            let simulantImSim = World.getSimulantImSim simulant world
-            let simulantImSim = mapper simulantImSim
-            World.addSimulantImSim simulant simulantImSim world
+            world.SimulantsImSim.Remove simulant.SimulantAddress |> ignore<bool>
 
         static member internal utilizeSimulantImSim _ simulantImSim (_ : World) =
             simulantImSim.SimulantUtilized <- true
@@ -320,20 +307,7 @@ module WorldModule =
             world.SubscriptionsImSim.[subscription]
 
         static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
-            let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
-            World.setSubscriptionsImSim subscriptionsImSim world
-
-        static member internal tryMapSubscriptionImSim mapper subscription (world : World) =
-            match world.SubscriptionsImSim.TryGetValue subscription with
-            | (true, subscriptionImSim) ->
-                let subscriptionImSim = mapper subscriptionImSim
-                World.addSubscriptionImSim subscription subscriptionImSim world
-            | (false, _) -> ()
-
-        static member internal mapSubscriptionImSim mapper subscription world =
-            let subscriptionImSim = World.getSubscriptionImSim subscription world
-            let subscriptionImSim = mapper subscriptionImSim
-            World.addSubscriptionImSim subscription subscriptionImSim world
+            world.SubscriptionsImSim.[subscription] <- subscriptionImSim
 
         static member internal utilizeSubscriptionImSim _ subscriptionImSim (_ : World) =
             subscriptionImSim.SubscriptionUtilized <- true
@@ -886,11 +860,11 @@ module WorldModule =
     type World with // Handlers
 
         /// Handle an event by doing nothing.
-        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (_ : World) =
             Cascade
 
         /// Handle an event by swallowing.
-        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (_ : World) =
             Resolve
 
         /// Handle an event by exiting the application.

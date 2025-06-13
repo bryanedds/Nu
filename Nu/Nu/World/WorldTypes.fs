@@ -1799,11 +1799,11 @@ and [<Struct>] ArgImSim<'s when 's :> Simulant> =
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
 /// parameters of World.make, which is already rather long.
 and [<ReferenceEquality>] Dispatchers =
-    { Facets : Map<string, Facet>
-      EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
-      ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher> }
+    { Facets : Dictionary<string, Facet>
+      EntityDispatchers : Dictionary<string, EntityDispatcher>
+      GroupDispatchers : Dictionary<string, GroupDispatcher>
+      ScreenDispatchers : Dictionary<string, ScreenDispatcher>
+      GameDispatchers : Dictionary<string, GameDispatcher> }
 
 /// The subsystems contained by the engine.
 and [<ReferenceEquality>] internal Subsystems =
@@ -1819,8 +1819,8 @@ and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImSim : Address
       mutable DeclaredImSim : Address
-      mutable SimulantsImSim : SUMap<Address, SimulantImSim>
-      mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
+      mutable SimulantsImSim : SDictionary<Address, SimulantImSim>
+      mutable SubscriptionsImSim : SDictionary<string * Address * Address, SubscriptionImSim>
       JobGraph : JobGraph
       mutable GeometryViewport : Viewport
       // cache line 2
@@ -1828,7 +1828,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable OuterViewport : Viewport
       DestructionList : Simulant List
       Dispatchers : Dispatchers
-      Plugin : NuPlugin
+      mutable Plugin : NuPlugin
       PropagationTargets : Dictionary<Entity, Entity HashSet> }
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
@@ -2117,8 +2117,8 @@ and [<AbstractClass>] NuPlugin () =
     default this.Invoke _ _ _ = ()
 
     /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : world : World -> ((string * obj) list) * World
-    default this.MakeKeyedValues world = ([], world)
+    abstract MakeKeyedValues : world : World -> (string * obj) list
+    default this.MakeKeyedValues _ = []
 
     /// Attempt to make an emitter of the given name.
     abstract TryMakeEmitter : time : GameTime -> lifeTimeOpt : GameTime -> particleLifeTimeOpt : GameTime -> particleRate : single -> particleMax : int -> emitterName : string -> Particles.Emitter option

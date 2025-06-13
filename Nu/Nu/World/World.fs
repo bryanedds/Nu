@@ -236,28 +236,22 @@ module WorldModule3 =
             let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> assemblies
             let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
-            let world =
-                { world with WorldExtension = { world.WorldExtension with Plugin = plugin }}
-            let world =
-                Array.fold (fun world (facetName, facet) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with Facets = Map.add facetName facet world.WorldExtension.Dispatchers.Facets }}})
-                    world pluginFacets
-            let world =
-                Array.fold (fun world (entityDispatcherName, entityDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher world.WorldExtension.Dispatchers.EntityDispatchers }}})
-                    world pluginEntityDispatchers
-            let world =
-                Array.fold (fun world (groupDispatcherName, groupDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher world.WorldExtension.Dispatchers.GroupDispatchers }}})
-                    world pluginGroupDispatchers
-            let world =
-                Array.fold (fun world (screenDispatcherName, screenDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher world.WorldExtension.Dispatchers.ScreenDispatchers }}})
-                    world pluginScreenDispatchers
-            let world =
-                Array.fold (fun world (gameDispatcherName, gameDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher world.WorldExtension.Dispatchers.GameDispatchers }}})
-                    world pluginGameDispatchers
+            world.WorldExtension.Plugin <- plugin
+            world.WorldExtension.Dispatchers.Facets.Clear ()
+            world.WorldExtension.Dispatchers.EntityDispatchers.Clear ()
+            world.WorldExtension.Dispatchers.GroupDispatchers.Clear ()
+            world.WorldExtension.Dispatchers.ScreenDispatchers.Clear ()
+            world.WorldExtension.Dispatchers.GameDispatchers.Clear ()
+            for (facetName, facet) in pluginFacets do
+                world.WorldExtension.Dispatchers.Facets.[facetName] <- facet
+            for (entityDispatcherName, entityDispatcher) in pluginEntityDispatchers do
+                world.WorldExtension.Dispatchers.EntityDispatchers.[entityDispatcherName] <- entityDispatcher
+            for (groupDispatcherName, groupDispatcher) in pluginGroupDispatchers do
+                world.WorldExtension.Dispatchers.GroupDispatchers.[groupDispatcherName] <- groupDispatcher
+            for (screenDispatcherName, screenDispatcher) in pluginScreenDispatchers do
+                world.WorldExtension.Dispatchers.ScreenDispatchers.[screenDispatcherName] <- screenDispatcher
+            for (gameDispatcherName, gameDispatcher) in pluginGameDispatchers do
+                world.WorldExtension.Dispatchers.GameDispatchers.[gameDispatcherName] <- gameDispatcher
             let lateBindingses =
                 [|Array.map (snd >> cast<LateBindings>) pluginFacets
                   Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
@@ -265,23 +259,18 @@ module WorldModule3 =
                   Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
                   Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
                 Array.concat
-            let world =
-                UMap.fold (fun world simulant _ ->
-                    Array.fold (fun world lateBindings -> World.updateLateBindings3 lateBindings simulant world) world lateBindingses)
-                    world (World.getSimulants world)
-            let world =
-                UMap.fold
-                    (fun world simulant _ -> World.trySynchronize true simulant world)
-                    world (World.getSimulants world)
-            world
+            for simulant in (World.getSimulants world).Keys do
+                for lateBindings in lateBindingses do
+                    World.updateLateBindings3 lateBindings simulant world
+            for simulant in (World.getSimulants world).Keys do
+                World.trySynchronize true simulant world
 
         /// Make the world.
         static member make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
-            let config = AmbientState.getConfig ambientState
-            let entityStates = SUMap.makeEmpty HashIdentity.Structural config
-            let groupStates = UMap.makeEmpty HashIdentity.Structural config
-            let screenStates = UMap.makeEmpty HashIdentity.Structural config
+            let entityStates = SDictionary.make HashIdentity.Structural
+            let groupStates = Dictionary HashIdentity.Structural
+            let screenStates = Dictionary HashIdentity.Structural
             let gameState = GameState.make activeGameDispatcher
             let rendererPhysics3d = new RendererPhysics3d ()
             let subsystems =
@@ -291,20 +280,20 @@ module WorldModule3 =
                   RendererProcess = rendererProcess
                   RendererPhysics3d = rendererPhysics3d
                   AudioPlayer = audioPlayer }
-            let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
+            let simulants = Dictionary.singleton HashIdentity.Structural (Game :> Simulant) None
             let worldExtension =
                 { ContextImSim = Address.empty
                   DeclaredImSim = Address.empty
-                  SimulantsImSim = SUMap.makeEmpty HashIdentity.Structural config
-                  SubscriptionsImSim = SUMap.makeEmpty HashIdentity.Structural config
+                  SimulantsImSim = SDictionary.make HashIdentity.Structural
+                  SubscriptionsImSim = SDictionary.make HashIdentity.Structural
                   JobGraph = jobGraph
                   GeometryViewport = geometryViewport
                   RasterViewport = rasterViewport
                   OuterViewport = outerViewport
-                  DestructionListRev = []
+                  DestructionList = List ()
                   Dispatchers = dispatchers
                   Plugin = plugin
-                  PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
+                  PropagationTargets = Dictionary HashIdentity.Structural }
             let world =
                 { ChooseCount = 0
                   EventGraph = eventGraph
@@ -313,14 +302,14 @@ module WorldModule3 =
                   GroupStates = groupStates
                   ScreenStates = screenStates
                   GameState = gameState
-                  EntityMounts = UMap.makeEmpty HashIdentity.Structural config
+                  EntityMounts = Dictionary HashIdentity.Structural
                   Quadtree = quadtree
                   Octree = octree
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
                   WorldExtension = worldExtension }
-            let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
+            Reflection.attachProperties gameState.Dispatcher gameState world
             World.choose world
 
         /// Make an empty world.
@@ -332,8 +321,7 @@ module WorldModule3 =
                 let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Constants.Engine.EventFilter
                 let globalSimulantGeneralized = { GsgAddress = atoa Game.GameAddress }
-                let eventConfig = if config.Imperative then Imperative else Functional
-                EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
+                EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized
 
             // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -348,11 +336,11 @@ module WorldModule3 =
 
             // make the world's dispatchers
             let dispatchers =
-                { Facets = World.makeDefaultFacets ()
-                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
-                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
-                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GameDispatchers = Map.ofList [defaultGameDispatcher] }
+                { Facets = World.makeDefaultFacets () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  GameDispatchers = [defaultGameDispatcher] |> dictPlus StringComparer.Ordinal }
 
             // make the world's subsystems
             let imGui = ImGui (true, outerViewport.Bounds.Size)
@@ -365,7 +353,7 @@ module WorldModule3 =
             // make the world's ambient state
             let symbolics = Symbolics.makeEmpty ()
             let timers = Timers.make ()
-            let ambientState = AmbientState.make config.Imperative config.Accompanied true false symbolics Overlayer.empty timers None
+            let ambientState = AmbientState.make config.Accompanied true false symbolics Overlayer.empty timers None
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -400,8 +388,7 @@ module WorldModule3 =
                     let eventFilter = Constants.Engine.EventFilter
                     let globalSimulant = Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
-                    let eventConfig = if config.Imperative then Imperative else Functional
-                    EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
+                    EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized 
                     
                 // make plug-in facets and dispatchers
                 let pluginAssemblies = [|plugin.GetType().Assembly|]
@@ -422,11 +409,11 @@ module WorldModule3 =
 
                 // make the world's dispatchers
                 let dispatchers =
-                    { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
-                      EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
-                      GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
-                      ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                      GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
+                    { Facets = World.makeDefaultFacets () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      GameDispatchers = [defaultGameDispatcher] |> dictPlus StringComparer.Ordinal }
 
                 // get the first game dispatcher
                 let activeGameDispatcher =
@@ -462,7 +449,7 @@ module WorldModule3 =
 
                     // make the world's ambient state
                     let timers = Timers.make ()
-                    let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer timers (Some sdlDeps)
+                    let ambientState = AmbientState.make config.Accompanied config.Advancing config.FramePacing symbolics overlayer timers (Some sdlDeps)
 
                     // make the world's spatial trees
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -472,11 +459,11 @@ module WorldModule3 =
                     let world = World.make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
-                    let (kvps, world) = plugin.MakeKeyedValues world
-                    let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
+                    for (key, value) in plugin.MakeKeyedValues world do
+                        World.addKeyedValue key value world
 
                     // register the game
-                    let world = World.registerGame Game world
+                    World.registerGame Game world
                     Right world
 
                 // forward error messages
@@ -501,4 +488,4 @@ module WorldModule3 =
             let outerViewport = Viewport.makeOuter windowSize
             let rasterViewport = Viewport.makeRaster outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
-            World.runPlus tautology id id id id id worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin
+            World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin

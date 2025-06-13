@@ -838,7 +838,6 @@ module WorldModule2 =
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
-            world
 
         static member internal registerScreenPhysics screen world =
             let entities =
@@ -954,22 +953,22 @@ module WorldModule2 =
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) taskletsNotRun
                 | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig taskletsNotRun) tasklet) taskletsNotRun
 
-        static member private processTasklets world =
-            let tasklets = World.getTasklets world
-            World.clearTasklets world
-            let taskletsNotRun = OrderedDictionary HashIdentity.Structural
-            for (simulant, taskletList) in tasklets do
-                for tasklet in taskletList do
-                    if World.getExists simulant world
-                    then World.processTasklet simulant tasklet taskletsNotRun world
-                    else taskletsNotRun.
-                        else taskletsNotRun)
-                        taskletsNotRun
-                        taskletList)
-                    (OrderedDictionary (HashIdentity.Structural,(OMap.getConfig tasklets))
-                    tasklets
-            let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
-            World.restoreTasklets taskletsNotRun world
+        //static member private processTasklets world =
+        //    let tasklets = World.getTasklets world
+        //    World.clearTasklets world
+        //    let taskletsNotRun = OrderedDictionary HashIdentity.Structural
+        //    for (simulant, taskletList) in tasklets do
+        //        for tasklet in taskletList do
+        //            if World.getExists simulant world
+        //            then World.processTasklet simulant tasklet taskletsNotRun world
+        //            else taskletsNotRun
+        //                else taskletsNotRun)
+        //                taskletsNotRun
+        //                taskletList)
+        //            (OrderedDictionary (HashIdentity.Structural,(OMap.getConfig tasklets))
+        //            tasklets
+        //    let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
+        //    World.restoreTasklets taskletsNotRun world
 
         static member private processImSim (world : World) =
             WorldImSim.Reinitializing <- false
@@ -1691,7 +1690,7 @@ module WorldModule2 =
                 // run user-defined pre-process callbacks
                 world.Timers.PreProcessTimer.Restart ()
                 World.preProcess world
-                let (world : World) = preProcess world
+                preProcess world
                 world.Timers.PreProcessTimer.Stop ()
                 match liveness with
                 | Live ->
@@ -1742,7 +1741,7 @@ module WorldModule2 =
                                             // run user-defined per-process callbacks
                                             world.Timers.PerProcessTimer.Restart ()
                                             World.perProcess world
-                                            let (world : World) = perProcess world
+                                            perProcess world
                                             world.Timers.PerProcessTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
@@ -1766,7 +1765,7 @@ module WorldModule2 =
                                                         // run engine and user-defined post-process callbacks
                                                         world.Timers.PostProcessTimer.Restart ()
                                                         World.postProcess world
-                                                        let (world : World) = postProcess world
+                                                        postProcess world
                                                         world.Timers.PostProcessTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
@@ -1834,7 +1833,7 @@ module WorldModule2 =
                                                                 let imGui = World.getImGui world
                                                                 imGui.BeginFrame (single world.DateDelta.TotalSeconds)
                                                                 World.imGuiProcess world
-                                                                let (world : World) = imGuiProcess world
+                                                                imGuiProcess world
                                                                 imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
                                                                 world.Timers.ImGuiTimer.Stop ()

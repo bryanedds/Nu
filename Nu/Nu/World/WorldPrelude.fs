@@ -330,8 +330,7 @@ type [<ReferenceEquality>] 'w Tasklet =
 
 /// Configuration parameters for the world.
 type [<ReferenceEquality>] WorldConfig =
-    { Imperative : bool
-      Accompanied : bool
+    { Accompanied : bool
       Advancing : bool
       FramePacing : bool
       ModeOpt : string option
@@ -343,8 +342,7 @@ type [<ReferenceEquality>] WorldConfig =
 
     /// The default configuration of the world.
     static member defaultConfig =
-        { Imperative = true
-          Accompanied = false
+        { Accompanied = false
           Advancing = true
           FramePacing = false
           ModeOpt = None
