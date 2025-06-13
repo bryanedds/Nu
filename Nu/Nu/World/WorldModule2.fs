@@ -956,22 +956,21 @@ module WorldModule2 =
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) taskletsNotRun
                 | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig taskletsNotRun) tasklet) taskletsNotRun
 
-        //static member private processTasklets world =
-        //    let tasklets = World.getTasklets world
-        //    World.clearTasklets world
-        //    let taskletsNotRun = OrderedDictionary HashIdentity.Structural
-        //    for (simulant, taskletList) in tasklets do
-        //        for tasklet in taskletList do
-        //            if World.getExists simulant world
-        //            then World.processTasklet simulant tasklet taskletsNotRun world
-        //            else taskletsNotRun
-        //                else taskletsNotRun)
-        //                taskletsNotRun
-        //                taskletList)
-        //            (OrderedDictionary (HashIdentity.Structural,(OMap.getConfig tasklets))
-        //            tasklets
-        //    let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
-        //    World.restoreTasklets taskletsNotRun world
+        static member private processTasklets world =
+            let tasklets = World.getTasklets world
+            let world = World.clearTasklets world
+            let (taskletsNotRun, world) =
+                OMap.fold (fun (taskletsNotRun, world) simulant taskletList ->
+                    UList.fold (fun (taskletsNotRun, world) tasklet ->
+                        if World.getExists simulant world
+                        then World.processTasklet simulant tasklet taskletsNotRun world
+                        else (taskletsNotRun, world))
+                        (taskletsNotRun, world)
+                        taskletList)
+                    (OMap.makeEmpty HashIdentity.Structural (OMap.getConfig tasklets), world)
+                    tasklets
+            let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
+            World.restoreTasklets taskletsNotRun world
 
         static member private processImSim (world : World) =
             WorldImSim.Reinitializing <- false

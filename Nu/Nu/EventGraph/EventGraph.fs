@@ -219,14 +219,16 @@ module EventGraph =
     /// Get the subscriptions with the given sorting criteria.
     let getSortableSubscriptions
         (getSortPriority : Simulant -> 'w -> IComparable)
-        (subscriptionEntries : (uint64 * SubscriptionEntry) seq)
+        (subscriptionEntries : KeyValuePair<uint64, SubscriptionEntry> seq)
         (world : 'w) =
         Seq.map
-            (fun (subscriptionId, subscription : SubscriptionEntry) ->
+            (fun (entry : KeyValuePair<_, _>) ->
+                let subscriptionId = entry.Key
+                let subscription = entry.Value
                 // NOTE: we just take the sort priority of the first callback found when callbacks are compressed. This
                 // is semantically sub-optimal, but should be fine for all of our cases.
                 let priority = getSortPriority subscription.SubscriptionSubscriber world
-                struct (priority, subscriptionId, subscription))
+                struct (priority, KeyValuePair.Create (subscriptionId, subscription)))
             subscriptionEntries
 
     /// Publish an event.
@@ -237,11 +239,11 @@ module EventGraph =
         callableSubscription evt world
 
     /// Sort subscriptions using categorization via the 'by' procedure.
-    let sortSubscriptionsBy by (subscriptions : (uint64 * SubscriptionEntry) seq) (world : 'w) : seq<uint64 * SubscriptionEntry> =
+    let sortSubscriptionsBy by (subscriptions : KeyValuePair<uint64, SubscriptionEntry> seq) (world : 'w) : KeyValuePair<uint64, SubscriptionEntry> seq =
         getSortableSubscriptions by subscriptions world |>
         Array.ofSeq |>
-        Array.sortWith (fun (struct (p : IComparable, _, _)) (struct (p2 : IComparable, _, _)) -> p.CompareTo p2) |>
-        Array.map (fun (struct (_, subscriptionId, subscription)) -> (subscriptionId, subscription)) |>
+        Array.sortWith (fun (struct (p : IComparable, _)) (struct (p2 : IComparable, _)) -> p.CompareTo p2) |>
+        Array.map snd' |>
         Array.toSeq
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
