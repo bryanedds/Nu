@@ -340,7 +340,7 @@ module WorldModuleEntity =
         static member internal getEntityLightProbe entity world = (World.getEntityState entity world).LightProbe
         static member internal getEntityLight entity world = (World.getEntityState entity world).Light
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
-        static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) (World.getDestructionListRev world)
+        static member internal getEntityDestroying (entity : Entity) world = (World.getDestructionList world).Contains entity
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityPropagatedDescriptorOpt entity world = (World.getEntityState entity world).PropagatedDescriptorOpt
@@ -1911,7 +1911,7 @@ module WorldModuleEntity =
         static member internal destroyEntityImmediateInternal recur entity world =
 
             // attempt to remove from destruction list
-            let world = World.tryRemoveSimulantFromDestruction entity world
+            World.tryRemoveSimulantFromDestruction entity world
 
             // ensure entity exists in the world
             if World.getEntityExists entity world then

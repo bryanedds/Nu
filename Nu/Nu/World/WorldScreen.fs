@@ -24,29 +24,29 @@ module WorldScreenModule =
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
         member this.GetModelGeneric<'a> world = World.getScreenModelGeneric<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false value this world |> snd'
+        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetTransitionState world = World.getScreenTransitionState this world
-        member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd'
+        member this.SetTransitionState value world = World.setScreenTransitionState value this world |> ignore<bool>
         member this.TransitionState = lens (nameof this.TransitionState) this this.GetTransitionState this.SetTransitionState
         member this.GetIncoming world = World.getScreenIncoming this world
-        member this.SetIncoming value world = World.setScreenIncoming value this world |> snd'
+        member this.SetIncoming value world = World.setScreenIncoming value this world |> ignore<bool>
         member this.Incoming = lens (nameof this.Incoming) this this.GetIncoming this.SetIncoming
         member this.GetOutgoing world = World.getScreenOutgoing this world
-        member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
+        member this.SetOutgoing value world = World.setScreenOutgoing value this world |> ignore<bool>
         member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
         member this.GetRequestedSong world = World.getScreenRequestedSong this world
-        member this.SetRequestedSong value world = World.setScreenRequestedSong value this world |> snd'
+        member this.SetRequestedSong value world = World.setScreenRequestedSong value this world |> ignore<bool>
         member this.RequestedSong = lens (nameof this.RequestedSong) this this.GetRequestedSong this.SetRequestedSong
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
-        member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
+        member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> ignore<bool>
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
         member this.GetNav3d world = World.getScreenNav3d this world
         member this.Nav3d = lensReadOnly (nameof this.Nav3d) this this.GetNav3d
         member this.GetProtected world = World.getScreenProtected this world
         member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getScreenPersistent this world
-        member this.SetPersistent value world = World.setScreenPersistent value this world |> snd'
+        member this.SetPersistent value world = World.setScreenPersistent value this world |> ignore<bool>
         member this.Persistent = lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent
         member this.GetDestroying world = World.getScreenDestroying this world
         member this.Destroying = lensReadOnly (nameof this.Destroying) this this.GetDestroying
@@ -93,7 +93,7 @@ module WorldScreenModule =
 
         /// Set a property value with explicit type.
         member this.SetProperty propertyName property world =
-            World.setScreenProperty propertyName property this world |> snd'
+            World.setScreenProperty propertyName property this world |> ignore<bool>
 
         /// To try set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
@@ -253,7 +253,7 @@ module WorldScreenModule =
                 World.createScreen4 descriptor.SimulantDispatcherName screenNameOpt world
             let world =
                 List.fold (fun world (propertyName, property) ->
-                    World.setScreenProperty propertyName property screen world |> snd')
+                    World.setScreenProperty propertyName property screen world |> ignore<bool>)
                     world descriptor.SimulantProperties
             let world =
                 List.fold (fun world childDescriptor ->
@@ -536,14 +536,14 @@ module WorldScreenModule =
             | (Some body, Some body') ->
                 if body' <> body then // OPTIMIZATION: preserve map reference if no content changes detected.
                     let nav3d = { nav3d with Nav3dBodies = Map.add navId body' nav3d.Nav3dBodies }
-                    World.setScreenNav3d nav3d screen world |> snd'
+                    World.setScreenNav3d nav3d screen world |> ignore<bool>
                 else world
             | (None, Some body) ->
                 let nav3d = { nav3d with Nav3dBodies = Map.add navId body nav3d.Nav3dBodies }
-                World.setScreenNav3d nav3d screen world |> snd'
+                World.setScreenNav3d nav3d screen world |> ignore<bool>
             | (Some _, None) ->
                 let nav3d = { nav3d with Nav3dBodies = Map.remove navId nav3d.Nav3dBodies }
-                World.setScreenNav3d nav3d screen world |> snd'
+                World.setScreenNav3d nav3d screen world |> ignore<bool>
             | (None, None) -> world
 
         /// Set the given screen's 3d navigation configuration.
@@ -551,7 +551,7 @@ module WorldScreenModule =
             let nav3d = World.getScreenNav3d screen world
             if config <> nav3d.Nav3dConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
                 let nav3d = { nav3d with Nav3dConfig = config }
-                World.setScreenNav3d nav3d screen world |> snd'
+                World.setScreenNav3d nav3d screen world |> ignore<bool>
             else world
 
         /// Attempt to synchronize the given screen's 3d navigation information.
@@ -579,7 +579,7 @@ module WorldScreenModule =
                             Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
                             Nav3dMeshOpt = Some navMesh }
                     | None -> nav3d
-                World.setScreenNav3d nav3d screen world |> snd'
+                World.setScreenNav3d nav3d screen world |> ignore<bool>
             else world
 
         /// Query the given screen's 3d navigation information if it exists.

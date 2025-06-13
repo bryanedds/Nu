@@ -129,20 +129,14 @@ module WorldModule =
 
     type World with // Destruction
 
-        static member internal getDestructionListRev world =
-            world.WorldExtension.DestructionListRev
+        static member internal getDestructionList world =
+            world.WorldExtension.DestructionList
 
         static member internal addSimulantToDestruction simulant world =
-            { world with
-                WorldExtension =
-                    { world.WorldExtension with
-                        DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }}
+            world.WorldExtension.DestructionList.Add simulant
 
         static member internal tryRemoveSimulantFromDestruction simulant world =
-            { world with
-                WorldExtension =
-                    { world.WorldExtension with
-                        DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
+            world.WorldExtension.DestructionList.RemoveAll ((=) simulant) |> ignore<int>
 
     type World with // Dispatchers
 

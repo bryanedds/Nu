@@ -1826,7 +1826,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       // cache line 2
       RasterViewport : Viewport
       OuterViewport : Viewport
-      DestructionListRev : Simulant list
+      DestructionList : Simulant List
       Dispatchers : Dispatchers
       Plugin : NuPlugin
       PropagationTargets : Dictionary<Entity, Entity HashSet> }

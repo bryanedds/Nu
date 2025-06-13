@@ -97,7 +97,7 @@ module WorldModuleGroup =
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
         static member internal getGroupProtected group world = (World.getGroupState group world).Protected
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) (World.getDestructionListRev world)
+        static member internal getGroupDestroying (group : Group) world = (World.getDestructionList world).Contains group
         static member internal getGroupOrder group world = (World.getGroupState group world).Order
         static member internal getGroupId group world = (World.getGroupState group world).Id
         static member internal getGroupName group world = (World.getGroupState group world).Name

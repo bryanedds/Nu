@@ -99,7 +99,7 @@ module WorldModuleScreen =
         static member internal getScreenNav3d screen world = (World.getScreenState screen world).Nav3d
         static member internal getScreenProtected screen world = (World.getScreenState screen world).Protected
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) (World.getDestructionListRev world)
+        static member internal getScreenDestroying (screen : Screen) world = (World.getDestructionList world).Contains screen
         static member internal getScreenOrder screen world = (World.getScreenState screen world).Order
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
