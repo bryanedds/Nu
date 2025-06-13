@@ -11,7 +11,7 @@ module WorldModuleGroup =
 
     /// Dynamic property getter and setter.
     type private PropertyGetter = Group -> World -> Property
-    type private PropertySetter = Property -> Group -> World -> struct (bool * World)
+    type private PropertySetter = Property -> Group -> World -> bool
 
     /// Dynamic property getters / setters.
     let mutable private GroupGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
@@ -20,52 +20,42 @@ module WorldModuleGroup =
     type World with
     
         static member private groupStateFinder (group : Group) world =
-            UMap.tryFind group world.GroupStates
+            Dictionary.tryFind group world.GroupStates
 
         static member private groupStateAdder groupState (group : Group) world =
             let screen = group.Screen
-            let simulants =
-                match world.Simulants.TryGetValue (screen :> Simulant) with
-                | (true, groupsOpt) ->
-                    match groupsOpt with
-                    | Some groups ->
-                        let groups = USet.add (group :> Simulant) groups
-                        UMap.add (screen :> Simulant) (Some groups) world.Simulants
-                    | None ->
-                        let groups = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) (group :> Simulant)
-                        UMap.add (screen :> Simulant) (Some groups) world.Simulants
-                | (false, _) -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
-            let simulants =
-                if not (UMap.containsKey (group :> Simulant) simulants)
-                then UMap.add (group :> Simulant) None simulants
-                else simulants
-            let groupStates = UMap.add group groupState world.GroupStates
-            World.choose { world with Simulants = simulants; GroupStates = groupStates }
-        
+            match world.Simulants.TryGetValue screen with
+            | (true, groupsOpt) ->
+                match groupsOpt with
+                | Some groups -> groups.Add group |> ignore<bool>
+                | None ->
+                    let groups = hashSetPlus HashIdentity.Structural [group :> Simulant]
+                    world.Simulants.[screen] <- Some groups
+            | (false, _) -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
+            if not (world.Simulants.ContainsKey group) then world.Simulants.[group] <- None
+            world.GroupStates.[group] <- groupState
+
         static member private groupStateRemover (group : Group) world =
             let screen = group.Screen
-            let simulants =
-                match world.Simulants.TryGetValue (screen :> Simulant) with
-                | (true, groupsOpt) ->
-                    match groupsOpt with
-                    | Some groups ->
-                        let groups = USet.remove (group :> Simulant) groups
-                        if USet.isEmpty groups
-                        then UMap.add (screen :> Simulant) None world.Simulants
-                        else UMap.add (screen :> Simulant) (Some groups) world.Simulants
-                    | None -> world.Simulants
-                | (false, _) -> world.Simulants
-            let simulants = UMap.remove (group :> Simulant) simulants
-            let groupStates = UMap.remove group world.GroupStates
-            World.choose { world with Simulants = simulants; GroupStates = groupStates }
+            match world.Simulants.TryGetValue screen with
+            | (true, groupsOpt) ->
+                match groupsOpt with
+                | Some groups ->
+                    groups.Remove group |> ignore<bool>
+                    if groups.Count = 0
+                    then world.Simulants.[screen] <- None
+                    else world.Simulants.[screen] <- Some groups
+                | None -> ()
+            | (false, _) -> ()
+            world.Simulants.Remove group |> ignore<bool>
+            world.GroupStates.Remove group |> ignore<bool>
 
         static member private groupStateSetter groupState (group : Group) world =
 #if DEBUG
-            if not (UMap.containsKey group world.GroupStates) then
+            if not (world.GroupStates.ContainsKey group) then
                 failwith ("Cannot set the state of a non-existent group '" + scstring group + "'")
 #endif
-            let groupStates = UMap.add group groupState world.GroupStates
-            World.choose { world with GroupStates = groupStates }
+            world.GroupStates.[group] <- groupState
 
         static member private addGroupState groupState group world =
             World.groupStateAdder groupState group world
@@ -87,9 +77,6 @@ module WorldModuleGroup =
             match World.getGroupStateOpt group world with
             | Some groupState -> groupState
             | None -> failwith ("Could not find group '" + scstring group + "'.")
-
-        static member internal setGroupState groupState group world =
-            World.groupStateSetter groupState group world
 
         static member internal getGroupXtension group world =
             let groupState = World.getGroupState group world
@@ -119,13 +106,12 @@ module WorldModuleGroup =
             let groupState = World.getGroupState group world
             let previous = groupState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
-                let struct (groupState, world) =
-                    let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
-                    struct (groupState, World.setGroupState groupState group world)
-                let world = groupState.Dispatcher.TrySynchronize (initializing, group, world)
-                let world = World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue group world
-                struct (true, world)
-            else struct (false, world)
+                groupState.Model.DesignerType <- value.DesignerType
+                groupState.Model.DesignerValue <- value.DesignerValue
+                groupState.Dispatcher.TrySynchronize (initializing, group, world)
+                World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue group world
+                true
+            else false
 
         static member internal getGroupModelGeneric<'a> group world =
             let groupState = World.getGroupState group world
@@ -135,14 +121,16 @@ module WorldModuleGroup =
             | modelObj ->
                 let modelSymbol = valueToSymbol modelObj
                 try let model = symbolToValue modelSymbol
-                    groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
+                    groupState.Model.DesignerType <- typeof<'a>
+                    groupState.Model.DesignerValue <- model
                     model
                 with _ ->
                     Log.warn "Could not convert existing group model value to new type; attempting to use fallback model value instead."
                     match groupState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, group, world) with
                     | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
-                        groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
+                        groupState.Model.DesignerType <- typeof<'a>
+                        groupState.Model.DesignerValue <- model
                         model
 
         static member internal setGroupModelGeneric<'a> initializing (value : 'a) group world =
@@ -150,39 +138,40 @@ module WorldModuleGroup =
             let valueObj = value :> obj
             let previous = groupState.Model
             if valueObj =/= previous.DesignerValue || initializing then
-                let struct (groupState, world) =
-                    let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    struct (groupState, World.setGroupState groupState group world)
-                let world = groupState.Dispatcher.TrySynchronize (initializing, group, world)
-                let world = World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value group world
-                struct (true, world)
-            else struct (false, world)
+                groupState.Model.DesignerType <- typeof<'a>
+                groupState.Model.DesignerValue <- valueObj
+                groupState.Dispatcher.TrySynchronize (initializing, group, world)
+                World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value group world
+                true
+            else false
 
         static member internal setGroupContent (value : GroupContent) group world =
             let screenState = World.getGroupState group world
-            let screenState = { screenState with Content = value }
-            World.setGroupState screenState group world
+            screenState.Content <- value
 
         static member internal setGroupVisible value group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Visible
-            if value <> previous
-            then struct (true, world |> World.setGroupState { groupState with Visible = value } group |> World.publishGroupChange (nameof groupState.Visible) previous value group)
-            else struct (false, world)
+            if value <> previous then
+                World.publishGroupChange (nameof groupState.Visible) previous value group world
+                true
+            else false
 
         static member internal setGroupProtected value group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Protected
-            if value <> previous
-            then struct (true, world |> World.setGroupState { groupState with Protected = value } group)
-            else struct (false, world)
+            if value <> previous then
+                World.publishGroupChange (nameof groupState.Protected) previous value group world
+                true
+            else false
 
         static member internal setGroupPersistent value group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Persistent
-            if value <> previous
-            then struct (true, world |> World.setGroupState { groupState with Persistent = value } group |> World.publishGroupChange (nameof groupState.Persistent) previous value group)
-            else struct (false, world)
+            if value <> previous then
+                World.publishGroupChange (nameof groupState.Persistent) previous value group world
+                true
+            else false
 
         static member internal tryGetGroupXtensionProperty (propertyName, group, world, property : _ outref) =
             if World.getGroupExists group world
@@ -246,7 +235,7 @@ module WorldModuleGroup =
                         | ComputedExpr property -> property.ComputedGet group world :?> 'a
                     | None -> failwithumf ()
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
-                groupState.Xtension <- Xtension.attachProperty propertyName property groupState.Xtension
+                Xtension.attachProperty propertyName property groupState.Xtension
                 value
 
         static member internal tryGetGroupXtensionValue<'a> propertyName group world : 'a voption =
@@ -269,46 +258,42 @@ module WorldModuleGroup =
                     let previous = dp.DesignerValue
                     if property.PropertyValue =/= previous then
                         let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
-                        match GroupState.trySetProperty propertyName property groupState with
-                        | struct (true, groupState) -> struct (true, true, previous, World.setGroupState groupState group world)
-                        | struct (false, _) -> struct (false, false, previous, world)
-                    else (true, false, previous, world)
+                        if GroupState.trySetProperty propertyName property groupState
+                        then struct (true, true, previous)
+                        else struct (false, false, previous)
+                    else (true, false, previous)
                 | :? ComputedProperty as cp ->
                     match cp.ComputedSetOpt with
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box group) (box world)
-                        if property.PropertyValue =/= previous
-                        then struct (true, true, previous, computedSet property.PropertyValue group world :?> World)
-                        else struct (true, false, previous, world)
-                    | None -> struct (false, false, Unchecked.defaultof<_>, world)
+                        if property.PropertyValue =/= previous then
+                            computedSet property.PropertyValue group world |> ignore<obj> // TODO: P0: fix.
+                            struct (true, true, previous)
+                        else struct (true, false, previous)
+                    | None -> struct (false, false, Unchecked.defaultof<_>)
                 | _ ->
                     let previous = propertyOld.PropertyValue
                     if property.PropertyValue =/= previous then
-                        match GroupState.trySetProperty propertyName property groupState with
-                        | struct (true, groupState) -> (true, true, previous, World.setGroupState groupState group world)
-                        | struct (false, _) -> struct (false, false, previous, world)
-                    else struct (true, false, previous, world)
-            | false -> struct (false, false, Unchecked.defaultof<_>, world)
+                        if GroupState.trySetProperty propertyName property groupState
+                        then (true, true, previous)
+                        else struct (false, false, previous)
+                    else struct (true, false, previous)
+            | false -> struct (false, false, Unchecked.defaultof<_>)
 
         static member internal trySetGroupXtensionPropertyFast propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
             match World.trySetGroupXtensionPropertyWithoutEvent propertyName property groupState group world with
-            | struct (true, changed, previous, world) ->
-                if changed
-                then World.publishGroupChange propertyName previous property.PropertyValue group world
-                else world
-            | struct (false, _, _, world) -> world
+            | struct (true, changed, previous) ->
+                if changed then World.publishGroupChange propertyName previous property.PropertyValue group world
+            | struct (false, _, _) -> ()
 
         static member internal trySetGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
             match World.trySetGroupXtensionPropertyWithoutEvent propertyName property groupState group world with
-            | struct (true, changed, previous, world) ->
-                let world =
-                    if changed
-                    then World.publishGroupChange propertyName previous property.PropertyValue group world
-                    else world
-                struct (true, changed, world)
-            | struct (false, changed, _, world) -> struct (false, changed, world)
+            | struct (true, changed, previous) ->
+                if changed then World.publishGroupChange propertyName previous property.PropertyValue group world
+                struct (true, changed)
+            | struct (false, changed, _) -> struct (false, changed)
 
         static member internal trySetGroupXtensionValue<'a> propertyName (value : 'a) group world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
@@ -319,52 +304,44 @@ module WorldModuleGroup =
             let propertyOld = GroupState.getProperty propertyName groupState
             let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
             let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            let world =
-                match propertyOld.PropertyValue with
-                | :? DesignerProperty as dp ->
-                    previous <- dp.DesignerValue
+            match propertyOld.PropertyValue with
+            | :? DesignerProperty as dp ->
+                previous <- dp.DesignerValue
+                if value =/= previous then
+                    changed <- true
+                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                    GroupState.setProperty propertyName property groupState
+            | :? ComputedProperty as cp ->
+                match cp.ComputedSetOpt with
+                | Some computedSet ->
+                    previous <- cp.ComputedGet (box group) (box world)
                     if value =/= previous then
                         changed <- true
-                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                        let groupState = GroupState.setProperty propertyName property groupState
-                        World.setGroupState groupState group world
-                    else world
-                | :? ComputedProperty as cp ->
-                    match cp.ComputedSetOpt with
-                    | Some computedSet ->
-                        previous <- cp.ComputedGet (box group) (box world)
-                        if value =/= previous then
-                            changed <- true
-                            computedSet propertyOld.PropertyValue group world :?> World
-                        else world
-                    | None -> world
-                | _ ->
-                    previous <- propertyOld.PropertyValue
-                    if value =/= previous then
-                        changed <- true
-                        let property = { propertyOld with PropertyValue = value }
-                        let groupState = GroupState.setProperty propertyName property groupState
-                        World.setGroupState groupState group world
-                    else world
-            if changed
-            then World.publishGroupChange propertyName previous value group world
-            else world
+                        computedSet propertyOld.PropertyValue group world |> ignore<obj> // TODO: P0: fix.
+                | None -> ()
+            | _ ->
+                previous <- propertyOld.PropertyValue
+                if value =/= previous then
+                    changed <- true
+                    let property = { propertyOld with PropertyValue = value }
+                    GroupState.setProperty propertyName property groupState
+            if changed then
+                World.publishGroupChange propertyName previous value group world
 
         static member internal setGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
             let propertyOld = GroupState.getProperty propertyName groupState
             if property.PropertyValue =/= propertyOld.PropertyValue then
-                let groupState = GroupState.setProperty propertyName property groupState
-                let world = World.setGroupState groupState group world
-                struct (true, World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world)
-            else struct (false, world)
+                GroupState.setProperty propertyName property groupState
+                World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world
+                true
+            else false
 
         static member internal trySetGroupPropertyFast propertyName property group world =
             match GroupSetters.TryGetValue propertyName with
             | (true, setter) ->
-                if World.getGroupExists group world
-                then setter property group world |> snd'
-                else world
+                if World.getGroupExists group world then
+                    setter property group world |> ignore<bool>
             | (false, _) ->
                 World.trySetGroupXtensionPropertyFast propertyName property group world
 
@@ -372,9 +349,9 @@ module WorldModuleGroup =
             match GroupSetters.TryGetValue propertyName with
             | (true, setter) ->
                 if World.getGroupExists group world then
-                    let struct (changed, world) = setter property group world
-                    struct (true, changed, world)
-                else (false, false, world)
+                    let changed = setter property group world
+                    struct (true, changed)
+                else (false, false)
             | (false, _) ->
                 World.trySetGroupXtensionProperty propertyName property group world
 
@@ -383,53 +360,48 @@ module WorldModuleGroup =
             | (true, setter) ->
                 if World.getGroupExists group world
                 then setter property group world
-                else struct (false, world)
+                else false
             | (false, _) ->
                 World.setGroupXtensionProperty propertyName property group world
 
         static member internal attachGroupMissingProperties group world =
             let groupState = World.getGroupState group world
             let definitions = Reflection.getReflectivePropertyDefinitions groupState
-            let groupState =
-                Map.fold (fun groupState propertyName (propertyDefinition : PropertyDefinition) ->
-                    let mutable property = Unchecked.defaultof<_>
-                    if not (World.tryGetGroupProperty (propertyName, group, world, &property)) then
-                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
-                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
-                        GroupState.attachProperty propertyName property groupState
-                    else groupState)
-                    groupState definitions
-            World.setGroupState groupState group world
+            for (propertyName, propertyDefinition : PropertyDefinition) in definitions.Pairs do
+                let mutable property = Unchecked.defaultof<_>
+                if not (World.tryGetGroupProperty (propertyName, group, world, &property)) then
+                    let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                    let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                    GroupState.attachProperty propertyName property groupState
 
         static member internal registerGroup group world =
             let dispatcher = World.getGroupDispatcher group world
-            let world = dispatcher.Register (group, world)
+            dispatcher.Register (group, world)
             let eventTrace = EventTrace.debug "World" "registerGroup" "" EventTrace.empty
-            let world = World.publishPlus () (Events.RegisterEvent --> group) eventTrace group true false world
+            World.publishPlus () (Events.RegisterEvent --> group) eventTrace group true false world
             let eventTrace = EventTrace.debug "World" "registerGroup" "LifeCycle" EventTrace.empty
             World.publishPlus (RegisterData group) (Events.LifeCycleEvent (nameof Group) --> Nu.Game.Handle) eventTrace group true false world
 
         static member internal unregisterGroup group world =
             let dispatcher = World.getGroupDispatcher group world
             let eventTrace = EventTrace.debug "World" "unregisterGroup" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData group) (Events.LifeCycleEvent (nameof Group) --> Nu.Game.Handle) eventTrace group true false world
+            World.publishPlus (UnregisteringData group) (Events.LifeCycleEvent (nameof Group) --> Nu.Game.Handle) eventTrace group true false world
             let eventTrace = EventTrace.debug "World" "unregisteringGroup" "" EventTrace.empty
-            let world = World.publishPlus () (Events.UnregisteringEvent --> group) eventTrace group true false world
+            World.publishPlus () (Events.UnregisteringEvent --> group) eventTrace group true false world
             dispatcher.Unregister (group, world)
 
         static member internal addGroup mayReplace groupState group world =
             let isNew = not (World.getGroupExists group world)
             if isNew || mayReplace then
-                let world = World.addGroupState groupState group world
-                if isNew then World.registerGroup group world else world
+                World.addGroupState groupState group world
+                if isNew then World.registerGroup group world
             else failwith ("Adding a group that the world already contains '" + scstring group + "'.")
 
         static member internal removeGroup3 removeEntities group world =
             if World.getGroupExists group world then
-                let world = World.unregisterGroup group world
-                let world = removeEntities group world
+                World.unregisterGroup group world
+                removeEntities group world
                 World.removeGroupState group world
-            else world
 
         static member internal viewGroupProperties group world =
             let state = World.getGroupState group world
@@ -437,7 +409,7 @@ module WorldModuleGroup =
 
         static member notifyGroupModelChange group world =
             let groupState = World.getGroupState group world
-            let world = groupState.Dispatcher.TrySynchronize (false, group, world)
+            groupState.Dispatcher.TrySynchronize (false, group, world)
             World.publishGroupChange Constants.Engine.ModelPropertyName groupState.Model.DesignerValue groupState.Model.DesignerValue group world
 
     /// Initialize property getters.

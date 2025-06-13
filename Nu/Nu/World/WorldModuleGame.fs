@@ -777,7 +777,6 @@ module WorldModuleGame =
                     let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
                     GameState.attachProperty propertyName property gameState
-                
 
         static member internal viewGameProperties game world =
             let state = World.getGameState game world

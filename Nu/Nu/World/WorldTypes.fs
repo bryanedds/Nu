@@ -142,6 +142,11 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueSome setter -> setter (mapper (lens.Get world)) world
         | ValueNone -> failwithumf ()
 
+    /// Update the lensed property's value using the given updater function.
+    /// Throws an exception if the lens is readonly.
+    member lens.Update updater world : unit =
+        updater (lens.Get world)
+
     /// The change event associated with the lensed property.
     member lens.ChangeEvent : ChangeData Address =
         let names = [|Constants.Lens.ChangeName; lens.Name; Constants.Lens.EventName|]
@@ -1833,18 +1838,18 @@ and [<ReferenceEquality>] World =
         { // cache line 1 (assuming 16 byte header)
           mutable ChooseCount : int // NOTE: this allows us to check the integrity of the world's imperative subsystems.
           EventGraph : EventGraph
-          EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
-          EntityStates : SUMap<Entity, EntityState>
-          GroupStates : UMap<Group, GroupState>
-          ScreenStates : UMap<Screen, ScreenState>
+          EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SDictionary<Entity, EntityState>>, EntityState>
+          EntityStates : SDictionary<Entity, EntityState>
+          GroupStates : Dictionary<Group, GroupState>
+          ScreenStates : Dictionary<Screen, ScreenState>
           // cache line 2
           GameState : GameState
-          EntityMounts : UMap<Entity, Entity USet>
+          EntityMounts : Dictionary<Entity, Entity HashSet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
           AmbientState : World AmbientState
           Subsystems : Subsystems
-          Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
+          Simulants : Dictionary<Simulant, Simulant HashSet option> // OPTIMIZATION: using None instead of empty HashSet to descrease number of HashSet instances.
           WorldExtension : WorldExtension }
 
     /// Check that the world is accompanied (such as by an editor program that controls it).
