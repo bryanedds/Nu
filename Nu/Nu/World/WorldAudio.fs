@@ -109,16 +109,13 @@ module WorldAudio =
         static member loadAudioPackage packageName world =
             let loadAudioPackageMessage = LoadAudioPackageMessage packageName
             World.enqueueAudioMessage loadAudioPackageMessage world
-            world
             
         /// Unload an audio package should be unloaded since its assets will not be used again soon.
         static member unloadAudioPackage packageName world =
             let unloadAudioPackageMessage = UnloadAudioPackageMessage packageName
             World.enqueueAudioMessage unloadAudioPackageMessage world
-            world
 
         /// Send a message to the audio player to reload its audio assets.
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.enqueueAudioMessage reloadAudioAssetsMessage world
-            world

@@ -936,7 +936,7 @@ and SimulantState =
 
 /// Hosts the ongoing state of a game.
 and [<ReferenceEquality; CLIMutable>] GameState =
-    { Dispatcher : GameDispatcher
+    { mutable Dispatcher : GameDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       mutable Content : GameContent
@@ -1013,7 +1013,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
 
 /// Hosts the ongoing state of a screen.
 and [<ReferenceEquality; CLIMutable>] ScreenState =
-    { Dispatcher : ScreenDispatcher
+    { mutable Dispatcher : ScreenDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       mutable Content : ScreenContent
@@ -1081,7 +1081,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
 
 /// Hosts the ongoing state of a group.
 and [<ReferenceEquality; CLIMutable>] GroupState =
-    { Dispatcher : GroupDispatcher
+    { mutable Dispatcher : GroupDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       mutable Content : GroupContent
@@ -1822,10 +1822,10 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable SimulantsImSim : SUMap<Address, SimulantImSim>
       mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
       JobGraph : JobGraph
-      GeometryViewport : Viewport
+      mutable GeometryViewport : Viewport
       // cache line 2
-      RasterViewport : Viewport
-      OuterViewport : Viewport
+      mutable RasterViewport : Viewport
+      mutable OuterViewport : Viewport
       DestructionList : Simulant List
       Dispatchers : Dispatchers
       Plugin : NuPlugin

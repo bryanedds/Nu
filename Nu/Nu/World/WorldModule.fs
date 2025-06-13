@@ -403,7 +403,6 @@ module WorldModule =
         /// Attempt to set the window position.
         static member trySetWindowPosition position world =
             World.getAmbientStateBy (AmbientState.trySetWindowPosition position) world
-            world
 
         /// Attempt to get the window size.
         static member tryGetWindowSize world =
@@ -418,7 +417,6 @@ module WorldModule =
         /// Attempt to set the window size.
         static member trySetWindowSize size world =
             World.getAmbientStateBy (AmbientState.trySetWindowSize size) world
-            world
 
         /// Get the geometry viewport.
         static member getGeometryViewport (world : World) =
@@ -426,7 +424,7 @@ module WorldModule =
 
         /// Set the geometry viewport.
         static member setGeometryViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with GeometryViewport = viewport }}
+            world.WorldExtension.GeometryViewport <- viewport
 
         /// Get the inner viewport.
         static member getRasterViewport (world : World) =
@@ -434,7 +432,7 @@ module WorldModule =
 
         /// Set the inner viewport.
         static member setRasterViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with RasterViewport = viewport }}
+            world.WorldExtension.RasterViewport <- viewport
 
         /// Get the outer viewport.
         static member getOuterViewport (world : World) =
@@ -442,7 +440,7 @@ module WorldModule =
 
         /// Set the outer viewport.
         static member setOuterViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with OuterViewport = viewport }}
+            world.WorldExtension.OuterViewport <- viewport
 
         static member internal getSymbolics world =
             World.getAmbientStateBy AmbientState.getSymbolics world
@@ -889,12 +887,13 @@ module WorldModule =
 
         /// Handle an event by doing nothing.
         static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Cascade, world)
+            Cascade
 
         /// Handle an event by swallowing.
         static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, world)
+            Resolve
 
         /// Handle an event by exiting the application.
         static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, World.exit world)
+            World.exit world
+            Resolve

@@ -284,6 +284,10 @@ module WorldModuleEntity =
                 true
             else false
 
+        static member internal getEntityContent entity world =
+            let screenState = World.getEntityState entity world
+            screenState.Content
+
         static member internal setEntityContent (value : EntityContent) entity world =
             let screenState = World.getEntityState entity world
             screenState.Content <- value
@@ -1498,7 +1502,7 @@ module WorldModuleEntity =
             let facets = World.getFacets world
             Reflection.attachIntrinsicFacets entityDispatchers facets entityState.Dispatcher entityState world
 
-        static member internal applyEntityOverlay overlayerOld overlayer world entity =
+        static member internal applyEntityOverlay overlayerOld overlayer entity world =
             let entityState = World.getEntityState entity world
             match entityState.OverlayNameOpt with
             | Some overlayName ->

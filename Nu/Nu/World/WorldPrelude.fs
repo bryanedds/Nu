@@ -445,12 +445,12 @@ module AmbientState =
               // cache line 2
               mutable TickDelta : int64
               KeyValueStore : SDictionary<string, obj>
-              TickTime : int64
+              mutable TickTime : int64
               TickWatch : Stopwatch
-              DateDelta : TimeSpan
+              mutable DateDelta : TimeSpan
               // cache line 3
-              TickDeltaPrevious : int64
-              DateTime : DateTimeOffset
+              mutable TickDeltaPrevious : int64
+              mutable DateTime : DateTimeOffset
               Tasklets : OrderedDictionary<Simulant, 'w Tasklet List>
               mutable SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -552,17 +552,17 @@ module AmbientState =
             then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
             else tickDeltaCurrent
         let tickTime = state.TickTime + tickDelta
+        let dateTimeOld = state.DateTime
         let dateTime = DateTimeOffset.Now
-        { state with
-            UpdateDelta = updateDelta
-            UpdateTime = state.UpdateTime + updateDelta
-            ClockDelta = single tickDelta / single Stopwatch.Frequency
-            ClockTime = single tickTime / single Stopwatch.Frequency
-            TickDelta = tickDelta
-            TickDeltaPrevious = tickDeltaCurrent
-            TickTime = tickTime
-            DateTime = dateTime
-            DateDelta = dateTime - state.DateTime }
+        state.UpdateDelta <- updateDelta
+        state.UpdateTime <- state.UpdateTime + updateDelta
+        state.ClockDelta <- single tickDelta / single Stopwatch.Frequency
+        state.ClockTime <- single tickTime / single Stopwatch.Frequency
+        state.TickDelta <- tickDelta
+        state.TickDeltaPrevious <- tickDeltaCurrent
+        state.TickTime <- tickTime
+        state.DateTime <- dateTime
+        state.DateDelta <- dateTime - dateTimeOld
 
     /// Switch simulation to use this ambient state.
     let switch (state : 'w AmbientState) =
