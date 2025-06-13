@@ -1843,7 +1843,7 @@ and [<ReferenceEquality>] World =
           GroupStates : Dictionary<Group, GroupState>
           ScreenStates : Dictionary<Screen, ScreenState>
           // cache line 2
-          GameState : GameState
+          mutable GameState : GameState
           EntityMounts : Dictionary<Entity, Entity HashSet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree

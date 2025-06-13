@@ -758,12 +758,12 @@ module WorldModule =
             let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
             World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
             World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
-            (unsubscribe, world)
+            unsubscribe
 
         /// Keep active a subscription for the life span of an entity and a given facet.
         static member sense<'a>
             (callback : Event<'a, Entity> -> World -> Handling) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
-            World.sensePlus callback eventAddress subscriber facetName world |> snd
+            World.sensePlus callback eventAddress subscriber facetName world |> ignore
 
     type World with // KeyValueStore (tho part of AmbientState, must come after EventGraph definitions since it publishes)
 

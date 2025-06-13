@@ -72,7 +72,7 @@ module EventGraph =
 
     /// Remove event state.
     let removeEventState key (eventGraph : EventGraph) =
-        eventGraph.EventStates.Remove key
+        eventGraph.EventStates.Remove key |> ignore<bool>
 
     /// Get subscriptions.
     let getSubscriptions (eventGraph : EventGraph) =

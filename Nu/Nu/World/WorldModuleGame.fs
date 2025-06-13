@@ -30,6 +30,10 @@ module WorldModuleGame =
             ignore<Game> game
             world.GameState
 
+        static member internal setGameState gameState game world =
+            ignore<Game> game
+            world.GameState <- gameState
+
         static member internal getGameXtension game world =
             let gameState = World.getGameState game world
             gameState.Xtension
