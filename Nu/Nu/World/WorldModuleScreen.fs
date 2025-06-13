@@ -108,8 +108,7 @@ module WorldModuleScreen =
             let screenState = World.getScreenState screen world
             let previous = screenState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
-                screenState.Model.DesignerType <- value.DesignerType
-                screenState.Model.DesignerValue <- value.DesignerValue
+                screenState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
                 screenState.Dispatcher.TrySynchronize (initializing, screen, world)
                 World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue screen world
                 true
@@ -123,16 +122,14 @@ module WorldModuleScreen =
             | modelObj ->
                 let modelSymbol = valueToSymbol modelObj
                 try let model = symbolToValue modelSymbol
-                    screenState.Model.DesignerType <- typeof<'a>
-                    screenState.Model.DesignerValue <- model
+                    screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
                     Log.warn "Could not convert existing screen model value to new type; attempting to use fallback model value instead."
                     match screenState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, screen, world) with
                     | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
-                        screenState.Model.DesignerType <- typeof<'a>
-                        screenState.Model.DesignerValue <- model
+                        screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
         static member internal setScreenModelGeneric<'a> initializing (value : 'a) screen world =
@@ -140,8 +137,7 @@ module WorldModuleScreen =
             let valueObj = value :> obj
             let previous = screenState.Model
             if valueObj =/= previous.DesignerValue || initializing then
-                screenState.Model.DesignerType <- typeof<'a>
-                screenState.Model.DesignerValue <- valueObj
+                screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
                 screenState.Dispatcher.TrySynchronize (initializing, screen, world)
                 World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value screen world
                 true

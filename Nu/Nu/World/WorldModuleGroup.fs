@@ -106,8 +106,7 @@ module WorldModuleGroup =
             let groupState = World.getGroupState group world
             let previous = groupState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
-                groupState.Model.DesignerType <- value.DesignerType
-                groupState.Model.DesignerValue <- value.DesignerValue
+                groupState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
                 groupState.Dispatcher.TrySynchronize (initializing, group, world)
                 World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue group world
                 true
@@ -121,16 +120,14 @@ module WorldModuleGroup =
             | modelObj ->
                 let modelSymbol = valueToSymbol modelObj
                 try let model = symbolToValue modelSymbol
-                    groupState.Model.DesignerType <- typeof<'a>
-                    groupState.Model.DesignerValue <- model
+                    groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
                     Log.warn "Could not convert existing group model value to new type; attempting to use fallback model value instead."
                     match groupState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, group, world) with
                     | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
-                        groupState.Model.DesignerType <- typeof<'a>
-                        groupState.Model.DesignerValue <- model
+                        groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
         static member internal setGroupModelGeneric<'a> initializing (value : 'a) group world =
@@ -138,8 +135,7 @@ module WorldModuleGroup =
             let valueObj = value :> obj
             let previous = groupState.Model
             if valueObj =/= previous.DesignerValue || initializing then
-                groupState.Model.DesignerType <- typeof<'a>
-                groupState.Model.DesignerValue <- valueObj
+                groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
                 groupState.Dispatcher.TrySynchronize (initializing, group, world)
                 World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value group world
                 true

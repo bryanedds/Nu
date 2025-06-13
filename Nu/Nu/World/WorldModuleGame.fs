@@ -44,8 +44,7 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
-                gameState.Model.DesignerType <- value.DesignerType
-                gameState.Model.DesignerValue <- value.DesignerValue
+                gameState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
                 gameState.Dispatcher.TrySynchronize (initializing, game, world)
                 if initializing then
                     let content = World.getGameContent game world
@@ -81,8 +80,7 @@ module WorldModuleGame =
             let valueObj = value :> obj
             let previous = gameState.Model
             if valueObj =/= previous.DesignerValue || initializing then
-                gameState.Model.DesignerType <- typeof<'a>
-                gameState.Model.DesignerValue <- valueObj
+                gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
                 gameState.Dispatcher.TrySynchronize (initializing, game, world)
                 if initializing then
                     let content = World.getGameContent game world
