@@ -218,9 +218,9 @@ module WorldScreenModule =
             // make the dispatcher
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> dispatcher
+                | (false, _) -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime nameOpt dispatcher
@@ -304,9 +304,9 @@ module WorldScreenModule =
             let dispatcherName = screenDescriptor.ScreenDispatcherName
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a ScreenDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> dispatcher
+                | (false, _) -> failwith ("Could not find a ScreenDispatcher named '" + dispatcherName + "'.")
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime None dispatcher

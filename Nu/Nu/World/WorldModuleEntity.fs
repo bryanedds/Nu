@@ -1351,16 +1351,16 @@ module WorldModuleEntity =
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
-            match Map.tryFind facetName facets with
-            | Some facet -> Right facet
-            | None -> Left ("Invalid facet name '" + facetName + "'.")
+            match facets.TryGetValue facetName with
+            | (true, facet) -> Right facet
+            | (false, _) -> Left ("Invalid facet name '" + facetName + "'.")
 
-        static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
+        static member private isFacetCompatibleWithEntity entityDispatchers facet (entityState : EntityState) =
             // Note a facet is incompatible with any other facet if it contains any properties that has
             // the same name but a different type.
             let facetType = facet.GetType ()
             let facetPropertyDefinitions = Reflection.getPropertyDefinitions facetType
-            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
+            if Reflection.isFacetCompatibleWithDispatcher entityDispatchers facet entityState then
                 List.notExists
                     (fun (propertyDefinition : PropertyDefinition) ->
                         let mutable property = Unchecked.defaultof<_>
@@ -1975,11 +1975,11 @@ module WorldModuleEntity =
         static member createEntity6 skipProcessing dispatcherName overlayDescriptor surnames (group : Group) world =
 
             // find the entity's dispatcher
-            let dispatcherMap = World.getEntityDispatchers world
+            let dispatchers = World.getEntityDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatcherMap with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> dispatcher
+                | (false, _) -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // compute the optional overlay name
             let overlayNameDefault = Overlay.dispatcherNameToOverlayName dispatcherName
@@ -1994,11 +1994,11 @@ module WorldModuleEntity =
             let entityState = EntityState.make surnames overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties
-            let facetMap = World.getFacets world
+            let facets = World.getFacets world
             let dispatcherType = getType dispatcher
             let dispatcherTypes = dispatcherType :: Reflection.getBaseTypesExceptObject dispatcherType |> List.rev
             for (facetNames, ty) in List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) dispatcherTypes do
-                Reflection.attachIntrinsicFacetsViaNames dispatcherMap facetMap facetNames entityState world
+                Reflection.attachIntrinsicFacetsViaNames dispatchers facets facetNames entityState world
                 let definitions = Reflection.getPropertyDefinitionsNoInherit ty
                 Reflection.attachPropertiesViaDefinitions definitions entityState world
 
@@ -2153,12 +2153,12 @@ module WorldModuleEntity =
             let entityProperties = if tryReadPropagationHistory then entityProperties else Map.remove "PropagatedDescriptorOpt" entityDescriptor.EntityProperties
 
             // make the dispatcher
-            let dispatcherMap = World.getEntityDispatchers world
+            let dispatchers = World.getEntityDispatchers world
             let dispatcherName = entityDescriptor.EntityDispatcherName
             let (dispatcherName, dispatcher) =
-                match Map.tryFind dispatcherName dispatcherMap with
-                | Some dispatcher -> (dispatcherName, dispatcher)
-                | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> (dispatcherName, dispatcher)
+                | (false, _) -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // get the default overlay name option
             let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
@@ -2171,7 +2171,7 @@ module WorldModuleEntity =
             let dispatcherType = getType dispatcher
             let dispatcherTypes = dispatcherType :: Reflection.getBaseTypesExceptObject dispatcherType |> List.rev
             for (facetNames, ty) in List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) dispatcherTypes do
-                Reflection.attachIntrinsicFacetsViaNames dispatcherMap facetMap facetNames entityState world
+                Reflection.attachIntrinsicFacetsViaNames dispatchers facetMap facetNames entityState world
                 let definitions = Reflection.getPropertyDefinitionsNoInherit ty
                 Reflection.attachPropertiesViaDefinitions definitions entityState world
 

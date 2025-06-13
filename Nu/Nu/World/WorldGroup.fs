@@ -157,9 +157,9 @@ module WorldGroupModule =
         static member createGroup5 skipProcessing dispatcherName nameOpt (screen : Screen) world =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> dispatcher
+                | (false, _) -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
             let groupState = GroupState.make nameOpt dispatcher
             Reflection.attachProperties groupState.Dispatcher groupState world
             let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
@@ -279,9 +279,9 @@ module WorldGroupModule =
             let dispatcherName = groupDescriptor.GroupDispatcherName
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> dispatcher
+                | (false, _) -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
 
             // make the group state and populate its properties
             let groupState = GroupState.make None dispatcher

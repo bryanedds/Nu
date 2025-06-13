@@ -257,9 +257,9 @@ module WorldGameModule =
             let dispatcherName = gameDescriptor.GameDispatcherName
             let dispatchers = World.getGameDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a GameDispatcher named '" + dispatcherName + "'.")
+                match dispatchers.TryGetValue dispatcherName with
+                | (true, dispatcher) -> dispatcher
+                | (false, _) -> failwith ("Could not find a GameDispatcher named '" + dispatcherName + "'.")
 
             // make the game state and populate its properties
             let gameState = GameState.make dispatcher
