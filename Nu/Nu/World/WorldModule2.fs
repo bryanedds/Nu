@@ -360,23 +360,25 @@ module WorldModule2 =
 
                     // init subscriptions _before_ potentially creating screen
                     World.addSimulantImSim screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
-                    let mapFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) world =
-                        let mapScreenImSim screenImSim =
-                            let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
-                            { screenImSim with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
-                    let mapSndResult (mapper : 'r -> 'r) world =
-                        let mapScreenImSim screenImSim =
-                            let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
-                            { screenImSim with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
-                    init mapSndResult screen world
+                    let updateFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) (world : World) =
+                        match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
+                        | (true, simulantImSim) ->
+                            let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
+                            simulantImSim.Result <- (mapper screenResult, userResult)
+                        | (false, _) -> ()
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
+                    let updateSndResult (mapper : 'r -> 'r) world =
+                        match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
+                        | (true, simulantImSim) ->
+                            let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
+                            simulantImSim.Result <- (screenResult, mapper userResult)
+                        | (false, _) -> ()
+                    init updateSndResult screen world
 
                     // create screen only when needed
                     if screenCreation then
@@ -408,8 +410,9 @@ module WorldModule2 =
                         screen
                         world
                 else transitionScreen screen world
-            let (screenResult, userResult) = (World.getSimulantImSim screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
+            let simulantImSim = World.getSimulantImSim screen.ScreenAddress world
+            let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
+            simulantImSim.Result <- (FQueue.empty<SelectionEventData>, zero)
             (screenResult, userResult)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue =
@@ -735,10 +738,10 @@ module WorldModule2 =
                 if World.getEntityExists target world then
                     target.SetPropagationSourceOpt None world
 
-        static member internal makeIntrinsicOverlays facets entityDispatchers =
+        static member internal makeIntrinsicOverlays (facets : Dictionary<string, Facet>) (entityDispatchers : Dictionary<string, EntityDispatcher>) =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
-            let facets = facets |> Map.toValueList |> List.map box
-            let entityDispatchers = entityDispatchers |> Map.toValueList |> List.map box
+            let facets = facets.Values |> Seq.map box |> Seq.toList
+            let entityDispatchers = entityDispatchers |> Seq.map box |> Seq.toList
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
@@ -1283,11 +1286,13 @@ module WorldModule2 =
         static member internal sweepSimulants (world : World) =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
-            for (simulantAddress, simulantImSim) in world.SimulantsImSim do
+            for entry in world.SimulantsImSim do
+                let simulantAddress = entry.Key
+                let simulantImSim = entry.Value
                 if not simulantImSim.SimulantUtilized then
                     let simulant = World.deriveFromAddress simulantAddress
                     ImSimSimulantsToDestroy.Add (simulantImSim.InitializationTime, simulant)
-                    World.setSimulantsImSim (SUMap.remove simulantAddress world.SimulantsImSim) world
+                    world.SimulantsImSim.Remove simulantAddress |> ignore<bool>
                 else
                     simulantImSim.SimulantUtilized <- false
                     simulantImSim.SimulantInitializing <- false
@@ -1299,10 +1304,12 @@ module WorldModule2 =
             ImSimSimulantsToDestroy.Clear ()
 
             // update subscription bookkeeping
-            for (subscriptionKey, subscriptionImSim) in world.SubscriptionsImSim do
+            for entry in world.SubscriptionsImSim do
+                let subscriptionKey = entry.Key
+                let subscriptionImSim = entry.Value
                 if not subscriptionImSim.SubscriptionUtilized then
                     World.unsubscribe subscriptionImSim.SubscriptionId world
-                    World.setSubscriptionsImSim (SUMap.remove subscriptionKey world.SubscriptionsImSim) world
+                    world.SubscriptionsImSim.Remove subscriptionKey |> ignore<bool>
                 else subscriptionImSim.SubscriptionUtilized <- false
 
         static member private preUpdateSimulants (world : World) =

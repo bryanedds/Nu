@@ -1781,13 +1781,13 @@ and [<NoEquality; NoComparison>] internal SimulantImSim =
     { mutable SimulantInitializing : bool
       mutable SimulantUtilized : bool
       InitializationTime : int64
-      Result : obj }
+      mutable Result : obj }
 
 /// Provides subscription bookkeeping information with the ImSim API.
 and [<NoEquality; NoComparison>] internal SubscriptionImSim =
     { mutable SubscriptionUtilized : bool
       SubscriptionId : uint64
-      Results : obj }
+      mutable Results : obj }
 
 /// Describes an argument used with the ImSim API.
 and [<Struct>] ArgImSim<'s when 's :> Simulant> =
