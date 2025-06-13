@@ -1209,7 +1209,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.LightProbe = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
     member this.Light = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-    member this.Optimized imperative = this.Transform.Optimized imperative
+    member this.Optimized = this.Transform.Optimized
     member internal this.VisibleInView = this.Visible || this.AlwaysRender
     member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
     member internal this.PresenceInPlay = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
@@ -1250,13 +1250,13 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         Xtension.detachProperty name entityState.Xtension
 
     /// Make an entity state value.
-    static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+    static member make surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
         let mutable transform = Transform.makeDefault ()
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
           Dispatcher = dispatcher
           Facets = [||]
-          Xtension = Xtension.makeEmpty imperative
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyEntityContent :?> EntityContent
           PositionLocal = Vector3.Zero
@@ -1829,7 +1829,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
-      PropagationTargets : UMap<Entity, Entity USet> }
+      PropagationTargets : Dictionary<Entity, Entity HashSet> }
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
 /// game, messages to by consumed by the various engine subsystems, and general configuration data.

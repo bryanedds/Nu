@@ -219,39 +219,34 @@ module Overlayer =
                             | _ -> ()
             | _ -> ()
 
-    let internal applyOverlayToFacetNames4 (copyTarget : 'a -> 'a) target overlaySymbolsOld overlaySymbolsNew =
-        let target = copyTarget target
+    let internal applyOverlayToFacetNames4 target overlaySymbolsOld overlaySymbolsNew =
         let targetType = target.GetType ()
         match targetType.GetProperty Constants.Engine.FacetNamesPropertyName with
-        | null -> target
+        | null -> ()
         | facetNamesProperty ->
             match Map.tryFind facetNamesProperty.Name overlaySymbolsNew with
-            | Some propertySymbol ->
-                tryApplyOverlayToRecordProperty facetNamesProperty propertySymbol target overlaySymbolsOld
-                target
-            | None -> target
+            | Some propertySymbol -> tryApplyOverlayToRecordProperty facetNamesProperty propertySymbol target overlaySymbolsOld
+            | None -> ()
 
     /// Apply an overlay to the FacetNames property of the given target.
-    let applyOverlayToFacetNames (copyTarget : 'a -> 'a) overlayNameOld overlayNameNew target overlayerOld overlayerNew =
+    let applyOverlayToFacetNames overlayNameOld overlayNameNew target overlayerOld overlayerNew =
         let overlaySymbolsOld = getOverlaySymbols overlayNameOld Seq.empty overlayerOld
         let overlaySymbolsNew = getOverlaySymbols overlayNameNew Seq.empty overlayerNew
-        applyOverlayToFacetNames4 copyTarget target overlaySymbolsOld overlaySymbolsNew
+        applyOverlayToFacetNames4 target overlaySymbolsOld overlaySymbolsNew
 
     /// Apply an overlay to the given target (except for any FacetNames property).
     /// Only the properties that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
-    let applyOverlay6 (copyTarget : 'a -> 'a) overlayNameOld overlayNameNew facetNames target overlayerOld overlayerNew =
-        let target = copyTarget target
+    let applyOverlay6 overlayNameOld overlayNameNew facetNames target overlayerOld overlayerNew =
         let overlaySymbolsOld = getOverlaySymbols overlayNameOld facetNames overlayerOld
         let overlaySymbolsNew = getOverlaySymbols overlayNameNew Seq.empty overlayerNew
         applyOverlayToProperties target overlaySymbolsOld overlaySymbolsNew
         applyOverlayToXtension target overlaySymbolsOld overlaySymbolsNew
-        target
 
     /// Apply an overlay to the given target (except for any FacetNames property).
     /// Only the properties that are overlaid by the old overlay will be changed.
-    let applyOverlay copyTarget overlayNameOld overlayNameNew facetNames target overlayer =
-        applyOverlay6 copyTarget overlayNameOld overlayNameNew facetNames target overlayer overlayer
+    let applyOverlay overlayNameOld overlayNameNew facetNames target overlayer =
+        applyOverlay6 overlayNameOld overlayNameNew facetNames target overlayer overlayer
 
     /// Get intrinsic overlays.
     let getIntrinsicOverlays overlayer =

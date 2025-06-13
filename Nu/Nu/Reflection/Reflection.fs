@@ -261,26 +261,19 @@ module Reflection =
             readXtensionProperty xtension definitions target propertyName propertySymbol
 
     /// Read a target's Xtension from property descriptors.
-    let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
-        let target = copyTarget target
+    let private readXtension propertyDescriptors target =
         let targetType = target.GetType ()
         match targetType.GetProperty Constants.Engine.XtensionPropertyName with
-        | null ->
-            Log.error "Target does not support Xtensions due to missing Xtension property."
-            target
+        | null -> Log.error "Target does not support Xtensions due to missing Xtension property."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
                 let xtension = readXtensionProperties xtension propertyDescriptors target
                 xtensionProperty.SetValue (target, xtension)
-                target
-            | _ ->
-                Log.error "Target does not support Xtensions due to Xtension property having unexpected type."
-                target
+            | _ -> Log.error "Target does not support Xtensions due to Xtension property having unexpected type."
 
     /// Try to read just the target's OverlayNameOpt from property descriptors.
-    let tryReadOverlayNameOptToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
-        let target = copyTarget target
+    let tryReadOverlayNameOptToTarget propertyDescriptors target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties true
         let overlayNameOptPropertyOpt =
@@ -295,13 +288,11 @@ module Reflection =
             | Some overlayNameOptSymbol ->
                 let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
                 overlayNameOptProperty.SetValue (target, overlayNameOpt)
-                target
-            | None -> target
-        | None -> target
+            | None -> ()
+        | None -> ()
 
     /// Read just the target's FacetNames from property descriptors.
-    let readFacetNamesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
-        let target = copyTarget target
+    let readFacetNamesToTarget propertyDescriptors target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties true
         let facetNamesProperty =
@@ -318,8 +309,7 @@ module Reflection =
         | None -> target
 
     /// Read all of a target's member properties from property descriptors (except OverlayNameOpt and FacetNames).
-    let readMemberPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
-        let target = copyTarget target
+    let readMemberPropertiesToTarget propertyDescriptors target =
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> Constants.Engine.FacetNamesPropertyName &&
@@ -329,9 +319,9 @@ module Reflection =
         target
 
     /// Read all of a target's property values from property descriptors (except OverlayNameOpt and FacetNames).
-    let readPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
-        let target = readMemberPropertiesToTarget copyTarget propertyDescriptors target
-        readXtension copyTarget propertyDescriptors target
+    let readPropertiesToTarget propertyDescriptors target =
+        let target = readMemberPropertiesToTarget propertyDescriptors target
+        readXtension propertyDescriptors target
 
     /// Write an Xtension to property descriptors.
     let private writeXtension shouldWriteProperty propertyDescriptors xtension =
@@ -401,11 +391,10 @@ module Reflection =
         List.concat intrinsicFacetNamesLists
 
     /// Attach properties from the given definitions to a target.
-    let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target world =
+    let attachPropertiesViaDefinitions definitions target world =
         match definitions with
-        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | [] -> () // OPTIMIZATION: bail if nothing to do.
         | _ ->
-            let target = copyTarget target
             let targetType = target.GetType ()
             match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
             | null -> failwith "Target does not support Xtensions due to missing Xtension property."
@@ -421,11 +410,9 @@ module Reflection =
                         | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
                     xtensionProperty.SetValue (target, xtension)
                 | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
-            target
 
     /// Detach properties from a target.
-    let detachPropertiesViaNames (copyTarget : 'a -> 'a) propertyNames target =
-        let target = copyTarget target
+    let detachPropertiesViaNames propertyNames target =
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
         | null -> failwith "Target does not support Xtensions due to missing Xtension property."
@@ -437,19 +424,18 @@ module Reflection =
                     | null -> Xtension.detachProperty propertyName xtension
                     | _ -> failwith ("Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'.")
             | _ -> ()
-        target
 
     /// Attach source's properties to a target.
-    let attachProperties (copyTarget : 'a -> 'a) (source : 'b) target world =
+    let attachProperties (source : 'b) target world =
         let sourceType = source.GetType ()
         let definitions = getPropertyDefinitions sourceType
-        attachPropertiesViaDefinitions copyTarget definitions target world
+        attachPropertiesViaDefinitions definitions target world
 
     /// Detach source's properties to a target.
-    let detachProperties (copyTarget : 'a -> 'a) (source : 'b) target =
+    let detachProperties (source : 'b) target =
         let sourceType = source.GetType ()
         let propertyNames = getPropertyNames sourceType
-        detachPropertiesViaNames copyTarget propertyNames target
+        detachPropertiesViaNames propertyNames target
 
     /// Check for facet compatibility with the target's dispatcher.
     let isFacetTypeCompatibleWithDispatcher dispatcherMap (facetType : Type) (target : 'a) =
@@ -479,11 +465,10 @@ module Reflection =
             facetTypes
 
     /// Attach intrinsic facets to a target by their names.
-    let attachIntrinsicFacetsViaNames<'d, 'f, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
+    let attachIntrinsicFacetsViaNames<'d, 'f, 'a> dispatcherMap facetMap facetNames target world =
         match facetNames with
-        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | [] -> () // OPTIMIZATION: bail if nothing to do.
         | _ ->
-            let target = copyTarget target
             let facets =
                 List.map (fun facetName ->
                     match Map.tryFind facetName facetMap with
@@ -502,13 +487,14 @@ module Reflection =
                     else ())
                     facets
                 facetsProperty.SetValue (target, Array.append facetsExisting facets)
-                Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
+                for facet in facets do
+                    attachProperties facet target world
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets<'d, 'f, 'b, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
+    let attachIntrinsicFacets<'d, 'f, 'b, 'a> dispatcherMap facetMap (source : 'b) target world =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
-        attachIntrinsicFacetsViaNames<'d, 'f, 'a> copyTarget dispatcherMap facetMap instrinsicFacetNames target world
+        attachIntrinsicFacetsViaNames<'d, 'f, 'a> dispatcherMap facetMap instrinsicFacetNames target world
 
     /// Initialize backing data utilized by reflection module.
     let init () =

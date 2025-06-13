@@ -585,7 +585,7 @@ module AmbientState =
 
     /// Remove all tasklets associated with a simulant.
     let removeTasklets simulant state =
-        state.Tasklets.Remove simulant
+        state.Tasklets.Remove simulant |> ignore<bool>
 
     /// Clear the tasklets from future processing.
     let clearTasklets state =
