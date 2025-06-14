@@ -309,8 +309,7 @@ type CharacterDispatcher () =
              Entity.Visible @= visible
              Entity.Pickable .= false
              Entity.Animations @= animations
-             Entity.AnimatedModel .= Assets.Gameplay.JoanModel]
-            world
+             Entity.AnimatedModel .= Assets.Gameplay.JoanModel] world
         let animatedModel = world.DeclaredEntity
 
         // declare weapon
@@ -333,8 +332,7 @@ type CharacterDispatcher () =
                  Entity.BodyType .= Static
                  Entity.BodyShape .= BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor .= true
-                 Entity.NavShape .= EmptyNavShape]
-                world
+                 Entity.NavShape .= EmptyNavShape] world
 
         // process weapon collisions
         for result in results do
