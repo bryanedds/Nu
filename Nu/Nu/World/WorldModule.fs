@@ -512,12 +512,6 @@ module WorldModule =
         static member internal getEventGraph world =
             world.EventGraph
 
-        static member internal setEventGraph eventGraph world =
-            World.choose { world with EventGraph = eventGraph }
-
-        static member internal mapEventGraph mapper world =
-            World.setEventGraph (mapper world.EventGraph) world
-
         static member inline internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
             let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
                 let evt = { Data = evt.Data :?> 'a; Subscriber = evt.Subscriber :?> 's; Publisher = evt.Publisher; Address = Address.specialize<'a> evt.Address; Trace = evt.Trace }
@@ -559,7 +553,7 @@ module WorldModule =
 
         /// Set the state of the event filter.
         static member setEventFilter filter (world : World) =
-            World.mapEventGraph (EventGraph.setEventFilter filter) world
+            EventGraph.setEventFilter filter world.EventGraph
 
         /// Publish an event.
         static member publishPlus<'a, 'p when 'p :> Simulant>

@@ -85,8 +85,9 @@ type GameplayDispatcher () =
 
         match command with
         | StartQuitting ->
-            let world = World.publish () screen.QuitEvent screen world
-            just world
+            World.publish () screen.QuitEvent screen world
+
+        []
 
     // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =

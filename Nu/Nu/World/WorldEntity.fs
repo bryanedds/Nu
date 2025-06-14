@@ -864,8 +864,8 @@ module WorldEntityModule =
                     if descendantSource.GetExists world && descendantSource.HasPropagationTargets world then
                         World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> ignore<bool>
             let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
-            let world = entity.SetMountOptWithAdjustment mountOpt world
-            (entity, world)
+            entity.SetMountOptWithAdjustment mountOpt world
+            entity
 
         /// Paste an entity.
         static member pasteEntity (distance : single) rightClickPosition positionSnapEir pasteType entity (parent : Simulant) world =

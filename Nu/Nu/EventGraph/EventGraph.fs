@@ -54,7 +54,7 @@ module EventGraph =
               Unsubscriptions : UnsubscriptionEntries
               EventStates : SDictionary<uint64, obj>
               mutable EventTracerOpt : (string -> unit) option
-              EventFilter : EventFilter
+              mutable EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 
     /// Get the generalized global simulant of the event system.
@@ -96,7 +96,7 @@ module EventGraph =
 
     /// Set the state of the event filter.
     let setEventFilter filter (eventGraph : EventGraph) =
-        { eventGraph with EventFilter = filter }
+        eventGraph.EventFilter <- filter
 
     /// Remove from the event address cache all addresses belonging to the given target.
     let cleanEventAddressCache (eventTarget : 'a Address) =

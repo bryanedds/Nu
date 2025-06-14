@@ -726,11 +726,10 @@ module WorldModule2 =
                             if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                                 ancestor } |>
             Set.ofSeq |> // also copies references to avoid enumerator invalidation
-            Set.fold (fun world ancestor ->
-                if ancestor.GetExists world && ancestor.HasPropagationTargets world
-                then World.propagateEntityStructure ancestor world
-                else world)
-                world
+            fun ancestors ->
+                for ancestor in ancestors do
+                    if ancestor.GetExists world && ancestor.HasPropagationTargets world then
+                        World.propagateEntityStructure ancestor world
 
         /// Clear all propagation targets pointing back to the given entity.
         static member clearPropagationTargets (entity : Entity) world =
@@ -1275,9 +1274,6 @@ module WorldModule2 =
                     if element.Entry.GetExists world then
                         World.tryProcessEntity zeroDelta element.Entry world
                 world.Timers.UpdateEntitiesTimer.Stop ()
-
-                // fin
-                world
 
             // free cached values
             finally

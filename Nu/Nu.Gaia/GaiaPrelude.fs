@@ -21,7 +21,6 @@ type [<SymbolicExpansion>] GaiaState =
     { ProjectDllPath : string
       ProjectEditModeOpt : string option
       ProjectFreshlyLoaded : bool
-      ProjectImperativeExecution : bool
       EditWhileAdvancing : bool
       DesiredEye2dCenter : Vector2
       DesiredEye3dCenter : Vector3
@@ -36,13 +35,12 @@ type [<SymbolicExpansion>] GaiaState =
       AlternativeEyeTravelInput : bool }
 
     static member make
-        dllPath editModeOpt freshlyLoaded imperativeExecution editWhileAdvancing
+        dllPath editModeOpt freshlyLoaded editWhileAdvancing
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
         snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectFreshlyLoaded = freshlyLoaded
-          ProjectImperativeExecution = imperativeExecution
           EditWhileAdvancing = editWhileAdvancing
           DesiredEye2dCenter = desiredEye2dCenter
           DesiredEye3dCenter = desiredEye3dCenter
@@ -58,6 +56,6 @@ type [<SymbolicExpansion>] GaiaState =
 
     static member defaultState =
         GaiaState.make
-            "" None false false false
+            "" None false false
             v2Zero Constants.Engine.Eye3dCenterDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
             true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false

@@ -40,7 +40,7 @@ type BreakoutDispatcher () =
 
         // declare title screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
-        World.beginScreenWithGroupFromFile Simulants.Title.Name (game.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world |> ignore
+        let _ = World.beginScreenWithGroupFromFile Simulants.Title.Name (game.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world
         World.beginGroup "Gui" [] world
         if World.doButton "Play" [] world then game.SetGameState Gameplay world
         if World.doButton "Credits" [] world then game.SetGameState Credits world
@@ -58,7 +58,7 @@ type BreakoutDispatcher () =
 
         // declare credits screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
-        World.beginScreenWithGroupFromFile Simulants.Credits.Name (game.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world |> ignore
+        let _ = World.beginScreenWithGroupFromFile Simulants.Credits.Name (game.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world
         World.beginGroup "Gui" [] world
         if World.doButton "Back" [] world then game.SetGameState Title world
         World.endGroup world
