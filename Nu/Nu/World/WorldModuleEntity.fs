@@ -82,8 +82,8 @@ module WorldModuleEntity =
 
             // apply publish change events state
             let entityAddress = entity.EntityAddress
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with // TODO: P0: might as well use a dictionary now.
-            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
+            match World.tryGetKeyedValueFast<Dictionary<Entity Address, int>> (EntityChangeCountsKey, world) with
+            | (true, entityChangeCounts) -> if entityChangeCounts.ContainsKey entityAddress then entityState.PublishChangeEvents <- true
             | (false, _) -> ()
 
             // apply mounted state
