@@ -14,9 +14,8 @@ type BlazeVectorPlugin () =
              ("Title", fun world -> Game.SetBlazeVector Title world)
              ("Credits", fun world -> Game.SetBlazeVector Credits world)
              ("Gameplay", fun world ->
-                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
-                let world = Game.SetBlazeVector Gameplay world
-                world)]
+                Simulants.Gameplay.SetGameplay Gameplay.initial world
+                Game.SetBlazeVector Gameplay world)]
 
     // this specifies which packages are automatically loaded at game start-up.
     override this.InitialPackages =

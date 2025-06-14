@@ -362,8 +362,11 @@ module WorldModule3 =
             // make the world
             let world = World.make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
-            // finally, register the game
+            // register the game
             World.registerGame Game world
+
+            // fin
+            world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
