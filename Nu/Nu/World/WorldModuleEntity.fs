@@ -23,56 +23,16 @@ module WorldModuleEntity =
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
 
-    // OPTIMIZATION: avoids closure allocation in tight-loop.
-    type private KeyEquality () =
-        inherit OptimizedClosures.FSharpFunc<
-            KeyValuePair<Entity, SDictionary<Entity, EntityState>>,
-            KeyValuePair<Entity, SDictionary<Entity, EntityState>>,
-            bool> ()
-        override this.Invoke _ = failwithumf ()
-        override this.Invoke
-            (entityStateKey : KeyValuePair<Entity, SDictionary<Entity, EntityState>>,
-             entityStateKey2 : KeyValuePair<Entity, SDictionary<Entity, EntityState>>) =
-            refEq entityStateKey.Key entityStateKey2.Key &&
-            refEq entityStateKey.Value entityStateKey2.Value
-    let private keyEquality = KeyEquality ()
-
-    // OPTIMIZATION: avoids closure allocation in tight-loop.
-    let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
-    let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
-    let private getFreshKeyAndValue () =
-        let mutable entityStateOpt = Unchecked.defaultof<_>
-        getFreshKeyAndValueWorld.EntityStates.TryGetValue (getFreshKeyAndValueEntity, &entityStateOpt) |> ignore<bool>
-        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
-    let private getFreshKeyAndValueCached =
-        getFreshKeyAndValue
-
     type World with
-
-        // OPTIMIZATION: a ton of optimization has gone down in here...!
-        static member private entityStateRefresher (entity : Entity) world =
-            getFreshKeyAndValueEntity <- entity
-            getFreshKeyAndValueWorld <- world
-            let entityStateOpt =
-                KeyedCache.getValueFast
-                    keyEquality
-                    getFreshKeyAndValueCached
-                    (KeyValuePair (entity, world.EntityStates))
-                    (World.getEntityCachedOpt world)
-            getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
-            getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
-            match entityStateOpt :> obj with
-            | null ->
-                entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
-                Unchecked.defaultof<EntityState>
-            | _ ->
-                entity.EntityStateOpt <- entityStateOpt
-                entityStateOpt
 
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
-            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated
-            then World.entityStateRefresher entity world
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
+                match world.EntityStates.TryGetValue entity with
+                | (true, entityState) ->
+                    entity.EntityStateOpt <- entityState
+                    entityState
+                | (false, _) -> Unchecked.defaultof<EntityState>
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =

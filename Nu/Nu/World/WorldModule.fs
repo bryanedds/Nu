@@ -108,10 +108,6 @@ module WorldModule =
 
     type World with // Caching
 
-        /// Get the optional cached entity.
-        static member internal getEntityCachedOpt world =
-            world.EntityCachedOpt
-
         /// Get the simulants.
         static member internal getSimulants world =
             world.Simulants
@@ -586,7 +582,6 @@ module WorldModule =
                     | (false, _) -> null
 
             // publish to each subscription
-            // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
             // OPTIMIZATION: fused PublishEventHook for speed.
             if notNull subscriptionsOpt then
                 let mutable (going, enr) = (true, subscriptionsOpt.GetEnumerator ())
@@ -613,8 +608,6 @@ module WorldModule =
                                     | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); Cascade
                             handling <- result
-                            world |> World.choose |> ignore
-                        else () // nothing to do
                     else going <- false
 
         /// Publish an event with no subscription sorting or wildcard utilization.

@@ -1836,14 +1836,12 @@ and [<ReferenceEquality>] internal WorldExtension =
 and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
-          mutable ChooseCount : int // NOTE: this allows us to check the integrity of the world's imperative subsystems.
           EventGraph : EventGraph
-          EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SDictionary<Entity, EntityState>>, EntityState>
           EntityStates : SDictionary<Entity, EntityState>
           GroupStates : Dictionary<Group, GroupState>
           ScreenStates : Dictionary<Screen, ScreenState>
-          // cache line 2
           mutable GameState : GameState
+          // cache line 2
           EntityMounts : Dictionary<Entity, Entity HashSet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
@@ -2072,21 +2070,9 @@ and [<ReferenceEquality>] World =
         let eyeFieldOfView = this.Eye3dFieldOfView
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
-#if DEBUG
-    member internal this.Choose () =
-        match WorldTypes.Chosen with
-        | :? World as this -> 
-            if this.ChooseCount <> this.ChooseCount then
-                Log.error "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
-        | _ -> ()
-        this.ChooseCount <- inc this.ChooseCount // mutation is fine here since calling Choose implies we're doing so on a new reference in functional mode
-        WorldTypes.Chosen <- this
-        this
-#else
     member inline internal this.Choose () =
         WorldTypes.Chosen <- this
         this
-#endif
 
     override this.ToString () =
         ""
