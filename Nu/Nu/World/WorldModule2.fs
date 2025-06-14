@@ -372,7 +372,7 @@ module WorldModule2 =
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
-                    let updateSndResult (mapper : 'r -> 'r) world =
+                    let updateSndResult (mapper : 'r -> 'r) (world : World) =
                         match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
                         | (true, simulantImSim) ->
                             let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
@@ -416,7 +416,7 @@ module WorldModule2 =
             (screenResult, userResult)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue =
-            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> ()) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> fst
+            World.beginScreenPlus10<'d, unit> () (fun _ _ _ -> ()) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> fst
 
         /// End the ImSim declaration of a screen.
         static member endScreen (world : World) =
@@ -790,7 +790,6 @@ module WorldModule2 =
                             | (false, _) ->
                                 if not subscribing then failwithumf ()
                                 if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                                let keyValueStore = World.getKeyValueStore world
                                 entityChangeCounts.[entityAddress] <- 1 // no event
                         | (false, _) ->
                             if not subscribing then failwithumf ()
@@ -961,16 +960,16 @@ module WorldModule2 =
 
         static member private processTasklets world =
             let tasklets = World.getTasklets world
-            let world = World.clearTasklets world
-            let (taskletsNotRun, world) =
-                OMap.fold (fun (taskletsNotRun, world) simulant taskletList ->
-                    UList.fold (fun (taskletsNotRun, world) tasklet ->
+            World.clearTasklets world
+            let taskletsNotRun =
+                OMap.fold (fun taskletsNotRun simulant taskletList ->
+                    UList.fold (fun taskletsNotRun tasklet ->
                         if World.getExists simulant world
                         then World.processTasklet simulant tasklet taskletsNotRun world
-                        else (taskletsNotRun, world))
-                        (taskletsNotRun, world)
+                        else taskletsNotRun)
+                        taskletsNotRun
                         taskletList)
-                    (OMap.makeEmpty HashIdentity.Structural (OMap.getConfig tasklets), world)
+                    (OMap.makeEmpty HashIdentity.Structural (OMap.getConfig tasklets))
                     tasklets
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world

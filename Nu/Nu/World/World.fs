@@ -340,7 +340,7 @@ module WorldModule3 =
                   EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                  GameDispatchers = [defaultGameDispatcher] |> dictPlus StringComparer.Ordinal }
+                  GameDispatchers = Map.ofList [defaultGameDispatcher] |> Map.toSeq |> dictPlus StringComparer.Ordinal }
 
             // make the world's subsystems
             let imGui = ImGui (true, outerViewport.Bounds.Size)
@@ -409,11 +409,11 @@ module WorldModule3 =
 
                 // make the world's dispatchers
                 let dispatchers =
-                    { Facets = World.makeDefaultFacets () |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      GameDispatchers = [defaultGameDispatcher] |> dictPlus StringComparer.Ordinal }
+                    { Facets = World.makeDefaultFacets () |> Map.addMany pluginFacets |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.addMany pluginEntityDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.addMany pluginGroupDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.addMany pluginScreenDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                      GameDispatchers = Map.ofList [defaultGameDispatcher] |> Map.addMany pluginGameDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal }
 
                 // get the first game dispatcher
                 let activeGameDispatcher =

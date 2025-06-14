@@ -449,7 +449,7 @@ module AmbientState =
               // cache line 3
               mutable TickDeltaPrevious : int64
               mutable DateTime : DateTimeOffset
-              Tasklets : OrderedDictionary<Simulant, 'w Tasklet List>
+              mutable Tasklets : OMap<Simulant, 'w Tasklet UList>
               mutable SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               mutable Overlayer : Overlayer
@@ -581,23 +581,22 @@ module AmbientState =
 
     /// Remove all tasklets associated with a simulant.
     let removeTasklets simulant state =
-        state.Tasklets.Remove simulant |> ignore<bool>
+        state.Tasklets <- OMap.remove simulant state.Tasklets
 
     /// Clear the tasklets from future processing.
     let clearTasklets state =
-        state.Tasklets.Clear ()
+        state.Tasklets <- OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets)
 
     /// Restore the given tasklets from future processing.
     let restoreTasklets tasklets state =
-        { state with Tasklets = tasklets }
+        state.Tasklets <- tasklets
 
     /// Add a tasklet to be executed at the scheduled time.
     let addTasklet simulant tasklet state =
+        state.Tasklets <-
             match state.Tasklets.TryGetValue simulant with
-            | (true, taskletList) -> taskletList.Add tasklet
-            | (false, _) ->
-                let taskletList = List [tasklet]
-                state.Tasklets.Add (simulant, taskletList)
+            | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) state.Tasklets
+            | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig state.Tasklets) tasklet) state.Tasklets
 
     /// Attempt to get the window flags.
     let tryGetWindowFlags state =
@@ -713,7 +712,7 @@ module AmbientState =
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
-          Tasklets = OrderedDictionary HashIdentity.Structural
+          Tasklets = OMap.makeEmpty HashIdentity.Structural Imperative
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
           Overlayer = overlayer

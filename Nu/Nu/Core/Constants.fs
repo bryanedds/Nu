@@ -133,7 +133,6 @@ module Engine =
               "PerimeterUnscaled"
               "Perimeter"
               "Bounds"
-              "Imperative"
               "PresenceOverride"
               "PublishChangeEvents"
               "PublishPreUpdates"

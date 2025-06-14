@@ -50,7 +50,6 @@ module WorldEntityModule =
         let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity>>
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable Imperative = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable MountOpt = Unchecked.defaultof<Lens<Entity Relation option, Entity>>
         let mutable PropagationSourceOpt = Unchecked.defaultof<Lens<Entity option, Entity>>
         let mutable Enabled = Unchecked.defaultof<Lens<bool, Entity>>
@@ -279,7 +278,6 @@ module WorldEntityModule =
             Cached.AffineMatrixLocal <- lensReadOnly (nameof Cached.AffineMatrixLocal) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Presence <- lens (nameof Cached.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Imperative <- lens (nameof Cached.Imperative) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.MountOpt <- lens (nameof Cached.MountOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PropagationSourceOpt <- lens (nameof Cached.PropagationSourceOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Enabled <- lens (nameof Cached.Enabled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
