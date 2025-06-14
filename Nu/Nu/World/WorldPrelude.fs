@@ -477,21 +477,19 @@ module AmbientState =
         state.Flags <- if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask
 
     let internal clearAdvancement (state : _ AmbientState) =
-        { state with
-            Flags = state.Flags &&& ~~~AdvancingMask ||| AdvancementClearedMask
-            UpdateDelta = 0L
-            ClockDelta = 0.0f
-            TickDelta = 0L }
+        state.Flags <- state.Flags &&& ~~~AdvancingMask ||| AdvancementClearedMask
+        state.UpdateDelta <- 0L
+        state.ClockDelta <- 0.0f
+        state.TickDelta <- 0L
 
     let internal restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
         let flags = state.Flags
         let flags = if advancing then flags ||| AdvancingMask else flags &&& ~~~AdvancingMask
         let flags = if advancementCleared then flags ||| AdvancementClearedMask else flags &&& ~~~AdvancementClearedMask
-        { state with
-            Flags = flags
-            UpdateDelta = updateDelta
-            ClockDelta = clockDelta
-            TickDelta = tickDelta }
+        state.Flags <- flags
+        state.UpdateDelta <- updateDelta
+        state.ClockDelta <- clockDelta
+        state.TickDelta <- tickDelta
 
     /// Get the update delta.
     let getUpdateDelta state =

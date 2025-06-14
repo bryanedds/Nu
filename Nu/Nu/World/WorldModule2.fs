@@ -773,28 +773,31 @@ module WorldModule2 =
                     if eventNamesLength >= 7 then
                         let entityAddress = rtoa (Array.skip 3 eventNames)
                         let entity = Nu.Entity entityAddress
-                        match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with
+                        match World.tryGetKeyedValueFast<Dictionary<Entity Address, int>> (EntityChangeCountsKey, world) with
                         | (true, entityChangeCounts) ->
                             match entityChangeCounts.TryGetValue entityAddress with
                             | (true, entityChangeCount) ->
-                                let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
-                                let entityChangeCounts =
-                                    if entityChangeCount = 0
-                                    then UMap.remove entityAddress entityChangeCounts
-                                    else UMap.add entityAddress entityChangeCount entityChangeCounts
+                                let entityChangeCount =
+                                    if subscribing
+                                    then inc entityChangeCount
+                                    else dec entityChangeCount
+                                if entityChangeCount = 0
+                                    then entityChangeCounts.Remove entityAddress |> ignore<bool>
+                                    else entityChangeCounts.[entityAddress] <- entityChangeCount
                                 if entity.GetExists world then
                                     if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> ignore<bool>
                                     elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                                World.mapKeyValueStore (SUMap.add EntityChangeCountsKey entityChangeCounts) world // no event
                             | (false, _) ->
                                 if not subscribing then failwithumf ()
                                 if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                                World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
+                                let keyValueStore = World.getKeyValueStore world
+                                entityChangeCounts.[entityAddress] <- 1 // no event
                         | (false, _) ->
                             if not subscribing then failwithumf ()
-                            let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
                             if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                            World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
+                            let entityChangeCounts = dictPlus HashIdentity.Structural [(entityAddress, 1)]
+                            let keyValueStore = World.getKeyValueStore world
+                            keyValueStore.[EntityChangeCountsKey] <- entityChangeCounts // no event
                     if  Array.contains Constants.Address.WildcardName eventNames ||
                         Array.contains Constants.Address.EllipsisName eventNames then
                         Log.error "Subscribing to change events with a wildcard or ellipsis is not supported."
@@ -1925,9 +1928,9 @@ module EntityDispatcherModule2 =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (entity, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (entity, world)
 #if DEBUG
             if world.ContextImSim <> entity.EntityAddress then
@@ -1939,8 +1942,8 @@ module EntityDispatcherModule2 =
             World.advanceContext entity.EntityAddress context world
 
         /// ImSim process an entity.
-        abstract Process : entity : Entity * world : World -> World
-        default this.Process (_, world) = world
+        abstract Process : entity : Entity * world : World -> unit
+        default this.Process (_, _) = ()
 
     /// An ImSim 2d entity dispatcher.
     type [<AbstractClass>] Entity2dDispatcherImSim (physical, lightProbe, light) =
@@ -2301,9 +2304,9 @@ module GroupDispatcherModule =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (group, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (group, world)
 #if DEBUG
             if world.ContextImSim <> group.GroupAddress then
@@ -2315,8 +2318,8 @@ module GroupDispatcherModule =
             World.advanceContext group.GroupAddress context world
 
         /// ImSim process a group.
-        abstract Process : group : Group * world : World -> World
-        default this.Process (_, world) = world
+        abstract Process : group : Group * world : World -> unit
+        default this.Process (_, _) = ()
 
     type World with
 
@@ -2516,9 +2519,9 @@ module ScreenDispatcherModule =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (FQueue.ofSeq results, screen, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImSim <> screen.ScreenAddress then
@@ -2530,8 +2533,8 @@ module ScreenDispatcherModule =
             World.advanceContext screen.ScreenAddress context world
 
         /// ImSim process a screen.
-        abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> World
-        default this.Process (_, _, world) = world
+        abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> unit
+        default this.Process (_, _, _) = ()
 
     type World with
 
@@ -2728,9 +2731,9 @@ module GameDispatcherModule =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (game, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (game, world)
 #if DEBUG
             if world.ContextImSim <> game.GameAddress then
