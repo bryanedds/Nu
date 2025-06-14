@@ -57,7 +57,7 @@ module WorldImSim =
         static member getReinitializingImSim (world : World) =
             world.ReinitializingImSim
 
-        /// ImSim subscribe to the given event address with a user-defined result mapper.
+        /// ImSim subscribe to the given event address with a user-defined result.
         static member doSubscriptionPlus<'d, 'r> (mapResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue * World =
             let eventAddress' =
                 if not (Array.contains "Event" eventAddress.Names)
