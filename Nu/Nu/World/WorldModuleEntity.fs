@@ -816,8 +816,15 @@ module WorldModuleEntity =
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
             if v3Neq value entityState.Position then
-                if entityState.Mounted then World.propagateEntityAffineMatrix entity world
-                true
+                if entityState.Optimized then
+                    entityState.Position <- value
+                    if entityState.Mounted then World.propagateEntityAffineMatrix entity world
+                    true
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Position <- value
+                    World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                    true
             else false
 
         static member internal setEntityPositionLocal value entity world =
