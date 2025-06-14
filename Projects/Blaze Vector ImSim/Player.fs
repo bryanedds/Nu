@@ -40,10 +40,8 @@ type PlayerDispatcher () =
 
     override this.Process (entity, world) =
 
-        // grab body id
-        let bodyId = entity.GetBodyId world
-
         // process walking
+        let bodyId = entity.GetBodyId world
         if world.Advancing then
             let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
             let force =
