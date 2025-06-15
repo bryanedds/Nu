@@ -1,7 +1,7 @@
 ﻿namespace Nu
 
 /// Implementation of the state monad, where the state is a World.
-type WorldComputationExpression() =
+type WorldBuilder() =
     // let! x: 'a = y: World -> 'a * World
     member inline _.Bind(m: World -> 'a * World, f: 'a -> World -> 'b * World) : World -> 'b * World =
         fun world ->
@@ -53,8 +53,8 @@ type WorldComputationExpression() =
     member inline _.Run(f: unit -> World -> 'a * World) = f()
 // Using a type extension is needed without https://github.com/fsharp/fslang-suggestions/issues/905
 // Otherwise, `let! _ =` will fail with an overload resolution error
-module [<AutoOpen; System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>] WorldComputationExpression =
-    type WorldComputationExpression with
+module [<AutoOpen; System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>] WorldBuilder =
+    type WorldBuilder with
         // let! x: 'a = y: World -> 'a
         member inline _.Bind(m: World -> 'a, f: 'a -> World -> 'b * World) : World -> 'b * World =
             fun world ->
@@ -62,4 +62,4 @@ module [<AutoOpen; System.ComponentModel.EditorBrowsable(System.ComponentModel.E
                 f a world
     /// Using this means you lose 1) understandable compiler error messages 2) debug stepping and variable information,
     /// in exchange for a more convenient syntax that elides the need to redefine world on every line.
-    let world = WorldComputationExpression()
+    let world = WorldBuilder()
