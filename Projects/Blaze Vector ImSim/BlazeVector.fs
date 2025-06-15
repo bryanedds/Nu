@@ -25,13 +25,60 @@ module BlazeVectorExtensions =
 type BlazeVectorDispatcher () =
     inherit GameDispatcherImSim ()
 
+    let processGame (game: Game) =
+        world {
+            // declare splash screen
+            let behavior = Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)
+            let! gameState = game.GetGameState
+            let! results = World.beginScreen Simulants.Splash.Name (gameState = Splash) behavior []
+            if FQueue.contains Deselecting results && gameState = Splash then
+                do! game.SetGameState Title
+            do! World.endScreen
+            
+            // declare title screen
+            let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)
+            let! gameState = game.GetGameState
+            let! _ = World.beginScreenWithGroupFromFile Simulants.Title.Name (gameState = Title) behavior "Assets/Gui/Title.nugroup" []
+            do! World.beginGroup "Gui" []
+            let! clicked = World.doButton "Play" []
+            if clicked then do! game.SetGameState Gameplay
+            let! clicked = World.doButton "Credits" []
+            if clicked then do! game.SetGameState Credits
+            let! clicked = World.doButton "Exit" []
+            let! unaccompanied = fun w -> w.Unaccompanied
+            if clicked && unaccompanied then do! World.exit
+            do! World.endGroup
+            do! World.endScreen
+            
+            // declare gameplay screen
+            let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)
+            let! gameState = game.GetGameState
+            let! results = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (gameState = Gameplay) behavior []
+            if FQueue.contains Select results then do! Simulants.Gameplay.SetGameplayState Playing
+            if FQueue.contains Deselecting results then do! Simulants.Gameplay.SetGameplayState Quit
+            let! selected = Simulants.Gameplay.GetSelected
+            let! isQuit = Simulants.Gameplay.GetGameplayState >> (=) Quit
+            if selected && isQuit then do! game.SetGameState Title
+            do! World.endScreen
+
+            // declare credits screen
+            let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)
+            let! gameState = game.GetGameState
+            let! _ = World.beginScreenWithGroupFromFile Simulants.Credits.Name (gameState = Credits) behavior "Assets/Gui/Credits.nugroup" []
+            do! World.beginGroup "Gui" []
+            let! clicked = World.doButton "Back" []
+            if clicked then do! game.SetGameState Title
+            do! World.endGroup
+            do! World.endScreen
+        }
+        
     // here we define default property values
     static member Properties =
         [define Game.GameState Splash]
 
     // here we define the game's top-level behavior
-    override this.Process (game, world) =
-
+    override this.Process (game, world) = processGame game world
+    member _.ProcessWithoutComputationExpression (game: Game) (world: World) =
         // declare splash screen
         let behavior = Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)
         let (results, world) = World.beginScreen Simulants.Splash.Name (game.GetGameState world = Splash) behavior [] world

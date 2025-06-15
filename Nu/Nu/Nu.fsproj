@@ -126,6 +126,7 @@
 		<Compile Include="World\WorldContent.fs" />
 		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\World.fs" />
+		<Compile Include="World\WorldComputationExpression.fs" />
 		<None Include="Scripts\GenerateInputBindings.fsx" />
 		<None Include="SDL2.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
