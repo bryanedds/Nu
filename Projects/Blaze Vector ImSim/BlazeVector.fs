@@ -45,7 +45,7 @@ type BlazeVectorDispatcher () =
             let! clicked = World.doButton "Credits" []
             if clicked then do! game.SetGameState Credits
             let! clicked = World.doButton "Exit" []
-            let! unaccompanied = fun w -> w.Unaccompanied
+            let! unaccompanied = _.Unaccompanied
             if clicked && unaccompanied then do! World.exit
             do! World.endGroup
             do! World.endScreen
@@ -57,8 +57,8 @@ type BlazeVectorDispatcher () =
             if FQueue.contains Select results then do! Simulants.Gameplay.SetGameplayState Playing
             if FQueue.contains Deselecting results then do! Simulants.Gameplay.SetGameplayState Quit
             let! selected = Simulants.Gameplay.GetSelected
-            let! isQuit = Simulants.Gameplay.GetGameplayState >> (=) Quit
-            if selected && isQuit then do! game.SetGameState Title
+            let! gameState = Simulants.Gameplay.GetGameplayState
+            if selected && gameState = Quit then do! game.SetGameState Title
             do! World.endScreen
 
             // declare credits screen
