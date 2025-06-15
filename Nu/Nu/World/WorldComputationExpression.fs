@@ -46,7 +46,7 @@ type WorldComputationExpression() =
     // Sequencing different lines together
     member inline _.Combine(m1: World -> 'a * World, m2: 'a -> World -> 'b * World) : World -> 'b * World =
         fun world ->
-            let (a, world') = m1 world
+            let a, world' = m1 world
             m2 a world'
     // final value for the computation expression
     member inline _.Run(f: unit -> World -> unit * World) = f() >> snd
