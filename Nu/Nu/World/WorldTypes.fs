@@ -1854,8 +1854,8 @@ and [<ReferenceEquality>] internal WorldExtension =
       Plugin : NuPlugin
       PropagationTargets : UMap<Entity, Entity USet> }
 
-/// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
-/// game, messages to by consumed by the various engine subsystems, and general configuration data.
+/// The world state, in a functional programming sense. This type is immutable enough to allows efficient snapshots and
+/// later restoration, such as for undo and redo, with very little additional code.
 and [<ReferenceEquality>] WorldState =
     internal
         { // cache line 1 (assuming 16 byte header)
@@ -1877,8 +1877,13 @@ and [<ReferenceEquality>] WorldState =
     override this.ToString () =
         ""
 
+/// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
+/// game, messages to by consumed by the various engine subsystems, and general configuration data. For better
+/// ergonomics, the World type keeps a mutable reference to the functional WorldState, which is updated by the engine
+/// whenever the engine transforms the world state.
 and [<NoEquality; NoComparison>] World =
-    { mutable WorldState : WorldState }
+    internal
+        { mutable WorldState : WorldState }
 
     member internal this.EventGraph =
         this.WorldState.EventGraph
@@ -1918,6 +1923,10 @@ and [<NoEquality; NoComparison>] World =
 
     member internal this.WorldExtension =
         this.WorldState.WorldExtension
+
+    /// Get the current world state.
+    member this.CurrentState =
+        this.WorldState
 
     /// Check that the world is executing with imperative semantics where applicable.
     member this.Imperative =

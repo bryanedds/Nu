@@ -937,10 +937,13 @@ module WorldModule2 =
         /// Switch simulation to this world, resynchronizing the imperative subsystems with its current state.
         /// Needed when abandoning execution of the current world in favor of a previous world, such as in the case of
         /// an exception where the try expression resulted in a transformed world that is to be discarded.
-        static member switch (world : World) =
+        static member switch worldStateOld (world : World) =
 
             // wipe memoized named content
             Content.wipe ()
+
+            // update world state
+            world.WorldState <- worldStateOld
 
             // sync tick watch state to advancing
             World.switchAmbientState world

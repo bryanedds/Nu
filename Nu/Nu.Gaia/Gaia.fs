@@ -472,8 +472,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         not io.WantCaptureKeyboardGlobal &&
         (world.Halted || EditWhileAdvancing)
 
-    let private snapshot snapshotType world =
-        Pasts <- (snapshotType, world.WorldState) :: Pasts
+    let private snapshot snapshotType (world : World) =
+        Pasts <- (snapshotType, world.CurrentState) :: Pasts
         Futures <- []
         TimelineChanged <- true
 
@@ -588,9 +588,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if  not (World.getImperative world) &&
             match Pasts with
             | past :: pasts' ->
-                let future = (fst past, world.WorldState)
-                world.WorldState <- snd past
-                World.switch world
+                let future = (fst past, world.CurrentState)
+                World.switch (snd past) world
                 Pasts <- pasts'
                 Futures <- future :: Futures
                 TimelineChanged <- true
@@ -615,9 +614,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if  not (World.getImperative world) &&
             match Futures with
             | future :: futures' ->
-                let past = (fst future, world.WorldState)
-                world.WorldState <- snd future
-                World.switch world
+                let past = (fst future, world.CurrentState)
+                World.switch (snd future) world
                 Pasts <- past :: Pasts
                 Futures <- futures'
                 TimelineChanged <- true
@@ -945,7 +943,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to load entity
         match entityAndDescriptorOpt with
         | Right (entity, entityDescriptor) ->
-            let worldStateOld = world.WorldState
+            let worldStateOld = world.CurrentState
             try if not (entity.GetExists world) || not (entity.GetProtected world) then
                     if entity.GetExists world then
                         snapshot LoadEntity world
@@ -974,8 +972,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
-                world.WorldState <- worldStateOld
-                World.switch world
+                World.switch worldStateOld world
                 false
 
         // error
@@ -1110,7 +1107,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
             false
 
-    let private tryLoadGroup filePath world =
+    let private tryLoadGroup filePath (world : World) =
 
         // attempt to load group descriptor
         let groupAndDescriptorOpt =
@@ -1126,7 +1123,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to load group
         match groupAndDescriptorOpt with
         | Right (group, groupDescriptor) ->
-            let worldStateOld = world.WorldState
+            let worldStateOld = world.CurrentState
             try if not (group.GetExists world) || not (group.GetProtected world) then
                     if group.GetExists world then
                         World.destroyGroupImmediate SelectedGroup world
@@ -1143,8 +1140,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
-                world.WorldState <- worldStateOld
-                World.switch world
+                World.switch worldStateOld world
                 false
 
         // error
@@ -1163,7 +1159,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     let private tryReloadCode world =
         if World.getAllowCodeReload world then
-            let worldStateOld = world.WorldState
+            let worldStateOld = world.CurrentState
             snapshot ReloadCode world
             selectEntityOpt None world // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = TargetDir + "/../../.."
@@ -1273,8 +1269,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | (Choice2Of2 _, diags) ->
                         let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
                         Log.error ("Failed to compile code due to (see full output in the console):\n" + diagsStr)
-                        world.WorldState <- worldStateOld
-                        World.switch world
+                        World.switch worldStateOld world
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
 
@@ -1283,8 +1278,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
             with exn ->
                 Log.error ("Failed to inspect for F# code due to: " + scstring exn)
-                world.WorldState <- worldStateOld
-                World.switch world
+                World.switch worldStateOld world
 
         else MessageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
@@ -3583,7 +3577,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.GetExists world) then
-                let worldStateOld = world.WorldState
+                let worldStateOld = world.CurrentState
                 try snapshot CreateGroup world
                     World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> ignore<Group>
                     selectEntityOpt None world
@@ -3592,8 +3586,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     NewGroupName <- ""
                 with exn ->
                     MessageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
-                    world.WorldState <- worldStateOld
-                    World.switch world
+                    World.switch worldStateOld world
             if ImGui.IsKeyReleased ImGuiKey.Escape then ShowNewGroupDialog <- false
             ImGui.EndPopup ()
 
@@ -3928,8 +3921,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.TextWrapped (scstring exn)
             ImGui.Text "How would you like to handle this exception?"
             if ImGui.Button "Soft Rewind: undo the current ImGui frame." then
-                world.WorldState <- worldStateOld
-                World.switch world
+                World.switch worldStateOld world
                 RecoverableExceptionOpt <- None
             if ImGui.Button "Hard Rewind: undo the last edit operation." then
                 tryUndo world |> ignore<bool>
@@ -3944,7 +3936,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiProcess (world : World) =
 
         // store old world state
-        let worldStateOld = world.WorldState
+        let worldStateOld = world.CurrentState
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
         if  world.Eye2dCenter <> DesiredEye2dCenter ||
