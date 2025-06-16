@@ -1049,7 +1049,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
             false
 
-    let private tryLoadGroup filePath world =
+    let private tryLoadGroup filePath (world : World) =
 
         // attempt to load group descriptor
         let groupAndDescriptorOpt =
