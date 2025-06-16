@@ -1,4 +1,4 @@
-﻿﻿// Nu Game Engine.
+﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
 namespace Nu
@@ -632,7 +632,7 @@ module WorldEntityModule =
             dispatcher.TryUntruncateModel<'model> (model, entity, world)
 
         /// Get all the entities in a group.
-        static member getEntities (group : Group) world =
+        static member getEntities (group : Group) (world : World) =
             match world.Simulants.TryGetValue group with
             | (true, childrenOpt) ->
                 match childrenOpt with
@@ -646,9 +646,8 @@ module WorldEntityModule =
             | (false, _) -> Seq.empty
 
         /// Get all the entities directly parented by the group.
-        static member getSovereignEntities (group : Group) world =
-            let simulants = World.getSimulants world
-            match simulants.TryGetValue (group :> Simulant) with
+        static member getSovereignEntities (group : Group) (world : World) =
+            match world.Simulants.TryGetValue (group :> Simulant) with
             | (true, childrenOpt) ->
                 match childrenOpt with
                 | Some children -> children |> Seq.map cast<Entity>
@@ -776,11 +775,11 @@ module WorldEntityModule =
             else name
 
         /// Generate a sequential, editor-friendly entity name.
-        static member generateEntitySequentialName dispatcherName group world =
+        static member generateEntitySequentialName dispatcherName group (world : World) =
             let entityNames =
                 world.EntityStates |> // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
-                Seq.filter (fun entry -> entry.Key.Group = group) |>
-                Seq.map (fun entry -> entry.Key.Name) |>
+                Seq.filter (fun entry -> (fst entry).Group = group) |>
+                Seq.map (fun entry -> (fst entry).Name) |>
                 hashSetPlus StringComparer.Ordinal
             World.generateEntitySequentialName2 dispatcherName entityNames
 

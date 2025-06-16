@@ -17,7 +17,7 @@ open Prime
 module internal WorldTypes =
 
     // Debugging variables.
-    let mutable internal Chosen = obj ()
+    let mutable internal WorldForDebug = obj ()
 
     // Empty content variables.
     // OPTIMIZATION: allows us to avoid allocating content objects for entities that don't use them.
@@ -1353,7 +1353,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
 
     /// Get the latest value of a game's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGame handle WorldTypes.Chosen
+    member private this.View = WorldTypes.viewGame handle WorldTypes.WorldForDebug
 
     /// A convenience accessor to get the universal game handle.
     static member Handle = handle
@@ -1455,7 +1455,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
 
     /// Get the latest value of a screen's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewScreen (this :> obj) WorldTypes.Chosen
+    member private this.View = WorldTypes.viewScreen (this :> obj) WorldTypes.WorldForDebug
 
     /// Derive a group from its screen.
     static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
@@ -1556,7 +1556,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
 
     /// Get the latest value of a group's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGroup (this :> obj) WorldTypes.Chosen
+    member private this.View = WorldTypes.viewGroup (this :> obj) WorldTypes.WorldForDebug
 
     /// Derive an entity from its group.
     static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
@@ -1680,7 +1680,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
 
     /// Get the latest value of an entity's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewEntity (this :> obj) WorldTypes.Chosen
+    member private this.View = WorldTypes.viewEntity (this :> obj) WorldTypes.WorldForDebug
 
     /// Derive an entity from its parent entity.
     static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
@@ -1859,14 +1859,13 @@ and [<ReferenceEquality>] internal WorldExtension =
 and [<ReferenceEquality>] WorldState =
     internal
         { // cache line 1 (assuming 16 byte header)
-          mutable ChooseCount : int // NOTE: this allows us to check the integrity of the world's imperative subsystems.
           EventGraph : EventGraph
           EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
           EntityStates : SUMap<Entity, EntityState>
           GroupStates : UMap<Group, GroupState>
           ScreenStates : UMap<Screen, ScreenState>
-          // cache line 2
           GameState : GameState
+          // cache line 2
           EntityMounts : UMap<Entity, Entity USet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
@@ -2177,8 +2176,8 @@ and [<AbstractClass>] NuPlugin () =
     default this.Invoke _ _ _ = ()
 
     /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : world : World -> ((string * obj) list) * World
-    default this.MakeKeyedValues world = ([], world)
+    abstract MakeKeyedValues : world : World -> ((string * obj) list)
+    default this.MakeKeyedValues _ = []
 
     /// Attempt to make an emitter of the given name.
     abstract TryMakeEmitter : time : GameTime -> lifeTimeOpt : GameTime -> particleLifeTimeOpt : GameTime -> particleRate : single -> particleMax : int -> emitterName : string -> Particles.Emitter option

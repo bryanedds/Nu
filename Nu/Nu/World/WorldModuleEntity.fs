@@ -668,7 +668,7 @@ module WorldModuleEntity =
             | (false, _) -> false
 
         /// Find all the entities to which an entity may propagate its structure.
-        static member getPropagationTargets entity world =
+        static member getPropagationTargets entity (world : World) =
             match world.WorldExtension.PropagationTargets.TryGetValue entity with
             | (true, targets) -> seq targets
             | (false, _) -> Seq.empty
@@ -1726,7 +1726,7 @@ module WorldModuleEntity =
             let facets = World.getFacets world
             Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.Dispatcher entityState world
 
-        static member internal applyEntityOverlay overlayerOld overlayer world entity =
+        static member internal applyEntityOverlay overlayerOld overlayer entity world =
             let entityState = World.getEntityState entity world
             match entityState.OverlayNameOpt with
             | Some overlayName ->
@@ -2582,11 +2582,11 @@ module WorldModuleEntity =
                 World.setEntityState entityState entity world
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                 World.publishEntityChanges entity world
-                (Right (), world)
+                Right ()
             | (None, None) ->
-                (Right (), world)
+                Right ()
             | (_, _) ->
-                (Left "Could not set the entity's overlay name to None because doing so is currently not implemented.", world)
+                Left "Could not set the entity's overlay name to None because doing so is currently not implemented."
             
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
@@ -2606,9 +2606,9 @@ module WorldModuleEntity =
                     World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                     World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
                     World.publishEntityChanges entity world
-                    (Right (), world)
-                | Left error -> (Left error, world)
-            else (Right (), world)
+                    Right ()
+                | Left error -> Left error
+            else Right ()
 
         static member internal updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (entity : Entity) world : unit =
 

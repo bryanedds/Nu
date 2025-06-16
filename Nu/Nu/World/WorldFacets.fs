@@ -64,7 +64,7 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
-        let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
+        let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
         let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -136,14 +136,13 @@ type AnimatedSpriteFacet () =
          define Entity.Flip FlipNone]
 
     override this.Update (entity, world) =
-        if not (entity.GetEnabled world)
-        then entity.StartTime.Map ((+) world.GameDelta) world
-        else world
+        if not (entity.GetEnabled world) then
+            entity.StartTime.Map ((+) world.GameDelta) world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
-        let insetOpt = Option.toValueOption (getSpriteInsetOpt entity world)
+        let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
         let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -238,8 +237,7 @@ type BasicStaticSpriteEmitterFacet () =
     static let mapParticleSystem mapper (entity : Entity) world =
         let particleSystem = entity.GetParticleSystem world
         let particleSystem = mapper particleSystem
-        let world = entity.SetParticleSystem particleSystem world
-        world
+        entity.SetParticleSystem particleSystem world
 
     static let mapEmitter mapper (entity : Entity) world =
         mapParticleSystem (fun particleSystem ->
@@ -253,53 +251,53 @@ type BasicStaticSpriteEmitterFacet () =
     static let rec processOutput output entity world =
         match output with
         | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-        | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
+        | Particles.Outputs outputs -> for output in outputs do processOutput output entity world
 
     static let handleEmitterBlendChange evt world =
         let emitterBlend = evt.Data.Value :?> Blend
-        let world = mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterImageChange evt world =
         let emitterImage = evt.Data.Value :?> Image AssetTag
-        let world = mapEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterLifeTimeOptChange evt world =
         let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
-        let world = mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
+        Cascade
 
     static let handleParticleLifeTimeMaxOptChange evt world =
         let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
-        let world = mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleParticleRateChange evt world =
         let particleRate = evt.Data.Value :?> single
-        let world = mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleParticleMaxChange evt world =
         let particleMax = evt.Data.Value :?> int
-        let world = mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+        Cascade
 
     static let handleBasicParticleSeedChange evt world =
         let particleSeed = evt.Data.Value :?> Particles.BasicParticle
-        let world = mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterConstraintChange evt world =
         let emitterConstraint = evt.Data.Value :?> Particles.Constraint
-        let world = mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterStyleChange evt world =
         let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
-        let world = mapEmitter (constant emitter) entity world
-        (Cascade, world)
+        mapEmitter (constant emitter) entity world
+        Cascade
 
     static let handlePositionChange evt world =
         let entity = evt.Subscriber : Entity
@@ -314,8 +312,8 @@ type BasicStaticSpriteEmitterFacet () =
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             | _ -> particleSystem
-        let world = entity.SetParticleSystem particleSystem world
-        (Cascade, world)
+        entity.SetParticleSystem particleSystem world
+        Cascade
 
     static let handleRotationChange evt world =
         let entity = evt.Subscriber : Entity
@@ -330,8 +328,8 @@ type BasicStaticSpriteEmitterFacet () =
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             | _ -> particleSystem
-        let world = entity.SetParticleSystem particleSystem world
-        (Cascade, world)
+        entity.SetParticleSystem particleSystem world
+        Cascade
 
     static member Properties =
         [define Entity.SelfDestruct false
@@ -350,19 +348,18 @@ type BasicStaticSpriteEmitterFacet () =
         let emitter = makeEmitter entity world
         let particleSystem = entity.GetParticleSystem world
         let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
-        let world = entity.SetParticleSystem particleSystem world
-        let world = World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleEmitterBlendChange entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleEmitterImageChange entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleParticleMaxChange entity.ParticleMax.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleBasicParticleSeedChange entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleEmitterConstraintChange entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        let world = World.sense handleEmitterStyleChange entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        world
+        entity.SetParticleSystem particleSystem world
+        World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterBlendChange entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterImageChange entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleParticleMaxChange entity.ParticleMax.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleBasicParticleSeedChange entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterConstraintChange entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterStyleChange entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
 
     override this.Unregister (entity, world) =
         let particleSystem = entity.GetParticleSystem world
@@ -375,9 +372,8 @@ type BasicStaticSpriteEmitterFacet () =
             let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let (particleSystem, output) = Particles.ParticleSystem.run delta time particleSystem
-            let world = entity.SetParticleSystem particleSystem world
+            entity.SetParticleSystem particleSystem world
             processOutput output entity world
-        else world
 
     override this.Render (_, entity, world) =
         let time = world.GameTime
@@ -544,20 +540,20 @@ type ButtonFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
-                    let world = entity.SetDown true world
-                    let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownOffset world) world
+                    entity.SetDown true world
+                    entity.TrySet (nameof Entity.TextOffset) (entity.GetDownOffset world) world |> ignore
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus () entity.DownEvent eventTrace entity true false world
-                    (Resolve, world)
-                else (Resolve, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    World.publishPlus () entity.DownEvent eventTrace entity true false world
+                    Resolve
+                else Resolve
+            else Cascade
+        else Cascade
 
     static let handleMouseLeftUp evt world =
         let entity = evt.Subscriber : Entity
         let wasDown = entity.GetDown world
-        let world = entity.SetDown false world
-        let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) v2Zero world
+        entity.SetDown false world
+        entity.TrySet (nameof Entity.TextOffset) v2Zero world |> ignore
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
@@ -565,16 +561,16 @@ type ButtonFacet () =
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasDown then
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
-                    let world = World.publishPlus () entity.UpEvent eventTrace entity true false world
+                    World.publishPlus () entity.UpEvent eventTrace entity true false world
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
-                    let world = World.publishPlus () entity.ClickEvent eventTrace entity true false world
+                    World.publishPlus () entity.ClickEvent eventTrace entity true false world
                     match entity.GetClickSoundOpt world with
                     | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
                     | None -> ()
-                    (Resolve, world)
-                else (Cascade, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    Resolve
+                else Cascade
+            else Cascade
+        else Cascade
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
@@ -587,9 +583,8 @@ type ButtonFacet () =
          define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
     override this.Register (entity, world) =
-        let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ButtonFacet) world
-        let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
-        world
+        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ButtonFacet) world
+        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -646,36 +641,36 @@ type ToggleButtonFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
-                    let world = entity.SetPushed true world
-                    (Resolve, world)
-                else (Resolve, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    entity.SetPushed true world
+                    Resolve
+                else Resolve
+            else Cascade
+        else Cascade
 
     static let handleMouseLeftUp evt world =
         let entity = evt.Subscriber : Entity
         let wasPushed = entity.GetPushed world
-        let world = if wasPushed then entity.SetPushed false world else world
+        if wasPushed then entity.SetPushed false world
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasPushed then
-                    let world = entity.SetToggled (not (entity.GetToggled world)) world
+                    entity.SetToggled (not (entity.GetToggled world)) world
                     let toggled = entity.GetToggled world
                     let eventAddress = if toggled then entity.ToggledEvent else entity.UntoggledEvent
                     let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "" EventTrace.empty
-                    let world = World.publishPlus () eventAddress eventTrace entity true false world
+                    World.publishPlus () eventAddress eventTrace entity true false world
                     let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                    let world = World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
+                    World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
                     match entity.GetToggleSoundOpt world with
                     | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
                     | None -> ()
-                    (Resolve, world)
-                else (Cascade, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    Resolve
+                else Cascade
+            else Cascade
+        else Cascade
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
@@ -690,17 +685,15 @@ type ToggleButtonFacet () =
          define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
     override this.Register (entity, world) =
-        let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ToggleButtonFacet) world
-        let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ToggleButtonFacet) world
-        world
+        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ToggleButtonFacet) world
+        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ToggleButtonFacet) world
 
     override this.Update (entity, world) =
         let textOffset =
             if entity.GetPushed world then entity.GetPushedOffset world
             elif entity.GetToggled world then entity.GetToggledOffset world
             else v2Zero
-        let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
-        world
+        entity.TrySet (nameof Entity.TextOffset) textOffset world |> ignore
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -754,16 +747,16 @@ type RadioButtonFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
-                    let world = entity.SetPushed true world
-                    (Resolve, world)
-                else (Resolve, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    entity.SetPushed true world
+                    Resolve
+                else Resolve
+            else Cascade
+        else Cascade
 
     static let handleMouseLeftUp evt world =
         let entity = evt.Subscriber : Entity
         let wasPushed = entity.GetPushed world
-        let world = if wasPushed then entity.SetPushed false world else world
+        if wasPushed then entity.SetPushed false world
         let wasDialed = entity.GetDialed world
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
@@ -771,20 +764,20 @@ type RadioButtonFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasPushed && not wasDialed then
-                    let world = entity.SetDialed true world
+                    entity.SetDialed true world
                     let dialed = entity.GetDialed world
                     let eventAddress = if dialed then entity.DialedEvent else entity.UndialedEvent
                     let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "" EventTrace.empty
-                    let world = World.publishPlus () eventAddress eventTrace entity true false world
+                    World.publishPlus () eventAddress eventTrace entity true false world
                     let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
-                    let world = World.publishPlus dialed entity.DialEvent eventTrace entity true false world
+                    World.publishPlus dialed entity.DialEvent eventTrace entity true false world
                     match entity.GetDialSoundOpt world with
                     | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
                     | None -> ()
-                    (Resolve, world)
-                else (Cascade, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    Resolve
+                else Cascade
+            else Cascade
+        else Cascade
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
@@ -799,17 +792,15 @@ type RadioButtonFacet () =
          define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
 
     override this.Register (entity, world) =
-        let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof RadioButtonFacet) world
-        let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof RadioButtonFacet) world
-        world
+        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof RadioButtonFacet) world
+        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof RadioButtonFacet) world
 
     override this.Update (entity, world) =
         let textOffset =
             if entity.GetPushed world then entity.GetPushedOffset world
             elif entity.GetDialed world then entity.GetDialedOffset world
             else v2Zero
-        let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
-        world
+        entity.TrySet (nameof Entity.TextOffset) textOffset world |> ignore
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -914,26 +905,26 @@ type FeelerFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
-                    let world = entity.SetTouched true world
+                    entity.SetTouched true world
                     let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position entity.TouchEvent eventTrace entity true false world
-                    (Resolve, world)
-                else (Resolve, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    World.publishPlus data.Position entity.TouchEvent eventTrace entity true false world
+                    Resolve
+                else Resolve
+            else Cascade
+        else Cascade
 
     static let handleMouseLeftUp evt world =
         let entity = evt.Subscriber : Entity
         let data = evt.Data : MouseButtonData
         let wasTouched = entity.GetTouched world
-        let world = entity.SetTouched false world
+        entity.SetTouched false world
         if entity.GetVisible world then
             if entity.GetEnabled world && wasTouched then
                 let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
-                let world = World.publishPlus data.Position entity.UntouchEvent eventTrace entity true false world
-                (Resolve, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                World.publishPlus data.Position entity.UntouchEvent eventTrace entity true false world
+                Resolve
+            else Cascade
+        else Cascade
 
     static let handleIncoming evt world =
         let entity = evt.Subscriber : Entity
@@ -941,35 +932,32 @@ type FeelerFacet () =
             entity.GetVisible world &&
             entity.GetEnabled world then
             let mousePosition = MouseState.getPosition ()
-            let world = entity.SetTouched true world
+            entity.SetTouched true world
             let eventTrace = EventTrace.debug "FeelerFacet" "handleIncoming" "" EventTrace.empty
-            let world = World.publishPlus mousePosition entity.TouchEvent eventTrace entity true false world
-            (Resolve, world)
-        else (Cascade, world)
+            World.publishPlus mousePosition entity.TouchEvent eventTrace entity true false world
+            Resolve
+        else Cascade
 
     static let handleOutgoing evt world =
         let entity = evt.Subscriber : Entity
-        (Cascade, entity.SetTouched false world)
+        entity.SetTouched false world
+        Cascade
 
     static member Properties =
         [define Entity.Touched false]
 
     override this.Register (entity, world) =
-        let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof FeelerFacet) world
-        let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof FeelerFacet) world
-        let world = World.sense handleIncoming entity.Screen.IncomingFinishEvent entity (nameof FeelerFacet) world
-        let world = World.sense handleOutgoing entity.Screen.OutgoingStartEvent entity (nameof FeelerFacet) world
-        world
+        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof FeelerFacet) world
+        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof FeelerFacet) world
+        World.sense handleIncoming entity.Screen.IncomingFinishEvent entity (nameof FeelerFacet) world
+        World.sense handleOutgoing entity.Screen.OutgoingStartEvent entity (nameof FeelerFacet) world
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
             if entity.GetTouched world then
                 let mousePosition = World.getMousePosition world
                 let eventTrace = EventTrace.debug "FeelerFacet" "Update" "" EventTrace.empty
-                let world = World.publishPlus mousePosition entity.TouchingEvent eventTrace entity true false world
-                world
-            else world
-        else world
+                World.publishPlus mousePosition entity.TouchingEvent eventTrace entity true false world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
@@ -1002,11 +990,11 @@ type TextBoxFacet () =
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && not (entity.GetFocused world) then
                     let eventTrace = EventTrace.debug "TextBoxFacet" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus () entity.FocusEvent eventTrace entity true false world
-                    (Resolve, world)
-                else (Resolve, world)
-            else (Cascade, world)
-        else (Cascade, world)
+                    World.publishPlus () entity.FocusEvent eventTrace entity true false world
+                    Resolve
+                else Resolve
+            else Cascade
+        else Cascade
 
     static let handleKeyboardKeyChange evt (world : World) =
         let entity = evt.Subscriber : Entity
@@ -1018,52 +1006,45 @@ type TextBoxFacet () =
             entity.GetEnabled world &&
             entity.GetFocused world &&
             text.Length < entity.GetTextCapacity world then
-            let world =
-                if data.Down then
-                    if data.KeyboardKey = KeyboardKey.Left then 
-                        if cursor > 0 then
-                            let cursor = dec cursor
-                            let world = entity.SetCursor cursor world
-                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-                        else world
-                    elif data.KeyboardKey = KeyboardKey.Right then
-                        if cursor < text.Length then
-                            let cursor = inc cursor
-                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-                        else world
-                    elif data.KeyboardKey = KeyboardKey.Home || data.KeyboardKey = KeyboardKey.Up then
-                        let cursor = 0
-                        let world = entity.SetCursor cursor world
+            if data.Down then
+                if data.KeyboardKey = KeyboardKey.Left then 
+                    if cursor > 0 then
+                        let cursor = dec cursor
+                        entity.SetCursor cursor world
                         let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
                         World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-                    elif data.KeyboardKey = KeyboardKey.End || data.KeyboardKey = KeyboardKey.Down then
-                        let cursor = text.Length
-                        let world = entity.SetCursor cursor world
+                elif data.KeyboardKey = KeyboardKey.Right then
+                    if cursor < text.Length then
+                        let cursor = inc cursor
                         let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
                         World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-                    elif data.KeyboardKey = KeyboardKey.Backspace then
-                        if cursor > 0 && text.Length > 0 then
-                            let text = String.take (dec cursor) text + String.skip cursor text
-                            let cursor = dec cursor
-                            let world = entity.SetText text world
-                            let world = entity.SetCursor cursor world
-                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-                        else world
-                    elif data.KeyboardKey = KeyboardKey.Delete then
-                        let text = entity.GetText world
-                        if cursor >= 0 && cursor < text.Length then
-                            let text = String.take cursor text + String.skip (inc cursor) text
-                            let world = entity.SetText text world
-                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-                        else world
-                    else world
-                else world
-            (Resolve, world)
-        else (Cascade, world)
+                elif data.KeyboardKey = KeyboardKey.Home || data.KeyboardKey = KeyboardKey.Up then
+                    let cursor = 0
+                    entity.SetCursor cursor world
+                    let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                    World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                elif data.KeyboardKey = KeyboardKey.End || data.KeyboardKey = KeyboardKey.Down then
+                    let cursor = text.Length
+                    entity.SetCursor cursor world
+                    let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                    World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                elif data.KeyboardKey = KeyboardKey.Backspace then
+                    if cursor > 0 && text.Length > 0 then
+                        let text = String.take (dec cursor) text + String.skip cursor text
+                        let cursor = dec cursor
+                        entity.SetText text world
+                        entity.SetCursor cursor world
+                        let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                elif data.KeyboardKey = KeyboardKey.Delete then
+                    let text = entity.GetText world
+                    if cursor >= 0 && cursor < text.Length then
+                        let text = String.take cursor text + String.skip (inc cursor) text
+                        entity.SetText text world
+                        let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+            Resolve
+        else Cascade
 
     static let handleTextInput evt (world : World) =
         let entity = evt.Subscriber : Entity
@@ -1079,12 +1060,12 @@ type TextBoxFacet () =
                 then text + string evt.Data.TextInput
                 else String.take cursor text + string evt.Data.TextInput + String.skip cursor text
             let cursor = inc cursor
-            let world = entity.SetText text world
-            let world = if cursor >= 0 then entity.SetCursor cursor world else world
+            entity.SetText text world
+            if cursor >= 0 then entity.SetCursor cursor world
             let eventTrace = EventTrace.debug "TextBoxFacet" "handleTextInput" "" EventTrace.empty
-            let world = World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
-            (Resolve, world)
-        else (Cascade, world)
+            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+            Resolve
+        else Cascade
 
     static member Properties =
         [define Entity.Text ""
@@ -1101,11 +1082,10 @@ type TextBoxFacet () =
          nonPersistent Entity.Cursor 0]
 
     override this.Register (entity, world) =
-        let world = World.sense handleMouseLeftDown Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
-        let world = World.sense handleKeyboardKeyChange Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
-        let world = World.sense handleTextInput Game.TextInputEvent entity (nameof TextBoxFacet) world
-        let world = entity.SetCursor (entity.GetText world).Length world
-        world
+        World.sense handleMouseLeftDown Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
+        World.sense handleKeyboardKeyChange Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
+        World.sense handleTextInput Game.TextInputEvent entity (nameof TextBoxFacet) world
+        entity.SetCursor (entity.GetText world).Length world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -1185,8 +1165,8 @@ type EffectFacet () =
             let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
             match World.assetTagToValueOpt<Effects.EffectDescriptor> effectSymbol symbolLoadMetadata world with
             | Some effect -> entity.SetEffectDescriptor effect world
-            | None -> world
-        | None -> world
+            | None -> ()
+        | None -> ()
 
     static let run (entity : Entity) world =
 
@@ -1206,52 +1186,45 @@ type EffectFacet () =
 
         // run effect, optionally destroying upon exhaustion
         let (liveness, effect, dataToken) = Effect.run effect world
-        let world = entity.SetParticleSystem effect.ParticleSystem world
-        let world = entity.SetEffectTagTokens effect.TagTokens world
-        let world = entity.SetEffectDataToken dataToken world
-        if liveness = Dead && entity.GetSelfDestruct world
-        then World.destroyEntity entity world
-        else world
+        entity.SetParticleSystem effect.ParticleSystem world
+        entity.SetEffectTagTokens effect.TagTokens world
+        entity.SetEffectDataToken dataToken world
+        if liveness = Dead && entity.GetSelfDestruct world then
+            World.destroyEntity entity world
 
     static let handleEffectDescriptorChange evt world =
         let entity = evt.Subscriber : Entity
-        let world =
-            if entity.GetEnabled world then
-                match entity.GetRunMode world with
-                | RunEarly -> run entity world
-                | _ -> world
-            else world
-        (Cascade, world)
+        if entity.GetEnabled world then
+            match entity.GetRunMode world with
+            | RunEarly -> run entity world
+            | _ -> ()
+        Cascade
 
     static let handleEffectsChange evt world =
         let entity = evt.Subscriber : Entity
-        let world = setEffect (entity.GetEffectSymbolOpt world) entity world
-        (Cascade, world)
+        setEffect (entity.GetEffectSymbolOpt world) entity world
+        Cascade
 
     static let handleAssetsReload evt world =
         let entity = evt.Subscriber : Entity
-        let world = setEffect (entity.GetEffectSymbolOpt world) entity world
-        (Cascade, world)
+        setEffect (entity.GetEffectSymbolOpt world) entity world
+        Cascade
 
     static let handlePreUpdate evt world =
         let entity = evt.Subscriber : Entity
-        let world =
-            if entity.GetEnabled world then
-                match entity.GetRunMode world with
-                | RunEarly -> run entity world
-                | _ -> world
-            else world
-        (Cascade, world)
+        if entity.GetEnabled world then
+            match entity.GetRunMode world with
+            | RunEarly -> run entity world
+            | _ -> ()
+        Cascade
 
     static let handlePostUpdate evt world =
         let entity = evt.Subscriber : Entity
-        let world =
-            if entity.GetEnabled world then
-                match entity.GetRunMode world with
-                | RunLate -> run entity world
-                | _ -> world
-            else world
-        (Cascade, world)
+        if entity.GetEnabled world then
+            match entity.GetRunMode world with
+            | RunLate -> run entity world
+            | _ -> ()
+        Cascade
 
     static member Properties =
         [define Entity.ParticleSystem Particles.ParticleSystem.empty
@@ -1272,13 +1245,12 @@ type EffectFacet () =
 
     override this.Register (entity, world) =
         let effectStartTime = Option.defaultValue world.GameTime (entity.GetEffectStartTimeOpt world)
-        let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-        let world = World.sense handleEffectDescriptorChange entity.EffectDescriptor.ChangeEvent entity (nameof EffectFacet) world
-        let world = World.sense handleEffectsChange entity.EffectSymbolOpt.ChangeEvent entity (nameof EffectFacet) world
-        let world = World.sense handleAssetsReload Nu.Game.Handle.AssetsReloadEvent entity (nameof EffectFacet) world
-        let world = World.sense handlePreUpdate entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
-        let world = World.sense handlePostUpdate entity.Group.PostUpdateEvent entity (nameof EffectFacet) world
-        world
+        entity.SetEffectStartTimeOpt (Some effectStartTime) world
+        World.sense handleEffectDescriptorChange entity.EffectDescriptor.ChangeEvent entity (nameof EffectFacet) world
+        World.sense handleEffectsChange entity.EffectSymbolOpt.ChangeEvent entity (nameof EffectFacet) world
+        World.sense handleAssetsReload Nu.Game.Handle.AssetsReloadEvent entity (nameof EffectFacet) world
+        World.sense handlePreUpdate entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
+        World.sense handlePostUpdate entity.Group.PostUpdateEvent entity (nameof EffectFacet) world
 
     override this.Render (renderPass, entity, world) =
 
@@ -1405,34 +1377,38 @@ type RigidBodyFacet () =
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let center = if entity.GetIs2d world then entity.GetPerimeterCenter world else entity.GetPosition world
-            (Cascade, World.setBodyCenter center bodyId world)
-        else (Cascade, world)
+            World.setBodyCenter center bodyId world
+            Cascade
+        else Cascade
 
     static let propagatePhysicsRotation (entity : Entity) (evt : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let rotation = evt.Data.Value :?> Quaternion
-            (Cascade, World.setBodyRotation rotation bodyId world)
-        else (Cascade, world)
+            World.setBodyRotation rotation bodyId world
+            Cascade
+        else Cascade
 
     static let propagatePhysicsLinearVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let linearVelocity = evt.Data.Value :?> Vector3
-            (Cascade, World.setBodyLinearVelocity linearVelocity bodyId world)
-        else (Cascade, world)
+            World.setBodyLinearVelocity linearVelocity bodyId world
+            Cascade
+        else Cascade
 
     static let propagatePhysicsAngularVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let angularVelocity = evt.Data.Value :?> Vector3
-            (Cascade, World.setBodyAngularVelocity angularVelocity bodyId world)
-        else (Cascade, world)
+            World.setBodyAngularVelocity angularVelocity bodyId world
+            Cascade
+        else Cascade
 
     static let propagatePhysicsAffected (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-        let world = if evt.Data.Name = nameof Entity.BodyType && not (evt.Data.Value :?> BodyType).IsStatic then entity.SetStatic false world else world
-        let world = entity.PropagatePhysics world
-        (Cascade, world)
+        if evt.Data.Name = nameof Entity.BodyType && not (evt.Data.Value :?> BodyType).IsStatic then entity.SetStatic false world
+        entity.PropagatePhysics world
+        Cascade
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1464,24 +1440,26 @@ type RigidBodyFacet () =
         // OPTIMIZATION: share lambdas to reduce live object count.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
         let subIds = Array.init 5 (fun _ -> Gen.id64)
-        let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> snd
-        let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
-        let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
-        let world = World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd
-        let world = World.subscribePlus subIds.[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> snd
+        World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> ignore
+        World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> ignore
+        World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> ignore
+        World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> ignore
+        World.subscribePlus subIds.[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> ignore
         let unsubscribe = fun world ->
-            Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
+            for subId in subIds do
+                World.unsubscribe subId world
         let callback = fun evt world ->
             if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
                 not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
-                (Cascade, unsubscribe world)
-            else (Cascade, world)
+                unsubscribe world
+                Cascade
+            else Cascade
         let callback2 = fun _ world ->
-            (Cascade, unsubscribe world)
-        let world = World.sense callback entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
-        let world = World.sense callback2 entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
-        let world = entity.SetAwakeTimeStamp world.UpdateTime world
-        world
+            unsubscribe world
+            Cascade
+        World.sense callback entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
+        World.sense callback2 entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
+        entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
         let mutable transform = entity.GetTransform world
@@ -1571,14 +1549,13 @@ type BodyJointFacet () =
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
     override this.Register (entity, world) =
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget2Opt)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
-        world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2Opt)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
 
     override this.RegisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
@@ -1593,13 +1570,13 @@ type BodyJointFacet () =
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
             World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
-        | None -> world
+        | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
         | Some (targetId, target2IdOpt) ->
             World.destroyBodyJoint (entity.GetIs2d world) targetId target2IdOpt (entity.GetBodyJointId world) world
-        | None -> world
+        | None -> ()
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
@@ -1646,28 +1623,27 @@ type TileMapFacet () =
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
-        let world = entity.AutoBounds world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
-        let world =
-            World.sense (fun _ world ->
-                let attributes = entity.GetAttributesInferred world
-                let mutable transform = entity.GetTransform world
-                transform.Size <- attributes.SizeInferred
-                transform.Offset <- attributes.OffsetInferred
-                let world = entity.SetTransformWithoutEvent transform world
-                (Cascade, entity.PropagatePhysics world))
-                (entity.ChangeEvent (nameof entity.TileMap))
-                entity
-                (nameof TileMapFacet)
-                world
-        world
+        entity.AutoBounds world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world ->
+            let attributes = entity.GetAttributesInferred world
+            let mutable transform = entity.GetTransform world
+            transform.Size <- attributes.SizeInferred
+            transform.Offset <- attributes.OffsetInferred
+            entity.SetTransformWithoutEvent transform world
+            entity.PropagatePhysics world
+            Cascade)
+            (entity.ChangeEvent (nameof entity.TileMap))
+            entity
+            (nameof TileMapFacet)
+            world
 
     override this.RegisterPhysics (entity, world) =
         match TmxMap.tryGetTileMap (entity.GetTileMap world) with
@@ -1687,7 +1663,7 @@ type TileMapFacet () =
                     (entity.GetBodyId world).BodyIndex
                     tileMapDescriptor
             World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
-        | None -> world
+        | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
@@ -1752,28 +1728,27 @@ type TmxMapFacet () =
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
-        let world = entity.AutoBounds world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
-        let world =
-            World.sense (fun _ world ->
-                let attributes = entity.GetAttributesInferred world
-                let mutable transform = entity.GetTransform world
-                transform.Size <- attributes.SizeInferred
-                transform.Offset <- attributes.OffsetInferred
-                let world = entity.SetTransformWithoutEvent transform world
-                (Cascade, entity.PropagatePhysics world))
-                (entity.ChangeEvent (nameof entity.TmxMap))
-                entity
-                (nameof TmxMapFacet)
-                world
-        world
+        entity.AutoBounds world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world ->
+            let attributes = entity.GetAttributesInferred world
+            let mutable transform = entity.GetTransform world
+            transform.Size <- attributes.SizeInferred
+            transform.Offset <- attributes.OffsetInferred
+            entity.SetTransformWithoutEvent transform world
+            entity.PropagatePhysics world
+            Cascade)
+            (entity.ChangeEvent (nameof entity.TmxMap))
+            entity
+            (nameof TmxMapFacet)
+            world
 
     override this.RegisterPhysics (entity, world) =
         let mutable transform = entity.GetTransform world
@@ -1874,16 +1849,16 @@ type SpineSkeletonFacet () =
                 spineSkeletonInstance.B <- color.B
                 spineSkeletonInstance.A <- color.A
                 let spineSkeletonState = { SpineSkeleton = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
-                let world = entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
-                (Some spineSkeletonState, world)
-            | ValueNone -> (None, world)
-        | Some spineSkeletonState -> (Some spineSkeletonState, world)
+                entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
+                Some spineSkeletonState
+            | ValueNone -> None
+        | Some spineSkeletonState -> Some spineSkeletonState
 
     static let handleAnimationChange evt world =
         let entity = evt.Subscriber : Entity
-        let world = entity.SetSpineSkeletonStateOpt None world
-        let world = getOrTryCreateSpineSkeletonState entity world |> snd
-        (Cascade, world)
+        entity.SetSpineSkeletonStateOpt None world
+        getOrTryCreateSpineSkeletonState entity world |> ignore<SpineSkeletonState option>
+        Cascade
 
     static member Properties =
         [define Entity.AlwaysUpdate true
@@ -1897,17 +1872,16 @@ type SpineSkeletonFacet () =
          define Entity.SpineAnimationMix 0.2f]
 
     override this.Register (entity, world) =
-        let world = World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        let world = World.sense handleAnimationChange entity.SpineSkeleton.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        let world = World.sense handleAnimationChange entity.SpineAnimations.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        let world = World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        World.sense handleAnimationChange entity.SpineSkeleton.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        World.sense handleAnimationChange entity.SpineAnimations.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
         entity.SetStartTime world.GameTime world
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
             let gameDelta = world.GameDelta
-            let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
-            match spineSkeletonStateOpt with
+            match getOrTryCreateSpineSkeletonState entity world with
             | Some spineSkeletonState ->
                 let startTrackArgs = List ()
                 let interruptTrackArgs = List ()
@@ -1947,13 +1921,12 @@ type SpineSkeletonFacet () =
                 spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
                 spineSkeletonState.SpineAnimationState.remove_End endDelegate
                 spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
-                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world startTrackArgs
-                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world interruptTrackArgs
-                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world completeTrackArgs
-                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world endTrackArgs
-                let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world eventTrackArgs
-                world
-            | None -> world
+                for arg in startTrackArgs do World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
+                for arg in interruptTrackArgs do World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
+                for arg in completeTrackArgs do World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
+                for arg in endTrackArgs do World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
+                for arg in eventTrackArgs do World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
+            | None -> ()
         else entity.StartTime.Map ((+) world.GameDelta) world
 
     override this.Render (_, entity, world) =
@@ -1969,8 +1942,7 @@ type SpineSkeletonFacet () =
         | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
-        let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
-        match spineSkeletonStateOpt with
+        match getOrTryCreateSpineSkeletonState entity world with
         | Some spineSkeletonState ->
 
             // update skeleton so we can take some actual metrics
@@ -2025,17 +1997,15 @@ type LayoutFacet () =
         let childCenter = v2 offsetX offsetY + v2 margin.X -margin.Y + v2 childHalfWidth -childHalfHeight
         let childRightX = childCenter.X + childHalfWidth + margin.X
         offsetX <- childCenter.X + childHalfWidth
-        let world =
-            if childRightX > leftX + wrapLimit then
-                offsetX <- leftX
-                offsetY <- offsetY + -margin.Y + -maximum
-                maximum <- 0.0f
-                if not reentry
-                then flowRightward true leftX margin wrapLimit &offsetX &offsetY &maximum child world
-                else child.SetPerimeterCenterLocal childCenter.V3 world
+        if childRightX > leftX + wrapLimit then
+            offsetX <- leftX
+            offsetY <- offsetY + -margin.Y + -maximum
+            maximum <- 0.0f
+            if not reentry
+            then flowRightward true leftX margin wrapLimit &offsetX &offsetY &maximum child world
             else child.SetPerimeterCenterLocal childCenter.V3 world
+        else child.SetPerimeterCenterLocal childCenter.V3 world
         if childPerimeter.Height > maximum then maximum <- childPerimeter.Height
-        world
 
     static let rec flowDownward
         reentry topY (margin : Vector2) wrapLimit (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
@@ -2045,17 +2015,15 @@ type LayoutFacet () =
         let childCenter = v2 offsetX offsetY + v2 margin.X -margin.Y + v2 childHalfWidth -childHalfHeight
         let childBottomY = childCenter.Y + -childHalfHeight + -margin.Y
         offsetY <- childCenter.Y + -childHalfHeight
-        let world =
-            if childBottomY < topY + -wrapLimit then
-                offsetX <- offsetX + margin.X + maximum
-                offsetY <- topY
-                maximum <- 0.0f
-                if not reentry
-                then flowDownward true topY margin wrapLimit &offsetX &offsetY &maximum child world
-                else child.SetPerimeterCenterLocal childCenter.V3 world
+        if childBottomY < topY + -wrapLimit then
+            offsetX <- offsetX + margin.X + maximum
+            offsetY <- topY
+            maximum <- 0.0f
+            if not reentry
+            then flowDownward true topY margin wrapLimit &offsetX &offsetY &maximum child world
             else child.SetPerimeterCenterLocal childCenter.V3 world
+        else child.SetPerimeterCenterLocal childCenter.V3 world
         if childPerimeter.Width > maximum then maximum <- childPerimeter.Width
-        world
 
     static let flowLayout (perimeter : Box2) margin flowDirection flowLimit children world =
         let leftX = perimeter.Width * -0.5f
@@ -2070,29 +2038,25 @@ type LayoutFacet () =
                 | FlowParent -> perimeter.Width
                 | FlowUnlimited -> Single.MaxValue
                 | FlowTo limit -> limit
-            Array.fold (fun world child ->
-                flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
-                world children
+            for child in children do
+                flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world
         | FlowDownward ->
             let wrapLimit =
                 match flowLimit with
                 | FlowParent -> perimeter.Height
                 | FlowUnlimited -> Single.MaxValue
                 | FlowTo limit -> limit
-            Array.fold (fun world child ->
-                flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
-                world children
+            for child in children do
+                flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world
         | FlowLeftward ->
             Log.warnOnce "FlowLeftward not yet implemented." // TODO: P1: implement.
-            world
         | FlowUpward ->
             Log.warnOnce "FlowUpward not yet implemented." // TODO: P1: implement.
-            world
 
-    static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =
+    static let dockLayout (perimeter : Box2) margin (margins : Vector4) (children : Entity array) world =
         let perimeterWidthHalf = perimeter.Width * 0.5f
         let perimeterHeightHalf = perimeter.Height * 0.5f
-        Array.fold (fun world (child : Entity) ->
+        for child in children do
             if child.Has<LayoutFacet> world then
                 match child.GetDockType world with
                 | DockCenter ->
@@ -2105,39 +2069,38 @@ type LayoutFacet () =
                         v2
                             ((margins.X - margins.Z) * 0.5f)
                             ((margins.Y - margins.W) * 0.5f)
-                    let world = child.SetPositionLocal position.V3 world
+                    child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockTop ->
                     let size = v2 perimeter.Width margins.W - margin
                     let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
-                    let world = child.SetPositionLocal position.V3 world
+                    child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockRight ->
                     let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W) - margin
                     let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.Y - margins.W) * 0.5f)
-                    let world = child.SetPositionLocal position.V3 world
+                    child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockBottom ->
                     let size = v2 perimeter.Width margins.Y - margin
                     let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
-                    let world = child.SetPositionLocal position.V3 world
+                    child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockLeft ->
                     let size = v2 margins.X (perimeter.Height - margins.Y - margins.W) - margin
                     let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.Y - margins.W) * 0.5f)
-                    let world = child.SetPositionLocal position.V3 world
+                    child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
-            else world)
-            world children
 
-    static let gridLayout (perimeter : Box2) margin (dims : Vector2i) flowDirectionOpt resizeChildren children world =
+    static let gridLayout (perimeter : Box2) margin (dims : Vector2i) flowDirectionOpt resizeChildren (children : Entity array) world =
         let perimeterWidthHalf = perimeter.Width * 0.5f
         let perimeterHeightHalf = perimeter.Height * 0.5f
         let cellSize = v2 (perimeter.Width / single dims.X) (perimeter.Height / single dims.Y)
         let cellWidthHalf = cellSize.X * 0.5f
         let cellHeightHalf = cellSize.Y * 0.5f
         let childSize = cellSize - margin
-        Array.foldi (fun n world (child : Entity) ->
+        let mutable n = 0
+        for child in children do
             let (i, j) =
                 match flowDirectionOpt with
                 | Some flowDirection ->
@@ -2155,15 +2118,13 @@ type LayoutFacet () =
                 v2
                     (-perimeterWidthHalf + single i * cellSize.X + cellWidthHalf)
                     (perimeterHeightHalf - single j * cellSize.Y - cellHeightHalf)
-            let world = child.SetPositionLocal childPosition.V3 world
-            if resizeChildren
-            then child.SetSize childSize.V3 world
-            else world)
-            world children
+            child.SetPositionLocal childPosition.V3 world
+            if resizeChildren then child.SetSize childSize.V3 world
+            n <- inc n
 
     static let performLayout (entity : Entity) world =
         match entity.GetLayout world with
-        | Manual -> world // OPTIMIZATION: early exit.
+        | Manual -> () // OPTIMIZATION: early exit.
         | layout ->
             let children =
                 World.getEntityMounters entity world |>
@@ -2179,43 +2140,42 @@ type LayoutFacet () =
                 Array.map __c
             let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
             let margin = entity.GetLayoutMargin world
-            let world =
-                match layout with
-                | Flow (flowDirection, flowLimit) ->
-                    flowLayout perimeter margin flowDirection flowLimit children world
-                | Dock (margins, percentageBased, resizeChildren) ->
-                    ignore (percentageBased, resizeChildren) // TODO: P1: implement using these values.
-                    dockLayout perimeter margin margins children world
-                | Grid (dims, flowDirectionOpt, resizeChildren) ->
-                    gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
-                | Manual -> world
-            world
+            match layout with
+            | Flow (flowDirection, flowLimit) ->
+                flowLayout perimeter margin flowDirection flowLimit children world
+            | Dock (margins, percentageBased, resizeChildren) ->
+                ignore (percentageBased, resizeChildren) // TODO: P1: implement using these values.
+                dockLayout perimeter margin margins children world
+            | Grid (dims, flowDirectionOpt, resizeChildren) ->
+                gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
+            | Manual -> ()
 
     static let handleLayout evt world =
         let entity = evt.Subscriber : Entity
-        (Cascade, performLayout entity world)
+        performLayout entity world
+        Cascade
 
     static let handleMount evt world =
         let entity = evt.Subscriber : Entity
         let mounter = evt.Data.Mounter
-        let (orderChangeUnsub, world) = World.sensePlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let (layoutOrderChangeUnsub, world) = World.sensePlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let (dockTypeChangeUnsub, world) = World.sensePlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let (gridPositionChangeUnsub, world) = World.sensePlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let world =
-            World.sense (fun evt world ->
-                let world =
-                    if evt.Data.Mounter = mounter then
-                        let world = world |> orderChangeUnsub |> layoutOrderChangeUnsub |> dockTypeChangeUnsub |> gridPositionChangeUnsub
-                        performLayout entity world
-                    else world
-                (Cascade, world))
-                entity.UnmountEvent
-                entity
-                (nameof LayoutFacet)
-                world
-        let world = performLayout entity world
-        (Cascade, world)
+        let orderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet)
+        let layoutOrderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet)
+        let dockTypeChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet)
+        let gridPositionChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet)
+        World.sense (fun evt world ->
+            if evt.Data.Mounter = mounter then
+                orderChangeUnsub world |> ignore<World -> unit>
+                layoutOrderChangeUnsub world |> ignore<World -> unit>
+                dockTypeChangeUnsub world |> ignore<World -> unit>
+                gridPositionChangeUnsub world |> ignore<World -> unit>
+                performLayout entity world
+            Cascade)
+            entity.UnmountEvent
+            entity
+            (nameof LayoutFacet)
+            world
+        performLayout entity world
+        Cascade
 
     static member Properties =
         [define Entity.Layout Manual
@@ -2225,12 +2185,11 @@ type LayoutFacet () =
          define Entity.GridPosition v2iZero]
 
     override this.Register (entity, world) =
-        let world = performLayout entity world
-        let world = World.sense handleMount entity.MountEvent entity (nameof LayoutFacet) world
-        let world = World.sense handleLayout entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
-        let world = World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
-        let world = World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
-        world
+        performLayout entity world
+        World.sense handleMount entity.MountEvent entity (nameof LayoutFacet) world
+        World.sense handleLayout entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =
@@ -2304,18 +2263,12 @@ type LightProbe3dFacet () =
 
     static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
         let entity = evt.Subscriber
-        let world =
-            if evt.Data.Value :?> bool && entity.Group.GetVisible world
-            then entity.SetProbeStale true world
-            else world
-        (Cascade, world)
+        if evt.Data.Value :?> bool && entity.Group.GetVisible world then entity.SetProbeStale true world
+        Cascade
 
     static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
-        let world =
-            if evt.Data.Value :?> bool
-            then World.requestLightMapRender world
-            else world
-        (Cascade, world)
+        if evt.Data.Value :?> bool then World.requestLightMapRender world
+        Cascade
 
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
@@ -2328,9 +2281,9 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        let world = World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
-        let world = World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
-        let world = World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
@@ -2352,25 +2305,17 @@ type LightProbe3dFacet () =
     override this.Edit (op, entity, world) =
         match op with
         | AppendProperties append ->
-            let world =
-                if ImGui.Button "Rerender Light Map"
-                then entity.SetProbeStale true world // this isn't undoable
-                else world
-            let world =
-                if ImGui.Button "Recenter in Probe Bounds" then
-                    let world = append.EditContext.Snapshot RencenterInProbeBounds world
-                    let probeBounds = entity.GetProbeBounds world
-                    if Option.isSome (entity.GetMountOpt world)
-                    then entity.SetPositionLocal probeBounds.Center world
-                    else entity.SetPosition probeBounds.Center world
-                else world
-            let world =
-                if ImGui.Button "Reset Probe Bounds" then
-                    let world = append.EditContext.Snapshot ResetProbeBounds world
-                    entity.ResetProbeBounds world
-                else world
-            world
-        | _ -> world
+            if ImGui.Button "Rerender Light Map" then entity.SetProbeStale true world // this isn't undoable
+            if ImGui.Button "Recenter in Probe Bounds" then
+                append.EditContext.Snapshot RencenterInProbeBounds world
+                let probeBounds = entity.GetProbeBounds world
+                if Option.isSome (entity.GetMountOpt world)
+                then entity.SetPositionLocal probeBounds.Center world
+                else entity.SetPosition probeBounds.Center world
+            if ImGui.Button "Reset Probe Bounds" then
+                append.EditContext.Snapshot ResetProbeBounds world
+                entity.ResetProbeBounds world
+        | _ -> ()
 
 [<AutoOpen>]
 module Light3dFacetExtensions =
@@ -2442,13 +2387,13 @@ type Light3dFacet () =
         let lightCutoff = entity.GetLightCutoff world
         let world =
             if entity.GetAutoAttenuate world then
-                let world = entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
-                let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
+                entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
+                entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
                 world
             else world
         let size = v3Dup (lightCutoff * 2.0f)
-        let world = entity.SetSize size world
-        (Cascade, world)
+        entity.SetSize size world
+        Cascade
 
     static member Properties =
         [define Entity.Size (v3Dup (Constants.Render.LightCutoffDefault * 2.0f))
@@ -2465,9 +2410,8 @@ type Light3dFacet () =
          define Entity.DesireFog false]
 
     override this.Register (entity, world) =
-        let world = World.sense handleLightingChange entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
-        let world = World.sense handleLightingChange entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
-        world
+        World.sense handleLightingChange entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
+        World.sense handleLightingChange entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
 
     override this.Render (renderPass, entity, world) =
         let lightId = entity.GetId world
@@ -2516,19 +2460,16 @@ type Light3dFacet () =
         match op with
         | AppendProperties ap ->
             if ImGuiNET.ImGui.Button "Normalize Attenutation" then
-                let world = ap.EditContext.Snapshot NormalizeAttenuation world
+                ap.EditContext.Snapshot NormalizeAttenuation world
                 let brightness = entity.GetBrightness world
                 let lightCutoff = entity.GetLightCutoff world
-                let world = entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
-                let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
-                world
-            else world
+                entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
+                entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
         | ViewportOverlay _ ->
             let shadowFrustum = entity.ComputeShadowFrustum world
             for segment in shadowFrustum.Segments do
                 World.imGuiSegment3d segment 1.0f Color.Yellow world
-            world
-        | _ -> world
+        | _ -> ()
 
 [<AutoOpen>]
 module StaticBillboardFacetExtensions =
@@ -2622,9 +2563,8 @@ type AnimatedBillboardFacet () =
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
 
     override this.Update (entity, world) =
-        if not (entity.GetEnabled world)
-        then entity.StartTime.Map ((+) world.GameDelta) world
-        else world
+        if not (entity.GetEnabled world) then
+            entity.StartTime.Map ((+) world.GameDelta) world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -2716,8 +2656,7 @@ type BasicStaticBillboardEmitterFacet () =
     static let mapParticleSystem mapper (entity : Entity) world =
         let particleSystem = entity.GetParticleSystem world
         let particleSystem = mapper particleSystem
-        let world = entity.SetParticleSystem particleSystem world
-        world
+        entity.SetParticleSystem particleSystem world
 
     static let mapEmitter mapper (entity : Entity) world =
         mapParticleSystem (fun particleSystem ->
@@ -2731,64 +2670,64 @@ type BasicStaticBillboardEmitterFacet () =
     static let rec processOutput output entity world =
         match output with
         | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-        | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
+        | Particles.Outputs outputs -> for output in outputs do processOutput output entity world
 
     static let handleEmitterMaterialPropertiesChange evt world =
         let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
-        let world = mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterMaterialChange evt world =
         let emitterMaterial = evt.Data.Value :?> Material
-        let world = mapEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterShadowOffsetChange evt world =
         let emitterShadowOffset = evt.Data.Value :?> single
-        let world = mapEmitter (fun emitter -> if emitter.ShadowOffset <> emitterShadowOffset then { emitter with ShadowOffset = emitterShadowOffset } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ShadowOffset <> emitterShadowOffset then { emitter with ShadowOffset = emitterShadowOffset } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterRenderStyleChange evt world =
         let emitterRenderStyle = evt.Data.Value :?> RenderStyle
         let emitterRenderType = match emitterRenderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        let world = mapEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterLifeTimeOptChange evt world =
         let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
-        let world = mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
+        Cascade
 
     static let handleParticleLifeTimeMaxOptChange evt world =
         let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
-        let world = mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleParticleRateChange evt world =
         let particleRate = evt.Data.Value :?> single
-        let world = mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleParticleMaxChange evt world =
         let particleMax = evt.Data.Value :?> int
-        let world = mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticBillboardEmitter.resize particleMax emitter else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticBillboardEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+        Cascade
 
     static let handleBasicParticleSeedChange evt world =
         let particleSeed = evt.Data.Value :?> Particles.BasicParticle
-        let world = mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterConstraintChange evt world =
         let emitterConstraint = evt.Data.Value :?> Particles.Constraint
-        let world = mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
-        (Cascade, world)
+        mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+        Cascade
 
     static let handleEmitterStyleChange evt world =
         let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
-        let world = mapEmitter (constant emitter) entity world
-        (Cascade, world)
+        mapEmitter (constant emitter) entity world
+        Cascade
 
     static let handlePositionChange evt world =
         let entity = evt.Subscriber : Entity
@@ -2803,8 +2742,8 @@ type BasicStaticBillboardEmitterFacet () =
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             | _ -> particleSystem
-        let world = entity.SetParticleSystem particleSystem world
-        (Cascade, world)
+        entity.SetParticleSystem particleSystem world
+        Cascade
 
     static let handleRotationChange evt world =
         let entity = evt.Subscriber : Entity
@@ -2819,8 +2758,8 @@ type BasicStaticBillboardEmitterFacet () =
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             | _ -> particleSystem
-        let world = entity.SetParticleSystem particleSystem world
-        (Cascade, world)
+        entity.SetParticleSystem particleSystem world
+        Cascade
 
     static member Properties =
         [define Entity.SelfDestruct false
@@ -2842,21 +2781,20 @@ type BasicStaticBillboardEmitterFacet () =
         let emitter = makeEmitter entity world
         let particleSystem = entity.GetParticleSystem world
         let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
-        let world = entity.SetParticleSystem particleSystem world
-        let world = World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterMaterialPropertiesChange entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterMaterialChange entity.EmitterMaterial.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterShadowOffsetChange entity.EmitterShadowOffset.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterRenderStyleChange entity.EmitterRenderStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleParticleMaxChange entity.ParticleMax.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleBasicParticleSeedChange entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterConstraintChange entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterStyleChange entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        world
+        entity.SetParticleSystem particleSystem world
+        World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterMaterialPropertiesChange entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterMaterialChange entity.EmitterMaterial.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterShadowOffsetChange entity.EmitterShadowOffset.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterRenderStyleChange entity.EmitterRenderStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleParticleMaxChange entity.ParticleMax.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleBasicParticleSeedChange entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterConstraintChange entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterStyleChange entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
 
     override this.Unregister (entity, world) =
         let particleSystem = entity.GetParticleSystem world
@@ -2869,9 +2807,8 @@ type BasicStaticBillboardEmitterFacet () =
             let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let (particleSystem, output) = Particles.ParticleSystem.run delta time particleSystem
-            let world = entity.SetParticleSystem particleSystem world
+            entity.SetParticleSystem particleSystem world
             processOutput output entity world
-        else world
 
     override this.Render (renderPass, entity, world) =
         let castShadow = entity.GetEmitterCastShadow world
@@ -3140,7 +3077,7 @@ module AnimatedModelFacetExtensions =
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
             match this.TryComputeBoneTransforms time animations sceneOpt with
             | Some (boneIds, boneOffsets, boneTransforms) -> this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
-            | None -> world
+            | None -> ()
 
 /// Augments an entity with an animated model.
 type AnimatedModelFacet () =
@@ -3161,20 +3098,18 @@ type AnimatedModelFacet () =
          define Entity.UseJobGraph true]
 
     override this.Register (entity, world) =
-        let world = entity.AnimateBones world
-        let world =
-            World.sense
-                (fun evt world ->
-                    let playBox = fst' (World.getPlayBounds3d world)
-                    let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (evt.Subscriber.GetBounds world))
-                    let disabled = not (entity.GetEnabled world)
-                    let notUpdating = world.Halted || outsidePlayBounds || disabled
-                    let world = if notUpdating then evt.Subscriber.AnimateBones world else world
-                    (Cascade, world))
-                (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
-        let world = World.sense (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world)) (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
-        let world = World.sense (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world)) Game.AssetsReloadEvent entity (nameof AnimatedModelFacet) world
-        world
+        entity.AnimateBones world
+        World.sense
+            (fun evt world ->
+                let playBox = fst' (World.getPlayBounds3d world)
+                let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (evt.Subscriber.GetBounds world))
+                let disabled = not (entity.GetEnabled world)
+                let notUpdating = world.Halted || outsidePlayBounds || disabled
+                if notUpdating then evt.Subscriber.AnimateBones world
+                Cascade)
+            (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
+        World.sense (fun evt world -> evt.Subscriber.AnimateBones world; Cascade) (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
+        World.sense (fun evt world -> evt.Subscriber.AnimateBones world; Cascade) Game.AssetsReloadEvent entity (nameof AnimatedModelFacet) world
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
@@ -3194,7 +3129,7 @@ type AnimatedModelFacet () =
                 else entity.TryComputeBoneTransforms time animations sceneOpt
             match resultOpt with
             | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
-            | None -> world
+            | None -> ()
         else
             let animations =
                 Array.map (fun (animation : Animation) ->
@@ -3267,9 +3202,8 @@ type AnimatedModelFacet () =
                     let offset = offsets.[i]
                     let transform = transforms.[i]
                     World.imGuiCircle3d (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
-                world
-            | (_, _) -> world
-        | _ -> world
+            | (_, _) -> ()
+        | _ -> ()
 
 [<AutoOpen>]
 module TerrainFacetExtensions =
@@ -3356,15 +3290,14 @@ type TerrainFacet () =
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TerrainFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TerrainFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TerrainFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
-        let world = entity.SetAwakeTimeStamp world.UpdateTime world
-        world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
+        entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
         match entity.TryGetTerrainResolution world with
@@ -3401,7 +3334,7 @@ type TerrainFacet () =
                   Awake = entity.GetAwake world
                   BodyIndex = (entity.GetBodyId world).BodyIndex }
             World.createBody false (entity.GetBodyId world) bodyProperties world
-        | None -> world
+        | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody false (entity.GetBodyId world) world
@@ -3466,59 +3399,48 @@ type EditVolumeFacet () =
             ImGui.Indent ()
 
             // parent intersected
-            let world =
-                if ImGui.Button "Parent Intersected" then
-                    let world = append.EditContext.Snapshot (VolumeEdit "Parent Intersected") world
-                    let intersecteds = getIntersectedEntities entity world
-                    Array.fold (fun world (intersected : Entity) ->
-                        if intersected.GetExists world then
-                            let intersected' =
-                                if intersected.Has<StaticModelSurfaceFacet> world && intersected.Name.StartsWith "Geometry"
-                                then entity / intersected.Parent.Name // probably generic geometry imported from another engine's scene, so using a likely more descriptive parent name
-                                else entity / intersected.Name
-                            let intersected' =
-                                if intersected'.GetExists world
-                                then entity / (intersected'.Name + Gen.name)
-                                else intersected'
-                            World.renameEntityImmediate intersected intersected' world
-                        else world)
-                        world intersecteds
-                else world
+            if ImGui.Button "Parent Intersected" then
+                append.EditContext.Snapshot (VolumeEdit "Parent Intersected") world
+                let intersecteds = getIntersectedEntities entity world
+                for intersected in intersecteds do
+                    if intersected.GetExists world then
+                        let intersected' =
+                            if intersected.Has<StaticModelSurfaceFacet> world && intersected.Name.StartsWith "Geometry"
+                            then entity / intersected.Parent.Name // probably generic geometry imported from another engine's scene, so using a likely more descriptive parent name
+                            else entity / intersected.Name
+                        let intersected' =
+                            if intersected'.GetExists world
+                            then entity / (intersected'.Name + Gen.name)
+                            else intersected'
+                        World.renameEntityImmediate intersected intersected' world
 
             // unparent intersected
-            let world =
-                if ImGui.Button "Unparent Intersected" then
-                    let world = append.EditContext.Snapshot (VolumeEdit "Unparent Intersected") world
-                    let bounds = entity.GetBounds world
-                    let children =
-                        entity.GetChildren world |>
-                        Seq.filter (fun child -> bounds.Intersects (child.GetBounds world)) |>
-                        Array.ofSeq
-                    Array.fold (fun world (child : Entity) ->
-                        if child.GetExists world then
-                            let child' = child.Names |> Array.take (entity.Names.Length - 1) |> Array.add child.Name |> rtoa |> Nu.Entity
-                            let child' =
-                                if child'.GetExists world
-                                then entity / (child'.Name + Gen.name)
-                                else child'
-                            World.renameEntityImmediate child child' world
-                        else world)
-                        world children
-                else world
+            if ImGui.Button "Unparent Intersected" then
+                append.EditContext.Snapshot (VolumeEdit "Unparent Intersected") world
+                let bounds = entity.GetBounds world
+                let children =
+                    entity.GetChildren world |>
+                    Seq.filter (fun child -> bounds.Intersects (child.GetBounds world)) |>
+                    Array.ofSeq
+                for child in children do
+                    if child.GetExists world then
+                        let child' = child.Names |> Array.take (entity.Names.Length - 1) |> Array.add child.Name |> rtoa |> Nu.Entity
+                        let child' =
+                            if child'.GetExists world
+                            then entity / (child'.Name + Gen.name)
+                            else child'
+                        World.renameEntityImmediate child child' world
 
             // delete intersected
-            let world =
-                if ImGui.Button "Delete Intersected" then
-                    let world = append.EditContext.Snapshot (VolumeEdit "Delete Intersected") world
-                    let intersecteds = getIntersectedEntities entity world
-                    Array.fold (fun world (intersected : Entity) ->
-                        if intersected.GetExists world then World.destroyEntity intersected world else world)
-                        world intersecteds
-                else world
+            if ImGui.Button "Delete Intersected" then
+                append.EditContext.Snapshot (VolumeEdit "Delete Intersected") world
+                let intersecteds = getIntersectedEntities entity world
+                for intersected in intersecteds do
+                    if intersected.GetExists world then
+                        World.destroyEntity intersected world
 
             // end of category
             ImGui.Unindent ()
-            world
 
         | ViewportOverlay viewportOverlay ->
             if entity.GetOffset world = v3Zero then
@@ -3530,24 +3452,21 @@ type EditVolumeFacet () =
                     World.imGuiEditBox3d viewportOverlay.EditContext.SnapDrag (entity.GetBounds world) world
                 match manipulationResult with
                 | ImGuiEditActive started ->
-                    let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
+                    if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world
                     match entity.TryGetMountee world with
                     | Some mountee ->
                         let positionMountee = mountee.GetPosition world
-                        let world = entity.SetPositionLocal (positionMountee - bounds.Center) world
-                        let world = entity.SetSize (bounds.Size / entity.GetScale world) world
-                        world
+                        entity.SetPositionLocal (positionMountee - bounds.Center) world
+                        entity.SetSize (bounds.Size / entity.GetScale world) world
                     | None ->
-                        let world = entity.SetPosition bounds.Center world
-                        let world = entity.SetSize (bounds.Size / entity.GetScale world) world
-                        world
-                | ImGuiEditInactive -> world
+                        entity.SetPosition bounds.Center world
+                        entity.SetSize (bounds.Size / entity.GetScale world) world
+                | ImGuiEditInactive -> ()
             else
                 // TODO: P1: see if we can implement this properly instead of schmoing out.
                 Log.warnOnce "Bounds adjustment currently not implemented for entities with non-zero offset."
-                world
 
-        | _ -> world
+        | _ -> ()
 
     override this.RayCast (_, _, _) =
         [|Miss|]
@@ -3622,11 +3541,10 @@ type TraversalInterpoledFacet () =
 
         // process history for the frame
         let historyMax = entity.GetTraversalHistoryMax world
-        let world = entity.PositionHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetPosition world)) world
-        let world = entity.RotationHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
-        let world = entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
-        let world = entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
-        world
+        entity.PositionHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetPosition world)) world
+        entity.RotationHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
+        entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
+        entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
 
     override this.Edit (op, entity, world) =
 
@@ -3636,7 +3554,7 @@ type TraversalInterpoledFacet () =
             let position = entity.GetPosition world
             let positionHistory = FQueue.singleton position
             entity.SetPositionHistory positionHistory world
-        | _ -> world
+        | _ -> ()
 
 [<AutoOpen>]
 module NavBodyFacetExtensions =
@@ -3657,11 +3575,11 @@ type NavBodyFacet () =
         match entity.GetNavShape world with
         | NavShape.EmptyNavShape ->
             if entity.GetIs2d world
-            then world // TODO: implement for 2d navigation when it's available.
+            then () // TODO: implement for 2d navigation when it's available.
             else World.setNav3dBodyOpt None navId world
         | shape ->
             if entity.GetIs2d world
-            then world // TODO: implement for 2d navigation when it's available.
+            then () // TODO: implement for 2d navigation when it's available.
             else
                 if entity.GetNavEnabled world then
                     let bounds = entity.GetBounds world
@@ -3682,7 +3600,7 @@ type NavBodyFacet () =
         // OPTIMIZATION: conditionally subscribe to bounds change event.
         let subId = Gen.id64
         let subscribe world =
-            World.subscribePlus subId (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> snd
+            World.subscribePlus subId (fun _ world -> propagateNavBody entity world; Cascade) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> ignore
         let unsubscribe world =
             World.unsubscribe subId world
         let callback evt world =
@@ -3690,41 +3608,43 @@ type NavBodyFacet () =
             let previous = evt.Data.Previous :?> NavShape
             let value = evt.Data.Value :?> NavShape
             let navEnabled = entity.GetNavEnabled world
-            let world = if not previous.IsEmptyNavShape || navEnabled then unsubscribe world else world
-            let world = if not value.IsEmptyNavShape || navEnabled then subscribe world else world
-            let world = propagateNavBody entity world
-            (Cascade, world)
+            if not previous.IsEmptyNavShape || navEnabled then unsubscribe world
+            if not value.IsEmptyNavShape || navEnabled then subscribe world
+            propagateNavBody entity world
+            Cascade
         let callback2 evt world =
             let entity = evt.Subscriber : Entity
             let previous = evt.Data.Previous :?> bool
             let value = evt.Data.Value :?> bool
             let navShape = entity.GetNavShape world
-            let world = if not navShape.IsEmptyNavShape || previous then unsubscribe world else world
-            let world = if not navShape.IsEmptyNavShape || value then subscribe world else world
-            let world = propagateNavBody entity world
-            (Cascade, world)
+            if not navShape.IsEmptyNavShape || previous then unsubscribe world
+            if not navShape.IsEmptyNavShape || value then subscribe world
+            propagateNavBody entity world
+            Cascade
         let callback3 evt world =
             if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
                 Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set) |> not then
-                (Cascade, unsubscribe world)
-            else (Cascade, world)
-        let callback4 _ world = (Cascade, unsubscribe world)
-        let world = match entity.GetNavShape world with NavShape.EmptyNavShape -> world | _ -> subscribe world
-        let world = World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
-        let world = World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
-        let world = World.sense callback3 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
-        let world = World.sense callback4 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
+                unsubscribe world
+            Cascade
+        let callback4 _ world = unsubscribe world; Cascade
+        match entity.GetNavShape world with
+        | NavShape.EmptyNavShape -> ()
+        | _ -> subscribe world
+        World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
+        World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
+        World.sense callback3 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
+        World.sense callback4 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
-        let callbackPnb evt world = (Cascade, propagateNavBody evt.Subscriber world)
-        let world = World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
-        let world = World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+        let callbackPnb evt world = propagateNavBody evt.Subscriber world; Cascade
+        World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
+        World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =
         let navId = { NavIndex = -1; NavEntity = entity }
         if entity.GetIs2d world
-        then world // TODO: implement for 2d navigation when it's available.
+        then () // TODO: implement for 2d navigation when it's available.
         else World.setNav3dBodyOpt None navId world
 
     override this.GetAttributesInferred (_, _) =
@@ -3780,7 +3700,7 @@ type FollowerFacet () =
                     (distanceMaxOpt.IsNone || distance <= distanceMaxOpt.Value) then
                     if entity.GetIs2d world then
                         // TODO: implement for 2d navigation when it's available.
-                        world
+                        ()
                     else
                         // TODO: consider doing an offset physics ray cast to align nav position with near
                         // ground. Additionally, consider removing the CellHeight offset in the above query so
@@ -3795,14 +3715,10 @@ type FollowerFacet () =
                             | Some property -> property.PropertyType = typeof<Vector3>
                             | None -> false
                         if hasLinearVelocity && hasAngularVelocity then
-                            let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
-                            let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
-                            let world = entity.SetRotation followOutput.NavRotation world
-                            world
+                            entity.SetLinearVelocity followOutput.NavLinearVelocity world
+                            entity.SetAngularVelocity followOutput.NavAngularVelocity world
+                            entity.SetRotation followOutput.NavRotation world
                         else
-                            let world = entity.SetPosition followOutput.NavPosition world
-                            let world = entity.SetRotation followOutput.NavRotation world
-                            world
-                else world
-            | _ -> world
-        else world
+                            entity.SetPosition followOutput.NavPosition world
+                            entity.SetRotation followOutput.NavRotation world
+            | _ -> ()

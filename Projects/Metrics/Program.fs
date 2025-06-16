@@ -69,7 +69,8 @@ type MmccGameDispatcher () =
                 [Content.skyBox "SkyBox" []
                  Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
 
-    override this.Update (_, world) =
+    override this.Update (game, world) =
+        let world = base.Update (game, world)        
         if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world
@@ -109,26 +110,22 @@ type MyGameDispatcher () =
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
     
     override this.Register (_, world) =
-        let (screen, world) = World.createScreen (Some "Screen") world
-        let (group, world) = World.createGroup (Some "Group") screen world
-        let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
-        let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
-        let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
-        let world =
-            Array.fold (fun world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
-                let world = entity.SetPresence Omnipresent world
-                let world = entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
-                let world = entity.SetScale (v3Dup 0.1f) world
-                world)
-                world Positions
+        let screen = World.createScreen (Some "Screen") world
+        let group = World.createGroup (Some "Group") screen world
+        let fps = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
+        fps.SetPosition (v3 134.0f -168.0f 0.0f) world
+        World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> ignore<Entity>
+        for position in Positions do
+            let entity = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
+            entity.SetPresence Omnipresent world
+            entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
+            entity.SetScale (v3Dup 0.1f) world
         World.selectScreen (IdlingState world.GameTime) screen world
 #endif
 
     override this.Update (_, world) =
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+            World.exit world
 #endif
 
 type MetricsPlugin () =
@@ -142,9 +139,5 @@ module Program =
         Nu.init ()
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Metrics" }
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
-#if FUNCTIONAL
-        let worldConfig = { WorldConfig.defaultConfig with Imperative = false; SdlConfig = sdlConfig }
-#else
-        let worldConfig = { WorldConfig.defaultConfig with Imperative = true; SdlConfig = sdlConfig }
-#endif
+        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
         World.run worldConfig (MetricsPlugin ())

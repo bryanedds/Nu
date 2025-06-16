@@ -1,4 +1,4 @@
-﻿﻿// Nu Game Engine.
+﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
 namespace Nu
@@ -180,9 +180,8 @@ module WorldScreenModule =
             dispatcher.TryUntruncateModel<'model> (model, screen, world)
 
         /// Get all the screens in the world.
-        static member getScreens world =
-            let simulants = World.getSimulants world
-            match simulants.TryGetValue (Game.Handle :> Simulant) with
+        static member getScreens (world : World) =
+            match world.Simulants.TryGetValue (Game.Handle :> Simulant) with
             | (true, screensOpt) ->
                 match screensOpt with
                 | Some screens -> Seq.map cast<Screen> screens
@@ -224,7 +223,7 @@ module WorldScreenModule =
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime nameOpt dispatcher
-            Reflection.attachProperties screenState.Dispatcher screenState world
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
             if World.getScreenExists screen world then
                 if screen.GetDestroying world
@@ -310,8 +309,8 @@ module WorldScreenModule =
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make world.GameTime None dispatcher
-            Reflection.attachProperties screenState.Dispatcher screenState world
-            Reflection.readPropertiesToTarget screenDescriptor.ScreenProperties screenState
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
+            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
             let screenState =

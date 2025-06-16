@@ -218,10 +218,14 @@ module WorldModule3 =
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
+
+            // prepare for late-bound type updating
             WorldImSim.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
+
+            // update late-bound types
             let pluginType =
                 assemblies |>
                 Array.map (fun assembly -> assembly.GetTypes ()) |>
@@ -236,28 +240,31 @@ module WorldModule3 =
             let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> assemblies
             let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
-            let world =
-                { world with WorldExtension = { world.WorldExtension with Plugin = plugin }}
-            let world =
-                Array.fold (fun world (facetName, facet) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with Facets = Map.add facetName facet world.WorldExtension.Dispatchers.Facets }}})
-                    world pluginFacets
-            let world =
-                Array.fold (fun world (entityDispatcherName, entityDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher world.WorldExtension.Dispatchers.EntityDispatchers }}})
-                    world pluginEntityDispatchers
-            let world =
-                Array.fold (fun world (groupDispatcherName, groupDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher world.WorldExtension.Dispatchers.GroupDispatchers }}})
-                    world pluginGroupDispatchers
-            let world =
-                Array.fold (fun world (screenDispatcherName, screenDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher world.WorldExtension.Dispatchers.ScreenDispatchers }}})
-                    world pluginScreenDispatchers
-            let world =
-                Array.fold (fun world (gameDispatcherName, gameDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher world.WorldExtension.Dispatchers.GameDispatchers }}})
-                    world pluginGameDispatchers
+            let worldExtension = world.WorldExtension
+            let worldExtension = { worldExtension with Plugin = plugin }
+            let worldExtension =
+                Array.fold (fun worldExtension  (facetName, facet) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with Facets = Map.add facetName facet worldExtension.Dispatchers.Facets }})
+                    worldExtension pluginFacets
+            let worldExtension =
+                Array.fold (fun worldExtension (entityDispatcherName, entityDispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher worldExtension.Dispatchers.EntityDispatchers }})
+                    worldExtension pluginEntityDispatchers
+            let worldExtension =
+                Array.fold (fun worldExtension (groupDispatcherName, groupDispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher worldExtension.Dispatchers.GroupDispatchers }})
+                    worldExtension pluginGroupDispatchers
+            let worldExtension =
+                Array.fold (fun worldExtension (screenDispatcherName, screenDispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher worldExtension.Dispatchers.ScreenDispatchers }})
+                    worldExtension pluginScreenDispatchers
+            let worldExtension =
+                Array.fold (fun worldExtension (gameDispatcherName, gameDispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher worldExtension.Dispatchers.GameDispatchers }})
+                    worldExtension pluginGameDispatchers
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+            // update late bindings for all simulants
             let lateBindingses =
                 [|Array.map (snd >> cast<LateBindings>) pluginFacets
                   Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
@@ -265,15 +272,11 @@ module WorldModule3 =
                   Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
                   Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
                 Array.concat
-            let world =
-                UMap.fold (fun world simulant _ ->
-                    Array.fold (fun world lateBindings -> World.updateLateBindings3 lateBindings simulant world) world lateBindingses)
-                    world (World.getSimulants world)
-            let world =
-                UMap.fold
-                    (fun world simulant _ -> World.trySynchronize true simulant world)
-                    world (World.getSimulants world)
-            world
+            for (simulant, _) in world.Simulants do
+                for lateBindings in lateBindingses do
+                    World.updateLateBindings3 lateBindings simulant world
+            for (simulant, _) in world.Simulants do
+                World.trySynchronize true simulant world
 
         /// Make the world.
         static member make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
@@ -305,9 +308,8 @@ module WorldModule3 =
                   Dispatchers = dispatchers
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
-            let world =
-                { ChooseCount = 0
-                  EventGraph = eventGraph
+            let worldState =
+                { EventGraph = eventGraph
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
@@ -320,8 +322,12 @@ module WorldModule3 =
                   Subsystems = subsystems
                   Simulants = simulants
                   WorldExtension = worldExtension }
-            let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
-            World.choose world
+            let worldState =
+                { worldState with
+                    GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState worldState }
+            let world = { WorldState = worldState }
+            WorldTypes.WorldForDebug <- world
+            world
 
         /// Make an empty world.
         static member makeEmpty config (plugin : NuPlugin) =
@@ -374,8 +380,11 @@ module WorldModule3 =
             // make the world
             let world = World.make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
-            // finally, register the game
+            // register the game
             World.registerGame Game world
+
+            // fin
+            world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
@@ -472,11 +481,11 @@ module WorldModule3 =
                     let world = World.make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
-                    let (kvps, world) = plugin.MakeKeyedValues world
-                    let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
+                    for (key, value) in plugin.MakeKeyedValues world do
+                        World.addKeyedValue key value world
 
                     // register the game
-                    let world = World.registerGame Game world
+                    World.registerGame Game world
                     Right world
 
                 // forward error messages
@@ -501,4 +510,4 @@ module WorldModule3 =
             let outerViewport = Viewport.makeOuter windowSize
             let rasterViewport = Viewport.makeRaster outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
-            World.runPlus tautology id id id id id worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin
+            World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin

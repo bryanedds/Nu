@@ -14,9 +14,8 @@ type MyGamePlugin () =
              ("Title", fun world -> Game.SetMyGame Title world)
              ("Credits", fun world -> Game.SetMyGame Credits world)
              ("Gameplay", fun world ->
-                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
-                let world = Game.SetMyGame Gameplay world
-                world)]
+                Simulants.Gameplay.SetGameplay Gameplay.initial world
+                Game.SetMyGame Gameplay world)]
 
     // this specifies which packages are automatically loaded at game start-up.
     override this.InitialPackages =

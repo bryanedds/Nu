@@ -873,7 +873,7 @@ module WorldModule =
             world.WorldExtension.Plugin.Invoke name args world
 
         /// Attempt to make an emitter with the given parameters.
-        static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
+        static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
         static member internal preProcess (world : World) =
