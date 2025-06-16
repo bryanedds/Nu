@@ -934,6 +934,34 @@ module WorldModule2 =
             | Right _ -> true
             | Left _ -> false
 
+        /// Switch simulation to this world, resynchronizing the imperative subsystems with its current state.
+        /// Needed when abandoning execution of the current world in favor of a previous world, such as in the case of
+        /// an exception where the try expression resulted in a transformed world that is to be discarded.
+        static member switch (world : World) =
+
+            // wipe memoized named content
+            Content.wipe ()
+
+            // sync tick watch state to advancing
+            World.switchAmbientState world
+
+            // synchronize viewports in case they get out of sync, such as during an undo operation
+            World.synchronizeViewports world
+
+            // rebuild spatial trees
+            Octree.clear world.Octree
+            Quadtree.clear world.Quadtree
+            match World.getSelectedScreenOpt world with
+            | Some screen -> World.admitScreenElements screen world
+            | None -> ()
+
+            // rebuild physics states
+            let physics3d = World.getPhysicsEngine3d world in physics3d.ClearInternal ()
+            let physics2d = World.getPhysicsEngine2d world in physics2d.ClearInternal ()
+            match World.getSelectedScreenOpt world with
+            | Some screen -> World.registerScreenPhysics screen world
+            | None -> ()
+
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
                 match tasklet.ScheduledTime with
