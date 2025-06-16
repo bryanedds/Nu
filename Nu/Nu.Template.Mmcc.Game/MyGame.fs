@@ -64,7 +64,6 @@ type MyGameDispatcher () =
     override this.Command (_, command, _, world) =
         match command with
         | Exit -> if world.Unaccompanied then World.exit world
-        []
 
     // here we describe the content of the game, including all of its screens.
     override this.Content (_, _) =

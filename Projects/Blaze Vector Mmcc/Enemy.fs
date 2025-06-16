@@ -71,4 +71,3 @@ type EnemyDispatcher () =
                 World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
         | Hit ->
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
-        []

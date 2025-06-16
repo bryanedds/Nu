@@ -37,4 +37,3 @@ type BulletDispatcher () =
             if localTime = Constants.Gameplay.BulletLifeTime then World.destroyEntity entity world
         | Penetration ->
             World.destroyEntity entity world
-        []
