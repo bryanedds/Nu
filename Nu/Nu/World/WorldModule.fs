@@ -117,11 +117,11 @@ module WorldModule =
 
         static member internal addSimulantToDestruction simulant (world : World) =
             let worldExtension = { world.WorldExtension with DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }
-            world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal tryRemoveSimulantFromDestruction simulant (world : World) =
             let worldExtension = { world.WorldExtension with DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }
-            world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
     type World with // Dispatchers
 
@@ -151,7 +151,7 @@ module WorldModule =
             world.AmbientState
 
         static member internal mapAmbientState mapper (world : World) =
-            world.WorldState.Value <- { world.WorldState.Value with AmbientState = mapper world.AmbientState }
+            world.WorldState <- { world.WorldState with AmbientState = mapper world.AmbientState }
 
         /// Check that the update rate is non-zero.
         static member getAdvancing (world : World) =
@@ -273,8 +273,8 @@ module WorldModule =
                 world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
                 world.WorldExtension.ContextImSim <- context
             else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldState.Value.WorldExtension.ContextImSim; ContextImSim = context }
-                world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldState.WorldExtension.ContextImSim; ContextImSim = context }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal advanceContext declared context (world : World) =
             if world.Imperative then
@@ -282,7 +282,7 @@ module WorldModule =
                 world.WorldExtension.ContextImSim <- context
             else
                 let worldExtension = { world.WorldExtension with DeclaredImSim = declared; ContextImSim = context }
-                world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSimulantsImSim (world : World) =
             world.SimulantsImSim
@@ -292,7 +292,7 @@ module WorldModule =
                 world.WorldExtension.SimulantsImSim <- simulantsImSim
             else
                 let worldExtension = { world.WorldExtension with SimulantsImSim = simulantsImSim }
-                world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSimulantImSim simulant (world : World) =
             world.SimulantsImSim.[simulant]
@@ -332,7 +332,7 @@ module WorldModule =
                 world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
             else
                 let worldExtension = { world.WorldExtension with SubscriptionsImSim = subscriptionsImSim }
-                world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSubscriptionImSim subscription (world : World) =
             world.SubscriptionsImSim.[subscription]
@@ -364,7 +364,7 @@ module WorldModule =
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState (world : World) =
             let ambientState = AmbientState.switch world.AmbientState
-            world.WorldState.Value <- { world.WorldState.Value with AmbientState = ambientState }
+            world.WorldState <- { world.WorldState with AmbientState = ambientState }
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =
@@ -453,7 +453,7 @@ module WorldModule =
         /// Set the geometry viewport.
         static member setGeometryViewport viewport (world : World) =
             let worldExtension = { world.WorldExtension with GeometryViewport = viewport }
-            world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         /// Get the inner viewport.
         static member getRasterViewport (world : World) =
@@ -462,7 +462,7 @@ module WorldModule =
         /// Set the inner viewport.
         static member setRasterViewport viewport (world : World) =
             let worldExtension = { world.WorldExtension with RasterViewport = viewport }
-            world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         /// Get the outer viewport.
         static member getOuterViewport (world : World) =
@@ -471,10 +471,10 @@ module WorldModule =
         /// Set the outer viewport.
         static member setOuterViewport viewport (world : World) =
             let worldExtension = { world.WorldExtension with OuterViewport = viewport }
-            world.WorldState.Value <- { world.WorldState.Value with WorldExtension = worldExtension }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSymbolics (world : World) =
-            AmbientState.getSymbolics world.WorldState.Value.AmbientState
+            AmbientState.getSymbolics world.WorldState.AmbientState
 
         static member internal setSymbolics symbolics world =
             World.mapAmbientState (AmbientState.setSymbolics symbolics) world
@@ -507,7 +507,7 @@ module WorldModule =
             let symbolics = World.getSymbolics world
             Symbolics.reloadSymbols symbolics
 
-        static member internal getOverlayer world =
+        static member internal getOverlayer (world : World) =
             AmbientState.getOverlayer world.AmbientState
 
         static member internal setOverlayer overlayer world =
@@ -544,7 +544,7 @@ module WorldModule =
             world.Subsystems
 
         static member internal setSubsystems subsystems world =
-            world.WorldState.Value <- { world.WorldState.Value with Subsystems = subsystems }
+            world.WorldState <- { world.WorldState with Subsystems = subsystems }
 
         static member internal mapSubsystems mapper (world : World) =
             World.setSubsystems (mapper world.Subsystems) world
@@ -565,7 +565,7 @@ module WorldModule =
             world.EventGraph
 
         static member internal setEventGraph eventGraph world =
-            world.WorldState.Value <- { world.WorldState.Value with EventGraph = eventGraph }
+            world.WorldState <- { world.WorldState with EventGraph = eventGraph }
 
         static member internal mapEventGraph mapper (world : World) =
             World.setEventGraph (mapper world.EventGraph) world

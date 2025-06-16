@@ -39,7 +39,7 @@ module WorldModuleScreen =
                 then UMap.add (screen :> Simulant) None simulants
                 else simulants
             let screenStates = UMap.add screen screenState world.ScreenStates
-            world.WorldState.Value <- { world.WorldState.Value with Simulants = simulants; ScreenStates = screenStates }
+            world.WorldState <- { world.WorldState with Simulants = simulants; ScreenStates = screenStates }
 
         static member private screenStateRemover (screen : Screen) (world : World) =
             let simulants =
@@ -55,7 +55,7 @@ module WorldModuleScreen =
                 | (false, _) -> world.Simulants
             let simulants = UMap.remove (screen :> Simulant) simulants
             let screenStates = UMap.remove screen world.ScreenStates
-            world.WorldState.Value <- { world.WorldState.Value with Simulants = simulants; ScreenStates = screenStates }
+            world.WorldState <- { world.WorldState with Simulants = simulants; ScreenStates = screenStates }
 
         static member private screenStateSetter screenState (screen : Screen) (world : World) =
 #if DEBUG
@@ -63,7 +63,7 @@ module WorldModuleScreen =
                 failwith ("Cannot set the state of a non-existent screen '" + scstring screen + "'")
 #endif
             let screenStates = UMap.add screen screenState world.ScreenStates
-            world.WorldState.Value <- { world.WorldState.Value with ScreenStates = screenStates }
+            world.WorldState <- { world.WorldState with ScreenStates = screenStates }
 
         static member private addScreenState screenState screen world =
             World.screenStateAdder screenState screen world
@@ -341,7 +341,7 @@ module WorldModuleScreen =
                         match ScreenState.trySetProperty propertyName property screenState with
                         | struct (true, screenState) ->
                             World.setScreenState screenState screen world
-                            (true, true, previous)
+                            struct (true, true, previous)
                         | struct (false, _) -> struct (false, false, previous)
                     else struct (true, false, previous)
             | false -> struct (false, false, Unchecked.defaultof<_>)
@@ -460,7 +460,7 @@ module WorldModuleScreen =
             let isNew = not (World.getScreenExists screen world)
             if isNew || mayReplace then
                 World.addScreenState screenState screen world
-                if isNew then World.registerScreen screen world else world
+                if isNew then World.registerScreen screen world
             else failwith ("Adding a screen that the world already contains '" + scstring screen + "'.")
 
         static member internal removeScreen3 removeGroups screen world =

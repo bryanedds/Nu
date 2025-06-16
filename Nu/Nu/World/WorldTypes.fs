@@ -1879,43 +1879,46 @@ and [<ReferenceEquality>] WorldState =
         ""
 
 and [<NoEquality; NoComparison>] World =
-    { mutable WorldState : WorldState ref }
+    { mutable WorldState : WorldState }
 
     member internal this.EventGraph =
-        this.WorldState.Value.EventGraph
+        this.WorldState.EventGraph
 
     member internal this.EntityCachedOpt =
-        this.WorldState.Value.EntityCachedOpt
+        this.WorldState.EntityCachedOpt
 
     member internal this.EntityStates =
-        this.WorldState.Value.EntityStates
+        this.WorldState.EntityStates
 
     member internal this.GroupStates =
-        this.WorldState.Value.GroupStates
+        this.WorldState.GroupStates
 
     member internal this.ScreenStates =
-        this.WorldState.Value.ScreenStates
+        this.WorldState.ScreenStates
 
     member internal this.GameState =
-        this.WorldState.Value.GameState
+        this.WorldState.GameState
+
+    member internal this.EntityMounts =
+        this.WorldState.EntityMounts
 
     member internal this.Quadtree =
-        this.WorldState.Value.Quadtree
+        this.WorldState.Quadtree
 
     member internal this.Octree =
-        this.WorldState.Value.Octree
+        this.WorldState.Octree
 
     member internal this.AmbientState =
-        this.WorldState.Value.AmbientState
+        this.WorldState.AmbientState
 
     member internal this.Subsystems =
-        this.WorldState.Value.Subsystems
+        this.WorldState.Subsystems
 
     member internal this.Simulants =
-        this.WorldState.Value.Simulants
+        this.WorldState.Simulants
 
     member internal this.WorldExtension =
-        this.WorldState.Value.WorldExtension
+        this.WorldState.WorldExtension
 
     /// Check that the world is executing with imperative semantics where applicable.
     member this.Imperative =

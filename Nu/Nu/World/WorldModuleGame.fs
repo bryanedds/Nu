@@ -32,7 +32,7 @@ module WorldModuleGame =
 
         static member internal setGameState gameState game world =
             ignore<Game> game
-            world.WorldState.Value <- { world.WorldState.Value with GameState = gameState }
+            world.WorldState <- { world.WorldState with GameState = gameState }
 
         static member internal getGameXtension game world =
             let gameState = World.getGameState game world
@@ -685,7 +685,7 @@ module WorldModuleGame =
                         match GameState.trySetProperty propertyName property gameState with
                         | struct (true, gameState) ->
                             World.setGameState gameState game world
-                            (true, true, previous)
+                            struct (true, true, previous)
                         | struct (false, _) -> struct (false, false, previous)
                     else struct (true, false, previous)
             | false -> struct (false, false, Unchecked.defaultof<_>)
