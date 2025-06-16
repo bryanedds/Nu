@@ -1887,6 +1887,15 @@ and [<NoEquality; NoComparison>] World =
     member internal this.EntityCachedOpt =
         this.WorldState.Value.EntityCachedOpt
 
+    member internal this.EntityStates =
+        this.WorldState.Value.EntityStates
+
+    member internal this.GroupStates =
+        this.WorldState.Value.GroupStates
+
+    member internal this.ScreenStates =
+        this.WorldState.Value.ScreenStates
+
     member internal this.GameState =
         this.WorldState.Value.GameState
 
