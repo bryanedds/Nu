@@ -27,7 +27,7 @@ type SubscriptionSorter =
 
 /// Describes an event subscription that can be boxed / unboxed.
 type 'w BoxableSubscription =
-    Event<obj, Simulant> -> 'w -> Handling * 'w
+    Event<obj, Simulant> -> 'w -> Handling
 
 /// A map of event subscriptions.
 type SubscriptionEntries =
