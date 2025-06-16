@@ -58,7 +58,7 @@ module WorldImSim =
             world.ReinitializingImSim
 
         /// ImSim subscribe to the given event address with a user-defined result.
-        static member doSubscriptionPlus<'d, 'r> (mapResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue =
+        static member doSubscriptionPlus<'d, 'r> (updateResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue =
             let eventAddress' =
                 if not (Array.contains "Event" eventAddress.Names)
                 then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImSim.Names|])
@@ -68,19 +68,20 @@ module WorldImSim =
             | (true, subscriptionImSim) -> World.utilizeSubscriptionImSim subscriptionKey subscriptionImSim world
             | (false, _) ->
                 let subId = Gen.id64
-                let _ =
-                    World.subscribePlus subId (fun event world ->
-                        let mapSubscriptionImSim subscriptionImSim =
-                            let results = subscriptionImSim.Results :?> 'r FQueue
-                            { subscriptionImSim with Results = FQueue.conj (mapResult event.Data) results }
-                        World.tryMapSubscriptionImSim mapSubscriptionImSim subscriptionKey world
-                        Cascade)
-                        eventAddress'
-                        Game
-                        world
+                World.subscribePlus subId (fun event world ->
+                    match world.SubscriptionsImSim.TryGetValue subscriptionKey with
+                    | (true, subscriptionImSim) ->
+                        let results = subscriptionImSim.Results :?> 'r FQueue
+                        subscriptionImSim.Results <- FQueue.conj (updateResult event.Data) results
+                    | (false, _) -> ()
+                    Cascade)
+                    eventAddress'
+                    Game
+                    world |> ignore
                 World.addSubscriptionImSim subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'r> } world
-            let results = (World.getSubscriptionImSim subscriptionKey world).Results :?> 'r FQueue
-            World.mapSubscriptionImSim (fun subscriptionImSim -> { subscriptionImSim with Results = FQueue.empty<'r> }) subscriptionKey world
+            let subscriptionImSim = World.getSubscriptionImSim subscriptionKey world
+            let results = subscriptionImSim.Results :?> 'r FQueue
+            subscriptionImSim.Results <- FQueue.empty<'r>
             results
 
         /// ImSim subscribe to the given event address.
@@ -110,15 +111,15 @@ module WorldImSim =
             results |> Seq.map snd |> FQueue.ofSeq
 
         /// TODO: document this!
-        static member initBodyResult mapResult (entity : Entity) world =
-            World.monitor (fun event world -> mapResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
-            World.monitor (fun event world -> mapResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world
-            World.monitor (fun event world -> mapResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
-            World.monitor (fun event world -> mapResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
+        static member initBodyResult updateResult (entity : Entity) world =
+            World.monitor (fun event world -> updateResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
+            World.monitor (fun event world -> updateResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world
+            World.monitor (fun event world -> updateResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
+            World.monitor (fun event world -> updateResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
 
         /// TODO: document this!
-        static member initSpineSkeletonAnimationResult mapResult (entity : Entity) world =
-            World.monitor (fun event world -> mapResult (FQueue.conj $ event.Data) world; Cascade) entity.SpineSkeletonAnimationTriggerEvent entity world
+        static member initSpineSkeletonAnimationResult updateResult (entity : Entity) world =
+            World.monitor (fun event world -> updateResult (FQueue.conj $ event.Data) world; Cascade) entity.SpineSkeletonAnimationTriggerEvent entity world
 
         /// Clear the current ImSim context.
         static member scopeWorld world =
@@ -180,10 +181,11 @@ module WorldImSim =
 
                     // init subscriptions _before_ potentially creating group
                     World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
-                    let mapResult (mapper : 'r -> 'r) world =
-                        let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) }
-                        World.tryMapSimulantImSim mapGroupImSim group.GroupAddress world
-                    init mapResult group world
+                    let updateResult (mapper : 'r -> 'r) (world : World) =
+                        match world.SimulantsImSim.TryGetValue group.GroupAddress with
+                        | (true, simulantImSim) -> simulantImSim.Result <- mapper (simulantImSim.Result :?> 'r)
+                        | (false, _) -> ()
+                    init updateResult group world
 
                     // create group only when needed
                     if groupCreation then
@@ -203,8 +205,9 @@ module WorldImSim =
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModule.tryProcessGroup true group world
-            let result = match (World.getSimulantImSim group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) group.GroupAddress world
+            let simulantImSim = World.getSimulantImSim group.GroupAddress world
+            let result = match simulantImSim.Result with :? 'r as r -> r | _ -> zero
+            simulantImSim.Result <- zero
             result
 
         static member inline private beginGroup4<'d> name groupFilePathOpt args world =
@@ -239,8 +242,8 @@ module WorldImSim =
                     true
             let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && group.GetExists world then
-                    group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
+                    if (initializing || not arg.ArgStatic) && group.GetExists world then
+                        group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModule.tryProcessGroup true group world
 
@@ -321,10 +324,11 @@ module WorldImSim =
 
                     // init subscriptions _before_ potentially creating entity
                     World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
-                    let mapResult (mapper : 'r -> 'r) world =
-                        let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) }
-                        World.tryMapSimulantImSim mapEntityImSim entity.EntityAddress world
-                    init mapResult entity world
+                    let updateResult (mapper : 'r -> 'r) (world : World) =
+                        match world.SimulantsImSim.TryGetValue entity.EntityAddress with
+                        | (true, simulantImSim) -> simulantImSim.Result <- mapper (simulantImSim.Result :?> 'r)
+                        | (false, _) -> ()
+                    init updateResult entity world
 
                     // create entity only when needed
                     if entityCreation then
@@ -349,8 +353,9 @@ module WorldImSim =
                 WorldModule.tryProcessEntity true entity world
 
             // update result
-            let result = match (World.getSimulantImSim entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) entity.EntityAddress world
+            let simulantImSim = World.getSimulantImSim entity.EntityAddress world
+            let result = match simulantImSim.Result with :? 'r as r -> r | _ -> zero
+            simulantImSim.Result <- zero
             result
 
         /// Begin the ImSim declaration of an entity with the given arguments.
@@ -376,7 +381,7 @@ module WorldImSim =
             World.endEntity world
 
         /// ImSim declare an entity with the given arguments.
-        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name args world =
+        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name args (world : World) =
             let result = World.beginEntityPlus<'d, 'r> zero init name args world
             World.endEntity world
             result

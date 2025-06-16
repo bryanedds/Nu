@@ -43,8 +43,8 @@ module Gaia =
 
     (* Active Editing States *)
 
-    let mutable private Pasts = [] : (SnapshotType * WorldState) list
-    let mutable private Futures = [] : (SnapshotType * WorldState) list
+    let mutable private Pasts = [] : (SnapshotType * World) list
+    let mutable private Futures = [] : (SnapshotType * World) list
     let mutable private SelectedWindowOpt = Option<string>.None
     let mutable private SelectedWindowRestoreRequested = 0
     let mutable private EntityPropertiesFocusRequested = false
@@ -67,8 +67,6 @@ module Gaia =
     let mutable private SelectedEntityOpt = Option<Entity>.None
     let mutable private OpenProjectFilePath = null // this will be initialized on start
     let mutable private OpenProjectEditMode = "Title"
-    let mutable private OpenProjectImperativeExecution = false
-    let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
     let mutable private NewProjectType = "MMCC Game"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
@@ -114,7 +112,6 @@ module Gaia =
     let mutable private ProjectDllPath = ""
     let mutable private ProjectFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private ProjectEditMode = ""
-    let mutable private ProjectImperativeExecution = false
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private GroupFilePaths = Map.empty<Group Address, string>
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
@@ -473,13 +470,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         (world.Halted || EditWhileAdvancing)
 
     let private snapshot snapshotType world =
-        Pasts <- (snapshotType, world.WorldState) :: Pasts
+        Pasts <- (snapshotType, world) :: Pasts
         Futures <- []
         TimelineChanged <- true
 
     let private makeGaiaState projectDllPath editModeOpt freshlyLoaded world : GaiaState =
         GaiaState.make
-            projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution EditWhileAdvancing
+            projectDllPath editModeOpt freshlyLoaded EditWhileAdvancing
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
             Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput
 
@@ -584,60 +581,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             setFullScreen true world
         else setFullScreen false world
 
-    let private tryUndo (world : World) =
-        if  not (World.getImperative world) &&
-            match Pasts with
-            | past :: pasts' ->
-                let future = (fst past, world.WorldState)
-                world.WorldState <- snd past
-                World.switch world
-                Pasts <- pasts'
-                Futures <- future :: Futures
-                TimelineChanged <- true
-                true
-            | [] -> false
-        then
-            focusPropertyOpt None world
-            selectScreen false (World.getSelectedScreen world)
-            if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
-                let group = Seq.head (World.getGroups SelectedScreen world)
-                selectGroup false group
-            match SelectedEntityOpt with
-            | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
-            | Some _ | None -> ()
-            World.setEye2dCenter DesiredEye2dCenter world
-            World.setEye3dCenter DesiredEye3dCenter world
-            World.setEye3dRotation DesiredEye3dRotation world
-            true
-        else false
-
-    let private tryRedo world =
-        if  not (World.getImperative world) &&
-            match Futures with
-            | future :: futures' ->
-                let past = (fst future, world.WorldState)
-                world.WorldState <- snd future
-                World.switch world
-                Pasts <- past :: Pasts
-                Futures <- futures'
-                TimelineChanged <- true
-                true
-            | [] -> false
-        then
-            focusPropertyOpt None world
-            selectScreen false (World.getSelectedScreen world)
-            if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
-                let group = Seq.head (World.getGroups SelectedScreen world)
-                selectGroup false group
-            match SelectedEntityOpt with
-            | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
-            | Some _ | None -> ()
-            World.setEye2dCenter DesiredEye2dCenter world
-            World.setEye3dCenter DesiredEye3dCenter world
-            World.setEye3dRotation DesiredEye3dRotation world
-            true
-        else false
-
     let private freezeEntities world =
         snapshot FreezeEntities world
         let freezers =
@@ -740,10 +683,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ImGui.SetWindowFocus "Entity Hierarchy"
         EntityHierarchySearchRequested <- true
 
-    let private revertOpenProjectState (world : World) =
+    let private revertOpenProjectState () =
         OpenProjectFilePath <- ProjectDllPath
         OpenProjectEditMode <- ProjectEditMode
-        OpenProjectImperativeExecution <- world.Imperative
 
     let private resolveAssemblyAt (dirPath : string) (args : ResolveEventArgs) =
         let assemblyName = AssemblyName args.Name
@@ -945,7 +887,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to load entity
         match entityAndDescriptorOpt with
         | Right (entity, entityDescriptor) ->
-            let worldStateOld = world.WorldState
             try if not (entity.GetExists world) || not (entity.GetProtected world) then
                     if entity.GetExists world then
                         snapshot LoadEntity world
@@ -974,8 +915,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
-                world.WorldState <- worldStateOld
-                World.switch world
                 false
 
         // error
@@ -1126,7 +1065,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to load group
         match groupAndDescriptorOpt with
         | Right (group, groupDescriptor) ->
-            let worldStateOld = world.WorldState
             try if not (group.GetExists world) || not (group.GetProtected world) then
                     if group.GetExists world then
                         World.destroyGroupImmediate SelectedGroup world
@@ -1143,8 +1081,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
-                world.WorldState <- worldStateOld
-                World.switch world
                 false
 
         // error
@@ -1163,7 +1099,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     let private tryReloadCode world =
         if World.getAllowCodeReload world then
-            let worldStateOld = world.WorldState
             snapshot ReloadCode world
             selectEntityOpt None world // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = TargetDir + "/../../.."
@@ -1273,19 +1208,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | (Choice2Of2 _, diags) ->
                         let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
                         Log.error ("Failed to compile code due to (see full output in the console):\n" + diagsStr)
-                        world.WorldState <- worldStateOld
-                        World.switch world
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
 
                     // issue code reload event
                     World.publishPlus () Nu.Game.Handle.CodeReloadEvent (EventTrace.debug "Gaia" "tryReloadCode" "" EventTrace.empty) Nu.Game.Handle false false world
 
-            with exn ->
-                Log.error ("Failed to inspect for F# code due to: " + scstring exn)
-                world.WorldState <- worldStateOld
-                World.switch world
-
+            with exn -> Log.error ("Failed to inspect for F# code due to: " + scstring exn)
         else MessageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
     let private tryReloadAll world =
@@ -1632,9 +1561,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
             elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin false world |> ignore<bool>
             elif not (ImGui.GetIO ()).WantCaptureKeyboardGlobal || entityHierarchyFocused then
-                if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo world |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo world |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity world |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast NewEntityParentOpt) world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false world
@@ -2364,9 +2291,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if ImGui.MenuItem "New Project" then ShowNewProjectDialog <- true
                     if ImGui.MenuItem ("Open Project", "Ctrl+Shit+O") then ShowOpenProjectDialog <- true
                     if ImGui.MenuItem "Close Project" then ShowCloseProjectDialog <- true
-                    ImGui.Separator ()
-                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo world |> ignore<bool>
-                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo world |> ignore<bool>
                     ImGui.Separator ()
                     if not world.Advancing then
                         if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing world
@@ -3514,7 +3438,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Text "Edit Mode:"
             ImGui.SameLine ()
             ImGui.InputText ("##openProjectEditMode", &OpenProjectEditMode, 4096u) |> ignore<bool>
-            ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &OpenProjectImperativeExecution) |> ignore<bool>
             if  (ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
                 String.notEmpty OpenProjectFilePath &&
                 File.Exists OpenProjectFilePath then
@@ -3526,10 +3449,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     Directory.SetCurrentDirectory gaiaDirectory
                     ShowRestartDialog <- true
                 with _ ->
-                    revertOpenProjectState world
+                    revertOpenProjectState ()
                     Log.info "Could not save editor state and open project."
             if ImGui.IsKeyReleased ImGuiKey.Escape then
-                revertOpenProjectState world
+                revertOpenProjectState ()
                 ShowOpenProjectDialog <- false
             ImGui.EndPopup ()
 
@@ -3540,26 +3463,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
             OpenProjectFilePath <- ProjectFileDialogState.FilePath
 
-    let private imGuiCloseProjectDialog (world : World) =
+    let private imGuiCloseProjectDialog () =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowCloseProjectDialog, ImGuiWindowFlags.AlwaysAutoResize) then
             ImGui.Text "Close the project and use Gaia in its default state?"
-            ImGui.Checkbox ("Proceed w/ Imperative Execution (faster, but no Undo / Redo)", &CloseProjectImperativeExecution) |> ignore<bool>
             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowCloseProjectDialog <- false
-                let gaiaState = { GaiaState.defaultState with ProjectImperativeExecution = CloseProjectImperativeExecution }
+                let gaiaState = GaiaState.defaultState
                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                 let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDirectory
                     ShowRestartDialog <- true
                 with _ ->
-                    CloseProjectImperativeExecution <- world.Imperative
                     Log.info "Could not clear editor state and close project."
             if ImGui.IsKeyReleased ImGuiKey.Escape then
-                CloseProjectImperativeExecution <- world.Imperative
                 ShowCloseProjectDialog <- false
             ImGui.EndPopup ()
 
@@ -3583,7 +3503,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.GetExists world) then
-                let worldStateOld = world.WorldState
                 try snapshot CreateGroup world
                     World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> ignore<Group>
                     selectEntityOpt None world
@@ -3592,8 +3511,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     NewGroupName <- ""
                 with exn ->
                     MessageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
-                    world.WorldState <- worldStateOld
-                    World.switch world
             if ImGui.IsKeyReleased ImGuiKey.Escape then ShowNewGroupDialog <- false
             ImGui.EndPopup ()
 
@@ -3918,7 +3835,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             | None -> ()
             SelectedWindowRestoreRequested <- 0
 
-    let private imGuiExceptionDialog exn worldStateOld world =
+    let private imGuiExceptionDialog exn world =
         let title = "Unhandled Exception!"
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         ImGui.SetNextWindowSize (v2 900.0f 0.0f) // HACK: this is needed since auto-resizing windows don't work with ImGui.TextWrapped (https://github.com/ocornut/imgui/issues/778)
@@ -3927,14 +3844,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Text "Exception text:"
             ImGui.TextWrapped (scstring exn)
             ImGui.Text "How would you like to handle this exception?"
-            if ImGui.Button "Soft Rewind: undo the current ImGui frame." then
-                world.WorldState <- worldStateOld
-                World.switch world
+            if ImGui.Button "Mode Reset: reset the game mode to the current one." then
+                let editModes = World.getEditModes world
+                match editModes.TryGetValue ProjectEditMode with
+                | (true, modeFn) -> modeFn world
+                | (false, _) -> ()
                 RecoverableExceptionOpt <- None
-            if ImGui.Button "Hard Rewind: undo the last edit operation." then
-                tryUndo world |> ignore<bool>
-                RecoverableExceptionOpt <- None
-            if ImGui.Button "Ignore: proceed with current world as-is." then
+            if ImGui.Button "Ignore: proceed as-is." then
                 RecoverableExceptionOpt <- None
             if ImGui.Button "Exit: close the editor." then
                 World.exit world
@@ -3942,9 +3858,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.EndPopup ()
 
     let private imGuiProcess (world : World) =
-
-        // store old world state
-        let worldStateOld = world.WorldState
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
         if  world.Eye2dCenter <> DesiredEye2dCenter ||
@@ -3998,7 +3911,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if ShowNewProjectDialog then imGuiNewProjectDialog world
                     if ShowOpenProjectDialog && not ShowOpenProjectFileDialog then imGuiOpenProjectDialog world
                     elif ShowOpenProjectFileDialog then imGuiOpenProjectFileDialog ()
-                    if ShowCloseProjectDialog then imGuiCloseProjectDialog world
+                    if ShowCloseProjectDialog then imGuiCloseProjectDialog ()
                     if ShowNewGroupDialog then imGuiNewGroupDialog world
                     if ShowOpenGroupDialog then imGuiOpenGroupDialog world
                     if ShowSaveGroupDialog then imGuiSaveGroupDialog world
@@ -4034,7 +3947,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             with exn -> RecoverableExceptionOpt <- Some exn
 
         // exception handling dialog
-        | Some exn -> imGuiExceptionDialog exn worldStateOld world
+        | Some exn -> imGuiExceptionDialog exn world
 
     let private imGuiRender world =
 
@@ -4159,27 +4072,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->
-            if tryUndo world then
-                Futures <- [] // NOTE: clearing invalid futures.
-                let wasAdvancing = world.Advancing
-                if wasAdvancing then World.setAdvancing false world
-                let errorMsg =
-                    "Unexpected exception!\n" +
-                    "Rewound to previous world" + (if wasAdvancing then " and halted." else ".") +
-                    "\nError due to: " + exn.Message +
-                    "\nStack trace:\n" + string exn.StackTrace
-                Log.error errorMsg
-                MessageBoxOpt <- Some errorMsg
-                runWithCleanUpAndErrorProtection false world
-            else
-                let errorMsg = "Unexpected exception! Could not rewind world. Error due to: " + scstring exn
-                Log.error errorMsg
-                Constants.Engine.ExitCodeFailure
+            let errorMsg = "Unexpected exception! Could not rewind world. Error due to: " + scstring exn
+            Log.error errorMsg
+            Constants.Engine.ExitCodeFailure
 
     let rec private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectFilePath <- gaiaState.ProjectDllPath
-        OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
-        CloseProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d
@@ -4209,7 +4107,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ProjectDllPath <- OpenProjectFilePath
         ProjectFileDialogState <- ImGuiFileDialogState TargetDir
         ProjectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
-        ProjectImperativeExecution <- OpenProjectImperativeExecution
         GroupFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
         EntityFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
         selectScreen false screen
@@ -4258,8 +4155,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
             // attempt to create the world
             let worldConfig =
-                { Imperative = gaiaState.ProjectImperativeExecution
-                  Accompanied = true
+                { Accompanied = true
                   Advancing = false
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt

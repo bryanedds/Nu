@@ -18,7 +18,7 @@ module WorldImGui =
 
     type World with
 
-        static member internal getImGui (world : World) =
+        static member internal getImGui world =
             world.Subsystems.ImGui
 
         static member imGuiTryGetTextureId assetTag world =

@@ -90,7 +90,6 @@ module SdlDeps =
                 SDL.SDL_SetWindowPosition (window.SglWindow, 100, 100)
 
         | _ -> ()
-        sdlDeps
 
     /// Attempt to initalize an SDL module.
     let internal attemptPerformSdlInit create destroy =

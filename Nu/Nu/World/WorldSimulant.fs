@@ -226,7 +226,7 @@ module WorldSimulantModule =
             if namesLength >= 4 then
                 let entity = simulant :?> Entity
                 notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
-                SUMap.containsKey (simulant :?> Entity) world.EntityStates
+                world.EntityStates.ContainsKey (simulant :?> Entity) 
             else
                 match namesLength with
                 | 1 -> true

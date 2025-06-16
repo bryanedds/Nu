@@ -11,13 +11,13 @@ module WorldPhysics =
 
     type World with
 
-        static member internal getPhysicsEngine2d (world : World) =
+        static member internal getPhysicsEngine2d world =
             world.Subsystems.PhysicsEngine2d
 
-        static member internal getPhysicsEngine3d (world : World) =
+        static member internal getPhysicsEngine3d world =
             world.Subsystems.PhysicsEngine3d
 
-        static member internal getRendererPhysics3d (world : World) =
+        static member internal getRendererPhysics3d world =
             world.Subsystems.RendererPhysics3d
 
         /// Localize a primitive body shape to a specific size; non-primitive body shapes are unaffected.
@@ -92,12 +92,12 @@ module WorldPhysics =
                 World.handlePhysicsMessage3d message world
 
         /// Check that the world contains a body with the given body id.
-        static member getBodyExists bodyId (world : World) =
+        static member getBodyExists bodyId world =
             world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId ||
             world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId
 
         /// Get the contact normals of the body with the given body id.
-        static member getBodyContactNormals bodyId (world : World) =
+        static member getBodyContactNormals bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyContactNormals bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -107,7 +107,7 @@ module WorldPhysics =
                 [||]
 
         /// Get the linear velocity of the body with the given body id.
-        static member getBodyLinearVelocity bodyId (world : World) =
+        static member getBodyLinearVelocity bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyLinearVelocity bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -117,7 +117,7 @@ module WorldPhysics =
                 v3Zero
 
         /// Get the angular velocity of the body with the given body id.
-        static member getBodyAngularVelocity bodyId (world : World) =
+        static member getBodyAngularVelocity bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyAngularVelocity bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -127,7 +127,7 @@ module WorldPhysics =
                 v3Zero
 
         /// Get the contact normals where the body with the given body id is touching the ground.
-        static member getBodyToGroundContactNormals bodyId (world : World) =
+        static member getBodyToGroundContactNormals bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormals bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -137,7 +137,7 @@ module WorldPhysics =
                 [||]
 
         /// Get a contact normal where the body with the given body id is touching the ground (if one exists).
-        static member getBodyToGroundContactNormalOpt bodyId (world : World) =
+        static member getBodyToGroundContactNormalOpt bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormalOpt bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -147,7 +147,7 @@ module WorldPhysics =
                 None
 
         /// Get a contact tangent where the body with the given body id is touching the ground (if one exists).
-        static member getBodyToGroundContactTangentOpt bodyId (world : World) =
+        static member getBodyToGroundContactTangentOpt bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactTangentOpt bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -157,7 +157,7 @@ module WorldPhysics =
                 None
 
         /// Check that the body with the given body id is on the ground.
-        static member getBodyGrounded bodyId (world : World) =
+        static member getBodyGrounded bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyGrounded bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -167,7 +167,7 @@ module WorldPhysics =
                 false
 
         /// Check that the body with the given body id is a sensor.
-        static member getBodySensor bodyId (world : World) =
+        static member getBodySensor bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodySensor bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
@@ -177,11 +177,11 @@ module WorldPhysics =
                 false
 
         /// Ray cast against 3d physics bodies.
-        static member rayCast3dBodies ray collisionMask closestOnly (world : World) =
+        static member rayCast3dBodies ray collisionMask closestOnly world =
             world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
 
         /// Ray cast against 2d physics bodies.
-        static member rayCast2dBodies ray collisionMask closestOnly (world : World) =
+        static member rayCast2dBodies ray collisionMask closestOnly world =
             world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
 
         /// Send a physics message to create a physics body.

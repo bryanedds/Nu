@@ -11,14 +11,14 @@ module WorldRender =
 
     type World with
 
-        static member internal getRendererProcess (world : World) =
+        static member internal getRendererProcess world =
             world.Subsystems.RendererProcess
 
         static member internal withRendererProcess fn world =
             fn (World.getRendererProcess world)
 
         /// Get the current configuration of the 3d renderer.
-        static member getRenderer3dConfig (world : World) =
+        static member getRenderer3dConfig world =
             world.Subsystems.RendererProcess.Renderer3dConfig
 
         /// Set the current configuration of the 3d renderer.

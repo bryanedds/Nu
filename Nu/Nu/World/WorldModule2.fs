@@ -353,28 +353,32 @@ module WorldModule2 =
             let screenCreation = not (screen.GetExists world)
             let initializing =
                 match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
-                | (true, screenImSim) -> World.utilizeSimulantImSim screen.ScreenAddress screenImSim world; false
+                | (true, screenImSim) ->
+                    World.utilizeSimulantImSim screen.ScreenAddress screenImSim world
+                    false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating screen
                     World.addSimulantImSim screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
-                    let mapFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) world =
-                        let mapScreenImSim screenImSim =
-                            let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
-                            { screenImSim with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
-                    World.monitor (fun _ world -> mapFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
-                    let mapSndResult (mapper : 'r -> 'r) world =
-                        let mapScreenImSim screenImSim =
-                            let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
-                            { screenImSim with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
-                    init mapSndResult screen world
+                    let updateFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) (world : World) =
+                        match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
+                        | (true, simulantImSim) ->
+                            let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
+                            simulantImSim.Result <- (mapper screenResult, userResult)
+                        | (false, _) -> ()
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
+                    World.monitor (fun _ world -> updateFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
+                    let updateSndResult (mapper : 'r -> 'r) (world : World) =
+                        match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
+                        | (true, simulantImSim) ->
+                            let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
+                            simulantImSim.Result <- (screenResult, mapper userResult)
+                        | (false, _) -> ()
+                    init updateSndResult screen world
 
                     // create screen only when needed
                     if screenCreation then
@@ -406,8 +410,9 @@ module WorldModule2 =
                         screen
                         world
                 else transitionScreen screen world
-            let (screenResult, userResult) = (World.getSimulantImSim screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
+            let simulantImSim = World.getSimulantImSim screen.ScreenAddress world
+            let (screenResult, userResult) = simulantImSim.Result :?> SelectionEventData FQueue * 'r
+            simulantImSim.Result <- (FQueue.empty<SelectionEventData>, zero)
             (screenResult, userResult)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue =
@@ -732,10 +737,10 @@ module WorldModule2 =
                 if World.getEntityExists target world then
                     target.SetPropagationSourceOpt None world
 
-        static member internal makeIntrinsicOverlays facets entityDispatchers =
+        static member internal makeIntrinsicOverlays (facets : Dictionary<string, Facet>) (entityDispatchers : Dictionary<string, EntityDispatcher>) =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
-            let facets = facets |> Map.toValueList |> List.map box
-            let entityDispatchers = entityDispatchers |> Map.toValueList |> List.map box
+            let facets = facets.Values |> Seq.map box |> Seq.toList
+            let entityDispatchers = entityDispatchers |> Seq.map box |> Seq.toList
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
@@ -767,29 +772,30 @@ module WorldModule2 =
                     if eventNamesLength >= 7 then
                         let entityAddress = rtoa (Array.skip 3 eventNames)
                         let entity = Nu.Entity entityAddress
-                        match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with
+                        match World.tryGetKeyedValueFast<Dictionary<Entity Address, int>> (EntityChangeCountsKey, world) with
                         | (true, entityChangeCounts) ->
                             match entityChangeCounts.TryGetValue entityAddress with
                             | (true, entityChangeCount) ->
-                                let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
-                                let entityChangeCounts =
-                                    if entityChangeCount = 0
-                                    then UMap.remove entityAddress entityChangeCounts
-                                    else UMap.add entityAddress entityChangeCount entityChangeCounts
+                                let entityChangeCount =
+                                    if subscribing
+                                    then inc entityChangeCount
+                                    else dec entityChangeCount
+                                if entityChangeCount = 0
+                                    then entityChangeCounts.Remove entityAddress |> ignore<bool>
+                                    else entityChangeCounts.[entityAddress] <- entityChangeCount
                                 if entity.GetExists world then
                                     if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> ignore<bool>
                                     elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                                World.mapKeyValueStore (SUMap.add EntityChangeCountsKey entityChangeCounts) world // no event
                             | (false, _) ->
                                 if not subscribing then failwithumf ()
                                 if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                                World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
+                                entityChangeCounts.[entityAddress] <- 1 // no event
                         | (false, _) ->
                             if not subscribing then failwithumf ()
-                            let config = World.getCollectionConfig world
-                            let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
                             if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                            World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
+                            let entityChangeCounts = dictPlus HashIdentity.Structural [(entityAddress, 1)]
+                            let keyValueStore = World.getKeyValueStore world
+                            keyValueStore.[EntityChangeCountsKey] <- entityChangeCounts // no event
                     if  Array.contains Constants.Address.WildcardName eventNames ||
                         Array.contains Constants.Address.EllipsisName eventNames then
                         Log.error "Subscribing to change events with a wildcard or ellipsis is not supported."
@@ -810,28 +816,32 @@ module WorldModule2 =
         static member internal admitScreenElements screen world =
             let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SList.ofSeq
             let (entities2d, entities3d) = SList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+            let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
                 let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
-                Quadtree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element world.Quadtree
+                Quadtree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
+                let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                    Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
+                    Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
                 
         static member internal evictScreenElements screen world =
             let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SArray.ofSeq
             let (entities2d, entities3d) = SArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+            let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
                 let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
-                Quadtree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element world.Quadtree
+                Quadtree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
+                let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                    Octree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
+                    Octree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
 
         static member internal registerScreenPhysics screen world =
             let entities =
@@ -934,34 +944,6 @@ module WorldModule2 =
             | Right _ -> true
             | Left _ -> false
 
-        /// Switch simulation to this world, resynchronizing the imperative subsystems with its current state.
-        /// Needed when abandoning execution of the current world in favor of a previous world, such as in the case of
-        /// an exception where the try expression resulted in a transformed world that is to be discarded.
-        static member switch (world : World) =
-
-            // wipe memoized named content
-            Content.wipe ()
-
-            // sync tick watch state to advancing
-            World.switchAmbientState world
-
-            // synchronize viewports in case they get out of sync, such as during an undo operation
-            World.synchronizeViewports world
-
-            // rebuild spatial trees
-            Octree.clear world.Octree
-            Quadtree.clear world.Quadtree
-            match World.getSelectedScreenOpt world with
-            | Some screen -> World.admitScreenElements screen world
-            | None -> ()
-
-            // rebuild physics states
-            let physics3d = World.getPhysicsEngine3d world in physics3d.ClearInternal ()
-            let physics2d = World.getPhysicsEngine2d world in physics2d.ClearInternal ()
-            match World.getSelectedScreenOpt world with
-            | Some screen -> World.registerScreenPhysics screen world
-            | None -> ()
-
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
                 match tasklet.ScheduledTime with
@@ -996,9 +978,10 @@ module WorldModule2 =
             World.sweepSimulants world
 
         static member private destroySimulants world =
-            for simulant in world |> World.getDestructionListRev |> List.rev do
+            let destructionList = World.getDestructionList world
+            for simulant in List destructionList do
                 World.destroyImmediate simulant world
-            if List.notEmpty (World.getDestructionListRev world) then
+            if destructionList.Count > 0 then
                 World.destroySimulants world
 
         static member private toImGuiMouseButton mouseButton =
@@ -1234,13 +1217,15 @@ module WorldModule2 =
 
         /// Sweep the quadtree clean of all empty nodes.
         /// It can make sense to call this after loading a new level.
-        static member sweepQuadtree (world : World) =
-            Quadtree.sweep world.Quadtree
+        static member sweepQuadtree world =
+            let quadtree = World.getQuadtree world
+            Quadtree.sweep quadtree
 
         /// Sweep the octree clean of all empty nodes.
         /// It can make sense to call this after loading a new level.
-        static member sweepOctree (world : World) =
-            Octree.sweep world.Octree
+        static member sweepOctree world =
+            let octree = World.getOctree world
+            Octree.sweep octree
 
         /// Process ImSim for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
@@ -1298,19 +1283,31 @@ module WorldModule2 =
         static member internal sweepSimulants (world : World) =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
-            for (simulantAddress, simulantImSim) in world.SimulantsImSim do
+            for entry in world.SimulantsImSim do
+                let simulantAddress = entry.Key
+                let simulantImSim = entry.Value
                 if not simulantImSim.SimulantUtilized then
                     let simulant = World.deriveFromAddress simulantAddress
                     ImSimSimulantsToDestroy.Add (simulantImSim.InitializationTime, simulant)
-                    World.setSimulantsImSim (SUMap.remove simulantAddress world.SimulantsImSim) world
+                    world.SimulantsImSim.Remove simulantAddress |> ignore<bool>
                 else
-                    if world.Imperative then
-                        simulantImSim.SimulantUtilized <- false
-                        simulantImSim.SimulantInitializing <- false
-                    else
-                        let simulantsImSim = SUMap.add simulantAddress { simulantImSim with SimulantUtilized = false; SimulantInitializing = false } world.SimulantsImSim
-                        World.setSimulantsImSim simulantsImSim world
+                    simulantImSim.SimulantUtilized <- false
+                    simulantImSim.SimulantInitializing <- false
             ImSimSimulantsToDestroy.Sort SimulantImSimComparer
+
+            // destroy simulants
+            for (_, simulant) in ImSimSimulantsToDestroy do
+                World.destroy simulant world
+            ImSimSimulantsToDestroy.Clear ()
+
+            // update subscription bookkeeping
+            for entry in world.SubscriptionsImSim do
+                let subscriptionKey = entry.Key
+                let subscriptionImSim = entry.Value
+                if not subscriptionImSim.SubscriptionUtilized then
+                    World.unsubscribe subscriptionImSim.SubscriptionId world
+                    world.SubscriptionsImSim.Remove subscriptionKey |> ignore<bool>
+                else subscriptionImSim.SubscriptionUtilized <- false
 
         static member private preUpdateSimulants (world : World) =
 
@@ -1676,12 +1673,12 @@ module WorldModule2 =
                     World.processIntegrationMessage message world
             | None -> ()
 
-        static member private processPhysics world =
+        static member private processPhysics (world : World) =
             World.processPhysics3d world
             World.processPhysics2d world
 
         /// Clean-up the resources held by the world.
-        static member cleanUp (world : World) =
+        static member cleanUp world =
             world.WorldExtension.JobGraph.CleanUp ()
             World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
@@ -1926,9 +1923,9 @@ module EntityDispatcherModule2 =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (entity, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (entity, world)
 #if DEBUG
             if world.ContextImSim <> entity.EntityAddress then
@@ -2302,9 +2299,9 @@ module GroupDispatcherModule =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (group, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (group, world)
 #if DEBUG
             if world.ContextImSim <> group.GroupAddress then
@@ -2517,9 +2514,9 @@ module ScreenDispatcherModule =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (FQueue.ofSeq results, screen, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImSim <> screen.ScreenAddress then
@@ -2729,9 +2726,9 @@ module GameDispatcherModule =
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                AmbientState.clearAdvancement world.AmbientState
                 this.Process (game, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
             else this.Process (game, world)
 #if DEBUG
             if world.ContextImSim <> game.GameAddress then
@@ -3019,13 +3016,7 @@ module WorldModule2' =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
-                        if world.Imperative then
-                            entityState.Facets.[index] <- facet
-                        else
-                            let facets = entityState.Facets.Clone () :?> Facet array
-                            facets.[index] <- facet
-                            let entityState = { entityState with Facets = facets }
-                            World.setEntityState entityState entity world
+                        entityState.Facets.[index] <- facet
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
@@ -3040,16 +3031,11 @@ module WorldModule2' =
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
-                        if world.Imperative then
-                            entityState.Dispatcher <- entityDispatcher
-                        else
-                            let entityState = { entityState with Dispatcher = entityDispatcher }
-                            World.setEntityState entityState entity world
+                        entityState.Dispatcher <- entityDispatcher
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
-                        let entityState = World.getEntityState entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
                         let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
-                        let entityState = World.tryAddFacets intrinsicFacetNamesAdded entityState (Some entity) world |> Either.getRight
+                        World.tryAddFacets intrinsicFacetNamesAdded entityState (Some entity) world |> Either.getRight
                         let intrinsicFacetNamesRemoved = Set.difference intrinsicFacetNamesOld intrinsicFacetNamesNew
                         let _ = World.tryRemoveFacets intrinsicFacetNamesRemoved entityState (Some entity) world |> Either.getRight
                         World.updateEntityPresenceOverride entity world
@@ -3060,7 +3046,7 @@ module WorldModule2' =
                 match lateBindings with
                 | :? GroupDispatcher as groupDispatcher ->
                     if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
-                        World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                        groupState.Dispatcher <- groupDispatcher
                         World.attachGroupMissingProperties group world
                 | _ -> ()
             | :? Screen as screen ->
@@ -3068,7 +3054,7 @@ module WorldModule2' =
                 match lateBindings with
                 | :? ScreenDispatcher as screenDispatcher ->
                     if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
-                        World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                        screenState.Dispatcher <- screenDispatcher
                         World.attachScreenMissingProperties screen world
                 | _ -> ()
             | :? Game as game ->
@@ -3076,7 +3062,7 @@ module WorldModule2' =
                 match lateBindings with
                 | :? GameDispatcher as gameDispatcher ->
                     if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
-                        World.setGameState { gameState with Dispatcher = gameDispatcher } game world
+                        gameState.Dispatcher <- gameDispatcher
                         World.attachGameMissingProperties game world
                 | _ -> ()
             | _ -> failwithumf ()

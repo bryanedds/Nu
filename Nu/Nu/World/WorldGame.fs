@@ -263,8 +263,8 @@ module WorldGameModule =
 
             // make the game state and populate its properties
             let gameState = GameState.make dispatcher
-            let gameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world
-            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
+            Reflection.attachProperties gameState.Dispatcher gameState world
+            Reflection.readPropertiesToTarget gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
             let game = Game name

@@ -144,8 +144,9 @@ module WorldGroupModule =
             dispatcher.TryUntruncateModel<'model> (model, group, world)
 
         /// Get all the groups in a screen.
-        static member getGroups (screen : Screen) (world : World) =
-            match world.Simulants.TryGetValue (screen :> Simulant) with
+        static member getGroups (screen : Screen) world =
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (screen :> Simulant) with
             | (true, groupsOpt) ->
                 match groupsOpt with
                 | Some groups -> Seq.map cast<Group> groups
@@ -160,7 +161,7 @@ module WorldGroupModule =
                 | (true, dispatcher) -> dispatcher
                 | (false, _) -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
             let groupState = GroupState.make nameOpt dispatcher
-            let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
+            Reflection.attachProperties groupState.Dispatcher groupState world
             let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
             if World.getGroupExists group world then
                 if group.GetDestroying world
@@ -284,8 +285,8 @@ module WorldGroupModule =
 
             // make the group state and populate its properties
             let groupState = GroupState.make None dispatcher
-            let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
-            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+            Reflection.attachProperties groupState.Dispatcher groupState world
+            Reflection.readPropertiesToTarget groupDescriptor.GroupProperties groupState
 
             // apply the name if one is provided
             let groupState =

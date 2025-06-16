@@ -23,7 +23,7 @@ type [<ReferenceEquality>] SubscriptionEntry =
 
 /// Abstracts over a subscription sorting procedure.
 type SubscriptionSorter =
-    (uint64 * SubscriptionEntry) seq -> obj -> (uint64 * SubscriptionEntry) seq
+    KeyValuePair<uint64, SubscriptionEntry> array -> obj -> KeyValuePair<uint64, SubscriptionEntry> array
 
 /// Describes an event subscription that can be boxed / unboxed.
 type 'w BoxableSubscription =
@@ -31,11 +31,11 @@ type 'w BoxableSubscription =
 
 /// A map of event subscriptions.
 type SubscriptionEntries =
-    UMap<obj Address, OMap<uint64, SubscriptionEntry>>
+    Dictionary<obj Address, OrderedDictionary<uint64, SubscriptionEntry>>
 
 /// A map of subscription keys to unsubscription data.
 type UnsubscriptionEntries =
-    UMap<uint64, struct (obj Address * Simulant)>
+    Dictionary<uint64, struct (obj Address * Simulant)>
 
 [<RequireQualifiedAccess>]
 module EventGraph =
@@ -52,9 +52,9 @@ module EventGraph =
             { // cache line 1 (assuming 16 byte header)
               Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
-              EventStates : SUMap<uint64, obj>
-              EventTracerOpt : (string -> unit) option
-              EventFilter : EventFilter
+              EventStates : SDictionary<uint64, obj>
+              mutable EventTracerOpt : (string -> unit) option
+              mutable EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 
     /// Get the generalized global simulant of the event system.
@@ -63,16 +63,16 @@ module EventGraph =
 
     /// Get event state.
     let getEventState<'a> key (eventGraph : EventGraph) =
-        let state = SUMap.find key eventGraph.EventStates
+        let state = eventGraph.EventStates.[key]
         state :?> 'a
 
     /// Add event state.
     let addEventState<'a> key (state : 'a) (eventGraph : EventGraph) =
-        { eventGraph with EventStates = SUMap.add key (state :> obj) eventGraph.EventStates }
+        eventGraph.EventStates.[key] <- state :> obj
 
     /// Remove event state.
     let removeEventState key (eventGraph : EventGraph) =
-        { eventGraph with EventStates = SUMap.remove key eventGraph.EventStates }
+        eventGraph.EventStates.Remove key |> ignore<bool>
 
     /// Get subscriptions.
     let getSubscriptions (eventGraph : EventGraph) =
@@ -82,21 +82,13 @@ module EventGraph =
     let getUnsubscriptions (eventGraph : EventGraph) =
         eventGraph.Unsubscriptions
 
-    /// Set subscriptions.
-    let internal setSubscriptions subscriptions (eventGraph : EventGraph) =
-        { eventGraph with Subscriptions = subscriptions }
-
-    /// Set unsubscriptions.
-    let internal setUnsubscriptions unsubscriptions (eventGraph : EventGraph) =
-        { eventGraph with Unsubscriptions = unsubscriptions }
-
     /// Get how events are being traced.
     let getEventTracerOpt (eventGraph : EventGraph) =
         eventGraph.EventTracerOpt
 
     /// Set how events are being traced.
     let setEventTracerOpt tracing (eventGraph : EventGraph) =
-        { eventGraph with EventTracerOpt = tracing }
+        eventGraph.EventTracerOpt <- tracing
 
     /// Get the state of the event filter.
     let getEventFilter (eventGraph : EventGraph) =
@@ -104,7 +96,7 @@ module EventGraph =
 
     /// Set the state of the event filter.
     let setEventFilter filter (eventGraph : EventGraph) =
-        { eventGraph with EventFilter = filter }
+        eventGraph.EventFilter <- filter
 
     /// Remove from the event address cache all addresses belonging to the given target.
     let cleanEventAddressCache (eventTarget : 'a Address) =
@@ -200,8 +192,8 @@ module EventGraph =
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress (eventGraph : EventGraph) (world : 'w) =
         let eventSubscriptions = getSubscriptions eventGraph
         let eventAddresses = getEventAddresses2 eventAddress eventGraph
-        let subscriptionOpts = Array.map (fun eventAddress -> UMap.tryFind eventAddress eventSubscriptions) eventAddresses
-        let subscriptions = subscriptionOpts |> Array.definitize |> Array.map OMap.toSeq |> Seq.concat
+        let subscriptionOpts = Seq.map (fun eventAddress -> Dictionary.tryFind eventAddress eventSubscriptions) eventAddresses
+        let subscriptions = subscriptionOpts |> Seq.definitize |> Seq.map seq |> Seq.concat |> Seq.toArray
         publishSorter subscriptions world
 
     /// Log an event.
@@ -214,11 +206,11 @@ module EventGraph =
         | None -> ()
 
     /// Make an event delegate.
-    let make eventTracerOpt eventFilter globalSimulantGeneralized config =
+    let make eventTracerOpt eventFilter globalSimulantGeneralized =
         let eventGraph =
-            { Subscriptions = UMap.makeEmpty HashIdentity.Structural config
-              Unsubscriptions = UMap.makeEmpty HashIdentity.Structural config
-              EventStates = SUMap.makeEmpty HashIdentity.Structural config
+            { Subscriptions = dictPlus HashIdentity.Structural []
+              Unsubscriptions = dictPlus HashIdentity.Structural []
+              EventStates = SDictionary.make HashIdentity.Structural
               EventTracerOpt = eventTracerOpt
               EventFilter = eventFilter
               GlobalSimulantGeneralized = globalSimulantGeneralized }
@@ -227,14 +219,16 @@ module EventGraph =
     /// Get the subscriptions with the given sorting criteria.
     let getSortableSubscriptions
         (getSortPriority : Simulant -> 'w -> IComparable)
-        (subscriptionEntries : (uint64 * SubscriptionEntry) seq)
+        (subscriptionEntries : KeyValuePair<uint64, SubscriptionEntry> array)
         (world : 'w) =
-        Seq.map
-            (fun (subscriptionId, subscription : SubscriptionEntry) ->
+        Array.map
+            (fun (entry : KeyValuePair<_, _>) ->
+                let subscriptionId = entry.Key
+                let subscription = entry.Value
                 // NOTE: we just take the sort priority of the first callback found when callbacks are compressed. This
                 // is semantically sub-optimal, but should be fine for all of our cases.
                 let priority = getSortPriority subscription.SubscriptionSubscriber world
-                struct (priority, subscriptionId, subscription))
+                struct (priority, KeyValuePair.Create (subscriptionId, subscription)))
             subscriptionEntries
 
     /// Publish an event.
@@ -245,12 +239,11 @@ module EventGraph =
         callableSubscription evt world
 
     /// Sort subscriptions using categorization via the 'by' procedure.
-    let sortSubscriptionsBy by (subscriptions : (uint64 * SubscriptionEntry) seq) (world : 'w) : seq<uint64 * SubscriptionEntry> =
+    let sortSubscriptionsBy by (subscriptions : KeyValuePair<uint64, SubscriptionEntry> array) (world : 'w) : KeyValuePair<uint64, SubscriptionEntry> array =
         getSortableSubscriptions by subscriptions world |>
         Array.ofSeq |>
-        Array.sortWith (fun (struct (p : IComparable, _, _)) (struct (p2 : IComparable, _, _)) -> p.CompareTo p2) |>
-        Array.map (fun (struct (_, subscriptionId, subscription)) -> (subscriptionId, subscription)) |>
-        Array.toSeq
+        Array.sortWith (fun (struct (p : IComparable, _)) (struct (p2 : IComparable, _)) -> p.CompareTo p2) |>
+        Array.map snd'
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry array) (_ : 'w) =

@@ -10,11 +10,14 @@ module WorldAudio =
 
     type World with
 
-        static member internal getAudioPlayer (world : World) =
+        static member internal getAudioPlayer world =
             world.Subsystems.AudioPlayer
 
+        static member internal withAudioPlayer fn world =
+            fn (World.getAudioPlayer world)
+
         /// Enqueue an audio message to the world.
-        static member enqueueAudioMessage (message : AudioMessage) (world : World) =
+        static member enqueueAudioMessage (message : AudioMessage) world =
             world.Subsystems.AudioPlayer.EnqueueMessage message
 
         /// Enqueue multiple audio messages to the world.

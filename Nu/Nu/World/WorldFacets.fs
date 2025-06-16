@@ -64,7 +64,7 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
-        let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
         let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -142,7 +142,7 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
-        let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = Option.toValueOption (getSpriteInsetOpt entity world)
         let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -3036,10 +3036,9 @@ module AnimatedModelFacetExtensions =
         /// runs much faster than setting the BoneOffsets and BoneTransform properties normally.
         member this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world =
             let entityState = World.getEntityState this world
-            let entityState = EntityState.setProperty (nameof Entity.BoneIdsOpt) { PropertyType = typeof<Dictionary<string, int> option>; PropertyValue = Some boneIds } entityState
-            let entityState = EntityState.setProperty (nameof Entity.BoneOffsetsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneOffsets } entityState
-            let entityState = EntityState.setProperty (nameof Entity.BoneTransformsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneTransforms } entityState
-            World.setEntityState entityState this world
+            EntityState.setProperty (nameof Entity.BoneIdsOpt) { PropertyType = typeof<Dictionary<string, int> option>; PropertyValue = Some boneIds } entityState
+            EntityState.setProperty (nameof Entity.BoneOffsetsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneOffsets } entityState
+            EntityState.setProperty (nameof Entity.BoneTransformsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneTransforms } entityState
 
         /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
         member this.TryGetBoneTransformByName boneName world =

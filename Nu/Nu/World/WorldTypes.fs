@@ -17,7 +17,7 @@ open Prime
 module internal WorldTypes =
 
     // Debugging variables.
-    let mutable internal WorldForDebug = obj ()
+    let mutable internal Chosen = obj ()
 
     // Empty content variables.
     // OPTIMIZATION: allows us to avoid allocating content objects for entities that don't use them.
@@ -936,22 +936,22 @@ and SimulantState =
 
 /// Hosts the ongoing state of a game.
 and [<ReferenceEquality; CLIMutable>] GameState =
-    { Dispatcher : GameDispatcher
+    { mutable Dispatcher : GameDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
-      Content : GameContent
-      SelectedScreenOpt : Screen option
-      DesiredScreen : DesiredScreen
-      ScreenTransitionDestinationOpt : Screen option
-      Eye2dCenter : Vector2
-      Eye2dSize : Vector2
-      Eye3dCenter : Vector3
-      Eye3dRotation : Quaternion
-      Eye3dFieldOfView : single
-      Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
-      Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
-      Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
-      Order : int64
+      mutable Content : GameContent
+      mutable SelectedScreenOpt : Screen option
+      mutable DesiredScreen : DesiredScreen
+      mutable ScreenTransitionDestinationOpt : Screen option
+      mutable Eye2dCenter : Vector2
+      mutable Eye2dSize : Vector2
+      mutable Eye3dCenter : Vector3
+      mutable Eye3dRotation : Quaternion
+      mutable Eye3dFieldOfView : single
+      mutable Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
+      mutable Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
+      mutable Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
+      mutable Order : int64
       Id : uint64 }
 
     /// Copy a game state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
@@ -968,22 +968,19 @@ and [<ReferenceEquality; CLIMutable>] GameState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property gameState =
-        match Xtension.trySetProperty propertyName property gameState.Xtension with
-        | struct (true, xtension) -> struct (true, { gameState with Xtension = xtension })
-        | struct (false, _) -> struct (false, gameState)
+        Xtension.trySetProperty propertyName property gameState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property gameState =
-        { gameState with GameState.Xtension = Xtension.setProperty propertyName property gameState.Xtension }
+        Xtension.setProperty propertyName property gameState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property gameState =
-        { gameState with GameState.Xtension = Xtension.attachProperty name property gameState.Xtension }
+        Xtension.attachProperty name property gameState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name gameState =
-        let xtension = Xtension.detachProperty name gameState.Xtension
-        { gameState with GameState.Xtension = xtension }
+        Xtension.detachProperty name gameState.Xtension
 
     /// Make a game state value.
     static member make (dispatcher : GameDispatcher) =
@@ -994,7 +991,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
         let viewportExterior = Viewport.makeExterior ()
         let viewportImposter = Viewport.makeImposter ()
         { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGameContent :?> GameContent
           SelectedScreenOpt = None
@@ -1016,19 +1013,19 @@ and [<ReferenceEquality; CLIMutable>] GameState =
 
 /// Hosts the ongoing state of a screen.
 and [<ReferenceEquality; CLIMutable>] ScreenState =
-    { Dispatcher : ScreenDispatcher
+    { mutable Dispatcher : ScreenDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
-      Content : ScreenContent
-      TransitionState : TransitionState
-      Incoming : Transition
-      Outgoing : Transition
-      RequestedSong : RequestedSong
-      SlideOpt : Slide option
-      Nav3d : Nav3d
-      Protected : bool
-      Persistent : bool
-      Order : int64
+      mutable Content : ScreenContent
+      mutable TransitionState : TransitionState
+      mutable Incoming : Transition
+      mutable Outgoing : Transition
+      mutable RequestedSong : RequestedSong
+      mutable SlideOpt : Slide option
+      mutable Nav3d : Nav3d
+      mutable Protected : bool
+      mutable Persistent : bool
+      mutable Order : int64
       Id : uint64
       Name : string }
 
@@ -1046,28 +1043,25 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property screenState =
-        match Xtension.trySetProperty propertyName property screenState.Xtension with
-        | struct (true, xtension) -> struct (true, { screenState with Xtension = xtension })
-        | struct (false, _) -> struct (false, screenState)
+        Xtension.trySetProperty propertyName property screenState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property screenState =
-        { screenState with ScreenState.Xtension = Xtension.setProperty propertyName property screenState.Xtension }
+        Xtension.setProperty propertyName property screenState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property screenState =
-        { screenState with ScreenState.Xtension = Xtension.attachProperty name property screenState.Xtension }
+        Xtension.attachProperty name property screenState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name screenState =
-        let xtension = Xtension.detachProperty name screenState.Xtension
-        { screenState with ScreenState.Xtension = xtension }
+        Xtension.detachProperty name screenState.Xtension
 
     /// Make a screen state value.
     static member make time nameOpt (dispatcher : ScreenDispatcher) =
         let (id, name) = Gen.id64AndNameIf nameOpt
         { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyScreenContent :?> ScreenContent
           TransitionState = IdlingState time
@@ -1087,14 +1081,14 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
 
 /// Hosts the ongoing state of a group.
 and [<ReferenceEquality; CLIMutable>] GroupState =
-    { Dispatcher : GroupDispatcher
+    { mutable Dispatcher : GroupDispatcher
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
-      Content : GroupContent
-      Visible : bool
-      Protected : bool
-      Persistent : bool
-      Order : int64
+      mutable Content : GroupContent
+      mutable Visible : bool
+      mutable Protected : bool
+      mutable Persistent : bool
+      mutable Order : int64
       Id : uint64
       Name : string }
 
@@ -1112,28 +1106,25 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property groupState =
-        match Xtension.trySetProperty propertyName property groupState.Xtension with
-        | struct (true, xtension) -> struct (true, { groupState with Xtension = xtension })
-        | struct (false, _) -> struct (false, groupState)
+        Xtension.trySetProperty propertyName property groupState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property groupState =
-        { groupState with GroupState.Xtension = Xtension.setProperty propertyName property groupState.Xtension }
+        Xtension.setProperty propertyName property groupState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property groupState =
-        { groupState with GroupState.Xtension = Xtension.attachProperty name property groupState.Xtension }
+        Xtension.attachProperty name property groupState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name groupState =
-        let xtension = Xtension.detachProperty name groupState.Xtension
-        { groupState with GroupState.Xtension = xtension }
+        Xtension.detachProperty name groupState.Xtension
 
     /// Make a group state value.
     static member make nameOpt (dispatcher : GroupDispatcher) =
         let (id, name) = Gen.id64AndNameIf nameOpt
         { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
           Visible = true
@@ -1218,7 +1209,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.LightProbe = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
     member this.Light = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-    member this.Optimized imperative = this.Transform.Optimized imperative
+    member this.Optimized = this.Transform.Optimized
     member internal this.VisibleInView = this.Visible || this.AlwaysRender
     member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
     member internal this.PresenceInPlay = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
@@ -1244,42 +1235,28 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        match Xtension.trySetProperty propertyName property entityState.Xtension with
-        | struct (true, xtension) ->
-            entityState.Xtension <- xtension // redundant if xtension is imperative
-            struct (true, entityState)
-        | struct (false, _) -> struct (false, entityState)
+        Xtension.trySetProperty propertyName property entityState.Xtension
 
     /// Set an xtension property with explicit type information.
     static member setProperty propertyName property (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        let xtension = Xtension.setProperty propertyName property entityState.Xtension
-        entityState.Xtension <- xtension // redundant if xtension is imperative
-        entityState
+        Xtension.setProperty propertyName property entityState.Xtension
 
     /// Attach an xtension property.
     static member attachProperty name property (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        let xtension = Xtension.attachProperty name property entityState.Xtension
-        entityState.Xtension <- xtension // redundant if xtension is imperative
-        entityState
+        Xtension.attachProperty name property entityState.Xtension
 
     /// Detach an xtension property.
     static member detachProperty name (entityState : EntityState) =
-        let entityState = if entityState.Xtension.Imperative then entityState else EntityState.copy entityState
-        let xtension = Xtension.detachProperty name entityState.Xtension
-        entityState.Xtension <- xtension // redundant if xtension is imperative
-        entityState
+        Xtension.detachProperty name entityState.Xtension
 
     /// Make an entity state value.
-    static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+    static member make surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
         let mutable transform = Transform.makeDefault ()
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
           Dispatcher = dispatcher
           Facets = [||]
-          Xtension = Xtension.makeEmpty imperative
+          Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyEntityContent :?> EntityContent
           PositionLocal = Vector3.Zero
@@ -1353,7 +1330,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
 
     /// Get the latest value of a game's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGame handle WorldTypes.WorldForDebug
+    member private this.View = WorldTypes.viewGame handle WorldTypes.Chosen
 
     /// A convenience accessor to get the universal game handle.
     static member Handle = handle
@@ -1455,7 +1432,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
 
     /// Get the latest value of a screen's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewScreen (this :> obj) WorldTypes.WorldForDebug
+    member private this.View = WorldTypes.viewScreen (this :> obj) WorldTypes.Chosen
 
     /// Derive a group from its screen.
     static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
@@ -1556,7 +1533,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
 
     /// Get the latest value of a group's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGroup (this :> obj) WorldTypes.WorldForDebug
+    member private this.View = WorldTypes.viewGroup (this :> obj) WorldTypes.Chosen
 
     /// Derive an entity from its group.
     static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
@@ -1680,7 +1657,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
 
     /// Get the latest value of an entity's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewEntity (this :> obj) WorldTypes.WorldForDebug
+    member private this.View = WorldTypes.viewEntity (this :> obj) WorldTypes.Chosen
 
     /// Derive an entity from its parent entity.
     static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
@@ -1804,13 +1781,13 @@ and [<NoEquality; NoComparison>] internal SimulantImSim =
     { mutable SimulantInitializing : bool
       mutable SimulantUtilized : bool
       InitializationTime : int64
-      Result : obj }
+      mutable Result : obj }
 
 /// Provides subscription bookkeeping information with the ImSim API.
 and [<NoEquality; NoComparison>] internal SubscriptionImSim =
     { mutable SubscriptionUtilized : bool
       SubscriptionId : uint64
-      Results : obj }
+      mutable Results : obj }
 
 /// Describes an argument used with the ImSim API.
 and [<Struct>] ArgImSim<'s when 's :> Simulant> =
@@ -1822,11 +1799,11 @@ and [<Struct>] ArgImSim<'s when 's :> Simulant> =
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
 /// parameters of World.make, which is already rather long.
 and [<ReferenceEquality>] Dispatchers =
-    { Facets : Map<string, Facet>
-      EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
-      ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher> }
+    { Facets : Dictionary<string, Facet>
+      EntityDispatchers : Dictionary<string, EntityDispatcher>
+      GroupDispatchers : Dictionary<string, GroupDispatcher>
+      ScreenDispatchers : Dictionary<string, ScreenDispatcher>
+      GameDispatchers : Dictionary<string, GameDispatcher> }
 
 /// The subsystems contained by the engine.
 and [<ReferenceEquality>] internal Subsystems =
@@ -1842,90 +1819,36 @@ and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImSim : Address
       mutable DeclaredImSim : Address
-      mutable SimulantsImSim : SUMap<Address, SimulantImSim>
-      mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
+      mutable SimulantsImSim : SDictionary<Address, SimulantImSim>
+      mutable SubscriptionsImSim : SDictionary<string * Address * Address, SubscriptionImSim>
       JobGraph : JobGraph
-      GeometryViewport : Viewport
+      mutable GeometryViewport : Viewport
       // cache line 2
-      RasterViewport : Viewport
-      OuterViewport : Viewport
-      DestructionListRev : Simulant list
+      mutable RasterViewport : Viewport
+      mutable OuterViewport : Viewport
+      DestructionList : Simulant List
       Dispatchers : Dispatchers
-      Plugin : NuPlugin
-      PropagationTargets : UMap<Entity, Entity USet> }
+      mutable Plugin : NuPlugin
+      PropagationTargets : Dictionary<Entity, Entity HashSet> }
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
 /// game, messages to by consumed by the various engine subsystems, and general configuration data.
-and [<ReferenceEquality>] WorldState =
+and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
           EventGraph : EventGraph
-          EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
-          EntityStates : SUMap<Entity, EntityState>
-          GroupStates : UMap<Group, GroupState>
-          ScreenStates : UMap<Screen, ScreenState>
-          GameState : GameState
+          EntityStates : SDictionary<Entity, EntityState>
+          GroupStates : Dictionary<Group, GroupState>
+          ScreenStates : Dictionary<Screen, ScreenState>
+          mutable GameState : GameState
           // cache line 2
-          EntityMounts : UMap<Entity, Entity USet>
+          EntityMounts : Dictionary<Entity, Entity HashSet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
           AmbientState : World AmbientState
           Subsystems : Subsystems
-          Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
+          Simulants : Dictionary<Simulant, Simulant HashSet option> // OPTIMIZATION: using None instead of empty HashSet to descrease number of HashSet instances.
           WorldExtension : WorldExtension }
-
-    override this.ToString () =
-        ""
-
-and [<NoEquality; NoComparison>] World =
-    { mutable WorldState : WorldState }
-
-    member internal this.EventGraph =
-        this.WorldState.EventGraph
-
-    member internal this.EntityCachedOpt =
-        this.WorldState.EntityCachedOpt
-
-    member internal this.EntityStates =
-        this.WorldState.EntityStates
-
-    member internal this.GroupStates =
-        this.WorldState.GroupStates
-
-    member internal this.ScreenStates =
-        this.WorldState.ScreenStates
-
-    member internal this.GameState =
-        this.WorldState.GameState
-
-    member internal this.EntityMounts =
-        this.WorldState.EntityMounts
-
-    member internal this.Quadtree =
-        this.WorldState.Quadtree
-
-    member internal this.Octree =
-        this.WorldState.Octree
-
-    member internal this.AmbientState =
-        this.WorldState.AmbientState
-
-    member internal this.Subsystems =
-        this.WorldState.Subsystems
-
-    member internal this.Simulants =
-        this.WorldState.Simulants
-
-    member internal this.WorldExtension =
-        this.WorldState.WorldExtension
-
-    /// Check that the world is executing with imperative semantics where applicable.
-    member this.Imperative =
-        this.AmbientState.Imperative
-
-    /// Check that the world is executing with functional semantics.
-    member this.Functional =
-        not this.AmbientState.Imperative
 
     /// Check that the world is accompanied (such as by an editor program that controls it).
     member this.Accompanied =
@@ -2147,6 +2070,10 @@ and [<NoEquality; NoComparison>] World =
         let eyeFieldOfView = this.Eye3dFieldOfView
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
+    member inline internal this.Choose () =
+        WorldTypes.Chosen <- this
+        this
+
     override this.ToString () =
         ""
 
@@ -2176,7 +2103,7 @@ and [<AbstractClass>] NuPlugin () =
     default this.Invoke _ _ _ = ()
 
     /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : world : World -> ((string * obj) list)
+    abstract MakeKeyedValues : world : World -> (string * obj) list
     default this.MakeKeyedValues _ = []
 
     /// Attempt to make an emitter of the given name.
