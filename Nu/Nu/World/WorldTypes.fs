@@ -2244,7 +2244,7 @@ module Signal =
     let rec [<DebuggerHidden>]
         processSignal<'model, 'message, 'command, 's when 'message :> Message and 'command :> Command and 's :> Simulant>
         (processMessage : 'model * 'message * 's * World -> Signal list * 'model)
-        (processCommand : 'model * 'command * 's * World -> Signal list)
+        (processCommand : 'model * 'command * 's * World -> unit)
         (modelLens : Lens<'model, 's>)
         (signal : Signal)
         (simulant : 's)
@@ -2259,10 +2259,7 @@ module Signal =
             | [] -> ()
         | :? 'command as command ->
             let model = Lens.get modelLens world
-            let signals = processCommand (model, command, simulant, world)
-            match signals with
-            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
-            | [] -> ()
+            processCommand (model, command, simulant, world)
         | _ -> failwithumf ()
 
     and [<DebuggerHidden>] processSignals processMessage processCommand modelLens signals simulant world =

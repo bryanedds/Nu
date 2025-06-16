@@ -2107,8 +2107,8 @@ module EntityDispatcherModule2 =
         default this.Edit (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : model : 'model * command : 'command * entity : Entity * world : World -> Signal list
-        default this.Command (_, _, _, _) = []
+        abstract Command : model : 'model * command : 'command * entity : Entity * world : World -> unit
+        default this.Command (_, _, _, _) = ()
 
         /// The content specifier of the MMCC programming model.
         abstract Content : model : 'model * entity : Entity -> EntityContent list
@@ -2430,8 +2430,8 @@ module GroupDispatcherModule =
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : model : 'model * command : 'command * group : Group * world : World -> Signal list
-        default this.Command (_, _, _, _) = []
+        abstract Command : model : 'model * command : 'command * group : Group * world : World -> unit
+        default this.Command (_, _, _, _) = ()
 
         /// The content specifier of the MMCC programming model.
         abstract Content : model : 'model * group : Group -> EntityContent list
@@ -2645,8 +2645,8 @@ module ScreenDispatcherModule =
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : model : 'model * command : 'command * screen : Screen * world : World -> Signal list
-        default this.Command (_, _, _, _) = []
+        abstract Command : model : 'model * command : 'command * screen : Screen * world : World -> unit
+        default this.Command (_, _, _, _) = ()
 
         /// The content specifier of the MMCC programming model.
         abstract Content : model : 'model * screen : Screen -> GroupContent list
@@ -2860,8 +2860,8 @@ module GameDispatcherModule =
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
-        abstract Command : model : 'model * command : 'command * game : Game * world : World -> Signal list
-        default this.Command (_, _, _, _) = []
+        abstract Command : model : 'model * command : 'command * game : Game * world : World -> unit
+        default this.Command (_, _, _, _) = ()
 
         /// The content specifier of the MMCC programming model.
         abstract Content : model : 'model * game : Game -> ScreenContent list

@@ -128,8 +128,6 @@ type GameplayDispatcher () =
                 let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
                 World.setEye2dCenter eyeCenter world
 
-        []
-
     // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =
 
