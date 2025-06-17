@@ -1315,6 +1315,22 @@ module WorldModule2 =
                         World.setSimulantsImSim simulantsImSim world
             ImSimSimulantsToDestroy.Sort SimulantImSimComparer
 
+            // destroy simulants
+            for (_, simulant) in ImSimSimulantsToDestroy do World.destroy simulant world
+            ImSimSimulantsToDestroy.Clear ()
+
+            // update subscription bookkeeping
+            for (subscriptionKey, subscriptionImSim) in world.SubscriptionsImSim do
+                if not subscriptionImSim.SubscriptionUtilized then
+                    World.unsubscribe subscriptionImSim.SubscriptionId world
+                    World.setSubscriptionsImSim (SUMap.remove subscriptionKey world.SubscriptionsImSim) world
+                else
+                    if world.Imperative then
+                        subscriptionImSim.SubscriptionUtilized <- false
+                    else
+                        let simulantsImSim = SUMap.add subscriptionKey { subscriptionImSim with SubscriptionUtilized = false } world.SubscriptionsImSim
+                        World.setSubscriptionsImSim simulantsImSim world
+
         static member private preUpdateSimulants (world : World) =
 
             // gather simulants
