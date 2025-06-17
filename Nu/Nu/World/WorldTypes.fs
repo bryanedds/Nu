@@ -1190,8 +1190,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
     member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
-    member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
-    member this.PresenceOverride with get () = this.Transform.PresenceOverride and set value = this.Transform.PresenceOverride <- value
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
@@ -1218,7 +1216,19 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Optimized imperative = this.Transform.Optimized imperative
     member internal this.VisibleInView = this.Visible || this.AlwaysRender
     member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
-    member internal this.PresenceInPlay = match this.PresenceOverride with ValueSome presence -> presence | ValueNone -> this.Presence
+
+    member this.Presence
+        with get () = if this.Absolute then Omnipresent else this.Transform.Presence
+        and set value = this.Transform.Presence <- value
+
+    member this.PresenceOverride
+        with get () = this.Transform.PresenceOverride
+        and set value = this.Transform.PresenceOverride <- value
+
+    member internal this.PresenceInPlay =
+        match this.PresenceOverride with
+        | ValueSome presence -> if this.Absolute then Omnipresent else presence
+        | ValueNone -> this.Presence
 
     /// Copy an entity state, invalidating the incoming reference.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
