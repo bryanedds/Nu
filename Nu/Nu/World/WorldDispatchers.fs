@@ -24,6 +24,7 @@ type GuiDispatcher () =
     static member Properties =
         [define Entity.Absolute true
          define Entity.Size Constants.Engine.EntityGuiSizeDefault
+         define Entity.Presence Omnipresent
          define Entity.Elevation 1.0f
          define Entity.ElevationLocal 1.0f
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault]
