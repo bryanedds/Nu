@@ -16,42 +16,6 @@ module Xtension =
             { Properties : Dictionary<string, Property> // TODO: see if a quadratic searching dictionary could improve perf here.
               mutable ContainsRuntimeProperties : bool }
 
-        /// The dynamic look-up operator for an Xtension.
-        /// Example:
-        ///     let parallax : single = xtn?Parallax
-        static member (?) (xtension, propertyName) : 'a =
-
-            // try to find an existing property
-            match xtension.Properties.TryGetValue propertyName with
-            | (true, property) ->
-
-                // return property directly if the return type matches, otherwise the default value for that type
-                match property.PropertyValue with
-                | :? DesignerProperty as dp ->
-                    match dp.DesignerValue with
-                    | :? 'a as propertyValue -> propertyValue
-                    | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
-                | :? 'a as value -> value
-                | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
-
-            // can't find the required property.
-            | (false, _) -> failwith ("No property '" + propertyName + "' found.")
-
-        /// The dynamic assignment operator for an Xtension.
-        /// Example:
-        ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
-        static member (?<-) (xtension, propertyName, value : 'a) =
-            match xtension.Properties.TryGetValue propertyName with
-            | (true, property) ->
-#if DEBUG
-                if property.PropertyType <> typeof<'a> then
-                    failwith "Cannot change the type of an existing Xtension property."
-#endif
-                match property.PropertyValue with
-                | :? DesignerProperty as dp -> dp.DesignerValue <- value :> obj
-                | _ -> property.PropertyValue <- value :> obj
-            | (false, _) -> failwith "Cannot set property to an Xtension without first attaching it."
-
     /// Check whether the Xtension contains any DesignerProperty's or ComputedProperty's in constant-time (via an
     /// internally-cached flag).
     let containsRuntimeProperties (xtension : Xtension) = xtension.ContainsRuntimeProperties
