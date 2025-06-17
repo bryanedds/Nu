@@ -1601,7 +1601,7 @@ module WorldModule2 =
                                 | Imposter -> frustumImposter.Intersects shadowFrustum
                                 | Omnipresent -> true
                             if shadowInView then
-                                let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
+                                let distanceSquared = eyeCenter.DistanceSquared (light.GetPosition world)
                                 struct (distanceSquared, struct (shadowFrustum, light))|]
 
                 // sort shadow pass descriptors

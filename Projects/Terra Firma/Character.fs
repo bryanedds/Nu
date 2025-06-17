@@ -154,12 +154,12 @@ type CharacterDispatcher () =
             let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
             let playerPositionFlat = playerPosition.WithY 0.0f
             if position.Y - playerPosition.Y >= 0.25f then // above player
-                if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
+                if  playerPositionFlat.Distance positionFlat < 1.0f &&
                     rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
                     entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
                     entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
             elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
-                if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
+                if  playerPositionFlat.Distance positionFlat < 1.75f &&
                     rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
                     entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
                     entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
