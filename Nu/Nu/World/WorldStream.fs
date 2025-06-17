@@ -34,11 +34,11 @@ module Stream =
         (stream : Stream<'a>) : Stream<obj> =
         { Subscribe = fun world -> let (address, unsub) = stream.Subscribe world in (atooa address, unsub) }
 
-    (* Side-Effecting Combinators *)
+    (* Advanced Combinators *)
 
     /// Track changes in a stream using a stateful tracker function, transforms the tracked state, and produces a new
     /// stream with the transformed values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEffect4
+    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus4
         (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool)
         (transformer : 'c -> 'b)
         (state : 'c)
@@ -69,7 +69,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Tracks changes in a stream using a stateful tracker function and produces a new stream with updated values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEffect2
+    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus2
         (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool)
         (stream : Stream<'a>) :
         Stream<'a> =
@@ -98,7 +98,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Tracks changes using a stateful tracker function and creates a stream that optionally processes events based on the state.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEffect
+    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus
         (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
@@ -124,19 +124,19 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldThenEffect (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        trackEffect4 (fun b a w -> (f b a w, true)) g s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldThenPlus (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
+        trackPlus4 (fun b a w -> (f b a w, true)) g s stream
 
     /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldEffect (f : 'b -> Event<'a, Simulant> -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        trackEffect4 (fun b a w -> (f b a w, true)) id s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldPlus (f : 'b -> Event<'a, Simulant> -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
+        trackPlus4 (fun b a w -> (f b a w, true)) id s stream
 
     /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduceEffect (f : 'a -> Event<'a, Simulant> -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        trackEffect2 (fun a a2 w -> (f a a2 w, true)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] reducePlus (f : 'a -> Event<'a, Simulant> -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
+        trackPlus2 (fun a a2 w -> (f a a2 w, true)) stream
 
     /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterEffect
+    let [<DebuggerHidden; DebuggerStepThrough>] filterPlus
         (pred : Event<'a, Simulant> -> World -> bool) (stream : Stream<'a>) =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
@@ -156,7 +156,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Map over a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapEffect
+    let [<DebuggerHidden; DebuggerStepThrough>] mapPlus
         (mapper : Event<'a, Simulant> -> World -> 'b) (stream : Stream<'a>) : Stream<'b> =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
@@ -176,7 +176,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Map over two streams.
-    let [<DebuggerHidden; DebuggerStepThrough>] map2Effect
+    let [<DebuggerHidden; DebuggerStepThrough>] map2Plus
         (mapper : Event<'a, Simulant> -> Event<'b, Simulant> -> World -> 'c)
         (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
         let subscribe = fun (world : World) ->
@@ -241,133 +241,43 @@ module Stream =
         // fin
         { Subscribe = subscribe }
 
-    (* Event-Accessing Combinators *)
-
-    /// Track changes in a stream using a stateful tracker function, transforms the tracked state, and produces a new
-    /// stream with the transformed values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
-        (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool)
-        (transformer : 'c -> 'b)
-        (state : 'c)
-        (stream : Stream<'a>) :
-        Stream<'b> =
-        trackEffect4 (fun state evt world -> tracker state evt world) transformer state stream
-
-    /// Tracks changes in a stream using a stateful tracker function and produces a new stream with updated values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent2
-        (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool)
-        (stream : Stream<'a>) :
-        Stream<'a> =
-        trackEffect2 (fun state evt world -> tracker state evt world) stream
-
-    /// Tracks changes using a stateful tracker function and creates a stream that optionally processes events based on the state.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent
-        (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
-        trackEffect (fun state world -> tracker state world) state stream
-
-    /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldThenEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldThenEffect (fun state evt world -> f state evt world) g s stream
-
-    /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        foldEffect (fun state evt world -> f state evt world) s stream
-
-    /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduceEvent (f : 'a -> Event<'a, Simulant> -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        reduceEffect (fun value evt world -> f value evt world) stream
-
-    /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterEvent
-        (pred : Event<'a, Simulant> -> World -> bool) (stream : Stream<'a>) =
-        filterEffect (fun evt world -> pred evt world) stream
-
-    /// Map over a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapEvent
-        (mapper : Event<'a, Simulant> -> World -> 'b) (stream : Stream<'a>) : Stream<'b> =
-        mapEffect (fun evt world -> mapper evt world) stream
-
-    /// Map over two streams by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] map2Event
-        (mapper : Event<'a, Simulant> -> Event<'b, Simulant> -> World -> 'c) (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
-        map2Effect (fun evtA evtB world -> mapper evtA evtB world) stream stream2
-
-    (* World-Accessing Combinators *)
-
-    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld4
-        (tracker : 'c -> 'a -> World -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a>) : Stream<'b> =
-        trackEvent4 (fun c evt world -> tracker c evt.Data world) transformer state stream
-
-    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld2
-        (tracker : 'a -> 'a -> World -> 'a * bool) (stream : Stream<'a>) : Stream<'a> =
-        trackEvent2 (fun a evt world -> tracker a evt.Data world) stream
-
-    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld
-        (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
-        trackEvent tracker state stream
-
-    /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldThenWorld (f : 'b -> 'a -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldThenEvent (fun b evt world -> f b evt.Data world) g s stream
-
-    /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldWorld (f : 'b -> 'a -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        foldEvent (fun b evt world -> f b evt.Data world) s stream
-
-    /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduceWorld (f : 'a -> 'a -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        reduceEvent (fun a evt world -> f a evt.Data world) stream
-
-    /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterWorld (pred : 'a -> World -> bool) (stream : Stream<'a>) =
-        filterEvent (fun evt world -> pred evt.Data world) stream
-
-    /// Map over a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapWorld (mapper : 'a -> World -> 'b) (stream : Stream<'a>) : Stream<'b> =
-        mapEvent (fun evt world -> mapper evt.Data world) stream
-
-    /// Map over two streams by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] map2World
-        (mapper : 'a -> 'b -> World -> 'c) (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
-        map2Event (fun evtA evtB world -> mapper evtA.Data evtB.Data world) stream stream2
-
     (* Primitive Combinators *)
 
     let [<DebuggerHidden; DebuggerStepThrough>] track4
         (tracker : 'c -> 'a -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a>) : Stream<'b> =
-        trackWorld4 (fun c a _ -> tracker c a) transformer state stream
+        trackPlus4 (fun c a _ -> tracker c a.Data) transformer state stream
 
     let [<DebuggerHidden; DebuggerStepThrough>] track2
         (tracker : 'a -> 'a -> 'a * bool) (stream : Stream<'a>) : Stream<'a> =
-        trackWorld2 (fun a a2 _ -> tracker a a2) stream
+        trackPlus2 (fun a a2 _ -> tracker a a2.Data) stream
 
     let [<DebuggerHidden; DebuggerStepThrough>] track
         (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
-        trackWorld (fun b _ -> tracker b) state stream
+        trackPlus (fun b _ -> tracker b) state stream
 
     let [<DebuggerHidden; DebuggerStepThrough>] foldThen (f : 'b -> 'a -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldThenWorld (fun b a _ -> f b a) g s stream
+        foldThenPlus (fun b a _ -> f b a.Data) g s stream
 
     /// Fold over a stream, aggegating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] fold (f : 'b -> 'a -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        foldWorld (fun b a _ -> f b a) s stream
+        foldPlus (fun b a _ -> f b a.Data) s stream
 
     /// Reduce over a stream, accumulating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] reduce (f : 'a -> 'a -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        reduceWorld (fun a a2 _ -> f a a2) stream
+        reducePlus (fun a a2 _ -> f a a2.Data) stream
 
     /// Filter a stream by the given 'pred' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : 'a -> bool) (stream : Stream<'a>) =
-        filterWorld (fun a _ -> pred a) stream
+        filterPlus (fun a _ -> pred a.Data) stream
 
     /// Map over a stream by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : 'a -> 'b) (stream : Stream<'a>) : Stream<'b> =
-        mapWorld (fun a _ -> mapper a) stream
+        mapPlus (fun a _ -> mapper a.Data) stream
 
     /// Map over two streams by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] map2
         (mapper : 'a -> 'b -> 'c) (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
-        map2World (fun a b _ -> mapper a b) stream stream2
+        map2Plus (fun a b _ -> mapper a.Data b.Data) stream stream2
 
     /// Combine two streams. Combination is in 'product form', which is defined as a pair of the data of the combined
     /// events. Think of it as 'zip' for event streams.
@@ -409,7 +319,7 @@ module Stream =
 
     /// Take events from a stream while predicate is true.
     let [<DebuggerHidden; DebuggerStepThrough>] during pred stream =
-        trackEffect (fun () world -> ((), pred world)) () stream
+        trackPlus (fun () world -> ((), pred world)) () stream
 
     /// Terminate a stream when a given stream receives a value.
     let [<DebuggerHidden; DebuggerStepThrough>] until
@@ -648,19 +558,19 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] id (stream : _ Stream) = stream
 
     /// Take events from a stream only when World.getAdvancing evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream = filterEvent (fun _ -> World.getAdvancing) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream = filterPlus (fun _ -> World.getAdvancing) stream
 
     /// Take events from a stream only when World.getHalted evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream = filterEvent (fun _ -> World.getHalted) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream = filterPlus (fun _ -> World.getHalted) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream = filterEvent (fun _ -> World.getSelected simulant) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream = filterPlus (fun _ -> World.getSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterEvent (fun _ -> WorldTypes.getSelectedScreenIdling) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterPlus (fun _ -> WorldTypes.getSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterEvent (fun _ -> WorldTypes.getSelectedScreenTransitioning) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterPlus (fun _ -> WorldTypes.getSelectedScreenTransitioning) stream

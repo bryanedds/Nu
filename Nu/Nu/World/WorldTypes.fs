@@ -80,13 +80,13 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
       Get : World -> 'a
       SetOpt : ('a -> World -> unit) voption }
 
+    /// Get the lensed value mapped by the `by` function that includes the world value in its input.
+    member lens.GetByPlus by world =
+        by (lens.Get world) world
+
     /// Get the lensed value mapped by the `by` function.
     member lens.GetBy by world =
         by (lens.Get world)
-
-    /// Get the lensed value mapped by the `by` function that includes the world value in its input.
-    member lens.GetByWorld by world =
-        by (lens.Get world) world
 
     /// Attempt to set the property in the world to the given value.
     member lens.TrySet value world =
@@ -104,7 +104,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueNone -> failwith ("Lens for '" + lens.Name + "' is readonly.")
 
     /// Attempt to transform the lensed property's value using the given updater function that also receives the world as input.
-    member lens.TryMapWorld (mapper : 'a -> World -> 'a) world =
+    member lens.TryMapPlus (mapper : 'a -> World -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter ->
             setter (mapper (lens.Get world) world) world
@@ -121,18 +121,9 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
 
     /// Update the lensed property's value using the given updater function that also receives the world as input.
     /// Throws an exception if the lens is readonly.
-    member lens.MapWorld mapper world =
+    member lens.MapPlus mapper world =
         match lens.SetOpt with
         | ValueSome setter -> setter (mapper (lens.Get world) world) world
-        | ValueNone -> failwithumf ()
-
-    /// Update the lensed property's value using the given updater function, optionally updating the world value in the process.
-    /// Throws an exception if the lens is readonly.
-    member lens.MapEffect mapper world =
-        match lens.SetOpt with
-        | ValueSome setter ->
-            let (value, world) = mapper (lens.Get world) world
-            setter value world
         | ValueNone -> failwithumf ()
 
     /// Update the lensed property's value using the given updater function.
@@ -2160,8 +2151,8 @@ module Lens =
     let getBy<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
         lens.GetBy by world
 
-    let getByWorld<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
-        lens.GetByWorld by world
+    let getByPlus<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+        lens.GetByPlus by world
 
     let setOpt<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         match lens.SetOpt with
@@ -2174,17 +2165,14 @@ module Lens =
     let set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.Set a world
 
-    let tryMapWorld<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
-        lens.TryMapWorld mapper world
+    let tryMapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.TryMapPlus mapper world
 
     let tryMap<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.TryMap mapper world
 
-    let mapEffect<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
-        lens.MapEffect mapper world
-
-    let mapWorld<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
-        lens.MapWorld mapper world
+    let mapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.MapPlus mapper world
 
     let map<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.Map mapper world
