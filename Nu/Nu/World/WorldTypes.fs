@@ -103,7 +103,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueSome setter -> setter value world
         | ValueNone -> failwith ("Lens for '" + lens.Name + "' is readonly.")
 
-    /// Attempt to transform the lensed property's value using the given updater function that also receives the world as input.
+    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world as input.
     member lens.TryMapPlus (mapper : 'a -> World -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter ->
@@ -111,7 +111,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
             true
         | ValueNone -> false
 
-    /// Attempt to transform the lensed property's value using the given updater function.
+    /// Attempt to transform the lensed property's value using the given mapper function.
     member lens.TryMap (mapper : 'a -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter ->
@@ -119,24 +119,19 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
             true
         | ValueNone -> false
 
-    /// Update the lensed property's value using the given updater function that also receives the world as input.
+    /// Update the lensed property's value using the given mapper function that also receives the world as input.
     /// Throws an exception if the lens is readonly.
     member lens.MapPlus mapper world =
         match lens.SetOpt with
         | ValueSome setter -> setter (mapper (lens.Get world) world) world
         | ValueNone -> failwithumf ()
 
-    /// Update the lensed property's value using the given updater function.
+    /// Update the lensed property's value using the given mapper function.
     /// Throws an exception if the lens is readonly.
     member lens.Map mapper world =
         match lens.SetOpt with
         | ValueSome setter -> setter (mapper (lens.Get world)) world
         | ValueNone -> failwithumf ()
-
-    /// Update the lensed property's value using the given updater function.
-    /// Throws an exception if the lens is readonly.
-    member lens.Update updater world : unit =
-        updater (lens.Get world)
 
     /// The change event associated with the lensed property.
     member lens.ChangeEvent : ChangeData Address =
