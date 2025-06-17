@@ -96,11 +96,14 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member equals<'a> (left : 'a Address) (right : 'a Address) =
         refEq left right || // OPTIMIZATION: first check ref equality.
         left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
-        String.equateMany left.Names right.Names
+        String.equateManyBack left.Names right.Names // OPTIMIZATION: later names in an address tend to have higher variance.
 
     /// Compare Addresses.
     static member compare<'a> (left : 'a Address) (right : 'a Address) =
-        String.compareMany left.Names right.Names
+        if  refEq left right || // OPTIMIZATION: first check ref equality.
+            left.HashCode = right.HashCode then // OPTIMIZATION: check hash equality to bail as quickly as possible.
+            0
+        else String.compareMany left.Names right.Names
 
     /// Convert any address to an obj Address.
     static member generalize<'a> (address : 'a Address) : obj Address =
@@ -188,16 +191,16 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? ('a Address) as that -> Address<'a>.compare this that
-            | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
+            | :? ('a Address) as that -> Address.compare this that
+            | _ -> failwith "Cannot compare Address (comparee not of type Address)."
 
     interface 'a Address IEquatable with
         member this.Equals that =
-            Address<'a>.equals this that
+            Address<'a>.equals<'a> this that
 
     override this.Equals that =
         match that with
-        | :? ('a Address) as that -> Address<'a>.equals this that
+        | :? ('a Address) as that -> Address.equals<'a> this that
         | _ -> false
 
     override this.GetHashCode () =
@@ -215,7 +218,7 @@ module Address =
 
     /// Test address equality.
     let equals<'a> (left : 'a Address) (right : 'a Address) =
-        Address<'a>.equals left right
+        Address<'a>.equals<'a> left right
 
     /// Make an address from a sequence of names.
     let makeFromSeq<'a> names : 'a Address =
@@ -234,7 +237,7 @@ module Address =
         Address.ntoa<'a> name
 
     /// Convert a weakly-typed Address interface into a strongly-typed address.
-    let makeFromInterface address : 'a Address =
+    let makeFromInterface<'a> address : 'a Address =
         Address.itoa<'a> address
 
     /// Anonymize an address.

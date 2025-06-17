@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open Prime
+open System.Reflection
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
@@ -336,6 +337,24 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
+        member this.FinenessOffsetOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.FinenessOffsetPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.ScatterTypeOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ScatterTypePropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<ScatterType> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
         member this.TwoSidedOpt =
             match this.TryGetMaterialProperty Constants.Assimp.TwoSidedPropertyName with
             | ValueSome property ->
@@ -436,6 +455,26 @@ module AssimpExtensions =
                 | _ -> ValueNone
             else ValueNone
 
+        member this.FinenessOffsetOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.FinenessOffsetName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.ScatterTypeOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.ScatterTypeName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<ScatterType> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
         member this.NavShapeOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.NavShapeName, &entry) then
@@ -456,6 +495,15 @@ module AssimpExtensions =
                 this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
+
+        member this.ClearColorData () =
+            for i in 0 .. dec this.Meshes.Count do
+                let mesh = this.Meshes.[i]
+                let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
+                for attachment in mesh.MeshAnimationAttachments do
+                    let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
 
         member this.TryFindNode (meshIndex, node : Assimp.Node) =
             let nodes =

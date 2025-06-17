@@ -32,6 +32,7 @@
 		<Compile Include="Core\Branchless.fs" />
 		<Compile Include="Core\StructPair.fs" />
 		<Compile Include="Core\PathF.fs" />
+		<Compile Include="Core\Xtension.fs" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Address.fs" />
 		<Compile Include="Core\Relation.fs" />
@@ -55,10 +56,10 @@
 		<Compile Include="OpenGL\OpenGL.LightMap.fs" />
 		<Compile Include="OpenGL\OpenGL.Framebuffer.fs" />
 		<Compile Include="OpenGL\OpenGL.Sprite.fs" />
+		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
 		<Compile Include="OpenGL\OpenGL.Filter.fs" />
 		<Compile Include="OpenGL\OpenGL.SkyBox.fs" />
 		<Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
-		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
 		<Compile Include="Sdl\SdlInputBindings.fs" />
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
@@ -77,6 +78,7 @@
 		<Compile Include="AssetGraph\AssetGraph.fs" />
 		<Compile Include="AssetGraph\AssetClient.fs" />
 		<Compile Include="Metadata\Metadata.fs" />
+		<Compile Include="Metadata\HeightMap.fs" />
 		<Compile Include="Physics\PhysicsEngine.fs" />
 		<Compile Include="Physics\PhysicsEngine2d.fs" />
 		<Compile Include="Physics\PhysicsEngine3d.fs" />
@@ -120,7 +122,7 @@
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
 		<Compile Include="World\WorldEntityHierarchy.fs" />
-		<Compile Include="World\WorldImNui.fs" />
+		<Compile Include="World\WorldImSim.fs" />
 		<Compile Include="World\WorldContent.fs" />
 		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\World.fs" />
@@ -203,16 +205,16 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		<PackageReference Include="Csv" Version="2.0.93" />
+		<PackageReference Include="Csv" Version="2.0.170" />
 		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
-		<PackageReference Include="JoltPhysicsSharp" Version="2.16.0" />
+		<PackageReference Include="JoltPhysicsSharp" Version="2.16.2" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.10.0" />
 		<PackageReference Include="Pfim" Version="0.11.3" />
-		<PackageReference Include="Prime" Version="10.1.0" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
-		<PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+		<PackageReference Include="Prime" Version="11.0.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />
+		<PackageReference Include="System.Drawing.Common" Version="9.0.5" />
 		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
 	</ItemGroup>
 
@@ -222,7 +224,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="9.0.100" />
+		<PackageReference Update="FSharp.Core" Version="9.0.300" />
 	</ItemGroup>
 
 </Project>

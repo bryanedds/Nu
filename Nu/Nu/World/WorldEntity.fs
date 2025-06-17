@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 
@@ -187,9 +188,6 @@ module WorldEntityModule =
         member this.GetAbsolute world = World.getEntityAbsolute this world
         member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd'
         member this.Absolute = if notNull (this :> obj) then lens (nameof this.Absolute) this this.GetAbsolute this.SetAbsolute else Cached.Absolute
-        member this.GetImperative world = World.getEntityImperative this world
-        member this.SetImperative value world = World.setEntityImperative value this world |> snd'
-        member this.Imperative = if notNull (this :> obj) then lens (nameof this.Imperative) this this.GetImperative this.SetImperative else Cached.Imperative
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world |> snd'
         member this.Enabled = if notNull (this :> obj) then lens (nameof this.Enabled) this this.GetEnabled this.SetEnabled else Cached.Enabled
@@ -320,6 +318,7 @@ module WorldEntityModule =
         member this.UnmountEvent = Events.UnmountEvent --> this
         member this.BodyPenetrationEvent = Events.BodyPenetrationEvent --> this
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
+        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game.Handle
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
         /// Get the optional presence override.
@@ -410,6 +409,9 @@ module WorldEntityModule =
 
         /// Check that an entity is selected.
         member this.GetSelected world = World.getEntitySelected this world
+
+        /// Check that this entity is mounted by another entity.
+        member this.GetMounted world = World.getEntityMounted this world
 
         /// Attempt to get an entity on which this entity is mounted.
         member this.TryGetMountee world = Option.bind (tryResolve this) (this.GetMountOpt world)
@@ -571,6 +573,55 @@ module WorldEntityModule =
 
     type World with
 
+        /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
+        /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
+        /// descendents accordingly.
+        static member renameEntityImmediate source (destination : Entity) world =
+            let entityStateOpt = World.getEntityStateOpt source world
+            match entityStateOpt :> obj with
+            | null -> world
+            | _ ->
+                let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
+                let children = World.getEntityChildren source world
+                let order = World.getEntityOrder source world
+                let world = World.destroyEntityImmediateInternal false source world
+                let world = World.addEntity entityState destination world
+                let world = World.setEntityOrder order destination world |> snd'
+                let world =
+                    Seq.fold (fun world (child : Entity) ->
+                        let destination = destination / child.Name
+                        World.renameEntityImmediate child destination world)
+                        world children
+                let world =
+                    if WorldModule.UpdatingSimulants && World.getEntitySelected destination world
+                    then WorldModule.tryProcessEntity true destination world
+                    else world
+                let world =
+                    Seq.fold (fun world target ->
+                        if World.getEntityExists target world
+                        then World.setEntityPropagationSourceOpt (Some destination) target world |> snd'
+                        else world)
+                        world (World.getPropagationTargets source world)
+                let world =
+                    match World.getEntityPropagatedDescriptorOpt destination world with
+                    | None when World.hasPropagationTargets destination world ->
+                        let propagatedDescriptor = World.writeEntity false false EntityDescriptor.empty destination world
+                        World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
+                    | Some _ | None -> world
+                let world =
+                    let mountOpt = World.getEntityMountOpt destination world
+                    if  source.Parent <> destination.Parent &&
+                        Option.isSome mountOpt &&
+                        World.getEntityAllowedToMount destination world then
+                        let world = destination.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince the engine it's changing.
+                        destination.SetMountOptWithAdjustment mountOpt world
+                    else world
+                world
+
+        /// Rename an entity.
+        static member renameEntity source destination world =
+            World.defer (World.renameEntityImmediate source destination) Game.Handle world
+
         static member internal updateEntity (entity : Entity) world =
             let facets = entity.GetFacets world
             let mutable world = world // OPTIMIZATION: inlining fold for speed.
@@ -614,27 +665,25 @@ module WorldEntityModule =
 
         /// Get all the entities in a group.
         static member getEntities (group : Group) world =
-            let rec getEntitiesRec parent world =
-                let simulants = World.getSimulants world
-                match simulants.TryGetValue parent with
-                | (true, entitiesOpt) ->
-                    match entitiesOpt with
-                    | Some entities ->
-                        seq {
-                            yield! Seq.map cast<Entity> entities
-                            for entity in entities do
-                                yield! getEntitiesRec entity world }
-                    | None -> Seq.empty
-                | (false, _) -> Seq.empty
-            getEntitiesRec (group :> Simulant) world
+            match world.Simulants.TryGetValue group with
+            | (true, childrenOpt) ->
+                match childrenOpt with
+                | Some children ->
+                    seq {
+                        for child in children do
+                            let childEntity = child :?> Entity
+                            yield childEntity
+                            yield! childEntity.GetDescendants world }
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         /// Get all the entities directly parented by the group.
         static member getSovereignEntities (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
-            | (true, entitiesOpt) ->
-                match entitiesOpt with
-                | Some entities -> entities |> Seq.map cast<Entity> |> seq
+            | (true, childrenOpt) ->
+                match childrenOpt with
+                | Some children -> children |> Seq.map cast<Entity>
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
@@ -685,8 +734,10 @@ module WorldEntityModule =
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
-                            let intersections = entity.RayCast rayWorld world
-                            Array.map (fun intersection -> (intersection, entity)) intersections
+                            entity.RayCast rayWorld world |>
+                            Seq.filter _.IsHit |>
+                            Seq.map (function Hit intersection -> (intersection, entity) | _ -> failwithumf ()) |>
+                            Seq.toArray
                         else [||]
                     else [||])
                     entities
@@ -752,19 +803,20 @@ module WorldEntityModule =
                 | None -> next.GetOrder world / 2L
             World.setEntityOrder order entity world |> snd'
 
-        static member private generateEntitySequentialName2 dispatcherName existingEntityNames =
+        static member private generateEntitySequentialName2 dispatcherName (entityNames : string HashSet) =
             let mutable name = Gen.nameForEditor dispatcherName
-            if Set.contains name existingEntityNames
-            then World.generateEntitySequentialName2 dispatcherName existingEntityNames
+            if entityNames.Contains name 
+            then World.generateEntitySequentialName2 dispatcherName entityNames
             else name
 
         /// Generate a sequential, editor-friendly entity name.
         static member generateEntitySequentialName dispatcherName group world =
-            let existingEntityNames =
-                World.getEntities group world |>
-                Seq.map (fun entity -> entity.Name) |>
-                Set.ofSeq
-            World.generateEntitySequentialName2 dispatcherName existingEntityNames
+            let entityNames =
+                world.EntityStates |> // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
+                Seq.filter (fun (entity, _) -> entity.Group = group) |>
+                Seq.map (fun (entity, _) -> entity.Name) |>
+                hashSetPlus StringComparer.Ordinal
+            World.generateEntitySequentialName2 dispatcherName entityNames
 
         /// Clear any entity on the world's clipboard.
         static member clearEntityFromClipboard (_ : World) =
@@ -784,79 +836,89 @@ module WorldEntityModule =
         /// Check that there's an entity on the world's clipboard to paste.
         static member canPasteEntityFromClipboard (_ : World) =
             Clipboard.IsSome
+        
+        /// Paste an entity from the given entity descriptor.
+        static member pasteEntityFromDescriptor (distance : single) rightClickPosition positionSnapEir pasteType cut entityDescriptor (entitySource : Entity) (parent : Simulant) world =
+            let nameOpt =
+                if cut then // try to preserve name only if cut
+                    match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
+                    | (true, nameSymbol) ->
+                        let name = symbolToValue nameSymbol
+                        let entityProposed = parent.Names |> Array.add name |> Entity
+                        if World.getEntityExists entityProposed world
+                        then Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entityProposed.Group world)
+                        else Some name
+                    | (_, _) -> Log.info "EntityDescriptor missing its Name property."; None
+                else
+                    let group = Group (Array.take 3 parent.Names)
+                    Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName group world) // otherwise use generated name
+            let (entity, world) = World.readEntity false false entityDescriptor nameOpt parent world
+            let (position, positionSnapOpt) =
+                let absolute = entity.GetAbsolute world
+                if entity.GetIs2d world then
+                    let position =
+                        match pasteType with
+                        | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize rightClickPosition world.RasterViewport).V3
+                        | PasteAtLook -> world.Eye2dCenter.V3
+                        | PasteAt position -> position
+                    match positionSnapEir with
+                    | Left positionSnap -> (position, Some positionSnap)
+                    | Right _ -> (position, None)
+                else
+                    let position =
+                        match pasteType with
+                        | PasteAtMouse ->
+                            let ray = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView rightClickPosition world.RasterViewport
+                            let forward = world.Eye3dRotation.Forward
+                            let plane = plane3 (world.Eye3dCenter + forward * distance) -forward
+                            let intersectionOpt = ray.Intersection plane
+                            intersectionOpt.Value
+                        | PasteAtLook -> world.Eye3dCenter + v3Forward.Transform world.Eye3dRotation * distance
+                        | PasteAt position -> position
+                    match positionSnapEir with
+                    | Right positionSnap -> (position, Some positionSnap)
+                    | Left _ -> (position, None)
+            let mutable transform = entity.GetTransform world
+            transform.Position <- position
+            match positionSnapOpt with Some positionSnap -> Transform.snapPosition (positionSnap, &transform) | None -> ()
+            let world = entity.SetTransform transform world
+            let world =
+                if not cut then
+                    match entity.GetPropagationSourceOpt world with
+                    | None ->
+                        if entitySource.GetExists world
+                        then entity.SetPropagationSourceOpt (Some entitySource) world
+                        else world
+                    | Some _ -> world
+                else entity.SetPropagationSourceOpt None world
+            let rec getDescendantPairs source entity world =
+                [for child in World.getEntityChildren entity world do
+                    let childSource = source / child.Name
+                    yield (childSource, child)
+                    yield! getDescendantPairs childSource child world]
+            let world =
+                getDescendantPairs entitySource entity world |>
+                List.fold (fun world (descendantSource, descendentEntity) ->
+                    if descendentEntity.GetExists world then
+                        let world = World.setEntityPropagatedDescriptorOpt None descendentEntity world |> snd'
+                        if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
+                        then World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> snd'
+                        else world
+                    else world)
+                    world
+            let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
+            let world = entity.SetMountOptWithAdjustment mountOpt world
+            (entity, world)
+
+        /// Paste an entity.
+        static member pasteEntity (distance : single) rightClickPosition positionSnapEir pasteType entity (parent : Simulant) world =
+            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
+            World.pasteEntityFromDescriptor distance rightClickPosition positionSnapEir pasteType false entityDescriptor entity parent world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard tryForwardPropagationSource (distance : single) rightClickPosition positionSnapEir pasteType (parent : Simulant) world =
+        static member tryPasteEntityFromClipboard distance rightClickPosition positionSnapEir pasteType parent world =
             match Clipboard with
             | Some (cut, entityDescriptor, entitySource) ->
-                let nameOpt =
-                    if cut then // try to preserve name only if cut
-                        match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
-                        | (true, nameSymbol) ->
-                            let name = symbolToValue nameSymbol
-                            let entityProposed = parent.Names |> Array.add name |> Entity
-                            if World.getEntityExists entityProposed world
-                            then Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entityProposed.Group world)
-                            else Some name
-                        | (_, _) -> Log.info "EntityDescriptor missing its Name property."; None
-                    else
-                        let group = Group (Array.take 3 parent.Names)
-                        Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName group world) // otherwise use generated name
-                let (entity, world) = World.readEntity false false entityDescriptor nameOpt parent world
-                let (position, positionSnapOpt) =
-                    let absolute = entity.GetAbsolute world
-                    if entity.GetIs2d world then
-                        let position =
-                            match pasteType with
-                            | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize rightClickPosition world.RasterViewport).V3
-                            | PasteAtLook -> world.Eye2dCenter.V3
-                            | PasteAt position -> position
-                        match positionSnapEir with
-                        | Left positionSnap -> (position, Some positionSnap)
-                        | Right _ -> (position, None)
-                    else
-                        let position =
-                            match pasteType with
-                            | PasteAtMouse ->
-                                let ray = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView rightClickPosition world.RasterViewport
-                                let forward = world.Eye3dRotation.Forward
-                                let plane = plane3 (world.Eye3dCenter + forward * distance) -forward
-                                let intersectionOpt = ray.Intersection plane
-                                intersectionOpt.Value
-                            | PasteAtLook -> world.Eye3dCenter + v3Forward.Transform world.Eye3dRotation * distance
-                            | PasteAt position -> position
-                        match positionSnapEir with
-                        | Right positionSnap -> (position, Some positionSnap)
-                        | Left _ -> (position, None)
-                let mutable transform = entity.GetTransform world
-                transform.Position <- position
-                match positionSnapOpt with Some positionSnap -> Transform.snapPosition (positionSnap, &transform) | None -> ()
-                let world = entity.SetTransform transform world
-                let world =
-                    if tryForwardPropagationSource && not cut then
-                        match entity.GetPropagationSourceOpt world with
-                        | None ->
-                            if entitySource.GetExists world
-                            then entity.SetPropagationSourceOpt (Some entitySource) world
-                            else world
-                        | Some _ -> world
-                    else entity.SetPropagationSourceOpt None world
-                let rec getDescendantPairs source entity world =
-                    [for child in World.getEntityChildren entity world do
-                        let childSource = source / child.Name
-                        yield (childSource, child)
-                        yield! getDescendantPairs childSource child world]
-                let world =
-                    getDescendantPairs entitySource entity world |>
-                    List.fold (fun world (descendantSource, descendentEntity) ->
-                        if descendentEntity.GetExists world then
-                            let world = World.setEntityPropagatedDescriptorOpt None descendentEntity world |> snd'
-                            if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
-                            then World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> snd'
-                            else world
-                        else world)
-                        world
-                let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
-                let world = entity.SetMountOptWithAdjustment mountOpt world
+                let (entity, world) = World.pasteEntityFromDescriptor distance rightClickPosition positionSnapEir pasteType cut entityDescriptor entitySource parent world
                 (Some entity, world)
             | None -> (None, world)

@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int BONES_MAX = 128;
 const int BONES_INFLUENCE_MAX = 4;
@@ -28,12 +28,12 @@ void main()
     // compute output values
     vec4 positionBlended = boneBlended * vec4(position, 1.0);
     positionOut = model * positionBlended;
-    positionOut.xyzw /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
+    positionOut /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
     gl_Position = projection * view * positionOut;
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform vec3 eyeCenter;
 
@@ -43,5 +43,5 @@ in vec4 positionOut;
 
 void main()
 {
-	depth = length(positionOut.xyz - eyeCenter);
+	depth = length(positionOut.xyz - eyeCenter); // linear, world space depth
 }

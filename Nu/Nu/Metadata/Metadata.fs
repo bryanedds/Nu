@@ -633,6 +633,75 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
+    let private tryGetModelSubdermalImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let subdermalAsset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_subdermal")             elif has_d then albedoAssetName.Replace ("_d", "_subdermal")            else "")
+                    let subdermalAsset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Subdermal")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Subdermal")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Subdermal") else "")
+                    if getMetadataExists subdermalAsset then ValueSome subdermalAsset
+                    elif getMetadataExists subdermalAsset' then ValueSome subdermalAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelFinenessImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let finenessAsset =     asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_fineness")              elif has_d then albedoAssetName.Replace ("_d", "_fineness")             else "")
+                    let finenessAsset' =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Fineness")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Fineness")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Fineness") else "")
+                    if getMetadataExists finenessAsset then ValueSome finenessAsset
+                    elif getMetadataExists finenessAsset' then ValueSome finenessAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelScatterImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let scatterAsset =      asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_scatter")               elif has_d then albedoAssetName.Replace ("_d", "_scatter")              else "")
+                    let scatterAsset' =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Scatter")    elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Scatter")     elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Scatter") else "")
+                    if getMetadataExists scatterAsset then ValueSome scatterAsset
+                    elif getMetadataExists scatterAsset' then ValueSome scatterAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
     let private tryGetModelTwoSided materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -706,6 +775,21 @@ module Metadata =
     let tryGetStaticModelHeightImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelHeightImage materialIndex staticModel
 
+    /// Attempt to get the subsurface image asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelSubdermalImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelSubdermalImage materialIndex staticModel
+
+    /// Attempt to get the fineness image asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelFinenessImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelFinenessImage materialIndex staticModel
+
+    /// Attempt to get the scatter image asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelScatterImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelScatterImage materialIndex staticModel
+
     /// Attempt to get the two-sided property for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
@@ -762,6 +846,21 @@ module Metadata =
     /// Thread-safe.
     let tryGetAnimatedModelHeightImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelHeightImage materialIndex animatedModel
+
+    /// Attempt to get the subdermal image asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelSubdermalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelSubdermalImage materialIndex animatedModel
+
+    /// Attempt to get the fineness image asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelFinenessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelFinenessImage materialIndex animatedModel
+
+    /// Attempt to get the scatter image asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelScatterImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelScatterImage materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.

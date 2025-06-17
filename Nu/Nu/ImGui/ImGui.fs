@@ -19,6 +19,7 @@ type ImGuiEditResult =
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port.
 type ImGui (stub : bool, displaySize : Vector2i) =
 
+    static let mutable Font = Unchecked.defaultof<ImFontPtr>
     static let mutable MouseLeftIdInternal = 0L
 
     let charsPressed =
@@ -64,8 +65,11 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         // configure docking enabled
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
 
-        // add default font
-        fonts.AddFontDefault () |> ignore<ImFontPtr>
+        // add default font with the configured font size
+        let fontConfig = ImGuiNative.ImFontConfig_ImFontConfig ()
+        let fontConfigPtr = ImFontConfigPtr fontConfig
+        fontConfigPtr.SizePixels <- Constants.ImGui.FontSize
+        Font <- fonts.AddFontDefault fontConfigPtr
 
         // configure styling theme to nu
         ImGui.StyleColorsNu ()
@@ -101,9 +105,6 @@ type ImGui (stub : bool, displaySize : Vector2i) =
             ImGuizmo.BeginFrame ()
         if ImGui.IsMouseClicked ImGuiMouseButton.Left then
             MouseLeftIdInternal <- inc MouseLeftIdInternal
-
-    member this.EndFrame () =
-        () // nothing to do
 
     member this.InputFrame () =
         let io = ImGui.GetIO ()

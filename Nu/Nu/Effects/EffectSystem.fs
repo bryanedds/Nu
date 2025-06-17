@@ -14,8 +14,7 @@ module EffectSystem =
     /// Evaluates effect descriptors.
     type [<ReferenceEquality>] EffectSystem =
         private
-            { EffectDelta : GameTime
-              EffectTime : GameTime
+            { EffectTime : GameTime
               EffectTimeOriginal : GameTime
               EffectProgressOffset : single
               EffectAbsolute : bool
@@ -474,6 +473,7 @@ module EffectSystem =
             if slice.Enabled then
                 let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z)
                 let direction = rotation.Down
+                let bounds = Box3 (slice.Position - v3Dup slice.LightCutoff, v3Dup slice.LightCutoff * 2.0f)
                 let lightToken =
                     Light3dToken
                         { LightId = 0UL
@@ -487,7 +487,8 @@ module EffectSystem =
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
-                          DesireShadows = false }
+                          DesireShadows = false
+                          Bounds = bounds }
                 addDataToken lightToken effectSystem
             else effectSystem
 
@@ -521,7 +522,9 @@ module EffectSystem =
                       EmissionOpt = ValueSome slice.Emission.R
                       HeightOpt = ValueSome slice.Height
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      OpaqueDistanceOpt = ValueNone }
+                      OpaqueDistanceOpt = ValueNone
+                      FinenessOffsetOpt = ValueNone
+                      ScatterTypeOpt = ValueNone }
                 let material =
                     { AlbedoImageOpt = ValueSome (AssetTag.specialize<Image> imageAlbedo)
                       RoughnessImageOpt = ValueSome (AssetTag.specialize<Image> imageRoughness)
@@ -530,6 +533,9 @@ module EffectSystem =
                       EmissionImageOpt = ValueSome (AssetTag.specialize<Image> imageEmission)
                       NormalImageOpt = ValueSome (AssetTag.specialize<Image> imageNormal)
                       HeightImageOpt = ValueSome (AssetTag.specialize<Image> imageHeight)
+                      SubdermalImageOpt = ValueNone
+                      FinenessImageOpt = ValueNone
+                      ScatterImageOpt = ValueNone
                       TwoSidedOpt = ValueSome twoSided }
                 let billboardToken =
                     BillboardToken
@@ -570,7 +576,9 @@ module EffectSystem =
                       EmissionOpt = ValueSome slice.Emission.R
                       HeightOpt = ValueSome slice.Height
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      OpaqueDistanceOpt = ValueNone }
+                      OpaqueDistanceOpt = ValueNone
+                      FinenessOffsetOpt = ValueNone
+                      ScatterTypeOpt = ValueNone }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
@@ -737,16 +745,14 @@ module EffectSystem =
         else release effectSystem
     
     /// Creates a new EffectSystem with the following parameters -
-    ///   - time: The time basis of the effect.
-    ///   - delta: The delta time for the effect.
+    ///   - localTime: The time basis of the effect.
     ///   - absolute: A flag indicating if the effect is absolute.
     ///   - presence: The presence of the effect.
     ///   - shadowOffset: How far to offset shadows of any billboards.
     ///   - renderType: The render type of the effect.
     ///   - globalEnv: The global environment for the effect.
-    let make localTime delta absolute castShadow presence shadowOffset renderType globalEnv =
-        { EffectDelta = delta
-          EffectTime = localTime
+    let make localTime absolute castShadow presence shadowOffset renderType globalEnv =
+        { EffectTime = localTime
           EffectTimeOriginal = localTime
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute

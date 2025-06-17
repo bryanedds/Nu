@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -13,7 +13,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;

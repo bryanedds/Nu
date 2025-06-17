@@ -19,15 +19,15 @@ type [<StructuralEquality; NoComparison>] Viewport =
     member this.AspectRatio = single this.Bounds.Size.X / single this.Bounds.Size.Y
 
     /// The shadow texture buffer resolution appropriate for this viewport.
-    member this.ShadowResolution = v2iDup (Constants.Render.ShadowVirtualResolution * Globals.Render.ShadowScalar * this.DisplayScalar)
+    member this.ShadowTextureResolution =
+        v2iDup (Constants.Render.ShadowVirtualResolution * Globals.Render.ShadowScalar * this.DisplayScalar)
+
+    /// The shadow map buffer resolution appropriate for this viewport.
+    member this.ShadowMapResolution =
+        this.ShadowTextureResolution / 2
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
-
-    /// The shadow texture buffer resolution appropriate for this viewport and shadow buffer index.
-    static member getShadowTextureBufferResolution shadowBufferIndex (viewport : Viewport) =
-        let scalar = if shadowBufferIndex = 0 then Constants.Render.ShadowDetailedResolutionScalar else 1
-        viewport.ShadowResolution * scalar
 
     /// Project to the given frame.
     static member project (source : Vector3) (frame : Matrix4x4) viewport =

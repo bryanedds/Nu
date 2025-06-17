@@ -55,7 +55,7 @@ type RendererInline () =
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
-    let mutable renderersOpt = Option<Renderer3d * Renderer2d * RendererImGui>.None
+    let mutable dependenciesOpt = Option<nativeint * Renderer3d * Renderer2d * RendererImGui>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
 
@@ -67,7 +67,7 @@ type RendererInline () =
             windowOpt <- windowOpt_
 
             // ensure renderers not already created
-            match renderersOpt with
+            match dependenciesOpt with
             | None ->
 
                 // create renderers
@@ -96,10 +96,10 @@ type RendererInline () =
                     OpenGL.Hl.Assert ()
 
                     // fin
-                    renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
+                    dependenciesOpt <- Some (glContext, renderer3d, renderer2d, rendererImGui)
 
                 // no renderers
-                | None -> renderersOpt <- None
+                | None -> dependenciesOpt <- None
 
                 // fin
                 started <- true
@@ -108,8 +108,8 @@ type RendererInline () =
             | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
 
         member ri.Renderer3dConfig =
-            match renderersOpt with
-            | Some (renderer3d, _, _) -> renderer3d.RendererConfig
+            match dependenciesOpt with
+            | Some (_, renderer3d, _, _) -> renderer3d.RendererConfig
             | None -> Renderer3dConfig.defaultConfig
 
         member ri.TryGetImGuiTextureId assetTag =
@@ -119,37 +119,37 @@ type RendererInline () =
             | (false, _) -> ValueNone
 
         member ri.EnqueueMessage3d message =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messages3d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, depthTest, renderType, renderPass) =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messages3d.Add (RenderStaticModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; StaticModel = staticModel; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messages3d.Add (RenderStaticModelSurface { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; StaticModel = staticModel; SurfaceIndex = surfaceIndex; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualRenderedSurfaceIndices = drsIndices; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.EnqueueMessage2d message =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messages2d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.EnqueueMessageImGui message =
-            match renderersOpt with
+            match dependenciesOpt with
             | Some _ -> messagesImGui.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
@@ -159,8 +159,8 @@ type RendererInline () =
             messagesImGui.Clear ()
 
         member ri.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize geometryViewport rasterViewport outerViewport drawData =
-            match renderersOpt with
-            | Some (renderer3d, renderer2d, rendererImGui) ->
+            match dependenciesOpt with
+            | Some (_, renderer3d, renderer2d, rendererImGui) ->
 
                 // begin frame
                 OpenGL.Hl.BeginFrame (windowSize, outerViewport.Bounds)
@@ -195,12 +195,15 @@ type RendererInline () =
             | None -> ()
 
         member ri.Terminate () =
-            match renderersOpt with
-            | Some (renderer3d, renderer2d, rendererImGui) ->
+            match dependenciesOpt with
+            | Some (glContext, renderer3d, renderer2d, rendererImGui) ->
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
-                renderersOpt <- None
+                dependenciesOpt <- None
+                match windowOpt with
+                | Some (SglWindow window) -> OpenGL.Hl.DestroySglContext (glContext, window.SglWindow)
+                | None -> ()
                 terminated <- true
             | None -> ()
 
@@ -402,7 +405,7 @@ type RendererThread () =
 
                 // guard against early termination
                 if not terminated then
-            
+
                     // wait until swap is requested
                     while not swapRequested && not terminated do Thread.Yield () |> ignore<bool>
                     swapRequested <- false
@@ -421,6 +424,7 @@ type RendererThread () =
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
+        OpenGL.Hl.DestroySglContext (glContext, match window with SglWindow window -> window.SglWindow)
 
     interface RendererProcess with
 

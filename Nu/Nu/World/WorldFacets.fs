@@ -64,7 +64,7 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
-        let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
         let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -143,7 +143,7 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
-        let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = Option.toValueOption (getSpriteInsetOpt entity world)
         let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -1356,8 +1356,7 @@ type EffectFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 [<AutoOpen>]
 module RigidBodyFacetExtensions =
@@ -1426,10 +1425,6 @@ module RigidBodyFacetExtensions =
         member this.Awake = lensReadOnly (nameof this.Awake) this this.GetAwake
         member this.GetBodyId world : BodyId = this.Get (nameof this.BodyId) world
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
-        member this.BodyPenetrationEvent = Events.BodyPenetrationEvent --> this
-        member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
-        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game
-        member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
 /// Augments an entity with a physics-driven rigid body.
 type RigidBodyFacet () =
@@ -1439,8 +1434,8 @@ type RigidBodyFacet () =
         let scalar = entity.GetScale world * entity.GetSize world
         let bodyShape = entity.GetBodyShape world
         if entity.GetIs2d world
-        then World.localizeBodyShape scalar bodyShape
-        else bodyShape
+        then World.localizePrimitiveBodyShape scalar bodyShape
+        else bodyShape // NOTE: localization does not apply to 3D bodies.
 
     static let propagatePhysicsCenter (entity : Entity) (_ : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
@@ -1480,12 +1475,12 @@ type RigidBodyFacet () =
          define Entity.BodyType Static
          define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
          define Entity.SleepingAllowed true
-         define Entity.Friction 0.5f
+         define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
          define Entity.LinearVelocity v3Zero
          define Entity.LinearDamping 0.0f
          define Entity.AngularVelocity v3Zero
-         define Entity.AngularDamping 0.2f
+         define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
          define Entity.GravityOverride None
@@ -2299,15 +2294,13 @@ type SkyBoxFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.Static true
+        [define Entity.Presence Omnipresent
+         define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
          define Entity.Color Color.White
          define Entity.Brightness 1.0f
          define Entity.CubeMap Assets.Default.SkyBoxMap]
-
-    override this.PresenceOverride =
-        ValueSome Omnipresent
 
     override this.Render (renderPass, entity, world) =
         World.enqueueRenderMessage3d
@@ -2367,15 +2360,13 @@ type LightProbe3dFacet () =
 
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
+         define Entity.Presence Omnipresent
          define Entity.LightProbe true
          define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
-
-    override this.PresenceOverride =
-        ValueSome Omnipresent
 
     override this.Register (entity, world) =
         let world = World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
@@ -2394,8 +2385,7 @@ type LightProbe3dFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -2432,6 +2422,9 @@ module Light3dFacetExtensions =
         member this.GetAttenuationQuadratic world : single = this.Get (nameof this.AttenuationQuadratic) world
         member this.SetAttenuationQuadratic (value : single) world = this.Set (nameof this.AttenuationQuadratic) value world
         member this.AttenuationQuadratic = lens (nameof this.AttenuationQuadratic) this this.GetAttenuationQuadratic this.SetAttenuationQuadratic
+        member this.GetAutoAttenuate world : bool = this.Get (nameof this.AutoAttenuate) world
+        member this.SetAutoAttenuate (value : bool) world = this.Set (nameof this.AutoAttenuate) value world
+        member this.AutoAttenuate = lens (nameof this.AutoAttenuate) this this.GetAutoAttenuate this.SetAutoAttenuate
         member this.GetLightCutoff world : single = this.Get (nameof this.LightCutoff) world
         member this.SetLightCutoff (value : single) world = this.Set (nameof this.LightCutoff) value world
         member this.LightCutoff = lens (nameof this.LightCutoff) this this.GetLightCutoff this.SetLightCutoff
@@ -2441,22 +2434,81 @@ module Light3dFacetExtensions =
         member this.GetDesireShadows world : bool = this.Get (nameof this.DesireShadows) world
         member this.SetDesireShadows (value : bool) world = this.Set (nameof this.DesireShadows) value world
         member this.DesireShadows = lens (nameof this.DesireShadows) this this.GetDesireShadows this.SetDesireShadows
+        member this.GetDesireFog world : bool = this.Get (nameof this.DesireFog) world
+        member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
+        member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
+
+        member this.ComputeShadowView world =
+            match this.GetLightType world with
+            | PointLight ->
+                Matrix4x4.CreateTranslation (-this.GetPosition world)
+            | SpotLight (_, _) ->
+                let shadowRotation = this.GetRotation world
+                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                shadowView.Translation <- this.GetPosition world
+                shadowView <- shadowView.Inverted
+                shadowView
+            | DirectionalLight ->
+                let shadowRotation = this.GetRotation world
+                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                shadowView.Translation <- this.GetPosition world
+                shadowView <- shadowView.Inverted
+                shadowView
+
+        member this.ComputeShadowProjection world =
+            match this.GetLightType world with
+            | PointLight ->
+                let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+            | SpotLight (_, coneOuter) ->
+                let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
+                let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+            | DirectionalLight ->
+                let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+
+        member this.ComputeShadowFrustum world =
+            let shadowView = this.ComputeShadowView world
+            let shadowProjection = this.ComputeShadowProjection world
+            Frustum (shadowView * shadowProjection)
 
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
     inherit Facet (false, false, true)
 
+    static let handleLightingChange evt world =
+        let entity = evt.Subscriber : Entity
+        let brightness = entity.GetBrightness world
+        let lightCutoff = entity.GetLightCutoff world
+        let world =
+            if entity.GetAutoAttenuate world then
+                let world = entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
+                let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
+                world
+            else world
+        let size = v3Dup (lightCutoff * 2.0f)
+        let world = entity.SetSize size world
+        (Cascade, world)
+
     static member Properties =
-        [define Entity.Size (v3Dup 0.25f)
+        [define Entity.Size (v3Dup (Constants.Render.LightCutoffDefault * 2.0f))
          define Entity.Static true
          define Entity.Light true
          define Entity.Color Color.White
          define Entity.Brightness Constants.Render.BrightnessDefault
          define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
          define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
+         define Entity.AutoAttenuate true
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
          define Entity.LightType PointLight
-         define Entity.DesireShadows false]
+         define Entity.DesireShadows false
+         define Entity.DesireFog false]
+
+    override this.Register (entity, world) =
+        let world = World.sense handleLightingChange entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
+        let world = World.sense handleLightingChange entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
+        world
 
     override this.Render (renderPass, entity, world) =
         let lightId = entity.GetId world
@@ -2470,6 +2522,8 @@ type Light3dFacet () =
         let lightCutoff = entity.GetLightCutoff world
         let lightType = entity.GetLightType world
         let desireShadows = entity.GetDesireShadows world
+        let desireFog = entity.GetDesireFog world
+        let bounds = entity.GetBounds world
         World.enqueueRenderMessage3d
             (RenderLight3d
                 { LightId = lightId
@@ -2483,16 +2537,21 @@ type Light3dFacet () =
                   LightCutoff = lightCutoff
                   LightType = lightType
                   DesireShadows = desireShadows
+                  DesireFog = desireFog
+                  Bounds = bounds
                   RenderPass = renderPass })
             world
 
     override this.RayCast (ray, entity, world) =
-        let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        let boundsSize = v3Dup 0.25f
+        let bounds = box3 (entity.GetPosition world - boundsSize * 0.5f) boundsSize
+        let intersectionOpt = ray.Intersects bounds
+        [|Intersection.ofNullable intersectionOpt|]
 
-    override this.GetAttributesInferred (_, _) =
-        AttributesInferred.important (v3Dup 0.25f) v3Zero
+    override this.GetAttributesInferred (entity, world) =
+        let lightCutoff = entity.GetLightCutoff world
+        let size = v3Dup (lightCutoff * 2.0f)
+        AttributesInferred.important size v3Zero
 
     override this.Edit (op, entity, world) =
         match op with
@@ -2505,6 +2564,11 @@ type Light3dFacet () =
                 let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
                 world
             else world
+        | ViewportOverlay _ ->
+            let shadowFrustum = entity.ComputeShadowFrustum world
+            for segment in shadowFrustum.Segments do
+                World.imGuiSegment3d segment 1.0f Color.Yellow world
+            world
         | _ -> world
 
 [<AutoOpen>]
@@ -2563,8 +2627,7 @@ type StaticBillboardFacet () =
         // TODO: P1: intersect against oriented quad rather than bounds.
         let bounds = entity.GetBounds world
         let intersectionOpt = ray.Intersects bounds
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 /// Augments an entity with an animated billboard.
 type AnimatedBillboardFacet () =
@@ -2629,8 +2692,7 @@ type AnimatedBillboardFacet () =
         // TODO: P1: intersect against oriented quad rather than bounds.
         let bounds = entity.GetBounds world
         let intersectionOpt = ray.Intersects bounds
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetExtensions =
@@ -2873,7 +2935,9 @@ type BasicStaticBillboardEmitterFacet () =
                               EmissionOpt = match emitterProperties.EmissionOpt with ValueSome emission -> ValueSome emission | ValueNone -> descriptor.MaterialProperties.EmissionOpt
                               HeightOpt = match emitterProperties.HeightOpt with ValueSome height -> ValueSome height | ValueNone -> descriptor.MaterialProperties.HeightOpt
                               IgnoreLightMapsOpt = match emitterProperties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ValueSome ignoreLightMaps | ValueNone -> descriptor.MaterialProperties.IgnoreLightMapsOpt
-                              OpaqueDistanceOpt = ValueNone }
+                              OpaqueDistanceOpt = ValueNone
+                              FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
+                              ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt }
                         let emitterMaterial = entity.GetEmitterMaterial world
                         let material =
                             { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
@@ -2883,6 +2947,9 @@ type BasicStaticBillboardEmitterFacet () =
                               EmissionImageOpt = match emitterMaterial.EmissionImageOpt with ValueSome emissionImage -> ValueSome emissionImage | ValueNone -> descriptor.Material.EmissionImageOpt
                               NormalImageOpt = match emitterMaterial.NormalImageOpt with ValueSome normalImage -> ValueSome normalImage | ValueNone -> descriptor.Material.NormalImageOpt
                               HeightImageOpt = match emitterMaterial.HeightImageOpt with ValueSome heightImage -> ValueSome heightImage | ValueNone -> descriptor.Material.HeightImageOpt
+                              SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
+                              FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
+                              ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt }
                         Some
                             (RenderBillboardParticles
@@ -2901,8 +2968,7 @@ type BasicStaticBillboardEmitterFacet () =
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
-        if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-        else [||]
+        [|Intersection.ofNullable intersectionOpt|]
 
 [<AutoOpen>]
 module StaticModelFacetExtensions =
@@ -2959,16 +3025,19 @@ type StaticModelFacet () =
                     let raySurface = rayEntity.Transform inverse
                     let boundsIntersectionOpt = raySurface.Intersects geometry.Bounds
                     if boundsIntersectionOpt.HasValue then
-                        raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
-                        Seq.map snd' |>
-                        Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                        Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
-                        Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
-                        Seq.toArray
-                    else [||])
+                        let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
+                        if Seq.notEmpty intersections then
+                            intersections |>
+                            Seq.map snd' |>
+                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
+                            Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
+                            Seq.map (fun point -> Hit (point - ray.Origin).Magnitude) |>
+                            Seq.toArray
+                        else [|Miss|]
+                    else [|Miss|])
                     staticModelMetadata.Surfaces
             Array.concat intersectionses
-        | ValueNone -> [||]
+        | ValueNone -> [|Miss|]
 
 [<AutoOpen>]
 module StaticModelSurfaceFacetExtensions =
@@ -3028,11 +3097,13 @@ type StaticModelSurfaceFacet () =
                 let geometry = surface.PhysicallyBasedGeometry
                 let boundsIntersectionOpt = rayEntity.Intersects geometry.Bounds
                 if boundsIntersectionOpt.HasValue then
-                    let intersections = rayEntity.Intersects (geometry.Indices, geometry.Vertices)
-                    intersections |> Seq.map snd' |> Seq.toArray
-                else [||]
-            else [||]
-        | ValueNone -> [||]
+                    let intersections = Array.ofSeq (rayEntity.Intersects (geometry.Indices, geometry.Vertices))
+                    if Array.notEmpty intersections
+                    then Array.map (snd' >> Hit) intersections
+                    else [|Miss|]
+                else [|Miss|]
+            else [|Miss|]
+        | ValueNone -> [|Miss|]
 
 [<AutoOpen>]
 module AnimatedModelFacetExtensions =
@@ -3102,7 +3173,7 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
-        ///
+        /// TODO: document this!
         member this.AnimateBones (world : World) =
             let time = world.GameTime
             let animations = this.GetAnimations world
@@ -3213,16 +3284,19 @@ type AnimatedModelFacet () =
                     let raySurface = rayEntity.Transform inverse
                     let boundsIntersectionOpt = raySurface.Intersects geometry.Bounds
                     if boundsIntersectionOpt.HasValue then
-                        raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
-                        Seq.map snd' |>
-                        Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                        Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
-                        Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
-                        Seq.toArray
-                    else [||])
+                        let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
+                        if Seq.notEmpty intersections then
+                            intersections |>
+                            Seq.map snd' |>
+                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
+                            Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
+                            Seq.map (fun point -> Hit (point - ray.Origin).Magnitude) |>
+                            Seq.toArray
+                        else [|Miss|]
+                    else [|Miss|])
                     animatedModelMetadata.Surfaces
             Array.concat intersectionses
-        | ValueNone -> [||]
+        | ValueNone -> [|Miss|]
 
     override this.Edit (op, entity, world) =
         match op with
@@ -3286,10 +3360,11 @@ type TerrainFacet () =
 
     static member Properties =
         [define Entity.Size (v3 512.0f 128.0f 512.0f)
+         define Entity.Presence Omnipresent
          define Entity.Static true
          define Entity.AlwaysRender true
          define Entity.BodyEnabled true
-         define Entity.Friction 0.5f
+         define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
@@ -3320,9 +3395,6 @@ type TerrainFacet () =
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
-
-    override this.PresenceOverride =
-        ValueSome Omnipresent
 
     override this.Register (entity, world) =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world
@@ -3401,6 +3473,125 @@ type TerrainFacet () =
         match entity.TryGetTerrainResolution world with
         | Some resolution -> AttributesInferred.important (v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))) v3Zero
         | None -> AttributesInferred.important (v3 512.0f 128.0f 512.0f) v3Zero
+
+    override this.RayCast (_, _, _) =
+        [|Miss|]
+
+/// Enables common operations on 3D entities that intersect this entity's bounds.
+/// TODO: P1: implement EditAreaFacet for 2D entities.
+type EditVolumeFacet () =
+    inherit Facet (false, false, false)
+
+    /// Check whether an entity can be frozen by an ancestor with a FreezerFacet.
+    static let rec getEntityParentable (entity : Entity) parent world =
+        let presence = entity.GetPresence world
+        entity <> parent &&
+        not (entity.GetProtected world) &&
+        not presence.IsOmnipresent &&
+        (entity.GetChildren world |> Seq.forall (fun child -> getEntityParentable child parent world))
+
+    static let getIntersectedEntities (entity : Entity) world =
+        let bounds = entity.GetBounds world
+        World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world |>
+        Seq.filter (fun intersected -> getEntityParentable intersected entity world) |>
+        Seq.toArray |>
+        Array.sortBy _.Names.Length
+
+    override this.Edit (op, entity, world) =
+
+        match op with
+        | AppendProperties append ->
+
+            // category and indentation
+            ImGui.Text "Volume Operations"
+            ImGui.Indent ()
+
+            // parent intersected
+            let world =
+                if ImGui.Button "Parent Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Parent Intersected") world
+                    let intersecteds = getIntersectedEntities entity world
+                    Array.fold (fun world (intersected : Entity) ->
+                        if intersected.GetExists world then
+                            let intersected' =
+                                if intersected.Has<StaticModelSurfaceFacet> world && intersected.Name.StartsWith "Geometry"
+                                then entity / intersected.Parent.Name // probably generic geometry imported from another engine's scene, so using a likely more descriptive parent name
+                                else entity / intersected.Name
+                            let intersected' =
+                                if intersected'.GetExists world
+                                then entity / (intersected'.Name + Gen.name)
+                                else intersected'
+                            World.renameEntityImmediate intersected intersected' world
+                        else world)
+                        world intersecteds
+                else world
+
+            // unparent intersected
+            let world =
+                if ImGui.Button "Unparent Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Unparent Intersected") world
+                    let bounds = entity.GetBounds world
+                    let children =
+                        entity.GetChildren world |>
+                        Seq.filter (fun child -> bounds.Intersects (child.GetBounds world)) |>
+                        Array.ofSeq
+                    Array.fold (fun world (child : Entity) ->
+                        if child.GetExists world then
+                            let child' = child.Names |> Array.take (entity.Names.Length - 1) |> Array.add child.Name |> rtoa |> Nu.Entity
+                            let child' =
+                                if child'.GetExists world
+                                then entity / (child'.Name + Gen.name)
+                                else child'
+                            World.renameEntityImmediate child child' world
+                        else world)
+                        world children
+                else world
+
+            // delete intersected
+            let world =
+                if ImGui.Button "Delete Intersected" then
+                    let world = append.EditContext.Snapshot (VolumeEdit "Delete Intersected") world
+                    let intersecteds = getIntersectedEntities entity world
+                    Array.fold (fun world (intersected : Entity) ->
+                        if intersected.GetExists world then World.destroyEntity intersected world else world)
+                        world intersecteds
+                else world
+
+            // end of category
+            ImGui.Unindent ()
+            world
+
+        | ViewportOverlay viewportOverlay ->
+            if entity.GetOffset world = v3Zero then
+                if world.DateTime.Millisecond < 500 then
+                    for intersected in getIntersectedEntities entity world do
+                        let bounds = intersected.GetBounds world
+                        World.imGuiCircle3d bounds.Center 5.0f false Color.Orange world
+                let (manipulationResult, bounds) =
+                    World.imGuiEditBox3d viewportOverlay.EditContext.SnapDrag (entity.GetBounds world) world
+                match manipulationResult with
+                | ImGuiEditActive started ->
+                    let world = if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world else world
+                    match entity.TryGetMountee world with
+                    | Some mountee ->
+                        let positionMountee = mountee.GetPosition world
+                        let world = entity.SetPositionLocal (positionMountee - bounds.Center) world
+                        let world = entity.SetSize (bounds.Size / entity.GetScale world) world
+                        world
+                    | None ->
+                        let world = entity.SetPosition bounds.Center world
+                        let world = entity.SetSize (bounds.Size / entity.GetScale world) world
+                        world
+                | ImGuiEditInactive -> world
+            else
+                // TODO: P1: see if we can implement this properly instead of schmoing out.
+                Log.warnOnce "Bounds adjustment currently not implemented for entities with non-zero offset."
+                world
+
+        | _ -> world
+
+    override this.RayCast (_, _, _) =
+        [|Miss|]
 
 [<AutoOpen>]
 module TraversalInterpolatedFacetExtensions =
@@ -3494,35 +3685,42 @@ module NavBodyFacetExtensions =
         member this.GetNavShape world : NavShape = this.Get (nameof this.NavShape) world
         member this.SetNavShape (value : NavShape) world = this.Set (nameof this.NavShape) value world
         member this.NavShape = lens (nameof this.NavShape) this this.GetNavShape this.SetNavShape
+        member this.GetNavEnabled world : bool = this.Get (nameof this.NavEnabled) world
+        member this.SetNavEnabled (value : bool) world = this.Set (nameof this.NavEnabled) value world
+        member this.NavEnabled = lens (nameof this.NavEnabled) this this.GetNavEnabled this.SetNavEnabled
 
 /// Augments an entity with a 3d navigation body.
 type NavBodyFacet () =
     inherit Facet (false, false, false)
 
     static let propagateNavBody (entity : Entity) world =
+        let navId = { NavIndex = -1; NavEntity = entity }
         match entity.GetNavShape world with
         | NavShape.EmptyNavShape ->
             if entity.GetIs2d world
             then world // TODO: implement for 2d navigation when it's available.
-            else World.setNav3dBodyOpt None entity world
+            else World.setNav3dBodyOpt None navId world
         | shape ->
             if entity.GetIs2d world
             then world // TODO: implement for 2d navigation when it's available.
             else
-                let bounds = entity.GetBounds world
-                let affineMatrix = entity.GetAffineMatrix world
-                let staticModel = entity.GetStaticModel world
-                let surfaceIndex = entity.GetSurfaceIndex world
-                World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
+                if entity.GetNavEnabled world then
+                    let bounds = entity.GetBounds world
+                    let affineMatrix = entity.GetAffineMatrix world
+                    let staticModel = entity.GetStaticModel world
+                    let surfaceIndex = entity.GetSurfaceIndex world
+                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) navId world
+                else World.setNav3dBodyOpt None navId world
 
     static member Properties =
         [define Entity.StaticModel Assets.Default.StaticModel
          define Entity.SurfaceIndex 0
-         define Entity.NavShape BoundsNavShape]
+         define Entity.NavShape BoundsNavShape
+         define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
 
-        // OPTIMIZATION: conditionally subscribe to transform change event.
+        // OPTIMIZATION: conditionally subscribe to bounds change event.
         let subId = Gen.id64
         let subscribe world =
             World.subscribePlus subId (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> snd
@@ -3531,21 +3729,32 @@ type NavBodyFacet () =
         let callback evt world =
             let entity = evt.Subscriber : Entity
             let previous = evt.Data.Previous :?> NavShape
-            let shape = evt.Data.Value :?> NavShape
-            let world = match previous with NavShape.EmptyNavShape -> world | _ -> unsubscribe world
-            let world = match shape with NavShape.EmptyNavShape -> world | _ -> subscribe world
+            let value = evt.Data.Value :?> NavShape
+            let navEnabled = entity.GetNavEnabled world
+            let world = if not previous.IsEmptyNavShape || navEnabled then unsubscribe world else world
+            let world = if not value.IsEmptyNavShape || navEnabled then subscribe world else world
             let world = propagateNavBody entity world
             (Cascade, world)
         let callback2 evt world =
+            let entity = evt.Subscriber : Entity
+            let previous = evt.Data.Previous :?> bool
+            let value = evt.Data.Value :?> bool
+            let navShape = entity.GetNavShape world
+            let world = if not navShape.IsEmptyNavShape || previous then unsubscribe world else world
+            let world = if not navShape.IsEmptyNavShape || value then subscribe world else world
+            let world = propagateNavBody entity world
+            (Cascade, world)
+        let callback3 evt world =
             if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
-                not (Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set)) then
+                Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set) |> not then
                 (Cascade, unsubscribe world)
             else (Cascade, world)
-        let callback3 _ world = (Cascade, unsubscribe world)
+        let callback4 _ world = (Cascade, unsubscribe world)
         let world = match entity.GetNavShape world with NavShape.EmptyNavShape -> world | _ -> subscribe world
         let world = World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
-        let world = World.sense callback2 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
-        let world = World.sense callback3 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
+        let world = World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
+        let world = World.sense callback3 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
+        let world = World.sense callback4 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
         let callbackPnb evt world = (Cascade, propagateNavBody evt.Subscriber world)
@@ -3554,9 +3763,10 @@ type NavBodyFacet () =
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =
+        let navId = { NavIndex = -1; NavEntity = entity }
         if entity.GetIs2d world
         then world // TODO: implement for 2d navigation when it's available.
-        else World.setNav3dBodyOpt None entity world
+        else World.setNav3dBodyOpt None navId world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant

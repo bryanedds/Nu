@@ -397,7 +397,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
         | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
 
-    // TODO: add some error logging.
     static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         match Metadata.tryGetStaticModelMetadata staticModelShape.StaticModel with
         | ValueSome staticModel ->
@@ -417,15 +416,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                         let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
-                        let geometryShape = { Vertices = geometry.Vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                        PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                        let transformOpt = staticModelSurfaceShape.TransformOpt
+                        let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
+                        match staticModelSurfaceShape.Profile with
+                        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
+                        | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
+                        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
                 masses
                 [0 .. dec staticModel.Surfaces.Length]
         | ValueNone -> masses
 
-    // TODO: add some error logging.
     static member private attachStaticModelShapeSurface (bodyProperties : BodyProperties) (staticModelSurfaceShape : StaticModelSurfaceShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
         | ValueSome staticModel ->
@@ -433,8 +435,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
-                let geometryShape = { Vertices = geometry.Vertices; Profile = staticModelSurfaceShape.Profile; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                let transformOpt = staticModelSurfaceShape.TransformOpt
+                let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
+                match staticModelSurfaceShape.Profile with
+                | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
+                | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
+                | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
             else masses
         | ValueNone -> masses
 
@@ -1297,7 +1303,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
-        member physicsEngine.TryRender (eyeCenter, renderSettings, rendererObj) =
+        member physicsEngine.TryRender (eyeCenter, eyeFrustum, renderSettings, rendererObj) =
             match (renderSettings, rendererObj) with
             | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
                 let distanceMaxSquared =
@@ -1305,8 +1311,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     Constants.Render.Body3dRenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
+                        let bodyCenter = body.WorldSpaceBounds.Center
+                        let bodyDistanceSquared = (bodyCenter - eyeCenter).MagnitudeSquared
                         body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
-                        (body.WorldSpaceBounds.Center - eyeCenter).MagnitudeSquared < distanceMaxSquared)
+                        bodyDistanceSquared < distanceMaxSquared &&
+                        eyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
                 renderer.SetCameraPosition &eyeCenter
                 physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBodyFilter)
             | _ -> ()

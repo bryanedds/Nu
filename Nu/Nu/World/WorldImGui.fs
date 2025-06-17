@@ -109,6 +109,19 @@ module WorldImGui =
         static member imGuiSegment3d segment thickness color world =
             World.imGuiSegments3d (SArray.singleton segment) thickness color world
 
+        /// Edit a Box3 via ImGui in the current eye 3d space.
+        static member imGuiEditBox3d snap box (world : World) =
+            let mutable box = box
+            let manipulationResult =
+                ImGuizmo.ManipulateBox3
+                    (world.Eye3dCenter,
+                     world.Eye3dRotation,
+                     world.Eye3dFieldOfView,
+                     world.RasterViewport,
+                     snap,
+                     &box)
+            (manipulationResult, box)
+
         /// Edit an array value via ImGui.
         static member imGuiEditPropertyArray<'a> (editItem : string -> 'a -> bool * bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) context =
             let mutable promoted = false
@@ -486,11 +499,19 @@ module WorldImGui =
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dEdited = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
+                let mutable lightAmbientBoostCutoff = lighting3dConfig.LightAmbientBoostCutoff
+                let mutable lightAmbientBoostScalar = lighting3dConfig.LightAmbientBoostScalar
                 let mutable lightShadowSamples = lighting3dConfig.LightShadowSamples
                 let mutable lightShadowBias = lighting3dConfig.LightShadowBias
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
+                let mutable fogEnabled = lighting3dConfig.FogEnabled
+                let mutable fogStart = lighting3dConfig.FogStart
+                let mutable fogFinish = lighting3dConfig.FogFinish
+                let mutable fogColor = let color = lighting3dConfig.FogColor in color.V4
+                let mutable sssEnabled = lighting3dConfig.SssEnabled
+                let mutable ssaoEnabled = lighting3dConfig.SsaoEnabled
                 let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
                 let mutable ssaoBias = lighting3dConfig.SsaoBias
                 let mutable ssaoRadius = lighting3dConfig.SsaoRadius
@@ -517,11 +538,19 @@ module WorldImGui =
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.V4
                 let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Light Shadow Samples", &lightShadowSamples, 0, 5) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Bias", &lightShadowBias, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited
+                lighting3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -546,15 +575,23 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 32.0f) || lighting3dEdited
+                lighting3dEdited <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 1.0f) || lighting3dEdited
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
+                          LightAmbientBoostCutoff = lightAmbientBoostCutoff
+                          LightAmbientBoostScalar = lightAmbientBoostScalar
                           LightShadowSamples = lightShadowSamples
                           LightShadowBias = lightShadowBias
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
+                          FogEnabled = fogEnabled
+                          FogStart = fogStart
+                          FogFinish = fogFinish
+                          FogColor = Color fogColor
+                          SssEnabled = sssEnabled
+                          SsaoEnabled = ssaoEnabled
                           SsaoIntensity = ssaoIntensity
                           SsaoBias = ssaoBias
                           SsaoRadius = ssaoRadius
@@ -716,6 +753,7 @@ module WorldImGui =
                          ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
                          ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> ||
                          ty.GenericTypeArguments.[0] = typeof<SongDescriptor> ||
+                         ty.GenericTypeArguments.[0] = typeof<ScatterType> ||
                          ty.GenericTypeArguments.[0] = typeof<Entity> ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list>) ||
@@ -751,6 +789,7 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|{ Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound } :> obj|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|{ FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song } :> obj|]))
+                                    elif ty.GenericTypeArguments.[0] = typeof<ScatterType> then (true, Activator.CreateInstance (ty, [|NoScatter :> obj|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments.[0] []|]))
@@ -804,6 +843,7 @@ module WorldImGui =
                           ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
                           ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> ||
                           ty.GenericTypeArguments.[0] = typeof<SongDescriptor> ||
+                          ty.GenericTypeArguments.[0] = typeof<ScatterType> ||
                           ty.GenericTypeArguments.[0] = typeof<Entity> ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list>) ||
@@ -841,6 +881,7 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, createValueOption Assets.Default.AnimatedModel)
                                     elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, createValueOption { Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound })
                                     elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, createValueOption { FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song })
+                                    elif ty.GenericTypeArguments.[0] = typeof<ScatterType> then (true, createValueOption NoScatter)
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, createValueOption (Reflection.objsToArray ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, createValueOption (Reflection.objsToList ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments.[0] []))
@@ -975,5 +1016,5 @@ module WorldImGui2 =
         static member imGuiRenderPhysics3d (settings : DrawSettings) world =
             let physicsEngine3d = World.getPhysicsEngine3d world
             let renderer = World.getRendererPhysics3d world :?> RendererPhysics3d
-            physicsEngine3d.TryRender (world.Eye3dCenter,  settings, renderer)
+            physicsEngine3d.TryRender (world.Eye3dCenter, world.Eye3dFrustumView, settings, renderer)
             renderer.Flush world

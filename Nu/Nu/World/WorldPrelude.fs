@@ -14,9 +14,20 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
 
-// The inferred attributes of an entity that are used to construct its bounds.
-// HACK: added Unimportant field to allow attributes to be marked as unimportant.
-// TODO: see if we can refactor this type to make its representation and algo less hacky.
+/// The result of an intersection-detecting operation.
+type [<Struct>] Intersection =
+    | Hit of single
+    | Miss
+
+    /// Convert from nullable intersection value.
+    static member ofNullable (intersection : single Nullable) =
+        if intersection.HasValue
+        then Hit intersection.Value
+        else Miss
+
+/// The inferred attributes of an entity that are used to construct its bounds.
+/// HACK: added Unimportant field to allow attributes to be marked as unimportant.
+/// TODO: see if we can refactor this type to make its representation and algo less hacky.
 type AttributesInferred =
     { Unimportant : bool
       SizeInferred : Vector3
@@ -104,7 +115,7 @@ type [<SymbolicExpansion>] Nav3dConfig =
         { CellSize = 0.1f
           CellHeight = 0.1f
           AgentHeight = 1.5f
-          AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
+          AgentRadius = 0.3f
           AgentClimbMax = 0.4f
           AgentSlopeMax = 45.0f
           RegionSizeMin = 8
@@ -145,11 +156,8 @@ type NavOutput =
       NavAngularVelocity : Vector3 }
 
 /// The data collected from a navigation builder result.
-type NavBuilderResultData =
-    { NavPointsMinY : single
-      NavPointsMaxY : single
-      NavPoints : Vector3 array
-      NavEdgesMinY : single
+type [<SymbolicExpansion>] NavBuilderResultData =
+    { NavEdgesMinY : single
       NavEdgesMaxY : single
       NavInteriorEdges : Segment3 array
       NavExteriorEdges : Segment3 array }
@@ -157,23 +165,8 @@ type NavBuilderResultData =
     /// Make from an RcBuilderResult.
     static member make (builderResult : RcBuilderResult) =
 
-        // compute points
-        let dmesh = builderResult.MeshDetail
-        let mutable pointsMinY = Single.MaxValue
-        let mutable pointsMaxY = Single.MinValue
-        let points =
-            [|for i in 0 .. dec dmesh.nmeshes do
-                let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let nverts = dmesh.meshes.[m + 1]
-                let verts = bverts * 3
-                for j in 0 .. dec nverts do
-                    let point = v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2]
-                    if pointsMinY > point.Y then pointsMinY <- point.Y
-                    if pointsMaxY < point.Y then pointsMaxY <- point.Y
-                    point|]
-
         // compute interior edges
+        let dmesh = builderResult.MeshDetail
         let mutable edgesMinY = Single.MaxValue
         let mutable edgesMaxY = Single.MinValue
         let interiorEdges =
@@ -240,10 +233,7 @@ type NavBuilderResultData =
                         k <- inc k|]
 
         // fin
-        { NavPointsMinY = pointsMinY
-          NavPointsMaxY = pointsMaxY
-          NavPoints = points
-          NavEdgesMinY = edgesMinY
+        { NavEdgesMinY = edgesMinY
           NavEdgesMaxY = edgesMaxY
           NavInteriorEdges = interiorEdges
           NavExteriorEdges = exteriorEdges }
@@ -649,7 +639,14 @@ module AmbientState =
 
     /// Attempt to check that the window is in a full screen state.
     let tryGetWindowFullScreen state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->            
+            let (width, height) = (ref 0, ref 0)
+            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
+            let mutable displayMode = Unchecked.defaultof<_>
+            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
+            Some (width.Value = displayMode.w || height.Value = displayMode.h)
+        | _ -> None
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =

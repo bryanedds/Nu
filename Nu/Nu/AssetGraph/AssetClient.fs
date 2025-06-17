@@ -52,6 +52,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
                     use assimp = new Assimp.AssimpContext ()
                     try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
                         scene.IndexDatasToMetadata () // avoid polluting memory with face data
+                        scene.ClearColorData () // avoid polluting memory with unused color data
                         return Right (assimpSceneAsset.FilePath, scene)
                     with exn ->
                         return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
@@ -80,7 +81,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
 
         // load cube maps directly
         for cubeMap in cubeMapAssets do
-            match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
+            match cubeMap.FilePath |> File.ReadAllLines |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
                 let dirPath = PathF.GetDirectoryName cubeMap.FilePath
                 let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()

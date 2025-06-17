@@ -82,8 +82,10 @@ type [<SymbolicExpansion>] Gameplay =
             Bricks = bricks
             Lives = 5 }
 
-    // this updates the gameplay model every frame that gameplay is active.
+    // this updates the gameplay model every frame
     static member update gameplay world =
+
+        // update only while gameplay is active.
         match gameplay.GameplayState with
         | Playing when gameplay.Lives > 0 && gameplay.Bricks.Count > 0 ->
 
@@ -162,6 +164,7 @@ type [<SymbolicExpansion>] Gameplay =
             // fin
             gameplay
 
+        // no update while gameplay is inactive
         | Playing | Quit -> gameplay
 
 // this is our gameplay MMCC message type.
@@ -289,7 +292,7 @@ type GameplayDispatcher () =
              // message
              Content.text "Message"
                 [Entity.Text := if gameplay.Lives <= 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
-             
+
              // quit
              Content.button Simulants.GameplayQuit.Name
                 [Entity.Position == v3 232.0f -144.0f 0.0f

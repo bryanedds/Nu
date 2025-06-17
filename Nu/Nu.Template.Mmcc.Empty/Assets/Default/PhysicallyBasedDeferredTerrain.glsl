@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 const int TERRAIN_LAYERS_MAX = 6;
@@ -35,6 +35,7 @@ layout(location = 10) in vec4 texCoordsOffset;
 layout(location = 11) in vec4 albedo;
 layout(location = 12) in vec4 material;
 layout(location = 13) in vec4 heightPlus;
+layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -63,9 +64,10 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float GAMMA = 2.2;
+const float ALBEDO_ALPHA_MIN = 0.3;
 const int TERRAIN_LAYERS_MAX = 6;
 
 uniform vec3 eyeCenter;
@@ -89,6 +91,8 @@ layout(location = 0) out vec4 position;
 layout(location = 1) out vec3 albedo;
 layout(location = 2) out vec4 material;
 layout(location = 3) out vec4 normalPlus;
+layout(location = 4) out vec4 subdermalPlus;
+layout(location = 5) out vec4 scatterPlus;
 
 void main()
 {
@@ -138,11 +142,13 @@ void main()
     }
 
     // discard fragment if even partly transparent
-    if (albedoBlend.w < 0.5) discard;
+    if (albedoBlend.w < ALBEDO_ALPHA_MIN) discard;
 
     // populate albedo, material, and normalPlus
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
     normalPlus.xyz = normalize(toWorld * normalize(normalBlend));
     normalPlus.w = heightPlusOut.y;
+    subdermalPlus = vec4(0.0);
+    scatterPlus = vec4(0.0);
 }

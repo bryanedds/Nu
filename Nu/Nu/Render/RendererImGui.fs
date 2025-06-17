@@ -110,7 +110,7 @@ type GlRendererImGui
             OpenGL.Hl.Assert ()
 
             // vertex shader code
-            // TODO: let's put this code into a .glsl file and load it from there.
+            // TODO: P1: let's put this code into a .glsl file and load it from there.
             let vertexStr =
                 [Constants.OpenGL.GlslVersionPragma
                  ""

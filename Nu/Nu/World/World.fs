@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.Reflection
 open System.Threading
@@ -30,7 +31,7 @@ type Nu () =
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
 
             // init logging
-            Log.init (Some "Log.txt")
+            Log.init (Some Constants.Paths.LogFilePath)
 
             // init math module
             Math.Init ()
@@ -173,6 +174,7 @@ module WorldModule3 =
                  BodyJoint3dDispatcher ()
                  TerrainDispatcher ()
                  Nav3dConfigDispatcher ()
+                 EditVolumeDispatcher ()
                  StaticModelHierarchyDispatcher ()
                  RigidModelHierarchyDispatcher ()]
 
@@ -208,14 +210,15 @@ module WorldModule3 =
                  StaticModelSurfaceFacet ()
                  AnimatedModelFacet ()
                  TerrainFacet ()
+                 EditVolumeFacet ()
                  TraversalInterpoledFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()
-                 FreezerFacet ()]
+                 Freezer3dFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
-            WorldImNui.Reinitializing <- true
+            WorldImSim.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
@@ -290,20 +293,22 @@ module WorldModule3 =
                   AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension =
-                { ContextImNui = Address.empty
-                  DeclaredImNui = Address.empty
-                  SimulantsImNui = SUMap.makeEmpty HashIdentity.Structural config
-                  SubscriptionsImNui = SUMap.makeEmpty HashIdentity.Structural config
-                  DestructionListRev = []
+                { ContextImSim = Address.empty
+                  DeclaredImSim = Address.empty
+                  SimulantsImSim = SUMap.makeEmpty HashIdentity.Structural config
+                  SubscriptionsImSim = SUMap.makeEmpty HashIdentity.Structural config
+                  JobGraph = jobGraph
                   GeometryViewport = geometryViewport
                   RasterViewport = rasterViewport
                   OuterViewport = outerViewport
+                  DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
             let world =
                 { ChooseCount = 0
                   EventGraph = eventGraph
+                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
                   ScreenStates = screenStates
@@ -314,7 +319,6 @@ module WorldModule3 =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
-                  JobGraph = jobGraph
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -482,7 +486,7 @@ module WorldModule3 =
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
         static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize geometryViewport rasterViewport outerViewport plugin =
-            match SdlDeps.tryMake worldConfig.SdlConfig windowSize with
+            match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin with

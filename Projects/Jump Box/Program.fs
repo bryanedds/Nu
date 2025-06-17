@@ -7,7 +7,7 @@ module Program =
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
-        // point current working directory at program's base directory
+        // point current working directory at application's base directory
         Directory.SetCurrentDirectory AppContext.BaseDirectory
 
         // initialize Nu

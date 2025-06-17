@@ -518,11 +518,13 @@ module Texture =
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.
     type TextureServer (lazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>, sharedContext, window) =
         let mutable threadOpt = None
+        let mutable glContextOpt = None
         let [<VolatileField>] mutable started = false
         let [<VolatileField>] mutable terminated = false
 
         member private this.Run () =
-            OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
+            glContextOpt <- Some (OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext))
+            OpenGL.Hl.Assert ()
             started <- true
             while not terminated do
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
@@ -547,6 +549,9 @@ module Texture =
         member this.Terminate () =
             if started && not terminated then
                 let thread = Option.get threadOpt
+                match glContextOpt with
+                | Some glContext -> OpenGL.Hl.DestroySglContext (glContext, window)
+                | None -> ()
                 terminated <- true
                 thread.Join ()
                 threadOpt <- None

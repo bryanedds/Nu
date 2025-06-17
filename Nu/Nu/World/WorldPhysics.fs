@@ -20,9 +20,9 @@ module WorldPhysics =
         static member internal getRendererPhysics3d world =
             world.Subsystems.RendererPhysics3d
 
-        /// Localize a body shape to a specific size.
-        static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) =
-            Physics.localizeBodyShape size bodyShape
+        /// Localize a primitive body shape to a specific size; non-primitive body shapes are unaffected.
+        static member localizePrimitiveBodyShape (size : Vector3) (bodyShape : BodyShape) =
+            Physics.localizePrimitiveBodyShape size bodyShape
 
         /// Handle a 2d physics message in the world.
         static member handlePhysicsMessage2d (message : PhysicsMessage) world =
@@ -88,6 +88,14 @@ module WorldPhysics =
                         let world = World.publishPlus bodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
                         world)
                         world message.BodyIds
+                | SetBodyEnabledMessage message ->
+                    if not message.Enabled then
+                        match message.BodyId.BodySource with
+                        | :? Entity ->
+                            let eventTrace = EventTrace.debug "World" "handlePhysicsMessage3d" "SetBodyEnabledMessage" EventTrace.empty
+                            World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                        | _ -> world
+                    else world
                 | _ -> world
             (World.getPhysicsEngine3d world).HandleMessage message
             world

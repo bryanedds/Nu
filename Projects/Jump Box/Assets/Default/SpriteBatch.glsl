@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int VERTS = 6;
 const int SPRITE_BATCH_SIZE = 192;
@@ -53,7 +53,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform sampler2D tex;
 

@@ -19,7 +19,7 @@ module WorldTests =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }
         let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        match SdlDeps.tryMake worldConfig.SdlConfig windowSize with
+        match SdlDeps.tryMake worldConfig.SdlConfig false windowSize with
         | Right sdlDeps ->
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             let outerViewport = Viewport.makeOuter windowSize

@@ -34,7 +34,7 @@ type CharacterType =
 
     member this.CharacterProperties =
         match this with
-        | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
+        | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f } // NOTE: I think this is to make enemies able to climb stairs, but now I'm not sure I remember...
         | Player -> CharacterProperties.defaultProperties
 
 type AttackState =
@@ -87,7 +87,7 @@ module CharacterExtensions =
         member this.DeathEvent = Events.DeathEvent --> this
 
 type CharacterDispatcher () =
-    inherit Entity3dDispatcherImNui (true, false, false)
+    inherit Entity3dDispatcherImSim (true, false, false)
 
     static let computeTraversalAnimations (entity : Entity) world =
         match entity.GetActionState world with
@@ -155,13 +155,13 @@ type CharacterDispatcher () =
                 let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
                 let playerPositionFlat = playerPosition.WithY 0.0f
                 if position.Y - playerPosition.Y >= 0.25f then // above player
-                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
+                    if  playerPositionFlat.Distance positionFlat < 1.0f &&
                         rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
                         let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
                         entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
                     else world
                 elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
-                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
+                    if  playerPositionFlat.Distance positionFlat < 1.75f &&
                         rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
                         let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
                         entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world

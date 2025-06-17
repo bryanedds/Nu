@@ -69,15 +69,14 @@ type MmccGameDispatcher () =
                 [Content.skyBox "SkyBox" []
                  Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
 
-    override this.Update (game, world) =
-        let world = base.Update (game, world)        
+    override this.Update (_, world) =
         if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world
 #else
 type MyGameDispatcher () =
-#if IMNUI
-    inherit GameDispatcherImNui ()
+#if IMSIM
+    inherit GameDispatcherImSim ()
 
     static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
         [|for i in 0 .. dec 50 do

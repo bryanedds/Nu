@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu.Template.ImSim.Empty": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

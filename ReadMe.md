@@ -4,17 +4,18 @@ Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](h
 
 So... just what is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative MVU-based API called MMCC (Model-Message-Command-Content). Additionally, we're now providing an even easier to learn ImGui-inspired API called 'ImNui'! Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of functional and declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative MVU-based API called MMCC (Model-Message-Command-Content). Additionally, we're now providing an even easier to learn ImGui-inspired API called 'ImSim'! Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of functional and declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
 This repository hosts several projects, including -
 
 - the 2D arcade game tutorial, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
-- **NEW!** Breakout tutorial using the ImNui API, ['Breakout ImNui'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20ImNui).
+- **NEW!** Breakout tutorial using the ImSim API, ['Breakout ImSim'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20ImSim).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
 - the 2D action game tutorial, ['Blaze Vector'](https://github.com/bryanedds/Nu/tree/master/Projects/Blaze%20Vector).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Nu/releases/download/v18.15.0/Project.5.Prototype.Sample.v0.1.2.zip).
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade), full game available now here - https://store.steampowered.com/app/3089800/Omni_Blade/
 
 Getting Started with Nu
@@ -27,17 +28,20 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/e6f034a4-8561-4c44-8151-daeb4668001f)
+![image](https://github.com/user-attachments/assets/77d6dfac-13ad-48e4-89e2-824a12cbe509)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
+![image](https://github.com/user-attachments/assets/44ec5233-3ed3-4038-9cc4-646bc4ddc96d)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
 ![image](https://github.com/user-attachments/assets/fa88a1a5-e793-44cb-8113-4a6bf8468d4c)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
-![image](https://github.com/user-attachments/assets/d8406232-2bb9-4b60-b7a0-4a49cfa29236)
+![image](https://github.com/user-attachments/assets/ce2e2ff6-dd28-43d9-a865-652b977fcf81)
 Rendering made efficient with instancing-by-default.
+
+![image](https://github.com/user-attachments/assets/b715c8d1-4765-426f-8551-0ebd24e65088)
+Our new subsurface scattering functionality for skin and foliage.
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
@@ -51,8 +55,14 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
-![image](https://github.com/user-attachments/assets/b1f31eab-f636-4579-8c6d-daeafb97a3c2)
+![image](https://github.com/user-attachments/assets/d6de81be-c34a-4cad-bc43-483389360c63)
 Screenshot from our current game in early development.
+
+![image](https://github.com/user-attachments/assets/048e8933-41cc-4a39-b3b6-4ad87b616779)
+Another screenshot from same.
+
+![image](https://github.com/user-attachments/assets/f45aa11d-4131-4011-9755-2c6599eabd36)
+A racing game we're prototyping with Nu and Jolt Physics.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
@@ -75,4 +85,12 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 
 **[@creynolds138](https://github.com/creynolds138)**
 
+**[@haraldsteinlechner](https://github.com/haraldsteinlechner)**
+
 **And a huge thank you to all of you who donate privately to keep this project going!**
+
+Please Become a Sponsor for Nu Today!
+=====================================
+
+Sponsor here - https://github.com/sponsors/bryanedds
+

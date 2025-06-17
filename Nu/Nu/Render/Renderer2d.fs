@@ -171,8 +171,9 @@ type [<ReferenceEquality>] StubRenderer2d =
 type [<ReferenceEquality>] GlRenderer2d =
     private
         { mutable Viewport : Viewport
+          SpriteVao : uint // TODO: P1: release these resources on clean-up.
           SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
-          TextQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
+          TextQuad : uint * uint // TODO: P1: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
@@ -770,11 +771,12 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
-                            let (vertices, indices, vao) = renderer.TextQuad
+                            let vao = renderer.SpriteVao
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
+                            let (vertices, indices) = renderer.TextQuad
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, &viewProjection, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
+                            OpenGL.Sprite.DrawSprite (vertices, indices, &viewProjection, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
                             OpenGL.Hl.Assert ()
 
                             // destroy texture
@@ -873,6 +875,10 @@ type [<ReferenceEquality>] GlRenderer2d =
     /// Make a GlRenderer2d.
     static member make viewport =
 
+        // create sprite vao
+        let spriteVao = OpenGL.Sprite.CreateSpriteVao ()
+        OpenGL.Hl.Assert ()
+
         // create one-off sprite and text resources
         let spriteShader = OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
         let textQuad = OpenGL.Sprite.CreateSpriteQuad true
@@ -885,6 +891,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         // make renderer
         let renderer =
             { Viewport = viewport
+              SpriteVao = spriteVao
               SpriteShader = spriteShader
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv

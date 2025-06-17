@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int VERTS = 4;
 const vec4 FILTERS[VERTS] =
@@ -25,7 +25,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform sampler2D tex;
 uniform vec4 color;

@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -13,7 +13,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
@@ -34,7 +34,7 @@ in vec2 texCoordsOut;
 
 layout(location = 0) out vec4 frag;
 
-vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
+vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eyeCenter;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
@@ -72,14 +72,14 @@ void main()
         }
         else if (lm2 == -1)
         {
-            vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
+            vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
             environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
         }
         else
         {
             // compute blended environment filter
-            vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
-            vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal);
+            vec3 r1 = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
+            vec3 r2 = parallaxCorrection(lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal);
             vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
             vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
             environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);

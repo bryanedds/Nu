@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -14,7 +14,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform float lightShadowExponent;
 
@@ -22,6 +22,6 @@ layout(location = 0) out vec2 depths;
 
 void main()
 {
-	depths.x = gl_FragCoord.z;
+	depths.x = gl_FragCoord.z; // non-linear, screen space depth
 	depths.y = exp(lightShadowExponent * depths.x);
 }

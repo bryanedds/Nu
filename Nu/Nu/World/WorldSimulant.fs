@@ -325,8 +325,7 @@ module PropertyDescriptor =
     let getPropertyDescriptors<'s when 's :> SimulantState> simulantOpt world =
         match simulantOpt with
         | Some simulant ->
-            // OPTIMIZATION: seqs used for speed.
-            let properties = typeof<'s>.GetProperties true
+            let properties = typeof<'s>.GetProperties true // OPTIMIZATION: seqs used for speed.
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties

@@ -159,9 +159,9 @@ module WorldModuleGroup =
             else struct (false, world)
 
         static member internal setGroupContent (value : GroupContent) group world =
-            let screenState = World.getGroupState group world
-            let screenState = { screenState with Content = value }
-            World.setGroupState screenState group world
+            let groupState = World.getGroupState group world
+            let groupState = { groupState with Content = value }
+            World.setGroupState groupState group world
 
         static member internal setGroupVisible value group world =
             let groupState = World.getGroupState group world
