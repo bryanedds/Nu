@@ -359,11 +359,8 @@ module Quadtree =
         // update ubiquitous in play where appropriate
         let ubiquitousOld = presenceOld.IsImposter || presenceOld.IsOmnipresent
         let ubiquitousNew = presenceNew.IsImposter || presenceNew.IsOmnipresent
-        if ubiquitousOld <> ubiquitousNew then
-            if ubiquitousOld then
-                tree.Ubiquitous.Remove element |> ignore
-            if ubiquitousNew then
-                tree.Ubiquitous.Add element |> ignore
+        if ubiquitousOld then tree.Ubiquitous.Remove element |> ignore
+        if ubiquitousNew then tree.Ubiquitous.Add element |> ignore
 
         // update ubiquitous-in-play-only where appropriate
         let ubiquitousInPlayOnlyOld =
@@ -372,11 +369,8 @@ module Quadtree =
         let ubiquitousInPlayOnlyNew =
             not (presenceNew.IsImposter || presenceNew.IsOmnipresent) &&
             presenceInPlayNew.IsImposter || presenceInPlayNew.IsOmnipresent
-        if ubiquitousInPlayOnlyOld <> ubiquitousInPlayOnlyNew then
-            if ubiquitousInPlayOnlyOld then
-                tree.UbiquitousInPlayOnly.Remove element |> ignore
-            if ubiquitousInPlayOnlyNew then
-                tree.UbiquitousInPlayOnly.Add element |> ignore
+        if ubiquitousInPlayOnlyOld then tree.UbiquitousInPlayOnly.Remove element |> ignore
+        if ubiquitousInPlayOnlyNew then tree.UbiquitousInPlayOnly.Add element |> ignore
 
         // update in node tree or ubiquitous fallback
         let wasInNode = Quadnode.isIntersectingBounds boundsOld tree.Node && boundsOld.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
