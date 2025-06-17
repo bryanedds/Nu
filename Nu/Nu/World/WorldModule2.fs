@@ -2135,7 +2135,7 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     /// An ImSim 3d entity dispatcher.
-    type [<AbstractClass>] Entity3dDispatcherImNui (physical, lightProbe, light) =
+    type [<AbstractClass>] Entity3dDispatcherImSim (physical, lightProbe, light) =
         inherit EntityDispatcherImSim (false, true, physical, lightProbe, light)
 
         static member Properties =
