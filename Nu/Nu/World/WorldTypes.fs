@@ -133,11 +133,6 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueSome setter -> setter (mapper (lens.Get world)) world
         | ValueNone -> failwithumf ()
 
-    /// Update the lensed property's value using the given updater function.
-    /// Throws an exception if the lens is readonly.
-    member lens.Update updater world : unit =
-        updater (lens.Get world)
-
     /// The change event associated with the lensed property.
     member lens.ChangeEvent : ChangeData Address =
         let names = [|Constants.Lens.ChangeName; lens.Name; Constants.Lens.EventName|]
