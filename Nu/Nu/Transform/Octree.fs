@@ -536,27 +536,18 @@ module Octree =
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
 
         // update imposter where appropriate
-        if presenceOld.IsImposter <> presenceNew.IsImposter then
-            if presenceOld.IsImposter then
-                tree.Omnipresent.Remove element |> ignore
-            if presenceNew.IsImposter then
-                tree.Omnipresent.Add element |> ignore
+        if presenceOld.IsImposter then tree.Omnipresent.Remove element |> ignore
+        if presenceNew.IsImposter then tree.Omnipresent.Add element |> ignore
 
         // update omnipresent where appropriate
-        if presenceOld.IsOmnipresent <> presenceNew.IsOmnipresent then
-            if presenceOld.IsOmnipresent then
-                tree.OmnipresentInPlayOnly.Remove element |> ignore
-            if presenceNew.IsOmnipresent then
-                tree.OmnipresentInPlayOnly.Add element |> ignore
+        if presenceOld.IsOmnipresent then tree.OmnipresentInPlayOnly.Remove element |> ignore
+        if presenceNew.IsOmnipresent then tree.OmnipresentInPlayOnly.Add element |> ignore
 
         // update omnipresent-in-play-only where appropriate
         let omnipresentInPlayOnlyOld = not presenceOld.IsOmnipresent && presenceInPlayOld.IsOmnipresent
         let omnipresentInPlayOnlyNew = not presenceNew.IsOmnipresent && presenceInPlayNew.IsOmnipresent
-        if omnipresentInPlayOnlyOld <> omnipresentInPlayOnlyNew then
-            if omnipresentInPlayOnlyOld then
-                tree.OmnipresentInPlayOnly.Remove element |> ignore
-            if omnipresentInPlayOnlyNew then
-                tree.OmnipresentInPlayOnly.Add element |> ignore
+        if omnipresentInPlayOnlyOld then tree.OmnipresentInPlayOnly.Remove element |> ignore
+        if omnipresentInPlayOnlyNew then tree.OmnipresentInPlayOnly.Add element |> ignore
 
         // update in node tree or ubiquitous fallback
         let wasInNode = Octnode.isIntersectingBox boundsOld tree.Node && boundsOld.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
