@@ -101,13 +101,13 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueSome setter -> setter value world
         | ValueNone -> failwith ("Lens for '" + lens.Name + "' is readonly.")
 
-    /// Attempt to transform the lensed property's value using the given updater function that also receives the world as input.
+    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world as input.
     member lens.TryMapWorld (mapper : 'a -> World -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter -> struct (true, setter (mapper (lens.Get world) world) world)
         | ValueNone -> struct (false, world)
 
-    /// Attempt to transform the lensed property's value using the given updater function, optionally updating the world value in the process.
+    /// Attempt to transform the lensed property's value using the given mapper function, optionally updating the world value in the process.
     member lens.TryMapEffect (mapper : 'a -> World -> ('a * World)) (world : World) =
         match lens.SetOpt with
         | ValueSome setter ->
@@ -115,20 +115,20 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
             struct (true, setter value world)
         | ValueNone -> struct (false, world)
 
-    /// Attempt to transform the lensed property's value using the given updater function.
+    /// Attempt to transform the lensed property's value using the given mapper function.
     member lens.TryMap (mapper : 'a -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter -> struct (true, setter (mapper (lens.Get world)) world)
         | ValueNone -> struct (false, world)
 
-    /// Update the lensed property's value using the given updater function that also receives the world as input.
+    /// Update the lensed property's value using the given mapper function that also receives the world as input.
     /// Returns the updated world or throws an exception if the lens is readonly.
     member lens.MapWorld mapper world =
         match lens.SetOpt with
         | ValueSome setter -> setter (mapper (lens.Get world) world) world
         | ValueNone -> failwithumf ()
 
-    /// Update the lensed property's value using the given updater function, optionally updating the world value in the process.
+    /// Update the lensed property's value using the given mapper function, optionally updating the world value in the process.
     /// Returns the updated world or throws an exception if the lens is readonly.
     member lens.MapEffect mapper world =
         match lens.SetOpt with
@@ -137,7 +137,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
             setter value world
         | ValueNone -> failwithumf ()
 
-    /// Update the lensed property's value using the given updater function.
+    /// Update the lensed property's value using the given mapper function.
     /// Returns the updated world or throws an exception if the lens is readonly.
     member lens.Map mapper world =
         match lens.SetOpt with
