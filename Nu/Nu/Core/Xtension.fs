@@ -21,54 +21,6 @@ module Xtension =
             member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0
             member this.ContainsRuntimeProperties with get () = this.Flags &&& ContainsRuntimePropertiesMask <> 0
 
-        /// The dynamic look-up operator for an Xtension.
-        /// Example:
-        ///     let parallax : single = xtn?Parallax
-        static member (?) (xtension, propertyName) : 'a =
-
-            // try to find an existing property
-            match UMap.tryFind propertyName xtension.Properties with
-            | Some property ->
-
-                // return property directly if the return type matches, otherwise the default value for that type
-                match property.PropertyValue with
-                | :? DesignerProperty as dp ->
-                    match dp.DesignerValue with
-                    | :? 'a as propertyValue -> propertyValue
-                    | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
-                | :? 'a as value -> value
-                | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
-
-            // can't find the required property.
-            | None -> failwith ("No property '" + propertyName + "' found.")
-
-        /// The dynamic assignment operator for an Xtension.
-        /// Example:
-        ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
-        static member (?<-) (xtension, propertyName, value : 'a) =
-            match UMap.tryFind propertyName xtension.Properties with
-            | Some property ->
-#if DEBUG
-                if property.PropertyType <> typeof<'a> then
-                    failwith "Cannot change the type of an existing Xtension property."
-#endif
-                if xtension.Imperative then
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerValue <- value :> obj
-                    | _ -> property.PropertyValue <- value :> obj
-                    xtension
-                else
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp ->
-                        let property = { property with PropertyValue = { dp with DesignerValue = value }}
-                        let properties = UMap.add propertyName property xtension.Properties
-                        { xtension with Properties = properties }
-                    | _ ->
-                        let property = { property with PropertyValue = value :> obj }
-                        let properties = UMap.add propertyName property xtension.Properties
-                        { xtension with Properties = properties }
-            | None -> failwith "Cannot set property to an Xtension without first attaching it."
-
     /// Check whether the Xtension uses mutation.
     let getImperative (xtension : Xtension) = xtension.Imperative
 
