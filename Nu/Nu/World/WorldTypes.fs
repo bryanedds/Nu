@@ -80,13 +80,13 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
       Get : World -> 'a
       SetOpt : ('a -> World -> unit) voption }
 
-    /// Get the lensed value mapped by the `by` function.
-    member lens.GetBy by world =
-        by (lens.Get world)
-
     /// Get the lensed value mapped by the `by` function that includes the world value in its input.
     member lens.GetByPlus by world =
         by (lens.Get world) world
+
+    /// Get the lensed value mapped by the `by` function.
+    member lens.GetBy by world =
+        by (lens.Get world)
 
     /// Attempt to set the property in the world to the given value.
     member lens.TrySet value world =
