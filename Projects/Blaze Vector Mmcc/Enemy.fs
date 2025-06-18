@@ -60,21 +60,14 @@ type EnemyDispatcher () =
     override this.Command (enemy, command, entity, world) =
         match command with
         | Update ->
-            let world =
-                let eyeBounds = World.getEye2dBounds world
-                let entityBounds = entity.GetBounds world
-                if entityBounds.Box2.Intersects eyeBounds then
-                    let bodyId = entity.GetBodyId world
-                    World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
-                else world
-            let world =
-                if enemy.Health <= 0 then
-                    let world = World.publish entity entity.DeathEvent entity world
-                    let world = World.destroyEntity entity world
-                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
-                    world
-                else world
-            just world
+            let eyeBounds = World.getEye2dBounds world
+            let entityBounds = entity.GetBounds world
+            if entityBounds.Box2.Intersects eyeBounds then
+                let bodyId = entity.GetBodyId world
+                World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
+            if enemy.Health <= 0 then
+                World.publish entity entity.DeathEvent entity world
+                World.destroyEntity entity world
+                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
         | Hit ->
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
-            just world

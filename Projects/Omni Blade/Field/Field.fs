@@ -79,8 +79,6 @@ type FieldCommand =
     | ProcessTouchInput of Vector2
     | UpdateEye
     | WarpAvatar of Vector3
-    | MoveAvatar of Vector3
-    | FaceAvatar of Direction
     | StartPlaying
     | StartQuitting
     | CommencingBattle of BattleData

@@ -72,8 +72,7 @@ type CreditsDispatcher () =
 
     override this.Command (_, StartQuitting, screen, world) =
         World.fadeOutSong 60L world
-        let world = World.publish () screen.QuitCreditsEvent screen world
-        just world
+        World.publish () screen.QuitCreditsEvent screen world
 
     override this.Content (credits, _) =
         [Content.group Simulants.CreditsGui.Name []

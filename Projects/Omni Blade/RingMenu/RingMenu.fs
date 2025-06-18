@@ -29,8 +29,8 @@ type RingMenuDispatcher () =
 
     override this.Command (_, command, entity, world) =
         match command with
-        | ItemCancel -> just (World.publish () entity.CancelEvent entity world)
-        | ItemSelect item -> just (World.publish item entity.ItemSelectEvent entity world)
+        | ItemCancel -> World.publish () entity.CancelEvent entity world
+        | ItemSelect item -> World.publish item entity.ItemSelectEvent entity world
 
     override this.Content (ringMenu, _) =
         let mutable i = -1

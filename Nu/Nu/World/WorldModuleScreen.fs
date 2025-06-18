@@ -11,7 +11,7 @@ module WorldModuleScreen =
 
     /// Dynamic property getter and setter.
     type private PropertyGetter = Screen -> World -> Property
-    type private PropertySetter = Property -> Screen -> World -> struct (bool * World)
+    type private PropertySetter = Property -> Screen -> World -> bool
 
     /// Dynamic property getters / setters.
     let mutable private ScreenGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
@@ -19,10 +19,10 @@ module WorldModuleScreen =
 
     type World with
 
-        static member private screenStateFinder (screen : Screen) world =
+        static member private screenStateFinder (screen : Screen) (world : World) =
             UMap.tryFind screen world.ScreenStates
 
-        static member private screenStateAdder screenState (screen : Screen) world =
+        static member private screenStateAdder screenState (screen : Screen) (world : World) =
             let simulants =
                 match world.Simulants.TryGetValue (Game.Handle :> Simulant) with
                 | (true, screensOpt) ->
@@ -39,9 +39,9 @@ module WorldModuleScreen =
                 then UMap.add (screen :> Simulant) None simulants
                 else simulants
             let screenStates = UMap.add screen screenState world.ScreenStates
-            World.choose { world with Simulants = simulants; ScreenStates = screenStates }
+            world.WorldState <- { world.WorldState with Simulants = simulants; ScreenStates = screenStates }
 
-        static member private screenStateRemover (screen : Screen) world =
+        static member private screenStateRemover (screen : Screen) (world : World) =
             let simulants =
                 match world.Simulants.TryGetValue (Game.Handle :> Simulant) with
                 | (true, screensOpt) ->
@@ -55,15 +55,15 @@ module WorldModuleScreen =
                 | (false, _) -> world.Simulants
             let simulants = UMap.remove (screen :> Simulant) simulants
             let screenStates = UMap.remove screen world.ScreenStates
-            World.choose { world with Simulants = simulants; ScreenStates = screenStates }
+            world.WorldState <- { world.WorldState with Simulants = simulants; ScreenStates = screenStates }
 
-        static member private screenStateSetter screenState (screen : Screen) world =
+        static member private screenStateSetter screenState (screen : Screen) (world : World) =
 #if DEBUG
             if not (UMap.containsKey screen world.ScreenStates) then
                 failwith ("Cannot set the state of a non-existent screen '" + scstring screen + "'")
 #endif
             let screenStates = UMap.add screen screenState world.ScreenStates
-            World.choose { world with ScreenStates = screenStates }
+            world.WorldState <- { world.WorldState with ScreenStates = screenStates }
 
         static member private addScreenState screenState screen world =
             World.screenStateAdder screenState screen world
@@ -117,17 +117,16 @@ module WorldModuleScreen =
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
 
-        static member internal setScreenModelProperty initializing (value : DesignerProperty) screen world =
+        static member internal setScreenModelProperty initializing (value : DesignerProperty) screen (world : World) =
             let screenState = World.getScreenState screen world
             let previous = screenState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
-                let struct (screenState, world) =
-                    let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
-                    struct (screenState, World.setScreenState screenState screen world)
-                let world = screenState.Dispatcher.TrySynchronize (initializing, screen, world)
-                let world = World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue screen world
-                struct (true, world)
-            else struct (false, world)
+                let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
+                World.setScreenState screenState screen world
+                screenState.Dispatcher.TrySynchronize (initializing, screen, world)
+                World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue screen world
+                true
+            else false
 
         static member internal getScreenModelGeneric<'a> screen world =
             let screenState = World.getScreenState screen world
@@ -152,13 +151,12 @@ module WorldModuleScreen =
             let valueObj = value :> obj
             let previous = screenState.Model
             if valueObj =/= previous.DesignerValue || initializing then
-                let struct (screenState, world) =
-                    let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    struct (screenState, World.setScreenState screenState screen world)
-                let world = screenState.Dispatcher.TrySynchronize (initializing, screen, world)
-                let world = World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value screen world
-                struct (true, world)
-            else struct (false, world)
+                let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                World.setScreenState screenState screen world
+                screenState.Dispatcher.TrySynchronize (initializing, screen, world)
+                World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value screen world
+                true
+            else false
 
         static member internal setScreenContent (value : ScreenContent) screen world =
             let screenState = World.getScreenState screen world
@@ -168,58 +166,74 @@ module WorldModuleScreen =
         static member internal setScreenTransitionState value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.TransitionState
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with TransitionState = value } screen |> World.publishScreenChange (nameof screenState.TransitionState) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with TransitionState = value } screen world
+                World.publishScreenChange (nameof screenState.TransitionState) previous value screen world
+                true
+            else false
 
         static member internal setScreenIncoming value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Incoming
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with Incoming = value } screen |> World.publishScreenChange (nameof screenState.Incoming) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with Incoming = value } screen world
+                World.publishScreenChange (nameof screenState.Incoming) previous value screen world
+                true
+            else false
 
         static member internal setScreenOutgoing value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Outgoing
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with Outgoing = value } screen |> World.publishScreenChange (nameof screenState.Outgoing) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with Outgoing = value } screen world
+                World.publishScreenChange (nameof screenState.Outgoing) previous value screen world
+                true
+            else false
 
         static member internal setScreenRequestedSong value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.RequestedSong
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with RequestedSong = value } screen |> World.publishScreenChange (nameof screenState.RequestedSong) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with RequestedSong = value } screen world
+                World.publishScreenChange (nameof screenState.RequestedSong) previous value screen world
+                true
+            else false
 
         static member internal setScreenSlideOpt value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.SlideOpt
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with SlideOpt = value } screen |> World.publishScreenChange (nameof screenState.SlideOpt) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with SlideOpt = value } screen world
+                World.publishScreenChange (nameof screenState.SlideOpt) previous value screen world
+                true
+            else false
 
         static member internal setScreenNav3d value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Nav3d
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with Nav3d = value } screen |> World.publishScreenChange (nameof screenState.Nav3d) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with Nav3d = value } screen world
+                World.publishScreenChange (nameof screenState.Nav3d) previous value screen world
+                true
+            else false
 
         static member internal setScreenProtected value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Protected
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with Protected = value } screen |> World.publishScreenChange (nameof screenState.Protected) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with Protected = value } screen world
+                World.publishScreenChange (nameof screenState.Protected) previous value screen world
+                true
+            else false
 
         static member internal setScreenPersistent value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Persistent
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with Persistent = value } screen |> World.publishScreenChange (nameof screenState.Persistent) previous value screen)
-            else struct (false, world)
+            if value <> previous then
+                World.setScreenState { screenState with Persistent = value } screen world
+                World.publishScreenChange (nameof screenState.Persistent) previous value screen world
+                true
+            else false
 
         static member internal tryGetScreenXtensionProperty (propertyName, screen, world, property : _ outref) =
             if World.getScreenExists screen world
@@ -307,45 +321,47 @@ module WorldModuleScreen =
                     if property.PropertyValue =/= previous then
                         let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
                         match ScreenState.trySetProperty propertyName property screenState with
-                        | struct (true, screenState) -> struct (true, true, previous, World.setScreenState screenState screen world)
-                        | struct (false, _) -> struct (false, false, previous, world)
-                    else (true, false, previous, world)
+                        | struct (true, screenState) ->
+                            World.setScreenState screenState screen world
+                            struct (true, true, previous)
+                        | struct (false, _) -> struct (false, false, previous)
+                    else (true, false, previous)
                 | :? ComputedProperty as cp ->
                     match cp.ComputedSetOpt with
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box screen) (box world)
-                        if property.PropertyValue =/= previous
-                        then struct (true, true, previous, computedSet property.PropertyValue screen world :?> World)
-                        else struct (true, false, previous, world)
-                    | None -> struct (false, false, Unchecked.defaultof<_>, world)
+                        if property.PropertyValue =/= previous then
+                            computedSet property.PropertyValue screen world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                            struct (true, true, previous)
+                        else struct (true, false, previous)
+                    | None -> struct (false, false, Unchecked.defaultof<_>)
                 | _ ->
                     let previous = propertyOld.PropertyValue
                     if property.PropertyValue =/= previous then
                         match ScreenState.trySetProperty propertyName property screenState with
-                        | struct (true, screenState) -> (true, true, previous, World.setScreenState screenState screen world)
-                        | struct (false, _) -> struct (false, false, previous, world)
-                    else struct (true, false, previous, world)
-            | false -> struct (false, false, Unchecked.defaultof<_>, world)
+                        | struct (true, screenState) ->
+                            World.setScreenState screenState screen world
+                            struct (true, true, previous)
+                        | struct (false, _) -> struct (false, false, previous)
+                    else struct (true, false, previous)
+            | false -> struct (false, false, Unchecked.defaultof<_>)
 
         static member internal trySetScreenXtensionPropertyFast propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
             match World.trySetScreenXtensionPropertyWithoutEvent propertyName property screenState screen world with
-            | struct (true, changed, previous, world) ->
-                if changed
-                then World.publishScreenChange propertyName previous property.PropertyValue screen world
-                else world
-            | struct (false, _, _, world) -> world
+            | struct (true, changed, previous) ->
+                if changed then
+                    World.publishScreenChange propertyName previous property.PropertyValue screen world
+            | struct (false, _, _) -> ()
 
         static member internal trySetScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
             match World.trySetScreenXtensionPropertyWithoutEvent propertyName property screenState screen world with
-            | struct (true, changed, previous, world) ->
-                let world =
-                    if changed
-                    then World.publishScreenChange propertyName previous property.PropertyValue screen world
-                    else world
-                struct (true, changed, world)
-            | struct (false, changed, _, world) -> struct (false, changed, world)
+            | struct (true, changed, previous) ->
+                if changed then
+                    World.publishScreenChange propertyName previous property.PropertyValue screen world
+                struct (true, changed)
+            | struct (false, changed, _) -> struct (false, changed)
 
         static member internal trySetScreenXtensionValue<'a> propertyName (value : 'a) screen world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
@@ -356,73 +372,59 @@ module WorldModuleScreen =
             let propertyOld = ScreenState.getProperty propertyName screenState
             let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
             let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            let world =
-                match propertyOld.PropertyValue with
-                | :? DesignerProperty as dp ->
-                    previous <- dp.DesignerValue
+            match propertyOld.PropertyValue with
+            | :? DesignerProperty as dp ->
+                previous <- dp.DesignerValue
+                if value =/= previous then
+                    changed <- true
+                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                    let screenState = ScreenState.setProperty propertyName property screenState
+                    World.setScreenState screenState screen world
+            | :? ComputedProperty as cp ->
+                match cp.ComputedSetOpt with
+                | Some computedSet ->
+                    previous <- cp.ComputedGet (box screen) (box world)
                     if value =/= previous then
                         changed <- true
-                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                        let screenState = ScreenState.setProperty propertyName property screenState
-                        World.setScreenState screenState screen world
-                    else world
-                | :? ComputedProperty as cp ->
-                    match cp.ComputedSetOpt with
-                    | Some computedSet ->
-                        previous <- cp.ComputedGet (box screen) (box world)
-                        if value =/= previous then
-                            changed <- true
-                            computedSet propertyOld.PropertyValue screen world :?> World
-                        else world
-                    | None -> world
-                | _ ->
-                    previous <- propertyOld.PropertyValue
-                    if value =/= previous then
-                        changed <- true
-                        let property = { propertyOld with PropertyValue = value }
-                        let screenState = ScreenState.setProperty propertyName property screenState
-                        World.setScreenState screenState screen world
-                    else world
-            if changed
-            then World.publishScreenChange propertyName previous value screen world
-            else world
+                        computedSet propertyOld.PropertyValue screen world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                | None -> ()
+            | _ ->
+                previous <- propertyOld.PropertyValue
+                if value =/= previous then
+                    changed <- true
+                    let property = { propertyOld with PropertyValue = value }
+                    let screenState = ScreenState.setProperty propertyName property screenState
+                    World.setScreenState screenState screen world
+            if changed then
+                World.publishScreenChange propertyName previous value screen world
 
         static member internal setScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
             let propertyOld = ScreenState.getProperty propertyName screenState
             if property.PropertyValue =/= propertyOld.PropertyValue then
                 let screenState = ScreenState.setProperty propertyName property screenState
-                let world = World.setScreenState screenState screen world
-                struct (true, World.publishScreenChange propertyName propertyOld.PropertyValue property.PropertyValue screen world)
-            else struct (false, world)
+                World.setScreenState screenState screen world
+                World.publishScreenChange propertyName propertyOld.PropertyValue property.PropertyValue screen world
+                true
+            else false
 
         static member internal trySetScreenPropertyFast propertyName property screen world =
             match ScreenSetters.TryGetValue propertyName with
-            | (true, setter) ->
-                if World.getScreenExists screen world
-                then setter property screen world |> snd'
-                else world
-            | (false, _) ->
-                World.trySetScreenXtensionPropertyFast propertyName property screen world
+            | (true, setter) -> setter property screen world |> ignore<bool>
+            | (false, _) -> World.trySetScreenXtensionPropertyFast propertyName property screen world
 
         static member internal trySetScreenProperty propertyName property screen world =
             match ScreenSetters.TryGetValue propertyName with
             | (true, setter) ->
-                if World.getScreenExists screen world then
-                    let struct (changed, world) = setter property screen world
-                    struct (true, changed, world)
-                else (false, false, world)
+                let changed = setter property screen world
+                struct (true, changed)
             | (false, _) ->
                 World.trySetScreenXtensionProperty propertyName property screen world
 
         static member internal setScreenProperty propertyName property screen world =
             match ScreenSetters.TryGetValue propertyName with
-            | (true, setter) ->
-                if World.getScreenExists screen world
-                then setter property screen world
-                else struct (false, world)
-            | (false, _) ->
-                World.setScreenXtensionProperty propertyName property screen world
+            | (true, setter) -> setter property screen world
+            | (false, _) -> World.setScreenXtensionProperty propertyName property screen world
 
         static member internal attachScreenMissingProperties screen world =
             let screenState = World.getScreenState screen world
@@ -440,33 +442,32 @@ module WorldModuleScreen =
 
         static member internal registerScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
-            let world = dispatcher.Register (screen, world)
+            dispatcher.Register (screen, world)
             let eventTrace = EventTrace.debug "World" "registerScreen" "" EventTrace.empty
-            let world = World.publishPlus () (Events.RegisterEvent --> screen) eventTrace screen true false world
+            World.publishPlus () (Events.RegisterEvent --> screen) eventTrace screen true false world
             let eventTrace = EventTrace.debug "World" "registerScreen" "LifeCycle" EventTrace.empty
             World.publishPlus (RegisterData screen) (Events.LifeCycleEvent (nameof Screen) --> Nu.Game.Handle) eventTrace screen true false world
 
         static member internal unregisterScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
             let eventTrace = EventTrace.debug "World" "registerScreen" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData screen) (Events.LifeCycleEvent (nameof Screen) --> Nu.Game.Handle) eventTrace screen true false world
+            World.publishPlus (UnregisteringData screen) (Events.LifeCycleEvent (nameof Screen) --> Nu.Game.Handle) eventTrace screen true false world
             let eventTrace = EventTrace.debug "World" "unregisteringScreen" "" EventTrace.empty
-            let world = World.publishPlus () (Events.UnregisteringEvent --> screen) eventTrace screen true false world
+            World.publishPlus () (Events.UnregisteringEvent --> screen) eventTrace screen true false world
             dispatcher.Unregister (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not (World.getScreenExists screen world)
             if isNew || mayReplace then
-                let world = World.addScreenState screenState screen world
-                if isNew then World.registerScreen screen world else world
+                World.addScreenState screenState screen world
+                if isNew then World.registerScreen screen world
             else failwith ("Adding a screen that the world already contains '" + scstring screen + "'.")
 
         static member internal removeScreen3 removeGroups screen world =
             if World.getScreenExists screen world then
-                let world = World.unregisterScreen screen world
-                let world = removeGroups screen world
+                World.unregisterScreen screen world
+                removeGroups screen world
                 World.removeScreenState screen world
-            else world
 
         static member internal viewScreenProperties screen world =
             let state = World.getScreenState screen world
@@ -474,7 +475,7 @@ module WorldModuleScreen =
 
         static member notifyScreenModelChange screen world =
             let screenState = World.getScreenState screen world
-            let world = screenState.Dispatcher.TrySynchronize (false, screen, world)
+            screenState.Dispatcher.TrySynchronize (false, screen, world)
             World.publishScreenChange Constants.Engine.ModelPropertyName screenState.Model.DesignerValue screenState.Model.DesignerValue screen world
 
     /// Initialize property getters.

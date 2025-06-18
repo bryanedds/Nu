@@ -52,9 +52,8 @@ type OmniBladeDispatcher () =
     inherit GameDispatcher<OmniBlade, OmniBladeMessage, OmniBladeCommand> (Splash)
 
     override this.Register (game, world) =
-        let world = base.Register (game, world)
+        base.Register (game, world)
         World.setMasterSongVolume Constants.Gameplay.SongVolumeDefault world
-        world
 
     override this.Definitions (omniBlade, _) =
         [Game.DesiredScreen :=
@@ -139,63 +138,51 @@ type OmniBladeDispatcher () =
 
         match command with
         | UpdateFullScreen keyboardKeyData ->
-            let world =
-                if keyboardKeyData.KeyboardKey = KeyboardKey.Enter && World.isKeyboardAltDown world && world.Unaccompanied then
-                    match World.tryGetWindowFullScreen world with
-                    | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
-                    | None -> world
-                else world
-            just world
+            if keyboardKeyData.KeyboardKey = KeyboardKey.Enter && World.isKeyboardAltDown world && world.Unaccompanied then
+                match World.tryGetWindowFullScreen world with
+                | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
+                | None -> ()
 
         | UpdatePicks ->
             if Simulants.Pick.GetSelected world then
-                let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.User.SaveFilePath1)) world
-                let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.User.SaveFilePath2)) world
-                let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.User.SaveFilePath3)) world
-                let world = Simulants.PickLoadGame1.SetVisible (File.Exists Assets.User.SaveFilePath1) world
-                let world = Simulants.PickLoadGame2.SetVisible (File.Exists Assets.User.SaveFilePath2) world
-                let world = Simulants.PickLoadGame3.SetVisible (File.Exists Assets.User.SaveFilePath3) world
-                just world
-            else just world
+                Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.User.SaveFilePath1)) world
+                Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.User.SaveFilePath2)) world
+                Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.User.SaveFilePath3)) world
+                Simulants.PickLoadGame1.SetVisible (File.Exists Assets.User.SaveFilePath1) world
+                Simulants.PickLoadGame2.SetVisible (File.Exists Assets.User.SaveFilePath2) world
+                Simulants.PickLoadGame3.SetVisible (File.Exists Assets.User.SaveFilePath3) world
 
         | SetField field ->
-            let world = Simulants.Field.SetField field world
-            just world
+            Simulants.Field.SetField field world
 
         | FromFieldToBattle (battleData, prizePool) ->
             let field = Simulants.Field.GetField world
             let playTime = Option.defaultValue field.FieldTime field.FieldSongTimeOpt
             let songTime = field.FieldTime - playTime
             let (battle, field) = Field.commenceBattle songTime battleData prizePool field
-            let world = Simulants.Battle.SetBattle battle world
-            let world = Simulants.Field.SetField field world
-            just world
+            Simulants.Battle.SetBattle battle world
+            Simulants.Field.SetField field world
 
         | FromBattleToField prizePool ->
             let battle = Simulants.Battle.GetBattle world
             let field = Simulants.Field.GetField world
             let field = Field.concludeBattle prizePool.Consequents battle field
-            let world = Simulants.Battle.SetBattle Battle.empty world
-            let world = Simulants.Field.SetField field world
-            just world
+            Simulants.Battle.SetBattle Battle.empty world
+            Simulants.Field.SetField field world
 
         | ConcludeCredits ->
-            let world = Simulants.Credits.SetCredits (Credits.make true) world
-            just world
+            Simulants.Credits.SetCredits (Credits.make true) world
 
         | SynchronizeSongVolume ->
             let field = Simulants.Field.GetField world
             World.setMasterSongVolume field.Options.SongVolume world
-            just world
 
         | ResetSongVolume ->
             World.setMasterSongVolume Constants.Gameplay.SongVolumeDefault world
-            just world
 
         | Exit ->
-            if world.Unaccompanied
-            then just (World.exit world)
-            else just world
+            if world.Unaccompanied then
+                World.exit world
 
     override this.Content (_, _) =
         [Content.screen<ScreenDispatcher> Simulants.Splash.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []

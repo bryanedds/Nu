@@ -720,19 +720,24 @@ type FieldDispatcher () =
                 let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                 let force = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
                 let force = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
-                let moveAvatar = MoveAvatar force
+                if force <> v3Zero then
+                    World.applyBodyForce force None (Simulants.FieldAvatar.GetBodyId world) world
                 let directionOpt =
                     if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then Some Rightward
                     elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then Some Leftward
                     elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then Some Upward
                     elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then Some Downward
                     else None
-                let faceAvatar =
-                    match directionOpt with
-                    | Some direction -> FaceAvatar direction
-                    | None -> Nop
-                withSignals [moveAvatar; faceAvatar] world
-            else just world
+                match directionOpt with
+                | Some direction ->
+                    let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldAvatar.GetBodyId world) world
+                    let speed = linearVelocity.Magnitude
+                    let field =
+                        if speed <= Constants.Field.AvatarIdleSpeedMax
+                        then Field.mapAvatar (Avatar.setDirection direction) field
+                        else field
+                    screen.SetField field world
+                | None -> ()
 
         | ProcessTouchInput position ->
             if  field.FieldState = Playing &&
@@ -756,43 +761,27 @@ type FieldDispatcher () =
                 if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                     let goalNormalized = heading.Normalized
                     let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
-                    let moveAvatar = MoveAvatar force
-                    let faceAvatar = FaceAvatar (Direction.ofVector3 heading)
-                    withSignals [moveAvatar; faceAvatar] world
-                else just world
-            else just world
+                    if force <> v3Zero then
+                        World.applyBodyForce force None (Simulants.FieldAvatar.GetBodyId world) world
+                    let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldAvatar.GetBodyId world) world
+                    let speed = linearVelocity.Magnitude
+                    let field =
+                        if speed <= Constants.Field.AvatarIdleSpeedMax
+                        then Field.mapAvatar (Avatar.setDirection (Direction.ofVector3 heading)) field
+                        else field
+                    screen.SetField field world
 
         | UpdateEye ->
             if world.Advancing then
-                let world = World.setEye2dCenter field.Avatar.Perimeter.LowerCenter.V2 world
+                World.setEye2dCenter field.Avatar.Perimeter.LowerCenter.V2 world
                 let tileMapPerimeter2d = (Simulants.FieldTileMap.GetPerimeter world).Box2
                 let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)
                 let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
-                let world = World.constrainEye2dBounds eyeBounds world
-                just world
-            else just world
+                World.constrainEye2dBounds eyeBounds world
 
         | WarpAvatar bottom ->
             let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
-            let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldAvatar.GetBodyId world) world
-            just world
-
-        | MoveAvatar force ->
-            let world =
-                if force <> v3Zero
-                then World.applyBodyForce force None (Simulants.FieldAvatar.GetBodyId world) world
-                else world
-            just world
-
-        | FaceAvatar direction ->
-            let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldAvatar.GetBodyId world) world
-            let speed = linearVelocity.Magnitude
-            let field =
-                if speed <= Constants.Field.AvatarIdleSpeedMax
-                then Field.mapAvatar (Avatar.setDirection direction) field
-                else field
-            let world = screen.SetField field world
-            just world
+            World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldAvatar.GetBodyId world) world
 
         | StartPlaying ->
             loadMetadata field.FieldType
@@ -813,9 +802,8 @@ type FieldDispatcher () =
                             | None -> (0L, time)
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
                         let field = Field.setFieldSongTimeOpt (Some startTime) field
-                        let world = screen.SetField field world
-                        withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, None, 0.5f, fieldSong)) world
-                    else just world
+                        screen.SetField field world
+                        World.playSong fadeIn 30L playTime None 0.5f fieldSong world
                 | (Some fieldSong, None) ->
                     let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                     let (playTime, startTime) =
@@ -829,45 +817,38 @@ type FieldDispatcher () =
                         | None -> (0L, time)
                     let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
                     let field = Field.setFieldSongTimeOpt (Some startTime) field
-                    let world = screen.SetField field world
-                    withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, None, 0.5f, fieldSong)) world
-                | (None, _) -> just world
-            | (false, _) -> just world
+                    screen.SetField field world
+                    World.playSong fadeIn 30L playTime None 0.5f fieldSong world
+                | (None, _) -> ()
+            | (false, _) -> ()
 
         | StartQuitting ->
-            let world = World.publish () screen.QuitFieldEvent screen world
-            just world
+            World.publish () screen.QuitFieldEvent screen world
 
         | CommencingBattle _ ->
-            let world = World.publish () screen.CommencingBattleEvent screen world
-            let signals = [FadeOutSong 60L |> signal] 
-            let signals = (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound) |> signal) :: signals
-            withSignals signals world
+            World.publish () screen.CommencingBattleEvent screen world
+            World.fadeOutSong 60L world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.BeastGrowlSound world
 
         | CommenceBattle (battleData, prizePool) ->
-            let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
-            just world
+            World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
 
         | MenuOptionsToggleFullScreen ->
             if world.Unaccompanied then
                 match World.tryGetWindowFullScreen world with
-                | Some fullScreen -> just (World.trySetWindowFullScreen (not fullScreen) world)
-                | None -> just world
-            else just world
+                | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
+                | None -> ()
 
         | ScheduleSound (delay, volume, sound) ->
-            let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
-            just world
+            World.schedule delay (fun world -> World.playSound volume sound world) screen world
 
         | PlaySong (fadeIn, fadeOut, start, repeatLimitOpt, volume, assetTag) ->
             World.playSong fadeIn fadeOut start repeatLimitOpt volume assetTag world
-            just world
 
         | FadeOutSong fade ->
             World.fadeOutSong fade world
-            just world
 
-        | Nop -> just world
+        | Nop -> ()
 
     override this.Content (field, _) =
 

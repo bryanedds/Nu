@@ -326,7 +326,7 @@ type OverlayNameDescriptor =
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
-      ScheduledOp : 'w -> 'w }
+      ScheduledOp : 'w -> unit }
 
 /// Configuration parameters for the world.
 type [<ReferenceEquality>] WorldConfig =

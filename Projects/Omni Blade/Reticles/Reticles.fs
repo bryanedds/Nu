@@ -28,8 +28,8 @@ type ReticlesDispatcher () =
 
     override this.Command (_, command, entity, world) =
         match command with
-        | TargetCancel -> just (World.publish () entity.CancelEvent entity world)
-        | TargetSelect index -> just (World.publish index entity.TargetSelectEvent entity world)
+        | TargetCancel -> World.publish () entity.CancelEvent entity world
+        | TargetSelect index -> World.publish index entity.TargetSelectEvent entity world
 
     override this.Content (reticles, _) =
         [Content.button "Cancel"

@@ -10,4 +10,4 @@ type MyGamePlugin () =
     // this exposes different editing modes in the editor
     override this.EditModes =
         Map.ofList
-            [("Initial", fun world -> world)]
+            [("Initial", fun _ -> ())]

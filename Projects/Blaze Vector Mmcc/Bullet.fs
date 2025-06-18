@@ -34,8 +34,6 @@ type BulletDispatcher () =
         match command with
         | Update ->
             let localTime = world.UpdateTime - startTime
-            let world = if localTime = Constants.Gameplay.BulletLifeTime then World.destroyEntity entity world else world
-            just world
+            if localTime = Constants.Gameplay.BulletLifeTime then World.destroyEntity entity world
         | Penetration ->
-            let world = World.destroyEntity entity world
-            just world
+            World.destroyEntity entity world
