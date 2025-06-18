@@ -64,15 +64,14 @@ type GameplayDispatcher () =
                         attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
 
-            // process enemy deaths
-            let deaths = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world
-            let enemyDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) deaths
-            for death in enemyDeaths do World.destroyEntity death world
-            screen.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
-        
-            // process player deaths
-            let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
-            if FQueue.notEmpty playerDeaths then screen.SetGameplayState Quit world
+            // process deaths
+            for death in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
+                match death.GetCharacterType world with
+                | Enemy ->
+                    World.destroyEntity death world
+                    screen.Score.Map (fun score -> score + 100) world
+                | Player ->
+                    screen.SetGameplayState Quit world
 
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
