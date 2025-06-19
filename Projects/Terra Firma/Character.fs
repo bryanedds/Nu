@@ -214,8 +214,13 @@ type CharacterDispatcher () =
             | InjuryState _ | WoundState _ -> ()
 
         // process movement - can move only when in normal state or in air
-        let actionState = entity.GetActionState world
-        if actionState.IsNormalState || not grounded then
+        match entity.GetActionState world with
+        | AttackState _ when grounded ->
+
+            // stop movement
+            entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
+
+        | actionState when actionState.IsNormalState || not grounded ->
 
             // compute new position
             let rotation = entity.GetRotation world
@@ -240,9 +245,7 @@ type CharacterDispatcher () =
             entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
             entity.SetRotation rotation world
 
-        // stop movement
-        elif actionState.IsAttackState && grounded then
-            entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
+        | _ -> ()
 
     static member Facets =
         [typeof<RigidBodyFacet>
