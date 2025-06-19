@@ -79,12 +79,11 @@ type GameplayDispatcher () =
                     screen.Score.Map ((+) 100) world
 
             // process player death
-            match screen.GetGameplayState world with
-            | Playing ->
-                if FQueue.notEmpty (World.doSubscription "Deaths" player.DeathEvent world) then
-                    screen.SetGameplayState Quit world
-                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-            | Quit -> ()
+            if FQueue.notEmpty (World.doSubscription "Deaths" player.DeathEvent world) then
+                match screen.GetGameplayState world with
+                | Playing -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+                | Quit -> () // already in quit state, so no need to play sound again
+                screen.SetGameplayState Quit world
 
             // process eye look
             if world.Advancing then
