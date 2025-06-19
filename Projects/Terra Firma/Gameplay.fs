@@ -101,11 +101,12 @@ type GameplayDispatcher () =
                 World.setEye3dRotation rotation world
 
             // declare score text
-            World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
+            let scoreText = "Score: " + string (screen.GetScore world)
+            World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= scoreText] world
 
             // declare quit button
-            let quit = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
-            if quit then screen.SetGameplayState Quit world
+            if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
+                screen.SetGameplayState Quit world
 
             // end scene declaration
             World.endGroup world
