@@ -41,8 +41,10 @@ type GameplayDispatcher () =
                 Simulants.Gameplay.SetGameplayState Playing world
                 Simulants.Gameplay.SetScore 0 world
 
-            // begin scene declaration
+            // begin scene declaration, processing nav sync at end of frame since optimized representations like
+            // frozen entities won't have their nav info registered until then
             World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
+            if initializing then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
@@ -97,11 +99,6 @@ type GameplayDispatcher () =
                 let rotation = Simulants.GameplayPlayer.GetRotationInterpolated world * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
                 World.setEye3dCenter (position + v3Up * 1.75f - rotation.Forward * 3.0f) world
                 World.setEye3dRotation rotation world
-
-            // process nav sync at end of frame since optimized representations like frozen entities won't have their
-            // nav info registered until then
-            if initializing then
-                World.defer (World.synchronizeNav3d false (Some Constants.Gameplay.SceneNavFilePath) screen) screen world
 
             // declare score text
             World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
