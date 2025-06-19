@@ -55,11 +55,10 @@ type GameplayDispatcher () =
          define Screen.Lives 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (results, gameplay, world) =
+    override this.Process (selectionResults, screen, world) =
 
         // process initialization
-        if FQueue.contains Select results then
-            Simulants.Gameplay.SetGameplayState Playing world
+        if FQueue.contains Select selectionResults then
             let bricks =
                 Map.ofList
                     [for i in 0 .. dec 5 do
@@ -68,6 +67,7 @@ type GameplayDispatcher () =
             Simulants.Gameplay.SetBricks bricks world
             Simulants.Gameplay.SetScore 0 world
             Simulants.Gameplay.SetLives 5 world
+            Simulants.Gameplay.SetGameplayState Playing world
 
         // declare scene group
         World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
@@ -111,9 +111,9 @@ type GameplayDispatcher () =
 
         // process paddle movement
         if  world.Advancing &&
-            gameplay.GetGameplayState world = Playing &&
-            gameplay.GetLives world > 0 &&
-            (gameplay.GetBricks world).Count > 0 then
+            screen.GetGameplayState world = Playing &&
+            screen.GetLives world > 0 &&
+            (screen.GetBricks world).Count > 0 then
             let paddlePosition = paddle.GetPosition world
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 paddle.SetPosition (paddlePosition.MapX (fun x -> max -128.0f (x - 4.0f))) world
@@ -134,9 +134,9 @@ type GameplayDispatcher () =
 
         // process ball life cycle
         if (ball.GetPosition world).Y < -180.0f then
-            gameplay.Lives.Map dec world
-            if gameplay.GetLives world > 0 then ball.SetPosition (v3 0.0f 48.0f 0.0f) world
-        if (gameplay.GetBricks world).Count = 0 then
+            screen.Lives.Map dec world
+            if screen.GetLives world > 0 then ball.SetPosition (v3 0.0f 48.0f 0.0f) world
+        if (screen.GetBricks world).Count = 0 then
             World.setBodyLinearVelocity v3Zero ballBodyId world
         elif ball.GetLinearVelocity world = v3Zero then
             World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed) ballBodyId world
@@ -156,12 +156,12 @@ type GameplayDispatcher () =
                 else
 
                     // brick collision
-                    match (gameplay.GetBricks world).TryGetValue penetrateeId.BodySource.Name with
+                    match (screen.GetBricks world).TryGetValue penetrateeId.BodySource.Name with
                     | (true, brick) ->
                         let bounce = (ball.GetPosition world - brick.Position).Normalized * BallSpeed
                         World.setBodyLinearVelocity bounce ballBodyId world
-                        gameplay.Score.Map ((+) 100) world
-                        gameplay.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
+                        screen.Score.Map ((+) 100) world
+                        screen.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
                         World.playSound 1.0f Assets.Default.Sound world
 
                     // wall collision
@@ -179,7 +179,7 @@ type GameplayDispatcher () =
             | _ -> ()
 
         // declare bricks
-        for (brickName, brick) in (gameplay.GetBricks world).Pairs do
+        for (brickName, brick) in (screen.GetBricks world).Pairs do
             World.doBlock2d brickName
                 [Entity.Position .= brick.Position
                  Entity.Size .= brick.Size
@@ -188,23 +188,24 @@ type GameplayDispatcher () =
                  Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
         // declare score
-        World.doText "Score" [Entity.Position .= v3 248.0f 136.0f 0.0f; Entity.Text @= "Score: " + string (gameplay.GetScore world)] world
+        let scoreText = "Score: " + string (screen.GetScore world)
+        World.doText "Score" [Entity.Position .= v3 248.0f 136.0f 0.0f; Entity.Text @= scoreText] world
 
         // declare lives
         World.doText "Lives" [Entity.Position .= v3 -240.0f 0.0f 0.0f; Entity.Text .= "Lives"] world
-        for i in 0 .. dec (gameplay.GetLives world) do
+        for i in 0 .. dec (screen.GetLives world) do
             World.doStaticSprite ("Life+" + string i)
                 [Entity.Position .= v3 -240.0f (single (inc i) * -16.0f) 0.0f
                  Entity.Size .= v3 32.0f 8.0f 0.0f
                  Entity.StaticImage .= Assets.Default.Paddle] world
 
         // declare message
-        let messageText = if gameplay.GetLives world <= 0 then "Game over!" elif (gameplay.GetBricks world).Count = 0 then "You win!" else ""
+        let messageText = if screen.GetLives world <= 0 then "Game over!" elif (screen.GetBricks world).Count = 0 then "You win!" else ""
         World.doText "Message" [Entity.Text @= messageText] world
 
         // declare quit button
         if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
-            gameplay.SetGameplayState Quit world
+            screen.SetGameplayState Quit world
 
         // end scene declaration
         World.endGroup world
