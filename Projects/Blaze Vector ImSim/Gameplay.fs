@@ -75,14 +75,16 @@ type GameplayDispatcher () =
 
             // process scoring
             for section in 0 .. dec Constants.Gameplay.SectionCount do
-                let deaths = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
-                screen.Score.Map (fun score -> score + deaths.Length * 100) world
+                for _ in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world do
+                    screen.Score.Map ((+) 100) world
 
             // process player death
-            let deaths = World.doSubscription "Deaths" player.DeathEvent world
-            if screen.GetGameplayState world = Playing && FQueue.notEmpty deaths then
-                screen.SetGameplayState Quit world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+            match screen.GetGameplayState world with
+            | Playing ->
+                if FQueue.notEmpty (World.doSubscription "Deaths" player.DeathEvent world) then
+                    screen.SetGameplayState Quit world
+                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+            | Quit -> ()
 
             // process eye look
             if world.Advancing then

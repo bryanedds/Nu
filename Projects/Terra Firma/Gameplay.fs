@@ -53,24 +53,24 @@ type GameplayDispatcher () =
                 world
 
             // process attacks
-            for attack in World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                attack.HitPoints.Map (dec >> max 0) world
-                if attack.GetHitPoints world > 0 then
-                    if not (attack.GetActionState world).IsInjuryState then
-                        attack.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                        attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
+            for attacked in World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
+                attacked.HitPoints.Map (dec >> max 0) world
+                if attacked.GetHitPoints world > 0 then
+                    if not (attacked.GetActionState world).IsInjuryState then
+                        attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                 else
-                    if not (attack.GetActionState world).IsWoundState then
-                        attack.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                        attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
+                    if not (attacked.GetActionState world).IsWoundState then
+                        attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
 
             // process deaths
-            for death in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                match death.GetCharacterType world with
+            for dead in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
+                match dead.GetCharacterType world with
                 | Enemy ->
-                    World.destroyEntity death world
+                    World.destroyEntity dead world
                     screen.Score.Map (fun score -> score + 100) world
                 | Player ->
                     screen.SetGameplayState Quit world
