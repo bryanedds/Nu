@@ -14,6 +14,11 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
 
+/// The wait duration for a coroutine.
+type Duration =
+    { IssueTime : GameTime
+      Duration : GameTime }
+
 /// The result of an intersection-detecting operation.
 type [<Struct>] Intersection =
     | Hit of single
@@ -452,12 +457,13 @@ module AmbientState =
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
+              Durations : OMap<uint64, Duration>
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               Overlayer : Overlayer
-              Timers : Timers
               // cache line 4
+              Timers : Timers
               LightMapRenderRequested : bool }
 
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
@@ -598,6 +604,12 @@ module AmbientState =
     let mapKeyValueStore mapper state =
         let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
+
+    /// Issue a duration with a generated id.
+    let issueDuration duration state =
+        let id = Gen.id64
+        let durations = OMap.add id { IssueTime = getGameTime state; Duration = duration } state.Durations
+        (id, { state with Durations = durations })
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -752,6 +764,7 @@ module AmbientState =
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
+          Durations = OMap.makeEmpty HashIdentity.Structural config
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

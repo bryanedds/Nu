@@ -370,6 +370,12 @@ module WorldModule =
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
+        /// Schedule transpire event after the given duration has elapsed.
+        static member registerDuration duration (world : World) =
+            let (id, ambientState) = AmbientState.issueDuration duration world.AmbientState
+            world.WorldState <- { world.WorldState with AmbientState = ambientState }
+            id
+
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
 

@@ -140,6 +140,7 @@ module Events =
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
     let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
+    let TranspireEvent (id : uint64) = rtoa<Duration> [|"Transpire"; string id; "Event"|]
     let KeyedValueChangeEvent key = rtoa<KeyedValueChangeData> [|"KeyedValue"; key; "Change"; "Event"|]
     let SelectEvent = stoa<unit> "Select/Event"
     let DeselectingEvent = stoa<unit> "Deselecting/Event"
