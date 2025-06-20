@@ -69,10 +69,10 @@ type MmccGameDispatcher () =
                 [Content.skyBox "SkyBox" []
                  Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
 
-    override this.Update (_, world) =
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
+    override this.Update (game, world) =
+        base.Update (game, world)        
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+            World.exit world
 #else
 type MyGameDispatcher () =
 #if IMSIM
@@ -85,20 +85,18 @@ type MyGameDispatcher () =
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Process (_, world) =
-        let (_, world) = World.beginScreen "Screen" true Vanilla [] world
-        let world = World.beginGroup "Group" [] world
-        let world = World.doFps "Fps" [Entity.Position .= v3 134.0f -168.0f 0.0f] world
-        let world = World.doSkyBox "SkyBox" [] world
-        let world =
-            Array.foldi (fun i world position ->
-                World.doEntity<MetricsEntityDispatcher> (string i)
-                    [Entity.Presence .= Omnipresent
-                     Entity.Position .= position + v3 -12.5f -12.5f -20.0f
-                     Entity.Scale .= v3Dup 0.1f] world)
-                world Positions
-        let world = World.endGroup world
-        let world = World.endScreen world
-        world
+        let _ = World.beginScreen "Screen" true Vanilla [] world
+        World.beginGroup "Group" [] world
+        World.doFps "Fps" [Entity.Position .= v3 134.0f -168.0f 0.0f] world
+        World.doSkyBox "SkyBox" [] world
+        for i in 0 .. dec Positions.Length do
+            let position = Positions.[i]
+            World.doEntity<MetricsEntityDispatcher> (string i)
+                [Entity.Presence .= Omnipresent
+                 Entity.Position .= position + v3 -12.5f -12.5f -20.0f
+                 Entity.Scale .= v3Dup 0.1f] world
+        World.endGroup world
+        World.endScreen world
 #else
     inherit GameDispatcher ()
 

@@ -166,7 +166,7 @@ type CharacterDispatcher () =
         | _ -> ()
 
         // navigation
-        let (navSpeedsOpt) =
+        let navSpeedsOpt =
             match entity.GetActionState world with
             | NormalState ->
                 let walkSpeed = Enemy.WalkSpeed
@@ -214,8 +214,13 @@ type CharacterDispatcher () =
             | InjuryState _ | WoundState _ -> ()
 
         // process movement - can move only when in normal state or in air
-        let actionState = entity.GetActionState world
-        if actionState.IsNormalState || not grounded then
+        match entity.GetActionState world with
+        | AttackState _ when grounded ->
+
+            // stop movement
+            entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
+
+        | actionState when actionState.IsNormalState || not grounded ->
 
             // compute new position
             let rotation = entity.GetRotation world
@@ -240,9 +245,7 @@ type CharacterDispatcher () =
             entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
             entity.SetRotation rotation world
 
-        // stop movement
-        elif actionState.IsAttackState && grounded then
-            entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
+        | _ -> ()
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -355,26 +358,21 @@ type CharacterDispatcher () =
             | BodyTransformData _ -> ()
 
         // process attacks
-        let attacks =
-            match entity.GetActionState world with
-            | AttackState attack ->
-                let localTime = world.UpdateTime - attack.AttackTime
-                let attack =
-                    match localTime with
-                    | 55L -> { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
-                    | _ -> attack
-                if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
-                    let weaponCollisions = entity.GetWeaponCollisions world
-                    let attacks = Set.difference weaponCollisions attack.AttackedCharacters
-                    let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters weaponCollisions }
-                    entity.SetActionState (AttackState attack) world
-                    attacks
-                else
-                    entity.SetActionState (AttackState attack) world
-                    Set.empty
-            | _ -> Set.empty
-        for attack in attacks do
-            World.publish attack entity.AttackEvent entity world
+        match entity.GetActionState world with
+        | AttackState attack ->
+            let localTime = world.UpdateTime - attack.AttackTime
+            let attack =
+                match localTime with
+                | 55L -> { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
+                | _ -> attack
+            if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
+                let weaponCollisions = entity.GetWeaponCollisions world
+                let attackedCharacters = Set.difference weaponCollisions attack.AttackedCharacters
+                entity.SetActionState (AttackState { attack with AttackedCharacters = Set.union attack.AttackedCharacters weaponCollisions }) world
+                for character in attackedCharacters do
+                    World.publish character entity.AttackEvent entity world
+            else entity.SetActionState (AttackState attack) world
+        | _ -> ()
 
         // declare player hearts
         match characterType with

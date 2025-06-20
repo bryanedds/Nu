@@ -75,15 +75,16 @@ type GameplayDispatcher () =
 
             // process scoring
             for section in 0 .. dec Constants.Gameplay.SectionCount do
-                let deaths = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
-                screen.Score.Map (fun score -> score + deaths.Length * 100) world
+                for _ in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world do
+                    screen.Score.Map ((+) 100) world
 
             // process player death
-            let deaths = World.doSubscription "Deaths" player.DeathEvent world
-            if screen.GetGameplayState world = Playing && FQueue.notEmpty deaths then
+            if FQueue.notEmpty (World.doSubscription "Deaths" player.DeathEvent world) then
+                match screen.GetGameplayState world with
+                | Playing -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+                | Quit -> () // already in quit state, so no need to play sound again
                 screen.SetGameplayState Quit world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-        
+
             // process eye look
             if world.Advancing then
                 let playerPosition = player.GetPosition world
@@ -94,11 +95,12 @@ type GameplayDispatcher () =
                 World.setEye2dCenter eyeCenter world
 
             // declare score text
-            World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
+            let scoreText = "Score: " + string (screen.GetScore world)
+            World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= scoreText] world
 
             // declare quit button
-            let quit = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
-            if quit then screen.SetGameplayState Quit world
+            if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
+                screen.SetGameplayState Quit world
 
             // end scene declaration
             World.endGroup world

@@ -41,8 +41,10 @@ type GameplayDispatcher () =
                 Simulants.Gameplay.SetGameplayState Playing world
                 Simulants.Gameplay.SetScore 0 world
 
-            // begin scene declaration
+            // begin scene declaration, processing nav sync at end of frame since optimized representations like
+            // frozen entities won't have their nav info registered until then
             World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
+            if initializing then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
@@ -51,28 +53,27 @@ type GameplayDispatcher () =
                 world
 
             // process attacks
-            for attack in World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                attack.HitPoints.Map (dec >> max 0) world
-                if attack.GetHitPoints world > 0 then
-                    if not (attack.GetActionState world).IsInjuryState then
-                        attack.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                        attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
+            for attacked in World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
+                attacked.HitPoints.Map (dec >> max 0) world
+                if attacked.GetHitPoints world > 0 then
+                    if not (attacked.GetActionState world).IsInjuryState then
+                        attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                 else
-                    if not (attack.GetActionState world).IsWoundState then
-                        attack.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                        attack.SetLinearVelocity (v3Up * attack.GetLinearVelocity world) world
+                    if not (attacked.GetActionState world).IsWoundState then
+                        attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
 
-            // process enemy deaths
-            let deaths = World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world
-            let enemyDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) deaths
-            for death in enemyDeaths do World.destroyEntity death world
-            screen.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
-        
-            // process player deaths
-            let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
-            if FQueue.notEmpty playerDeaths then screen.SetGameplayState Quit world
+            // process deaths
+            for dead in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
+                match dead.GetCharacterType world with
+                | Enemy ->
+                    World.destroyEntity dead world
+                    screen.Score.Map (fun score -> score + 100) world
+                | Player ->
+                    screen.SetGameplayState Quit world
 
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
@@ -99,17 +100,13 @@ type GameplayDispatcher () =
                 World.setEye3dCenter (position + v3Up * 1.75f - rotation.Forward * 3.0f) world
                 World.setEye3dRotation rotation world
 
-            // process nav sync at end of frame since optimized representations like frozen entities won't have their
-            // nav info registered until then
-            if initializing then
-                World.defer (World.synchronizeNav3d false (Some Constants.Gameplay.SceneNavFilePath) screen) screen world
-
             // declare score text
-            World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= "Score: " + string (screen.GetScore world)] world
+            let scoreText = "Score: " + string (screen.GetScore world)
+            World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= scoreText] world
 
             // declare quit button
-            let quit = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world
-            if quit then screen.SetGameplayState Quit world
+            if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
+                screen.SetGameplayState Quit world
 
             // end scene declaration
             World.endGroup world
