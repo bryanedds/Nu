@@ -170,8 +170,9 @@ module Modifier =
 
     /// Composes the given modifier `mdfr` with the behavior of a pair of type `'a * 'c`.
     /// The `mdfr` is applied to the first component of the pair, while the second component remains unchanged.
-    /// The output behavior is a pair of type `'b * 'c`, where the first component is the result of applying `mdfr` to the first component of the input pair,
-    /// and the second component is the unchanged second component of the input pair.
+    /// The output behavior is a pair of type `'b * 'c`, where the first component is the result of applying `mdfr` to
+    /// the first component of the input pair, and the second component is the unchanged second component of the input
+    /// pair.
     let first (mdfr : Modifier<'a, 'b>) : Modifier<'a * 'c, 'b * 'c> =
         Modifier $ fun bhvrAC ->
             let bhvrB = run (Behavior.fst bhvrAC) mdfr
@@ -180,8 +181,9 @@ module Modifier =
 
     /// Composes the given modifier `mdfr` with the behavior of a pair of type `'c * 'a`.
     /// The `mdfr` is applied to the second component of the pair, while the first component remains unchanged.
-    /// The output behavior is a pair of type `'c * 'b`, where the first component is the unchanged first component of the input pair,
-    /// and the second component is the result of applying `mdfr` to the second component of the input pair.
+    /// The output behavior is a pair of type `'c * 'b`, where the first component is the unchanged first component of
+    /// the input pair, and the second component is the result of applying `mdfr` to the second component of the input
+    /// pair.
     let second (mdfr : Modifier<'a, 'b>) : Modifier<'c * 'a, 'c * 'b> =
         Modifier $ fun bhvrCA ->
             let bhvrB = run (Behavior.snd bhvrCA) mdfr
