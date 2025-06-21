@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
+open System.Threading.Tasks
 open SDL2
 open TiledSharp
 open DotRecast.Core.Collections
@@ -375,6 +376,7 @@ type Timers =
       PostUpdateGameTimer : Stopwatch
       PostUpdateScreensTimer : Stopwatch
       PostUpdateGroupsTimer : Stopwatch
+      CoroutineTimer : Stopwatch
       TaskletsTimer : Stopwatch
       DestructionTimer : Stopwatch
       PerProcessTimer : Stopwatch
@@ -412,6 +414,7 @@ type Timers =
           PostUpdateGameTimer = Stopwatch ()
           PostUpdateScreensTimer = Stopwatch ()
           PostUpdateGroupsTimer = Stopwatch ()
+          CoroutineTimer = Stopwatch ()
           TaskletsTimer = Stopwatch ()
           DestructionTimer = Stopwatch ()
           PerProcessTimer = Stopwatch ()
@@ -458,11 +461,12 @@ module AmbientState =
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
               Durations : OMap<uint64, Duration>
+              SyncIn : KeyValuePair<uint64, TaskCompletionSource<unit>> List
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
-              Overlayer : Overlayer
               // cache line 4
+              Overlayer : Overlayer
               Timers : Timers
               LightMapRenderRequested : bool }
 
@@ -605,11 +609,27 @@ module AmbientState =
         let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
 
-    /// Issue a duration with a generated id.
-    let issueDuration duration state =
+    /// Schedule a duration with a generated id.
+    let scheduleDuration duration state =
         let id = Gen.id64
         let durations = OMap.add id { IssueTime = getGameTime state; Duration = duration } state.Durations
         (id, { state with Durations = durations })
+
+    /// Get the scheduled durations.
+    let getDurations state =
+        state.Durations
+
+    /// Set the scheduled durations.
+    let setDurations durations state =
+        { state with Durations = durations }
+
+    /// Get that sync in.
+    let getSyncIn state =
+        state.SyncIn
+
+    /// Set that sync in.
+    let setSyncIn syncIn state =
+        { state with SyncIn = syncIn }
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -765,6 +785,7 @@ module AmbientState =
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
           Durations = OMap.makeEmpty HashIdentity.Structural config
+          SyncIn = List ()
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

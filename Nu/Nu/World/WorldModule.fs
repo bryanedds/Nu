@@ -29,6 +29,10 @@ module WorldModule =
     /// TODO: P1: consider making this an AmbientState flag.
     let mutable internal UpdatingSimulants = false
 
+    /// Track if we're in the portion of the frame before coroutine processing has started or after.
+    /// TODO: P1: consider making this an AmbientState flag.
+    let mutable internal CoroutineProcessingStarted = false
+
     /// Track if we're in the portion of the frame before tasklet processing has started or after.
     /// TODO: P1: consider making this an AmbientState flag.
     let mutable internal TaskletProcessingStarted = false
@@ -370,11 +374,22 @@ module WorldModule =
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
-        /// Schedule transpire event after the given duration has elapsed.
-        static member registerDuration duration (world : World) =
-            let (id, ambientState) = AmbientState.issueDuration duration world.AmbientState
+        static member internal scheduleDuration duration (world : World) =
+            let (id, ambientState) = AmbientState.scheduleDuration duration world.AmbientState
             world.WorldState <- { world.WorldState with AmbientState = ambientState }
             id
+
+        static member internal getDurations (world : World) =
+            AmbientState.getDurations world.AmbientState
+
+        static member internal setDurations durations (world : World) =
+            World.mapAmbientState (AmbientState.setDurations durations) world
+
+        static member internal getSyncIn (world : World) =
+            AmbientState.getSyncIn world.AmbientState
+
+        static member internal setSyncIn syncIn (world : World) =
+            World.mapAmbientState (AmbientState.setSyncIn syncIn) world
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
@@ -636,6 +651,10 @@ module WorldModule =
             let eventAddressObj = Address.generalize eventAddress
 
 #if DEBUG
+            // ensure that no Transpire event is published while outside of coroutine processing
+            if not CoroutineProcessingStarted && eventAddress.Length > 0 && eventAddress.Names.[0] = "Transpire" then
+                Log.fail "Event publish operation failed. Cannot publish Transpire event outside of coroutine processing."
+
             // log event based on event filter
             EventGraph.logEvent eventAddressObj eventTrace world.EventGraph
 #endif

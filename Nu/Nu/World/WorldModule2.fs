@@ -1772,136 +1772,154 @@ module WorldModule2 =
                                             match World.getLiveness world with
                                             | Live ->
 
-                                                // process tasklets that have been scheduled and are ready to run
-                                                world.Timers.TaskletsTimer.Restart ()
-                                                WorldModule.TaskletProcessingStarted <- true
-                                                World.processTasklets world
-                                                world.Timers.TaskletsTimer.Stop ()
+                                                // process coroutines
+                                                world.Timers.CoroutineTimer.Restart ()
+                                                WorldModule.CoroutineProcessingStarted <- true
+                                                Coroutine.copySyncIn (World.getSyncIn world)
+                                                let durations = World.getDurations world
+                                                let durationsRemaining = List ()
+                                                for (id, duration) in durations do
+                                                    if duration.IssueTime + duration.Duration >= world.GameTime
+                                                    then World.publish duration (Events.TranspireEvent id --> Game.GameAddress) Game world
+                                                    else durationsRemaining.Add (id, duration)
+                                                World.setDurations (OMap.ofSeq (OMap.getComparer durations) (OMap.getConfig durations) durationsRemaining) world
+                                                Coroutine.update ()
+                                                World.setSyncIn (Coroutine.copySyncOut ()) world
+                                                world.Timers.CoroutineTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
 
-                                                    // destroy simulants that have been marked for destruction at the end of frame
-                                                    world.Timers.DestructionTimer.Restart ()
-                                                    World.processImSim world
-                                                    World.destroySimulants world
-                                                    world.Timers.DestructionTimer.Stop ()
+                                                    // process tasklets that have been scheduled and are ready to run
+                                                    world.Timers.TaskletsTimer.Restart ()
+                                                    WorldModule.TaskletProcessingStarted <- true
+                                                    World.processTasklets world
+                                                    world.Timers.TaskletsTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
-                                                    
-                                                        // run engine and user-defined post-process callbacks
-                                                        world.Timers.PostProcessTimer.Restart ()
-                                                        World.postProcess world
-                                                        postProcess world
-                                                        world.Timers.PostProcessTimer.Stop ()
+
+                                                        // destroy simulants that have been marked for destruction at the end of frame
+                                                        world.Timers.DestructionTimer.Restart ()
+                                                        World.processImSim world
+                                                        World.destroySimulants world
+                                                        world.Timers.DestructionTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
-
-                                                            // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
-                                                            world.Timers.RenderMessagesTimer.Restart ()
-                                                            let lightMapRenderRequested = World.getLightMapRenderRequested world
-                                                            World.acknowledgeLightMapRenderRequest world
-                                                            World.renderSimulants lightMapRenderRequested world
-                                                            world.Timers.RenderMessagesTimer.Stop ()
+                                                    
+                                                            // run engine and user-defined post-process callbacks
+                                                            world.Timers.PostProcessTimer.Restart ()
+                                                            World.postProcess world
+                                                            postProcess world
+                                                            world.Timers.PostProcessTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
 
-                                                                // process audio
-                                                                world.Timers.AudioTimer.Restart ()
-                                                                if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                                    let audioPlayer = World.getAudioPlayer world
-                                                                    let audioMessages = audioPlayer.PopMessages ()
-                                                                    audioPlayer.Play audioMessages
-                                                                world.Timers.AudioTimer.Stop ()
-
-                                                                // process main thread time recording
-                                                                world.Timers.MainThreadTime <- world.Timers.MainThreadTimer.Elapsed
-
-                                                                // process rendering (1/2)
-                                                                let rendererProcess = World.getRendererProcess world
-                                                                if not firstFrame then rendererProcess.Swap ()
-
-                                                                // process frame pacing mechanics
-                                                                if world.Timers.MainThreadTimer.IsRunning then
-
-                                                                    // automatically enable frame pacing when need is detected
-                                                                    let world =
-                                                                        if not world.FramePacing then
-                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
-                                                                            if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
-                                                                            FramePaceChecks <- inc FramePaceChecks
-                                                                            if FramePaceIssues = 15 then World.setFramePacing true world
-                                                                            if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
-                                                                            world
-                                                                        else world
-
-                                                                    // pace frame when enabled
-                                                                    if world.FramePacing then
-                                                                        let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
-                                                                        while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum do
-                                                                            let timeToSleep = frameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
-                                                                            if timeToSleep > 0.008 then Thread.Sleep 7
-                                                                            elif timeToSleep > 0.004 then Thread.Sleep 3
-                                                                            elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                            else Thread.Yield () |> ignore<bool>
-
-                                                                // process main thread timer
-                                                                world.Timers.MainThreadTimer.Restart ()
-
-                                                                // process additional frame time recording
-                                                                let gcTotalTime = GC.GetTotalPauseDuration ()
-                                                                let gcFrameTime = gcTotalTime - world.Timers.GcTotalTime
-                                                                world.Timers.GcTotalTime <- gcTotalTime
-                                                                world.Timers.GcFrameTime <- gcFrameTime
-                                                                world.Timers.ImGuiTime <- world.Timers.ImGuiTimer.Elapsed
-
-                                                                // process imgui frame
-                                                                world.Timers.ImGuiTimer.Restart ()
-                                                                let imGui = World.getImGui world
-                                                                imGui.BeginFrame (single world.DateDelta.TotalSeconds)
-                                                                World.imGuiProcess world
-                                                                imGuiProcess world
-                                                                imGui.InputFrame ()
-                                                                let drawData = imGui.RenderFrame ()
-                                                                world.Timers.ImGuiTimer.Stop ()
-
-                                                                // process rendering (2/2)
-                                                                rendererProcess.SubmitMessages
-                                                                    world.Eye3dFrustumInterior
-                                                                    world.Eye3dFrustumExterior
-                                                                    world.Eye3dFrustumImposter
-                                                                    (World.getLight3dViewBox world)
-                                                                    world.Eye3dCenter
-                                                                    world.Eye3dRotation
-                                                                    world.Eye3dFieldOfView
-                                                                    world.Eye2dCenter
-                                                                    world.Eye2dSize
-                                                                    (World.getWindowSize world)
-                                                                    world.GeometryViewport
-                                                                    world.RasterViewport
-                                                                    world.OuterViewport
-                                                                    drawData
-
-                                                                // post-process imgui frame
-                                                                World.imGuiPostProcess world
-                                                                imGuiPostProcess world
-
-                                                                // update time and recur
-                                                                world.Timers.FrameTimer.Stop ()
-                                                                WorldModule.TaskletProcessingStarted <- false
-                                                                World.updateTime world
-                                                                if world.Advancing then
-                                                                    World.publish () (Events.TimeUpdateEvent --> Game) Game world
-                                                                    match World.getSelectedScreenOpt world with
-                                                                    | Some selectedScreen ->
-                                                                        World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
-                                                                        for group in World.getGroups selectedScreen world do
-                                                                            if group.GetExists world then
-                                                                                World.publish () (Events.TimeUpdateEvent --> group) group world
-                                                                    | None -> ()
-
-                                                                // recur or return
+                                                                // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
+                                                                world.Timers.RenderMessagesTimer.Restart ()
+                                                                let lightMapRenderRequested = World.getLightMapRenderRequested world
+                                                                World.acknowledgeLightMapRenderRequest world
+                                                                World.renderSimulants lightMapRenderRequested world
+                                                                world.Timers.RenderMessagesTimer.Stop ()
                                                                 match World.getLiveness world with
-                                                                | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
+                                                                | Live ->
+
+                                                                    // process audio
+                                                                    world.Timers.AudioTimer.Restart ()
+                                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                                        let audioPlayer = World.getAudioPlayer world
+                                                                        let audioMessages = audioPlayer.PopMessages ()
+                                                                        audioPlayer.Play audioMessages
+                                                                    world.Timers.AudioTimer.Stop ()
+
+                                                                    // process main thread time recording
+                                                                    world.Timers.MainThreadTime <- world.Timers.MainThreadTimer.Elapsed
+
+                                                                    // process rendering (1/2)
+                                                                    let rendererProcess = World.getRendererProcess world
+                                                                    if not firstFrame then rendererProcess.Swap ()
+
+                                                                    // process frame pacing mechanics
+                                                                    if world.Timers.MainThreadTimer.IsRunning then
+
+                                                                        // automatically enable frame pacing when need is detected
+                                                                        let world =
+                                                                            if not world.FramePacing then
+                                                                                let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                FramePaceChecks <- inc FramePaceChecks
+                                                                                if FramePaceIssues = 15 then World.setFramePacing true world
+                                                                                if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
+                                                                                world
+                                                                            else world
+
+                                                                        // pace frame when enabled
+                                                                        if world.FramePacing then
+                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum do
+                                                                                let timeToSleep = frameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
+                                                                                if timeToSleep > 0.008 then Thread.Sleep 7
+                                                                                elif timeToSleep > 0.004 then Thread.Sleep 3
+                                                                                elif timeToSleep > 0.002 then Thread.Sleep 1
+                                                                                else Thread.Yield () |> ignore<bool>
+
+                                                                    // process main thread timer
+                                                                    world.Timers.MainThreadTimer.Restart ()
+
+                                                                    // process additional frame time recording
+                                                                    let gcTotalTime = GC.GetTotalPauseDuration ()
+                                                                    let gcFrameTime = gcTotalTime - world.Timers.GcTotalTime
+                                                                    world.Timers.GcTotalTime <- gcTotalTime
+                                                                    world.Timers.GcFrameTime <- gcFrameTime
+                                                                    world.Timers.ImGuiTime <- world.Timers.ImGuiTimer.Elapsed
+
+                                                                    // process imgui frame
+                                                                    world.Timers.ImGuiTimer.Restart ()
+                                                                    let imGui = World.getImGui world
+                                                                    imGui.BeginFrame (single world.DateDelta.TotalSeconds)
+                                                                    World.imGuiProcess world
+                                                                    imGuiProcess world
+                                                                    imGui.InputFrame ()
+                                                                    let drawData = imGui.RenderFrame ()
+                                                                    world.Timers.ImGuiTimer.Stop ()
+
+                                                                    // process rendering (2/2)
+                                                                    rendererProcess.SubmitMessages
+                                                                        world.Eye3dFrustumInterior
+                                                                        world.Eye3dFrustumExterior
+                                                                        world.Eye3dFrustumImposter
+                                                                        (World.getLight3dViewBox world)
+                                                                        world.Eye3dCenter
+                                                                        world.Eye3dRotation
+                                                                        world.Eye3dFieldOfView
+                                                                        world.Eye2dCenter
+                                                                        world.Eye2dSize
+                                                                        (World.getWindowSize world)
+                                                                        world.GeometryViewport
+                                                                        world.RasterViewport
+                                                                        world.OuterViewport
+                                                                        drawData
+
+                                                                    // post-process imgui frame
+                                                                    World.imGuiPostProcess world
+                                                                    imGuiPostProcess world
+
+                                                                    // update time and recur
+                                                                    world.Timers.FrameTimer.Stop ()
+                                                                    WorldModule.TaskletProcessingStarted <- false
+                                                                    World.updateTime world
+                                                                    if world.Advancing then
+                                                                        World.publish () (Events.TimeUpdateEvent --> Game) Game world
+                                                                        match World.getSelectedScreenOpt world with
+                                                                        | Some selectedScreen ->
+                                                                            World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
+                                                                            for group in World.getGroups selectedScreen world do
+                                                                                if group.GetExists world then
+                                                                                    World.publish () (Events.TimeUpdateEvent --> group) group world
+                                                                        | None -> ()
+
+                                                                    // recur or return
+                                                                    match World.getLiveness world with
+                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
+                                                                    | Dead -> ()
                                                                 | Dead -> ()
                                                             | Dead -> ()
                                                         | Dead -> ()

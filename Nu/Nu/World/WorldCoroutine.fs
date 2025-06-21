@@ -3,7 +3,10 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Diagnostics
+open System.Threading.Tasks
 open Prime
 
 /// The Coroutine monad context of the world.
@@ -20,16 +23,6 @@ type CoroutineBuilder () =
             match a world with
             | Left next -> Left (this.Map f next)
             | Right value -> Right (f value))
-
-    /// Applicative apply for the coroutine monad.
-    /// TODO: implement correctly!
-    //[<DebuggerHidden; DebuggerStepThrough>]
-    //member this.Apply (Coroutine f) (Coroutine a) : 'b Coroutine =
-    //    Coroutine (fun world ->
-    //        match f world, a world with
-    //        | (Left f', _) -> Left (apply f' a)
-    //        | (_, Left a') -> Left (apply f a')
-    //        | (Right f, Right a) -> Right (f a))
 
     /// Monadic return for the coroutine monad.
     [<DebuggerHidden; DebuggerStepThrough>]
@@ -53,12 +46,19 @@ module CoroutineBuilder =
 [<RequireQualifiedAccess>]
 module Coroutine =
 
-    /// Functor map for the coroutine monad.
-    let [<DebuggerHidden; DebuggerStepThrough>] inline map f a = coroutine.Map f a
+    let mutable private SyncIn =
+        Unchecked.defaultof<ConcurrentDictionary<uint64, TaskCompletionSource<unit>>>
+
+    let copySyncIn (omap : KeyValuePair<uint64, TaskCompletionSource<unit>> List) =
+        SyncIn <- ConcurrentDictionary<uint64, TaskCompletionSource<unit>> omap
+
+    let copySyncOut () =
+        let result = List SyncIn
+        SyncIn <- Unchecked.defaultof<ConcurrentDictionary<uint64, TaskCompletionSource<unit>>>
+        result
 
     /// Functor map for the coroutine monad.
-    /// TODO: uncomment when implemented correctly!
-    //let [<DebuggerHidden; DebuggerStepThrough>] inline apply c a = coroutine.Apply c a
+    let [<DebuggerHidden; DebuggerStepThrough>] inline map f a = coroutine.Map f a
 
     /// Monadic return for the coroutine monad.
     let [<DebuggerHidden; DebuggerStepThrough>] inline returnM a = coroutine.Return a
@@ -70,35 +70,43 @@ module Coroutine =
     let [<DebuggerHidden>] get : World Coroutine =
         Coroutine (fun world -> Right world)
 
-    /// 
-    let step (Coroutine coroutine) world =
-        match coroutine world with
-        | Left next -> Left next
-        | Right value -> Right value
-
     /// Run a coroutine to its end.
-    let rec [<DebuggerHidden; DebuggerStepThrough>] run (Coroutine coroutine) world =
+    let rec [<DebuggerHidden; DebuggerStepThrough>] run<'a> (Coroutine coroutine : 'a Coroutine) world =
         match coroutine world with
         | Left next -> run next world
         | Right value -> value
 
     /// Wait for the given duration until resuming.
-    let [<DebuggerHidden; DebuggerStepThrough>] sleep duration (crt : 'a Coroutine) : 'a Coroutine =
+    let [<DebuggerHidden; DebuggerStepThrough>] sleep duration : unit Coroutine =
         coroutine {
             let! world = get
-            let id = World.registerDuration duration world
-            World.subscribe
-                (fun _ world ->
-                    run crt world |> ignore<'a>
+            let id = World.scheduleDuration duration world
+            let mutable published = false
+            World.subscribePlus
+                id
+                (fun _ _ ->
+                    published <- true
+                    World.unsubscribe id world
                     Cascade)
                 (Events.TranspireEvent id)
                 Game.Handle
-                world
+                world |> ignore
+            let await () =
+                let tcs = new TaskCompletionSource<unit> ()
+                let added = SyncIn.TryAdd (id, tcs)
+                if not added then failwith ("Coroutine sleep failed to add TaskCompletionSource for id " + string id + ".")
+                tcs.Task.Wait ()
+            let () =
+                while not published do await ()
             return () }
 
-    /// Wait to the next frame.
-    let [<DebuggerHidden; DebuggerStepThrough>] pass expr =
-        sleep GameTime.zero expr
+    /// Run this once per frame.
+    let update () =
+        let syncInCopy = SyncIn.ToArray ()
+        for entry in syncInCopy do
+            match SyncIn.TryRemove entry.Key with
+            | (true, tcs) -> tcs.SetResult ()
+            | _ -> Log.error ("Coroutine updateAll failed to remove TaskCompletionSource for id " + string entry.Key + ".")
 
 [<AutoOpen>]
 module WorldCoroutine =
@@ -107,5 +115,5 @@ module WorldCoroutine =
 
         /// Run a coroutine to its end.
         [<DebuggerHidden; DebuggerStepThrough>] 
-        static member runCoroutine coroutine world =
-            Coroutine.run coroutine world
+        static member runCoroutine (coroutine : unit Coroutine) world =
+            Task.Run<unit> (fun () -> Coroutine.run<unit> coroutine world) |> ignore<Task<unit>>
