@@ -351,10 +351,6 @@ and 'w Coroutine =
             | DynamicFrameRate frameRate -> TickTime (1.0 / double frameRate * double Stopwatch.Frequency |> int64)
         Sleep gameTime
 
-    /// A coroutine that performs the given action.
-    static member action f : 'w Coroutine =
-        Coroutine f
-
     /// Step a coroutine.
     static member step (pred : 'w -> bool) (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
         if pred world then
@@ -436,9 +432,6 @@ module CoroutineBuilder =
 
     /// Sleep until the next frame (approximate in DynamicFrameRate mode).
     let inline pass<'w> : 'w Coroutine = Coroutine.pass ()
-
-    /// A coroutine that performs the given action.
-    let inline action f = Coroutine.action f
 
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =

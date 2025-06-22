@@ -41,7 +41,17 @@ type JumpBoxDispatcher () =
         World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
         World.doText "Collisions" [Entity.Text @= "Collisions: " + string (jumpBox.GetCollisions world)] world
         let jump = World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world
-        if jump then World.jumpBody false 8.0f boxBodyId world
+        if jump then
+            World.jumpBody false 8.0f boxBodyId world
+            coroutine (world.LauncherWhile World.getAdvancing) {
+                sleep 10L
+                for i in 0 .. dec 30 do
+                    pass
+                    if i % 2 = 0 then World.playSound 0.25f Assets.Default.Sound
+                    if i = 15 then cancel
+                sleep 10L
+                fun _ -> Log.info "Splat!"
+                World.playSound 1.0f Assets.Default.Sound }
         World.doFillBar "FillBar" [Entity.Fill @= single (jumpBox.GetCollisions world) / 10.0f] world
         if jumpBox.GetCollisions world >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world
         World.endPanel world
