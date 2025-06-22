@@ -376,8 +376,8 @@ module WorldModule =
         static member internal setCoroutines coroutines world =
             World.mapAmbientState (AmbientState.setCoroutines coroutines) world
 
-        /// Add a coroutine to be processed by the engine.
-        static member addCoroutine coroutine (world : World) =
+        /// Run a coroutine to be processed by the engine.
+        static member runCoroutine coroutine (world : World) =
             let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
             World.mapAmbientState (AmbientState.addCoroutine coroutine) world
 
@@ -548,6 +548,10 @@ module WorldModule =
         /// Request a light map render for the current frame, such as when a light probe needs to be rendered.
         static member requestLightMapRender world =
             World.mapAmbientState AmbientState.requestLightMapRender world
+
+        /// Add a coroutine to be processed by the engine.
+        member this.Run coroutine =
+            World.runCoroutine coroutine this
 
     type World with // Subsystems
 

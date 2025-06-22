@@ -329,12 +329,17 @@ type 'w Coroutine =
     | Coroutine of ('w -> unit)
     | Coroutines of 'w Coroutine list
 
+    /// A coroutine that performs the given action.
     static member action f : 'w Coroutine =
         Coroutine f
 
-    /// A coroutine that sleeps until the next frame.
+    /// A coroutine that sleeps until the next frame (approximate in DynamicFrameRate mode).
     static member pass () : 'w Coroutine =
-        Sleep GameTime.zero
+        let gameTime =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate _ -> UpdateTime 1L
+            | DynamicFrameRate frameRate -> TickTime (1.0 / double frameRate * double Stopwatch.Frequency |> int64)
+        Sleep gameTime
 
     /// A coroutine that sleeps until the given game time.
     static member sleep (gameTime : GameTime) : 'w Coroutine =
