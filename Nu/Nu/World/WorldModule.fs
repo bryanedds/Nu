@@ -549,9 +549,9 @@ module WorldModule =
         static member requestLightMapRender world =
             World.mapAmbientState AmbientState.requestLightMapRender world
 
-        /// Launch a coroutine to be processed by the engine.
-        member this.Launch coroutine =
-            World.launchCoroutine coroutine this
+        /// A coroutine launcher.
+        member this.Launcher =
+            flip World.launchCoroutine this
 
     type World with // Subsystems
 
