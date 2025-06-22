@@ -323,7 +323,7 @@ type OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
-/// A continuation is a computation that can be stepped through, potentially sleeping until a certain game time.
+/// A coroutine in Nu allows easy definition of static behavior over multiple frames.
 type 'w Coroutine =
     | Sleep of GameTime
     | Coroutine of ('w -> unit)
@@ -376,29 +376,28 @@ type 'w Coroutine =
 /// Note that the "value" carried is simply unit as we are sequencing actions.
 type CoroutineBuilder () =
 
+    /// A no-op action.
     member this.Return (_ : unit) : 'w Coroutine =
-        // A no-op action.
         Coroutine ignore
     
+    /// Run m, then run the coroutine produced by f.
     member this.Bind (m : 'w Coroutine, f : unit -> 'w Coroutine) : 'w Coroutine =
-        // Run m, then run the coroutine produced by f.
-        // The simplest way is to combine them sequentially.
         Coroutines [m; f ()]
     
+    /// Delay evaluation until the computation is run.
     member this.Delay (f : unit -> 'w Coroutine) : 'w Coroutine =
-        // Delay evaluation until the computation is run.
         f ()
         
+    /// Iterate over the sequence and combine coroutines.
     member this.For (seq : seq<'T>, f : 'T -> 'w Coroutine) : 'w Coroutine =
-        // Fold over the sequence and combine coroutines.
         seq |> Seq.fold (fun acc t -> this.Combine (acc, f t)) (this.Zero ())
     
+    /// Sequence two coroutines.
     member this.Combine (m1 : 'w Coroutine, m2 : 'w Coroutine) : 'w Coroutine =
-        // Sequence two coroutines.
         Coroutines [m1; m2]
     
+    /// Zero is just a no-op.
     member this.Zero () : 'w Coroutine =
-        // Zero is just a no-op.
         Coroutine ignore
 
 [<AutoOpen>]
@@ -410,8 +409,10 @@ module CoroutineBuilder =
     /// A coroutine that sleeps until the next frame.
     let inline sleep gameTime = Coroutine.sleep gameTime
 
+    /// Sleep until the next frame (approximate in DynamicFrameRate mode).
     let pass () = Coroutine.pass ()
 
+    /// A coroutine that performs the given action.
     let inline action f = Coroutine.action f
 
 /// A tasklet to be completed at the scheduled update time.
