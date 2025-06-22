@@ -323,6 +323,92 @@ type OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
+/// A continuation is a computation that can be stepped through, potentially sleeping until a certain game time.
+type 'w Coroutine =
+    | Sleep of GameTime
+    | Coroutine of ('w -> unit)
+    | Coroutines of 'w Coroutine list
+
+    static member action f : 'w Coroutine =
+        Coroutine f
+
+    /// A coroutine that sleeps until the next frame.
+    static member pass () : 'w Coroutine =
+        Sleep GameTime.zero
+
+    /// A coroutine that sleeps until the given game time.
+    static member sleep (gameTime : GameTime) : 'w Coroutine =
+        Sleep gameTime
+
+    /// Step a coroutine.
+    /// TODO: P1: see if we can make this tail-recursive.
+    static member step (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : Either<'w Coroutine, unit> =
+        match coroutine with
+        | Sleep gameTime' -> if gameTime' >= gameTime then Left coroutine else Right ()
+        | Coroutine action -> action world; Right ()
+        | Coroutines coroutines ->
+            match coroutines with
+            | [] -> Right ()
+            | head :: tail ->
+                match Coroutine.step head gameTime world with
+                | Left head' -> Left (Coroutines (head' :: tail))
+                | Right () -> Coroutine.step (Coroutines tail) gameTime world
+
+    /// Prepare a coroutine for execution at the given starting game time.
+    static member prepare (coroutine : 'w Coroutine) gameTime =
+        match coroutine with
+        | Sleep gameTime' -> let gameTime'' = gameTime + gameTime' in (gameTime'', Sleep gameTime'')
+        | Coroutine _ as c -> (gameTime, c)
+        | Coroutines coroutines ->
+            List.fold (fun (gameTime, coroutines) coroutine ->
+                let (gameTime', coroutine') = Coroutine.prepare coroutine gameTime
+                (gameTime', coroutine' :: coroutines))
+                (gameTime, [])
+                coroutines |>
+            mapSnd (List.rev >> Coroutines)
+
+/// A computation expression builder for Coroutine.
+/// Note that the "value" carried is simply unit as we are sequencing actions.
+type CoroutineBuilder () =
+
+    member this.Return (_ : unit) : 'w Coroutine =
+        // A no-op action.
+        Coroutine ignore
+    
+    member this.Bind (m : 'w Coroutine, f : unit -> 'w Coroutine) : 'w Coroutine =
+        // Run m, then run the coroutine produced by f.
+        // The simplest way is to combine them sequentially.
+        Coroutines [m; f ()]
+    
+    member this.Delay (f : unit -> 'w Coroutine) : 'w Coroutine =
+        // Delay evaluation until the computation is run.
+        f ()
+        
+    member this.For (seq : seq<'T>, f : 'T -> 'w Coroutine) : 'w Coroutine =
+        // Fold over the sequence and combine coroutines.
+        seq |> Seq.fold (fun acc t -> this.Combine (acc, f t)) (this.Zero ())
+    
+    member this.Combine (m1 : 'w Coroutine, m2 : 'w Coroutine) : 'w Coroutine =
+        // Sequence two coroutines.
+        Coroutines [m1; m2]
+    
+    member this.Zero () : 'w Coroutine =
+        // Zero is just a no-op.
+        Coroutine ignore
+
+[<AutoOpen>]
+module CoroutineBuilder =
+
+    /// The coroutine builder.
+    let coroutine = CoroutineBuilder ()
+
+    /// A coroutine that sleeps until the next frame.
+    let inline sleep gameTime = Coroutine.sleep gameTime
+
+    let pass () = Coroutine.pass ()
+
+    let inline action f = Coroutine.action f
+
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
@@ -370,6 +456,7 @@ type Timers =
       PostUpdateGameTimer : Stopwatch
       PostUpdateScreensTimer : Stopwatch
       PostUpdateGroupsTimer : Stopwatch
+      CoroutinesTimer : Stopwatch
       TaskletsTimer : Stopwatch
       DestructionTimer : Stopwatch
       PerProcessTimer : Stopwatch
@@ -407,6 +494,7 @@ type Timers =
           PostUpdateGameTimer = Stopwatch ()
           PostUpdateScreensTimer = Stopwatch ()
           PostUpdateGroupsTimer = Stopwatch ()
+          CoroutinesTimer = Stopwatch ()
           TaskletsTimer = Stopwatch ()
           DestructionTimer = Stopwatch ()
           PerProcessTimer = Stopwatch ()
@@ -452,6 +540,7 @@ module AmbientState =
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
+              Coroutines : OMap<uint64, 'w Coroutine>
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -598,6 +687,20 @@ module AmbientState =
     let mapKeyValueStore mapper state =
         let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
+
+    /// Get the active coroutines.
+    let getCoroutines state =
+        state.Coroutines
+
+    /// Set the active coroutines.
+    let setCoroutines coroutines state =
+        { state with Coroutines = coroutines }
+
+    /// Add a coroutine to the active coroutines.
+    let addCoroutine coroutine state =
+        let id = Gen.id64
+        let coroutines = OMap.add id coroutine state.Coroutines
+        { state with Coroutines = coroutines }
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -752,6 +855,7 @@ module AmbientState =
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
+          Coroutines = OMap.makeEmpty HashIdentity.Structural config
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

@@ -2991,20 +2991,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             MiscTimings.Enqueue
                 (single
                     (world.Timers.InputTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.AudioTimer.Elapsed.TotalMilliseconds))
+                     world.Timers.AudioTimer.Elapsed.TotalMilliseconds))
             MiscTimings.Dequeue () |> ignore<single>
             PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last MiscTimings)
             PhysicsTimings.Dequeue () |> ignore<single>
             UpdateTimings.Enqueue
                 (single
                     (world.Timers.PreProcessTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.UpdateTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.PerProcessTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.TaskletsTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.DestructionTimer.Elapsed.TotalMilliseconds +
-                        world.Timers.PostProcessTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
+                     world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.UpdateTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PerProcessTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.CoroutinesTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.TaskletsTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.DestructionTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PostProcessTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
             UpdateTimings.Dequeue () |> ignore<single>
             RenderMessagesTimings.Enqueue (single world.Timers.RenderMessagesTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
             RenderMessagesTimings.Dequeue () |> ignore<single>

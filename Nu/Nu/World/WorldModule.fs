@@ -370,6 +370,17 @@ module WorldModule =
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
+        static member internal getCoroutines (world : World) =
+            AmbientState.getCoroutines world.AmbientState
+
+        static member internal setCoroutines coroutines world =
+            World.mapAmbientState (AmbientState.setCoroutines coroutines) world
+
+        /// Add a coroutine to be processed by the engine.
+        static member addCoroutine coroutine (world : World) =
+            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
+            World.mapAmbientState (AmbientState.addCoroutine coroutine) world
+
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
 
