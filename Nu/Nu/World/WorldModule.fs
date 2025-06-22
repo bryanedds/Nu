@@ -376,8 +376,8 @@ module WorldModule =
         static member internal setCoroutines coroutines world =
             World.mapAmbientState (AmbientState.setCoroutines coroutines) world
 
-        /// Run a coroutine to be processed by the engine.
-        static member runCoroutine coroutine (world : World) =
+        /// Launch a coroutine to be processed by the engine.
+        static member launchCoroutine coroutine (world : World) =
             let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
             World.mapAmbientState (AmbientState.addCoroutine coroutine) world
 
@@ -549,9 +549,9 @@ module WorldModule =
         static member requestLightMapRender world =
             World.mapAmbientState AmbientState.requestLightMapRender world
 
-        /// Add a coroutine to be processed by the engine.
-        member this.Run coroutine =
-            World.runCoroutine coroutine this
+        /// Launch a coroutine to be processed by the engine.
+        member this.Launch coroutine =
+            World.launchCoroutine coroutine this
 
     type World with // Subsystems
 
