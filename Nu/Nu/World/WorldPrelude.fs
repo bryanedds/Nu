@@ -374,7 +374,7 @@ type 'w Coroutine =
 
 /// A computation expression builder for Coroutine.
 /// Note that the "value" carried is simply unit as we are sequencing actions.
-type CoroutineBuilder () =
+type CoroutineBuilder<'w> (launch : 'w Coroutine -> unit) =
 
     /// A no-op action.
     member this.Return (_ : unit) : 'w Coroutine =
@@ -383,6 +383,10 @@ type CoroutineBuilder () =
     /// Run m, then run the coroutine produced by f.
     member this.Bind (m : 'w Coroutine, f : unit -> 'w Coroutine) : 'w Coroutine =
         Coroutines [m; f ()]
+    
+    /// Run m, then run the coroutine produced by f.
+    member this.Bind (m : 'w -> unit, f : unit -> 'w Coroutine) : 'w Coroutine =
+        Coroutines [Coroutine m; f ()]
     
     /// Delay evaluation until the computation is run.
     member this.Delay (f : unit -> 'w Coroutine) : 'w Coroutine =
@@ -400,11 +404,15 @@ type CoroutineBuilder () =
     member this.Zero () : 'w Coroutine =
         Coroutine ignore
 
+    /// Run the coroutine by launching it.
+    member this.Run (coroutine : 'w Coroutine) =
+        launch coroutine
+
 [<AutoOpen>]
 module CoroutineBuilder =
 
     /// The coroutine builder.
-    let coroutine = CoroutineBuilder ()
+    let coroutine launch = CoroutineBuilder launch
 
     /// A coroutine that sleeps until the next frame.
     let inline sleep gameTime = Coroutine.sleep gameTime
