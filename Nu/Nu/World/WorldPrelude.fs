@@ -356,7 +356,6 @@ and 'w Coroutine =
         Coroutine f
 
     /// Step a coroutine.
-    /// TODO: P1: see if we can make this tail-recursive.
     static member step (pred : 'w -> bool) (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
         if pred world then
             match coroutine with
