@@ -336,15 +336,19 @@ and 'w Coroutine =
     | Coroutine of ('w -> unit)
     | Coroutines of 'w Coroutine list
 
-    static member cancel () : 'w Coroutine =
+    /// A coroutine that cancels the entire tree.
+    [<DebuggerHidden>]
+    static member cancel : 'w Coroutine =
         Cancel
 
     /// A coroutine that sleeps until the given game time.
+    [<DebuggerHidden; DebuggerStepThrough>]
     static member sleep (gameTime : GameTime) : 'w Coroutine =
         Sleep gameTime
 
     /// A coroutine that sleeps until the next frame (approximate in DynamicFrameRate mode).
-    static member pass () : 'w Coroutine =
+    [<DebuggerHidden>]
+    static member pass : 'w Coroutine =
         let gameTime =
             match Constants.GameTime.DesiredFrameRate with
             | StaticFrameRate _ -> UpdateTime 1L
@@ -352,6 +356,7 @@ and 'w Coroutine =
         Sleep gameTime
 
     /// Step a coroutine.
+    [<DebuggerHidden; DebuggerStepThrough>]
     static member step (pred : 'w -> bool) (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
         if pred world then
             match coroutine with
@@ -369,6 +374,7 @@ and 'w Coroutine =
         else CoroutineCancelled
 
     /// Prepare a coroutine for execution at the given starting game time.
+    [<DebuggerHidden; DebuggerStepThrough>]
     static member prepare (coroutine : 'w Coroutine) gameTime =
         match coroutine with
         | Cancel -> (gameTime, coroutine)
@@ -387,34 +393,42 @@ and 'w Coroutine =
 type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
 
     /// A no-op action.
-    member this.Return (_ : unit) : 'w Coroutine =
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member this.Return (()) : 'w Coroutine =
         Coroutine ignore
     
     /// Yields m.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.Yield (c : 'w Coroutine) : 'w Coroutine =
         c
     
     /// Yields f as a Coroutine.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.Yield (f : 'w -> unit) : 'w Coroutine =
         Coroutine f
     
     /// Delay evaluation until the computation is run.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.Delay (f : unit -> 'w Coroutine) : 'w Coroutine =
         f ()
         
     /// Iterate over the sequence and combine coroutines.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.For (seq : seq<'t>, f : 't -> 'w Coroutine) : 'w Coroutine =
         Seq.fold (fun c t -> this.Combine (c, f t)) (this.Zero ()) seq
     
     /// Sequence two coroutines.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.Combine (m1 : 'w Coroutine, m2 : 'w Coroutine) : 'w Coroutine =
         Coroutines [m1; m2]
     
     /// Zero is just a no-op.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.Zero () : 'w Coroutine =
         Coroutine ignore
 
     /// Run the coroutine by launching it.
+    [<DebuggerHidden; DebuggerStepThrough>]
     member this.Run (coroutine : 'w Coroutine) =
         launcher coroutine
 
@@ -422,16 +436,20 @@ type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
 module CoroutineBuilder =
 
     /// The coroutine builder.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let inline coroutine launcher = CoroutineBuilder launcher
 
     /// A coroutine that cancels the entire tree.
-    let inline cancel<'w> : 'w Coroutine = Coroutine.cancel ()
+    [<DebuggerHidden; DebuggerStepThrough>]
+    let inline cancel<'w> : 'w Coroutine = Coroutine.cancel
 
     /// A coroutine that sleeps until the next frame.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let inline sleep gameTime = Coroutine.sleep gameTime
 
     /// Sleep until the next frame (approximate in DynamicFrameRate mode).
-    let inline pass<'w> : 'w Coroutine = Coroutine.pass ()
+    [<DebuggerHidden; DebuggerStepThrough>]
+    let inline pass<'w> : 'w Coroutine = Coroutine.pass
 
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =
