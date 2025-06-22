@@ -406,8 +406,8 @@ type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
         f ()
         
     /// Iterate over the sequence and combine coroutines.
-    member this.For (seq : seq<'T>, f : 'T -> 'w Coroutine) : 'w Coroutine =
-        seq |> Seq.fold (fun acc t -> this.Combine (acc, f t)) (this.Zero ())
+    member this.For (seq : seq<'t>, f : 't -> 'w Coroutine) : 'w Coroutine =
+        Seq.fold (fun c t -> this.Combine (c, f t)) (this.Zero ()) seq
     
     /// Sequence two coroutines.
     member this.Combine (m1 : 'w Coroutine, m2 : 'w Coroutine) : 'w Coroutine =
