@@ -970,8 +970,9 @@ module WorldModule2 =
             let coroutines' =
                 OMap.fold (fun coroutines id coroutine ->
                     match Coroutine.step coroutine world.GameTime world with
-                    | Right () -> coroutines
-                    | Left coroutine' -> OMap.add id coroutine' coroutines)
+                    | CoroutineCancelled -> coroutines
+                    | CoroutineCompleted -> coroutines
+                    | CoroutineProgressing coroutine' -> OMap.add id coroutine' coroutines)
                     (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
                     coroutines
             World.setCoroutines coroutines' world

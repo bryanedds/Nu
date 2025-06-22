@@ -323,15 +323,25 @@ type OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
+/// The result of stepping a coroutine.
+type 'w CoroutineResult =
+    | CoroutineCompleted
+    | CoroutineCancelled
+    | CoroutineProgressing of 'w Coroutine
+
 /// A coroutine in Nu allows easy definition of static behavior over multiple frames.
-type 'w Coroutine =
+and 'w Coroutine =
+    | Cancel
     | Sleep of GameTime
     | Coroutine of ('w -> unit)
     | Coroutines of 'w Coroutine list
 
-    /// A coroutine that performs the given action.
-    static member action f : 'w Coroutine =
-        Coroutine f
+    static member cancel () : 'w Coroutine =
+        Cancel
+
+    /// A coroutine that sleeps until the given game time.
+    static member sleep (gameTime : GameTime) : 'w Coroutine =
+        Sleep gameTime
 
     /// A coroutine that sleeps until the next frame (approximate in DynamicFrameRate mode).
     static member pass () : 'w Coroutine =
@@ -341,29 +351,32 @@ type 'w Coroutine =
             | DynamicFrameRate frameRate -> TickTime (1.0 / double frameRate * double Stopwatch.Frequency |> int64)
         Sleep gameTime
 
-    /// A coroutine that sleeps until the given game time.
-    static member sleep (gameTime : GameTime) : 'w Coroutine =
-        Sleep gameTime
+    /// A coroutine that performs the given action.
+    static member action f : 'w Coroutine =
+        Coroutine f
 
     /// Step a coroutine.
     /// TODO: P1: see if we can make this tail-recursive.
-    static member step (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : Either<'w Coroutine, unit> =
+    static member step (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
         match coroutine with
-        | Sleep gameTime' -> if gameTime' >= gameTime then Left coroutine else Right ()
-        | Coroutine action -> action world; Right ()
+        | Cancel -> CoroutineCancelled
+        | Sleep gameTime' -> if gameTime' >= gameTime then CoroutineProgressing coroutine else CoroutineCompleted
+        | Coroutine action -> action world; CoroutineCompleted
         | Coroutines coroutines ->
             match coroutines with
-            | [] -> Right ()
+            | [] -> CoroutineCompleted
             | head :: tail ->
                 match Coroutine.step head gameTime world with
-                | Left head' -> Left (Coroutines (head' :: tail))
-                | Right () -> Coroutine.step (Coroutines tail) gameTime world
+                | CoroutineProgressing head' -> CoroutineProgressing (Coroutines (head' :: tail))
+                | CoroutineCompleted -> Coroutine.step (Coroutines tail) gameTime world
+                | CoroutineCancelled -> CoroutineCancelled
 
     /// Prepare a coroutine for execution at the given starting game time.
     static member prepare (coroutine : 'w Coroutine) gameTime =
         match coroutine with
+        | Cancel -> (gameTime, coroutine)
         | Sleep gameTime' -> let gameTime'' = gameTime + gameTime' in (gameTime'', Sleep gameTime'')
-        | Coroutine _ as c -> (gameTime, c)
+        | Coroutine _ -> (gameTime, coroutine)
         | Coroutines coroutines ->
             List.fold (fun (gameTime, coroutines) coroutine ->
                 let (gameTime', coroutine') = Coroutine.prepare coroutine gameTime
@@ -374,7 +387,7 @@ type 'w Coroutine =
 
 /// A computation expression builder for Coroutine.
 /// Note that the "value" carried is simply unit as we are sequencing actions.
-type CoroutineBuilder<'w> (launcher : 'w Coroutine -> unit) =
+type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
 
     /// A no-op action.
     member this.Return (_ : unit) : 'w Coroutine =
@@ -412,13 +425,16 @@ type CoroutineBuilder<'w> (launcher : 'w Coroutine -> unit) =
 module CoroutineBuilder =
 
     /// The coroutine builder.
-    let coroutine launcher = CoroutineBuilder launcher
+    let inline coroutine launcher = CoroutineBuilder launcher
+
+    /// A coroutine that cancels the entire tree.
+    let inline cancel () = Coroutine.cancel ()
 
     /// A coroutine that sleeps until the next frame.
     let inline sleep gameTime = Coroutine.sleep gameTime
 
     /// Sleep until the next frame (approximate in DynamicFrameRate mode).
-    let pass () = Coroutine.pass ()
+    let inline pass () = Coroutine.pass ()
 
     /// A coroutine that performs the given action.
     let inline action f = Coroutine.action f
