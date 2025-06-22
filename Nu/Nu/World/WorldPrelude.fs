@@ -397,15 +397,13 @@ type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
     member this.Return (()) : 'w Coroutine =
         Coroutine ignore
     
-    /// Yields m.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Yield (c : 'w Coroutine) : 'w Coroutine =
-        c
+    /// Run c, then run the coroutine produced by f.
+    member this.Bind (c : 'w Coroutine, f : unit -> 'w Coroutine) : 'w Coroutine =
+        Coroutines [c; f ()]
     
-    /// Yields f as a Coroutine.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Yield (f : 'w -> unit) : 'w Coroutine =
-        Coroutine f
+    /// Run c, then run the coroutine produced by f.
+    member this.Bind (c : 'w -> unit, f : unit -> 'w Coroutine) : 'w Coroutine =
+        Coroutines [Coroutine c; f ()]
     
     /// Delay evaluation until the computation is run.
     [<DebuggerHidden; DebuggerStepThrough>]
