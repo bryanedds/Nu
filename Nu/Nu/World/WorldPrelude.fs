@@ -394,11 +394,13 @@ type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
     member this.Return (_ : unit) : 'w Coroutine =
         Coroutine ignore
     
-    /// Yields m
-    member this.Yield (m : 'w Coroutine) : 'w Coroutine = m
+    /// Yields m.
+    member this.Yield (c : 'w Coroutine) : 'w Coroutine =
+        c
     
-    /// Yields m as a Coroutine
-    member this.Yield (m : 'w -> unit) : 'w Coroutine = Coroutine m
+    /// Yields f as a Coroutine.
+    member this.Yield (f : 'w -> unit) : 'w Coroutine =
+        Coroutine f
     
     /// Delay evaluation until the computation is run.
     member this.Delay (f : unit -> 'w Coroutine) : 'w Coroutine =
@@ -427,13 +429,13 @@ module CoroutineBuilder =
     let inline coroutine launcher = CoroutineBuilder launcher
 
     /// A coroutine that cancels the entire tree.
-    let inline cancel<'a>: 'a Coroutine = Coroutine.cancel ()
+    let inline cancel<'w> : 'w Coroutine = Coroutine.cancel ()
 
     /// A coroutine that sleeps until the next frame.
     let inline sleep gameTime = Coroutine.sleep gameTime
 
     /// Sleep until the next frame (approximate in DynamicFrameRate mode).
-    let inline pass<'a>: 'a Coroutine = Coroutine.pass ()
+    let inline pass<'w> : 'w Coroutine = Coroutine.pass ()
 
     /// A coroutine that performs the given action.
     let inline action f = Coroutine.action f
