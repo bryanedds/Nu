@@ -377,9 +377,9 @@ module WorldModule =
             World.mapAmbientState (AmbientState.setCoroutines coroutines) world
 
         /// Launch a coroutine to be processed by the engine.
-        static member launchCoroutine coroutine (world : World) =
+        static member launchCoroutine pred coroutine (world : World) =
             let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
-            World.mapAmbientState (AmbientState.addCoroutine coroutine) world
+            World.mapAmbientState (AmbientState.addCoroutine (pred, coroutine)) world
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
@@ -551,7 +551,11 @@ module WorldModule =
 
         /// A coroutine launcher.
         member this.Launcher =
-            flip World.launchCoroutine this
+            flip (World.launchCoroutine tautology) this
+
+        /// A cancellable coroutine launcher.
+        member this.LauncherWhile pred =
+            flip (World.launchCoroutine pred) this
 
     type World with // Subsystems
 

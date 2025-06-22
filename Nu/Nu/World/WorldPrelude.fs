@@ -357,19 +357,21 @@ and 'w Coroutine =
 
     /// Step a coroutine.
     /// TODO: P1: see if we can make this tail-recursive.
-    static member step (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
-        match coroutine with
-        | Cancel -> CoroutineCancelled
-        | Sleep gameTime' -> if gameTime' >= gameTime then CoroutineProgressing coroutine else CoroutineCompleted
-        | Coroutine action -> action world; CoroutineCompleted
-        | Coroutines coroutines ->
-            match coroutines with
-            | [] -> CoroutineCompleted
-            | head :: tail ->
-                match Coroutine.step head gameTime world with
-                | CoroutineProgressing head' -> CoroutineProgressing (Coroutines (head' :: tail))
-                | CoroutineCompleted -> Coroutine.step (Coroutines tail) gameTime world
-                | CoroutineCancelled -> CoroutineCancelled
+    static member step (pred : 'w -> bool) (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
+        if pred world then
+            match coroutine with
+            | Cancel -> CoroutineCancelled
+            | Sleep gameTime' -> if gameTime' >= gameTime then CoroutineProgressing coroutine else CoroutineCompleted
+            | Coroutine action -> action world; CoroutineCompleted
+            | Coroutines coroutines ->
+                match coroutines with
+                | [] -> CoroutineCompleted
+                | head :: tail ->
+                    match Coroutine.step pred head gameTime world with
+                    | CoroutineProgressing head' -> CoroutineProgressing (Coroutines (head' :: tail))
+                    | CoroutineCompleted -> Coroutine.step pred (Coroutines tail) gameTime world
+                    | CoroutineCancelled -> CoroutineCancelled
+        else CoroutineCancelled
 
     /// Prepare a coroutine for execution at the given starting game time.
     static member prepare (coroutine : 'w Coroutine) gameTime =
@@ -570,7 +572,7 @@ module AmbientState =
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
-              Coroutines : OMap<uint64, 'w Coroutine>
+              Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics

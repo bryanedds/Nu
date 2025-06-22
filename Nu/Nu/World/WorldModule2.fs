@@ -966,16 +966,17 @@ module WorldModule2 =
             | None -> ()
 
         static member private processCoroutines (world : World) =
-            let coroutines = World.getCoroutines world
-            let coroutines' =
-                OMap.fold (fun coroutines id coroutine ->
-                    match Coroutine.step coroutine world.GameTime world with
-                    | CoroutineCancelled -> coroutines
-                    | CoroutineCompleted -> coroutines
-                    | CoroutineProgressing coroutine' -> OMap.add id coroutine' coroutines)
-                    (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
-                    coroutines
-            World.setCoroutines coroutines' world
+            if world.Advancing then
+                let coroutines = World.getCoroutines world
+                let coroutines' =
+                    OMap.fold (fun coroutines id (pred, coroutine) ->
+                        match Coroutine.step pred coroutine world.GameTime world with
+                        | CoroutineCancelled -> coroutines
+                        | CoroutineCompleted -> coroutines
+                        | CoroutineProgressing coroutine' -> OMap.add id (pred, coroutine') coroutines)
+                        (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
+                        coroutines
+                World.setCoroutines coroutines' world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
