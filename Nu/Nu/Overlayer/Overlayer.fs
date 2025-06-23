@@ -40,9 +40,9 @@ type Overlay =
             [|for sourceType in sourceTypes do
                 yield sourceType
                 for sourceTypeDecomposed in Reflection.getBaseTypesExceptObject sourceType do
-                    yield sourceTypeDecomposed|] |>
-            HashSet |>
-            Seq.toList
+                    yield sourceTypeDecomposed|]
+            |> HashSet
+            |> Seq.toList
 
         // get the descriptors needed to construct the overlays
         let overlayDescriptors =
@@ -287,10 +287,10 @@ module Overlayer =
         let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
         let overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
         let routes =
-            (intrinsicOverlays @ extrinsicOverlays) |>
-            List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
-            List.concat |>
-            Map.ofList
+            (intrinsicOverlays @ extrinsicOverlays)
+            |> List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName)))
+            |> List.concat
+            |> Map.ofList
         { IntrinsicOverlays = intrinsicOverlays
           ExtrinsicOverlays = extrinsicOverlays
           Overlays = overlays
@@ -300,9 +300,9 @@ module Overlayer =
     /// the given intrinsic overlays.
     let tryMakeFromFile intrinsicOverlays (filePath : string) =
         try let extrinsicOverlays =
-                File.ReadAllText filePath |>
-                String.unescape |>
-                scvalue<Overlay list>
+                File.ReadAllText filePath
+                |> String.unescape
+                |> scvalue<Overlay list>
             make intrinsicOverlays extrinsicOverlays |> Right
         with exn -> Left ("Could not make overlayer from file '" + filePath + "' due to: " + scstring exn)
 
