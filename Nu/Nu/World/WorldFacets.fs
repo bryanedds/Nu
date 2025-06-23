@@ -205,8 +205,8 @@ type BasicStaticSpriteEmitterFacet () =
             (entity.GetParticleRate world)
             (entity.GetParticleMax world)
             (entity.GetEmitterStyle world)
-            world |>
-        Option.map cast<Particles.BasicStaticSpriteEmitter>
+            world
+        |> Option.map cast<Particles.BasicStaticSpriteEmitter>
 
     static let makeEmitter entity world =
         match tryMakeEmitter entity world with
@@ -379,9 +379,9 @@ type BasicStaticSpriteEmitterFacet () =
         let time = world.GameTime
         let particleSystem = entity.GetParticleSystem world
         let particlesMessages =
-            particleSystem |>
-            Particles.ParticleSystem.toParticlesDescriptors time |>
-            List.map (fun descriptor ->
+            particleSystem
+            |> Particles.ParticleSystem.toParticlesDescriptors time
+            |> List.map (fun descriptor ->
                 match descriptor with
                 | Particles.SpriteParticlesDescriptor descriptor ->
                     Some
@@ -389,8 +389,8 @@ type BasicStaticSpriteEmitterFacet () =
                           Horizon = descriptor.Horizon
                           AssetTag = descriptor.Image
                           RenderOperation2d = RenderSpriteParticles descriptor }
-                | _ -> None) |>
-            List.definitize
+                | _ -> None)
+            |> List.definitize
         World.enqueueLayeredOperations2d particlesMessages world
 
 [<AutoOpen>]
@@ -2164,17 +2164,17 @@ type LayoutFacet () =
             | Manual -> () // OPTIMIZATION: early exit.
             | layout ->
                 let children =
-                    World.getEntityMounters entity world |>
-                    Array.ofSeq |> // array for sorting
-                    Array.map (fun child ->
+                    World.getEntityMounters entity world
+                    |> Array.ofSeq // array for sorting
+                    |> Array.map (fun child ->
                         let layoutOrder =
                             if child.Has<LayoutFacet> world
                             then child.GetLayoutOrder world
                             else 0
                         let order = child.GetOrder world
-                        (layoutOrder, order, child)) |>
-                    Array.sortBy ab_ |>
-                    Array.map __c
+                        (layoutOrder, order, child))
+                    |> Array.sortBy ab_
+                    |> Array.map __c
                 let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
                 let margin = entity.GetLayoutMargin world
                 match layout with
@@ -2665,8 +2665,8 @@ type BasicStaticBillboardEmitterFacet () =
             (entity.GetParticleRate world)
             (entity.GetParticleMax world)
             (entity.GetEmitterStyle world)
-            world |>
-        Option.map cast<Particles.BasicStaticBillboardEmitter>
+            world
+        |> Option.map cast<Particles.BasicStaticBillboardEmitter>
 
     static let makeEmitter entity world =
         match tryMakeEmitter entity world with
@@ -2858,9 +2858,9 @@ type BasicStaticBillboardEmitterFacet () =
             let presence = entity.GetPresence world
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
-                particleSystem |>
-                Particles.ParticleSystem.toParticlesDescriptors time |>
-                List.map (fun descriptor ->
+                particleSystem
+                |> Particles.ParticleSystem.toParticlesDescriptors time
+                |> List.map (fun descriptor ->
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
                         let emitterProperties = entity.GetEmitterMaterialProperties world
@@ -2899,8 +2899,8 @@ type BasicStaticBillboardEmitterFacet () =
                                   DepthTest =  LessThanOrEqualTest
                                   RenderType = descriptor.RenderType
                                   RenderPass = renderPass })
-                    | _ -> None) |>
-                List.definitize
+                    | _ -> None)
+                |> List.definitize
             World.enqueueRenderMessages3d particlesMessages world
 
     override this.RayCast (ray, entity, world) =
@@ -2964,12 +2964,12 @@ type StaticModelFacet () =
                     if boundsIntersectionOpt.HasValue then
                         let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
                         if Seq.notEmpty intersections then
-                            intersections |>
-                            Seq.map snd' |>
-                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                            Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
-                            Seq.map (fun point -> Hit (point - ray.Origin).Magnitude) |>
-                            Seq.toArray
+                            intersections
+                            |> Seq.map snd'
+                            |> Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity)
+                            |> Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix)
+                            |> Seq.map (fun point -> Hit (point - ray.Origin).Magnitude)
+                            |> Seq.toArray
                         else [|Miss|]
                     else [|Miss|])
                     staticModelMetadata.Surfaces
@@ -3221,12 +3221,12 @@ type AnimatedModelFacet () =
                     if boundsIntersectionOpt.HasValue then
                         let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
                         if Seq.notEmpty intersections then
-                            intersections |>
-                            Seq.map snd' |>
-                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                            Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
-                            Seq.map (fun point -> Hit (point - ray.Origin).Magnitude) |>
-                            Seq.toArray
+                            intersections
+                            |> Seq.map snd'
+                            |> Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity)
+                            |> Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix)
+                            |> Seq.map (fun point -> Hit (point - ray.Origin).Magnitude)
+                            |> Seq.toArray
                         else [|Miss|]
                     else [|Miss|])
                     animatedModelMetadata.Surfaces
@@ -3425,10 +3425,10 @@ type EditVolumeFacet () =
 
     static let getIntersectedEntities (entity : Entity) world =
         let bounds = entity.GetBounds world
-        World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world |>
-        Seq.filter (fun intersected -> getEntityParentable intersected entity world) |>
-        Seq.toArray |>
-        Array.sortBy _.Names.Length
+        World.getEntities3dInBounds bounds (hashSetPlus HashIdentity.Structural []) world
+        |> Seq.filter (fun intersected -> getEntityParentable intersected entity world)
+        |> Seq.toArray
+        |> Array.sortBy _.Names.Length
 
     override this.Edit (op, entity, world) =
 
@@ -3460,9 +3460,9 @@ type EditVolumeFacet () =
                 append.EditContext.Snapshot (VolumeEdit "Unparent Intersected") world
                 let bounds = entity.GetBounds world
                 let children =
-                    entity.GetChildren world |>
-                    Seq.filter (fun child -> bounds.Intersects (child.GetBounds world)) |>
-                    Array.ofSeq
+                    entity.GetChildren world
+                    |> Seq.filter (fun child -> bounds.Intersects (child.GetBounds world))
+                    |> Array.ofSeq
                 for child in children do
                     if child.GetExists world then
                         let child' = child.Names |> Array.take (entity.Names.Length - 1) |> Array.add child.Name |> rtoa |> Nu.Entity

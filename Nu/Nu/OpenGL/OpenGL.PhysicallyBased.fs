@@ -3939,8 +3939,8 @@ module PhysicallyBased =
                                 let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                 surfaces.Add surface
-                                yield PhysicallyBasedSurface surface|] |>
-                            TreeNode)
+                                yield PhysicallyBasedSurface surface|]
+                            |> TreeNode)
 
                     // fin
                     Right

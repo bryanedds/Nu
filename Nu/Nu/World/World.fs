@@ -227,13 +227,13 @@ module WorldModule3 =
 
             // update late-bound types
             let pluginType =
-                assemblies |>
-                Array.map (fun assembly -> assembly.GetTypes ()) |>
-                Array.concat |>
-                Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>) |>
-                Array.filter (fun ty -> not ty.IsAbstract) |>
-                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0)) |>
-                Array.head
+                assemblies
+                |> Array.map (fun assembly -> assembly.GetTypes ())
+                |> Array.concat
+                |> Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>)
+                |> Array.filter (fun ty -> not ty.IsAbstract)
+                |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+                |> Array.head
             let plugin = Activator.CreateInstance pluginType :?> NuPlugin
             let pluginFacets = plugin.Birth<Facet> assemblies
             let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> assemblies
@@ -266,12 +266,12 @@ module WorldModule3 =
 
             // update late bindings for all simulants
             let lateBindingses =
-                [|Array.map (snd >> cast<LateBindings>) pluginFacets
-                  Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginGroupDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
                 Array.concat
+                    [|Array.map (snd >> cast<LateBindings>) pluginFacets
+                      Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
+                      Array.map (snd >> cast<LateBindings>) pluginGroupDispatchers
+                      Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
+                      Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|]
             for (simulant, _) in world.Simulants do
                 for lateBindings in lateBindingses do
                     World.updateLateBindings3 lateBindings simulant world

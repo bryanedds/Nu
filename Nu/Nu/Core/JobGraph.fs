@@ -95,8 +95,7 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
                             | (true, jobResult) when now <= jobResult.ResultTime + resultExpirationTime ->
                                 jobResults.AddOrUpdate (entry.Key, jobResult, fun _ existing -> if jobResult.IssueTime >= existing.IssueTime then jobResult else existing) |> ignore<JobResult>
                             | (_, _) -> ()
-                    1 |> Async.Sleep |> Async.RunSynchronously } |>
-            Async.StartAsTask
+                    Async.Sleep 1 |> Async.RunSynchronously } |> Async.StartAsTask
 
     interface JobGraph with
 

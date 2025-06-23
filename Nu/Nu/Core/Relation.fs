@@ -117,9 +117,9 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
         let relationStr = string relation
         let pathStr = relationStr.Replace("^", "..").Replace('~', '.').Replace('?', '\b')
         let resultStr =
-            addressStr + Constants.Address.SeparatorName + pathStr |>
-            (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/')) |>
-            Uri.UnescapeDataString
+            addressStr + Constants.Address.SeparatorName + pathStr
+            |> (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/'))
+            |> Uri.UnescapeDataString
         let resultStr =
             let resultStrLen = resultStr.Length
             if resultStrLen > 0 && resultStr.[dec resultStrLen] = '/'

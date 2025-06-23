@@ -23,7 +23,7 @@ type CharacterDispatcher () =
                 if character.Wounded then None
                 elif Map.containsKey Confuse statuses then Some 4
                 elif Map.containsKey Curse statuses then Some 3
-                elif Map.containsKey Sleep statuses then Some 2
+                elif Map.containsKey StatusType.Sleep statuses then Some 2
                 elif Map.containsKey Silence statuses then Some 1
                 elif Map.containsKey Poison statuses then Some 0
                 elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Some 5

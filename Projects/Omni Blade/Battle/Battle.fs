@@ -482,7 +482,7 @@ module Battle =
     let modifyCharacterHitPoints directAction affectsWounded cancelDataOpt hitPointsChange characterIndex battle =
         let character = getCharacter characterIndex battle
         let character = Character.modifyHitPoints affectsWounded cancelDataOpt (character.HitPoints + hitPointsChange) character
-        let character = if directAction then Character.setStatuses (Map.remove Sleep character.Statuses) character else character
+        let character = if directAction then Character.setStatuses (Map.remove StatusType.Sleep character.Statuses) character else character
         mapCharacter (constant character) characterIndex battle
 
     let modifyCharacterTechPoints techPointsChange characterIndex battle =
@@ -1590,7 +1590,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | CounterAttack messageOpt ->
-                if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
+                if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (CounterAttack None) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = prependActionCommand (ActionCommand.make Attack observerIndex (Some sourceIndex) None) battle
@@ -1599,7 +1599,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | CounterTech (techType, messageOpt) ->
-                if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) && not ((getCharacter observerIndex battle).Statuses.ContainsKey Silence) then
+                if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) && not ((getCharacter observerIndex battle).Statuses.ContainsKey Silence) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (CounterTech (techType, None)) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
@@ -1608,7 +1608,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | CounterConsumable (consumableType, messageOpt) ->
-                if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
+                if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (CounterConsumable (consumableType, None)) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
@@ -1617,7 +1617,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | AssistTech (techType, messageOpt) ->
-                if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
+                if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (AssistTech (techType, None)) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
@@ -1626,7 +1626,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | AssistConsumable (consumableType, messageOpt) ->
-                if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
+                if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (AssistConsumable (consumableType, None)) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
@@ -1635,7 +1635,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | PilferGold (gold, messageOpt) ->
-                if containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
+                if containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (PilferGold (gold, None)) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = setInventory (Inventory.removeGold gold battle.Inventory_) battle
@@ -1644,7 +1644,7 @@ module Battle =
                     | (false, battle) -> just battle
                 else just (setCurrentCommandOpt None battle)
             | PilferConsumable (consumableType, messageOpt) ->
-                if containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
+                if containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey StatusType.Sleep) then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (PilferConsumable (consumableType, None)) messageOpt localTime battle with
                     | (true, battle) ->
                         let battle = setInventory (Inventory.tryRemoveItem (Consumable consumableType) battle.Inventory_ |> snd) battle
@@ -1876,7 +1876,7 @@ module Battle =
             let battle =
                 match command.ActionCommand.Action with
                 | Attack | Defend ->
-                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
+                    if source.Healthy && not (Map.containsKey StatusType.Sleep source.Statuses) then
                         let targetIndexOpt = evalRetarget false targetIndexOpt battle
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         setCurrentCommandOpt (Some command) battle
@@ -1884,7 +1884,7 @@ module Battle =
                 | Consume consumableType ->
                     match Data.Value.Consumables.TryGetValue consumableType with
                     | (true, consumable) ->
-                        if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
+                        if source.Healthy && not (Map.containsKey StatusType.Sleep source.Statuses) then
                             let targetIndexOpt = evalRetarget consumable.Revive targetIndexOpt battle
                             let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             setCurrentCommandOpt (Some command) battle
@@ -1894,7 +1894,7 @@ module Battle =
                     match Data.Value.Techs.TryGetValue techType with
                     | (true, _) ->
                         if  source.Healthy &&
-                            not (Map.containsKey Sleep source.Statuses) &&
+                            not (Map.containsKey StatusType.Sleep source.Statuses) &&
                             (not (Map.containsKey Silence source.Statuses) || // NOTE: silence only blocks non-enemy, non-charge techs.
                              source.Enemy && match source.TechChargeOpt with Some (_, chargeAmount, _) -> chargeAmount >= Constants.Battle.ChargeMax | _ -> false) then
                             let affectingWounded = techType = Vita // TODO: pull from tech data.
@@ -1985,7 +1985,7 @@ module Battle =
                     character.ActionTime % 500.0f < 250.0f &&
                     actionTime % 500.0f >= 250.0f
                 let character =
-                    if character.Healthy && not (Map.containsKey Sleep character.Statuses)
+                    if character.Healthy && not (Map.containsKey StatusType.Sleep character.Statuses)
                     then Character.setActionTime (character.ActionTime + actionTimeDelta) character
                     else character
                 let character =

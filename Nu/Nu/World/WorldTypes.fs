@@ -663,8 +663,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     default this.Render (_, _, _) = ()
 
     /// Apply physics changes from a physics engine to an entity.
-    abstract ApplyPhysics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
-    default this.ApplyPhysics (_, _, _, _, _, _) = ()
+    abstract Physics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
+    default this.Physics (_, _, _, _, _, _) = ()
 
     /// Send a signal to an entity.
     abstract Signal : signalObj : obj * entity : Entity * world : World -> unit
@@ -1733,9 +1733,9 @@ and EntityDescriptor =
 
     /// Derive a name from the descriptor.
     static member getNameOpt descriptor =
-        descriptor.EntityProperties |>
-        Map.tryFind Constants.Engine.NamePropertyName |>
-        Option.map symbolToValue<string>
+        descriptor.EntityProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// Set a name for the descriptor.
     static member setNameOpt nameOpt descriptor =
@@ -1758,9 +1758,9 @@ and GroupDescriptor =
 
     /// Derive a name from the dispatcher.
     static member getNameOpt dispatcher =
-        dispatcher.GroupProperties |>
-        Map.tryFind Constants.Engine.NamePropertyName |>
-        Option.map symbolToValue<string>
+        dispatcher.GroupProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// The empty group descriptor.
     static member empty =
@@ -1777,9 +1777,9 @@ and ScreenDescriptor =
 
     /// Derive a name from the dispatcher.
     static member getNameOpt dispatcher =
-        dispatcher.ScreenProperties |>
-        Map.tryFind Constants.Engine.NamePropertyName |>
-        Option.map symbolToValue<string>
+        dispatcher.ScreenProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// The empty screen descriptor.
     static member empty =
@@ -2219,15 +2219,14 @@ and [<AbstractClass>] NuPlugin () =
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =
-        Array.map (fun (assembly : Assembly) ->
-            let types =
-                assembly.GetTypes () |>
-                Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |>
-                Array.filter (fun ty -> not ty.IsAbstract) |>
-                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
-            Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)) types)
-            assemblies |>
-        Array.concat
+        assemblies
+        |> Array.map (fun (assembly : Assembly) ->
+            assembly.GetTypes ()
+            |> Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>)
+            |> Array.filter (fun ty -> not ty.IsAbstract)
+            |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+            |> Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)))
+        |> Array.concat
 
     interface LateBindings
 

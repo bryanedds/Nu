@@ -421,9 +421,9 @@ module Stream =
 
     /// Insert a persistent state value into the stream.
     let [<DebuggerHidden; DebuggerStepThrough>] insert state stream =
-        stream |>
-        fold (fun (stateOpt, _) b -> (Some (Option.defaultValue state stateOpt), b)) (None, Unchecked.defaultof<_>) |>
-        map (mapFst Option.get)
+        stream
+        |> fold (fun (stateOpt, _) b -> (Some (Option.defaultValue state stateOpt), b)) (None, Unchecked.defaultof<_>)
+        |> map (mapFst Option.get)
 
     (* Derived Combinators *)
 
@@ -479,22 +479,21 @@ module Stream =
 
     /// Filter a stream of options for actual values.
     let [<DebuggerHidden; DebuggerStepThrough>] definitize (stream : Stream<'a option>) =
-        stream |>
-        filter Option.isSome |>
-        map Option.get
+        stream
+        |> filter Option.isSome
+        |> map Option.get
 
     /// Filter events with unchanging data.
     let [<DebuggerHidden; DebuggerStepThrough>] optimizeBy (by : 'a -> 'b) (stream : Stream<'a>) =
-        fold
-            (fun (s, _) a ->
-                let n = by a
-                match s with
-                | None -> (Some n, Some a)
-                | Some b -> if b = n then (Some n, None) else (Some n, Some a))
+        stream
+        |> fold (fun (s, _) a ->
+            let n = by a
+            match s with
+            | None -> (Some n, Some a)
+            | Some b -> if b = n then (Some n, None) else (Some n, Some a))
             (None, None)
-            stream |>
-        map snd |>
-        definitize
+        |> map snd
+        |> definitize
 
     /// Filter events with unchanging data.
     let [<DebuggerHidden; DebuggerStepThrough>] optimize (stream : Stream<'a>) =

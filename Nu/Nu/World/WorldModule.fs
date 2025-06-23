@@ -370,6 +370,17 @@ module WorldModule =
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
+        static member internal getCoroutines (world : World) =
+            AmbientState.getCoroutines world.AmbientState
+
+        static member internal setCoroutines coroutines world =
+            World.mapAmbientState (AmbientState.setCoroutines coroutines) world
+
+        /// Launch a coroutine to be processed by the engine.
+        static member launchCoroutine pred coroutine (world : World) =
+            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
+            World.mapAmbientState (AmbientState.addCoroutine (pred, coroutine)) world
+
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
 
@@ -537,6 +548,14 @@ module WorldModule =
         /// Request a light map render for the current frame, such as when a light probe needs to be rendered.
         static member requestLightMapRender world =
             World.mapAmbientState AmbientState.requestLightMapRender world
+
+        /// A coroutine launcher.
+        member this.Launcher =
+            flip (World.launchCoroutine tautology) this
+
+        /// A cancellable coroutine launcher.
+        member this.LauncherWhile pred =
+            flip (World.launchCoroutine pred) this
 
     type World with // Subsystems
 
@@ -895,19 +914,18 @@ module WorldModule =
 
         /// View the member properties of some SimulantState.
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
-            state |>
-            getType |>
-            (fun ty -> ty.GetProperties true) |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
-            Array.toList
+            getType state
+            |> (fun ty -> ty.GetProperties true)
+            |> Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state))
+            |> Array.toList
 
         /// View the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
-            state.GetXtension () |>
-            Xtension.toSeq |>
-            List.ofSeq |>
-            List.sortBy fst |>
-            List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
+            state.GetXtension ()
+            |> Xtension.toSeq
+            |> List.ofSeq
+            |> List.sortBy fst
+            |> List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
 
         /// Provides a full view of all the properties of some SimulantState.
         static member internal getSimulantStateProperties state =

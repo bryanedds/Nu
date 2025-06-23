@@ -78,9 +78,8 @@ module TmxMap =
             gid |||
             (if hflip then 0x80000000 else 0x0) |||
             (if vflip then 0x40000000 else 0x0) |||
-            (if dflip then 0x20000000 else 0x0) |>
-            uint
-        TmxLayerTile tid
+            (if dflip then 0x20000000 else 0x0)
+        TmxLayerTile (uint tid)
 
     /// Make a TmxObject.
     let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
@@ -286,13 +285,13 @@ module TmxMap =
         bodyShapes
 
     let getBodyShapes tileMapDescriptor =
-        tileMapDescriptor.TileMap.TileLayers |>
-        Seq.fold (fun shapess tileLayer ->
+        tileMapDescriptor.TileMap.TileLayers
+        |> Seq.fold (fun shapess tileLayer ->
             let shapes = getTileLayerBodyShapes tileLayer tileMapDescriptor
             shapes :: shapess)
-            [] |>
-        Seq.concat |>
-        Seq.toList
+            []
+        |> Seq.concat
+        |> Seq.toList
 
     let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =

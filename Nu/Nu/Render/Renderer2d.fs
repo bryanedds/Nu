@@ -530,16 +530,16 @@ type [<ReferenceEquality>] GlRenderer2d =
         let tilePivot = tileSize * 0.5f // just rotate around center
         let mutable tileSetTexturesAllFound = true
         let tileSetTextures =
-            tileAssets |>
-            Array.map (fun struct (tileSet, tileSetImage) ->
+            tileAssets
+            |> Array.map (fun struct (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
                 | ValueSome asset ->
                     match asset with
                     | TextureAsset tileSetTexture -> ValueSome struct (tileSet, tileSetImage, tileSetTexture)
                     | _ -> tileSetTexturesAllFound <- false; ValueNone
-                | ValueNone -> tileSetTexturesAllFound <- false; ValueNone) |>
-            Array.filter ValueOption.isSome |>
-            Array.map ValueOption.get
+                | ValueNone -> tileSetTexturesAllFound <- false; ValueNone)
+            |> Array.filter ValueOption.isSome
+            |> Array.map ValueOption.get
 
         // render only when all needed textures are found
         if tileSetTexturesAllFound then

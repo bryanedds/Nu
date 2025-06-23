@@ -58,9 +58,9 @@ module EffectSystem =
             else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
 
     let private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
-        keyFrames |>
-        selectKeyFrames2 localTime playback |>
-        fun (fst, snd, thd) -> (fst, snd, thd)
+        keyFrames
+        |> selectKeyFrames2 localTime playback
+        |> fun (fst, snd, thd) -> (fst, snd, thd)
 
     let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm =
         match algorithm with
@@ -608,13 +608,13 @@ module EffectSystem =
 
         // eval iterative repeat
         | Iterate count ->
-            Array.fold
+            [|0 .. count - 1|]
+            |> Array.fold
                 (fun (slice, effectSystem) _ ->
                     let (slice, effectSystem) = iterateDataTokens incrementAspects content slice history effectSystem
                     (slice, effectSystem))
                 (slice, effectSystem)
-                [|0 .. count - 1|] |>
-            snd
+            |> snd
 
         // eval cycling repeat
         | Cycle count ->
