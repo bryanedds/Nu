@@ -510,7 +510,7 @@ module WorldEntityModule =
         member this.GetPropagationTargets world = World.getPropagationTargets this world
 
         /// Apply physics changes to an entity.
-        member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
+        member this.Physics (center : Vector3) rotation linearVelocity angularVelocity world =
             let mutable transformOld = this.GetTransform world
             let mutable transformNew = transformOld
             if this.GetIs2d world then
@@ -528,7 +528,7 @@ module WorldEntityModule =
             this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world
             let dispatcher = this.GetDispatcher world
-            dispatcher.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, this, world)
+            dispatcher.Physics (center, rotation, linearVelocity, angularVelocity, this, world)
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =

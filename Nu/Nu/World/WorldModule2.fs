@@ -1231,7 +1231,7 @@ module WorldModule2 =
                                           BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
                                     let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                                     World.publishPlus transformData entity.BodyTransformEvent eventTrace entity false false world
-                                else entity.ApplyPhysics center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity world
+                                else entity.Physics center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity world
                     | _ -> ()
                 | BodyJointBreakMessage bodyJointBreakMessage ->
                     let bodyJointId = bodyJointBreakMessage.BodyJointId
@@ -2072,7 +2072,7 @@ module EntityDispatcherModule2 =
                         makeInitial world
             World.setEntityModelGeneric<'model> true model entity world |> ignore<bool>
 
-        override this.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, entity, world) =
+        override this.Physics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
             let (signals, model) = this.Physics (center, rotation, linearVelocity, angularVelocity, model, entity, world)
             this.SetModel model entity world
@@ -2141,7 +2141,7 @@ module EntityDispatcherModule2 =
         abstract Message : model : 'model * message : 'message * entity : Entity * world : World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
-        /// The physics synchronization handler for the MMCC programming model.
+        /// The physics application handler for the MMCC programming model.
         abstract Physics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * model : 'model * entity : Entity * world : World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 

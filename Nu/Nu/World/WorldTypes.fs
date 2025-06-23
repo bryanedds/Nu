@@ -662,8 +662,8 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     default this.Render (_, _, _) = ()
 
     /// Apply physics changes from a physics engine to an entity.
-    abstract ApplyPhysics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
-    default this.ApplyPhysics (_, _, _, _, _, _) = ()
+    abstract Physics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
+    default this.Physics (_, _, _, _, _, _) = ()
 
     /// Send a signal to an entity.
     abstract Signal : signalObj : obj * entity : Entity * world : World -> unit
