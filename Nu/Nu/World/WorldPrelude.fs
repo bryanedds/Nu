@@ -346,7 +346,7 @@ and 'w Coroutine =
     static member sleep (gameTime : GameTime) : 'w Coroutine =
         Sleep gameTime
 
-    /// A coroutine that sleeps until the time of the next frame.
+    /// A coroutine that sleeps for the length of one frame (the shortest possible one in DynamicFrameRate mode.
     [<DebuggerHidden>]
     static member pass : 'w Coroutine =
         let gameTime =
