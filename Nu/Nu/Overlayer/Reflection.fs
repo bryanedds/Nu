@@ -32,9 +32,9 @@ module Reflection =
 
     /// A dictionary of properties and their cached persistence state.
     let private PropertyPersistence =
-        Constants.Engine.NonPersistentPropertyNames |>
-        Seq.map (flip pair true) |>
-        dictPlus StringComparer.Ordinal
+        Constants.Engine.NonPersistentPropertyNames
+        |> Seq.map (flip pair true)
+        |> dictPlus StringComparer.Ordinal
 
     let rec private memoizable2 level (ty : Type) =
         match MemoizableMemo.TryGetValue ty with
@@ -187,11 +187,11 @@ module Reflection =
     /// Get all the unique reflective property definitions of a type, including those of its
     /// dispatcher and / or facets.
     let getReflectivePropertyDefinitions (target : 'a) =
-        target |>
-        getReflectivePropertyContainerTypes |>
-        List.map getPropertyDefinitions |>
-        List.concat |>
-        Map.ofListBy (fun definition -> (definition.PropertyName, definition))
+        target
+        |> getReflectivePropertyContainerTypes
+        |> List.map getPropertyDefinitions
+        |> List.concat
+        |> Map.ofListBy (fun definition -> (definition.PropertyName, definition))
 
     /// A hack to retreive a simplified generic type name
     let getSimplifiedTypeNameHack (ty : Type) =
@@ -392,9 +392,9 @@ module Reflection =
 
     /// Get the intrinsic facet names of a target type not considering inheritance.
     let getIntrinsicFacetNamesNoInherit targetType =
-        targetType |>
-        getIntrinsicFacetsNoInherit |>
-        List.map (fun (ty : Type) -> ty.Name)
+        targetType
+        |> getIntrinsicFacetsNoInherit
+        |> List.map (fun (ty : Type) -> ty.Name)
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
@@ -492,12 +492,12 @@ module Reflection =
         | _ ->
             let target = copyTarget target
             let facets =
-                List.map (fun facetName ->
+                facetNames
+                |> List.map (fun facetName ->
                     match Map.tryFind facetName facetMap with
                     | Some facet -> facet
                     | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
-                    facetNames |>
-                List.toArray
+                |> List.toArray
             let targetType = target.GetType ()
             match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
             | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
