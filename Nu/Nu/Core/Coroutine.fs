@@ -65,12 +65,12 @@ and 'w Coroutine =
         | Sleep gameTime' -> let gameTime'' = gameTime + gameTime' in (gameTime'', Sleep gameTime'')
         | Coroutine _ -> (gameTime, coroutine)
         | Coroutines coroutines ->
-            List.fold (fun (gameTime, coroutines) coroutine ->
+            coroutines
+            |> List.fold (fun (gameTime, coroutines) coroutine ->
                 let (gameTime', coroutine') = Coroutine.prepare coroutine gameTime
                 (gameTime', coroutine' :: coroutines))
                 (gameTime, [])
-                coroutines |>
-            mapSnd (List.rev >> Coroutines)
+            |> mapSnd (List.rev >> Coroutines)
 
 /// A computation expression builder for Coroutine.
 /// Note that the "value" carried is simply unit as we are sequencing actions.

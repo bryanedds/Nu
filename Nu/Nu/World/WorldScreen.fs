@@ -278,12 +278,12 @@ module WorldScreenModule =
 
         /// Write multiple screens to a game descriptor.
         static member writeScreens screens world =
-            screens |>
-            Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
-            Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && not (screen.GetProtected world)) |>
-            Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) [] |>
-            Seq.rev |>
-            Seq.toList
+            screens
+            |> Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world)
+            |> Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && not (screen.GetProtected world))
+            |> Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) []
+            |> Seq.rev
+            |> Seq.toList
 
         /// Write a screen to a file.
         static member writeScreenToFile (filePath : string) screen world =

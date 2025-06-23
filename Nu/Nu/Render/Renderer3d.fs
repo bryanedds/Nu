@@ -861,22 +861,22 @@ type [<ReferenceEquality>] private RenderTasks =
         if not lightingConfigChanged then
             let deferredStaticCached =
                 renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
-                (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic) ||>
-                Seq.forall2 (fun static_ staticCached ->
+                (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic)
+                ||> Seq.forall2 (fun static_ staticCached ->
                     OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
-                    (static_.Value, staticCached.Value) ||>
-                    Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+                    (static_.Value, staticCached.Value)
+                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
             let deferredAnimatedCached =
                 renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
-                (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated) ||>
-                Seq.forall2 (fun animated animatedCached ->
+                (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated)
+                ||> Seq.forall2 (fun animated animatedCached ->
                     AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
-                    (animated.Value, animatedCached.Value) ||>
-                    Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+                    (animated.Value, animatedCached.Value)
+                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
-                (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains) ||>
-                Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
+                (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
+                ||> Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
                     box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
                     terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
                     terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
@@ -1509,14 +1509,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                         if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
                             if not blockCompressed then
                                 let scalar = 1.0f / single Byte.MaxValue
-                                bytes |>
-                                Array.map (fun b -> single b * scalar) |>
-                                Array.chunkBySize 4 |>
-                                Array.map (fun b ->
+                                bytes
+                                |> Array.map (fun b -> single b * scalar)
+                                |> Array.chunkBySize 4
+                                |> Array.map (fun b ->
                                     let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
                                     let normal = v3 tangent.X tangent.Z -tangent.Y
-                                    normal) |>
-                                Some
+                                    normal)
+                                |> Some
                             else Log.info "Block-compressed images not supported for terrain normal images."; None
                         else Log.info "Normal image resolution does not match terrain resolution."; None
                     | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
@@ -1531,11 +1531,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                         if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
                             if not blockCompressed then
                                 let scalar = 1.0f / single Byte.MaxValue
-                                bytes |>
-                                Array.map (fun b -> single b * scalar) |>
-                                Array.chunkBySize 4 |>
-                                Array.map (fun b -> v3 b.[2] b.[1] b.[0]) |>
-                                Some
+                                bytes
+                                |> Array.map (fun b -> single b * scalar)
+                                |> Array.chunkBySize 4
+                                |> Array.map (fun b -> v3 b.[2] b.[1] b.[0])
+                                |> Some
                             else Log.info "Block-compressed images not supported for terrain tint images."; None
                         else Log.info "Tint image resolution does not match terrain resolution."; None
                     | None -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
@@ -2689,9 +2689,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // filter light maps according to enabledness and intersection with the geometry frustum
         let lightMaps =
-            renderTasks.LightMaps |>
-            Array.ofSeq |>
-            Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
+            renderTasks.LightMaps
+            |> Array.ofSeq
+            |> Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
 
         // sort light maps for deferred rendering relative to eye center
         let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
@@ -3284,9 +3284,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let spotAndDirectionalLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
-                renderer.RenderPasses2.Pairs |>
-                Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None) |>
-                Seq.headOrDefault Int32.MaxValue)
+                renderer.RenderPasses2.Pairs
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.headOrDefault Int32.MaxValue)
                 spotAndDirectionalLightsArray
 
         // shadow texture pre-passes
@@ -3365,9 +3365,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let pointLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
-                renderer.RenderPasses2.Pairs |>
-                Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None) |>
-                Seq.headOrDefault Int32.MaxValue)
+                renderer.RenderPasses2.Pairs
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.headOrDefault Int32.MaxValue)
                 pointLightsArray
 
         // shadow map pre-passes
@@ -3572,10 +3572,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                             for x in 0 .. dec Constants.Render.BrdfResolution do
                                 let nov = (single y + 0.5f) * (1.0f / single Constants.Render.BrdfResolution)
                                 let roughness = (single x + 0.5f) * (1.0f / single Constants.Render.BrdfResolution)
-                                GlRenderer3d.integrateBrdf nov roughness Constants.Render.BrdfSamples|] |>
-                        Array.map (fun v -> [|BitConverter.GetBytes v.X; BitConverter.GetBytes v.Y|]) |>
-                        Array.concat |>
-                        Array.concat
+                                GlRenderer3d.integrateBrdf nov roughness Constants.Render.BrdfSamples|]
+                        |> Array.map (fun v -> [|BitConverter.GetBytes v.X; BitConverter.GetBytes v.Y|])
+                        |> Array.concat
+                        |> Array.concat
                     File.WriteAllBytes (brdfFilePath, brdfBuffer)
                     brdfBuffer
             let brdfBufferPtr = GCHandle.Alloc (brdfBuffer, GCHandleType.Pinned)

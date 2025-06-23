@@ -101,15 +101,15 @@ module Xtension =
 
     /// Make an Xtension by copying properties of another Xtension.
     let rec makeFromXtension (xtension : Xtension) = 
-        xtension |>
-        toSeq |>
-        Seq.map (fun (n, p) ->
+        xtension
+        |> toSeq
+        |> Seq.map (fun (n, p) ->
             let propertyValue =
                 match p.PropertyValue with
                 | :? DesignerProperty as dp -> { dp with DesignerType = dp.DesignerType } :> obj
                 | value -> value
-            (n, { p with PropertyValue = propertyValue })) |>
-        ofSeq xtension.Imperative
+            (n, { p with PropertyValue = propertyValue }))
+        |> ofSeq xtension.Imperative
 
     /// Convert an xtension to a sequence of its entries.
     and toSeq xtension =

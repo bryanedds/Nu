@@ -638,23 +638,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     let private freezeEntities world =
         snapshot FreezeEntities world
-        let freezers =
-            World.getGroups SelectedScreen world |>
-            Seq.map (fun group -> World.getEntities group world) |>
-            Seq.concat |>
-            Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
-        for freezer in freezers do
-            freezer.SetFrozen true world
+        World.getGroups SelectedScreen world
+        |> Seq.map (fun group -> World.getEntities group world)
+        |> Seq.concat
+        |> Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
+        |> Seq.iter (fun freezer -> freezer.SetFrozen true world)
 
     let private thawEntities world =
         snapshot ThawEntities world
-        let freezers =
-            World.getGroups SelectedScreen world |>
-            Seq.map (fun group -> World.getEntities group world) |>
-            Seq.concat |>
-            Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
-        for freezer in freezers do
-            freezer.SetFrozen false world
+        World.getGroups SelectedScreen world
+        |> Seq.map (fun group -> World.getEntities group world)
+        |> Seq.concat
+        |> Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
+        |> Seq.iter (fun freezer -> freezer.SetFrozen false world)
 
     let private synchronizeNav world =
         // TODO: sync nav 2d when it's available.
@@ -667,13 +663,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         World.synchronizeNav3d true navFilePathOpt SelectedScreen world
 
     let private rerenderLightMaps world =
-        let lightProbes =
-            World.getGroups SelectedScreen world |>
-            Seq.map (fun group -> World.getEntities group world) |>
-            Seq.concat |>
-            Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world)
-        for lightProbe in lightProbes do
-            lightProbe.SetProbeStale true world
+        World.getGroups SelectedScreen world
+        |> Seq.map (fun group -> World.getEntities group world)
+        |> Seq.concat
+        |> Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world)
+        |> Seq.iter (fun lightProbe -> lightProbe.SetProbeStale true world)
 
     let private tryMoveSelectedEntityToOrigin skipSnapshot world =
         match SelectedEntityOpt with
@@ -719,16 +713,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private tryPickName names =
         let io = ImGui.GetIO ()
         io.SwallowKeyboard ()
-        let namesMatching =
-            [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
-                if ImGui.IsKeyReleased (enum key) then
-                    let chr = char (key - int ImGuiKey.A + 97)
-                    names |>
-                    Seq.filter (fun (name : string) -> name.Length > 0 && Char.ToLowerInvariant name.[0] = chr) |>
-                    Seq.tryHead|]
-        namesMatching |>
-        Array.definitize |>
-        Array.tryHead
+        [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
+            if ImGui.IsKeyReleased (enum key) then
+                let chr = char (key - int ImGuiKey.A + 97)
+                names
+                |> Seq.filter (fun (name : string) -> name.Length > 0 && Char.ToLowerInvariant name.[0] = chr)
+                |> Seq.tryHead|]
+        |> Array.definitize
+        |> Array.tryHead
 
     let private searchAssetViewer () =
         ImGui.SetWindowFocus "Asset Viewer"
@@ -1174,49 +1166,49 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
                     let fsprojNugetPaths =
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "PackageReference") |>
-                        Array.filter (fun line -> not (line.Contains "PackageReference Update=")) |>
-                        Array.map (fun line -> line.Replace ("<PackageReference Include=", "nuget: ")) |>
-                        Array.map (fun line -> line.Replace (" Version=", ", ")) |>
-                        Array.map (fun line -> line.Replace ("/>", "")) |>
-                        Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> line.Trim ())
+                        fsprojFileLines
+                        |> Array.map (fun line -> line.Trim ())
+                        |> Array.filter (fun line -> line.Contains "PackageReference")
+                        |> Array.filter (fun line -> not (line.Contains "PackageReference Update="))
+                        |> Array.map (fun line -> line.Replace ("<PackageReference Include=", "nuget: "))
+                        |> Array.map (fun line -> line.Replace (" Version=", ", "))
+                        |> Array.map (fun line -> line.Replace ("/>", ""))
+                        |> Array.map (fun line -> line.Replace ("\"", ""))
+                        |> Array.map (fun line -> line.Trim ())
                     let fsprojDllFilePaths =
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll") |>
-                        Array.map (fun line -> line.Replace ("<HintPath>", "")) |>
-                        Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
-                        Array.map (fun line -> line.Replace ("=", "")) |>
-                        Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> PathF.Normalize line) |>
-                        Array.map (fun line -> line.Trim ())
+                        fsprojFileLines
+                        |> Array.map (fun line -> line.Trim ())
+                        |> Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll")
+                        |> Array.map (fun line -> line.Replace ("<HintPath>", ""))
+                        |> Array.map (fun line -> line.Replace ("</HintPath>", ""))
+                        |> Array.map (fun line -> line.Replace ("=", ""))
+                        |> Array.map (fun line -> line.Replace ("\"", ""))
+                        |> Array.map (fun line -> PathF.Normalize line)
+                        |> Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
                         ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/netstandard2.1/Nu.Math.dll\""
                          "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.Pipe.dll\""
                          "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.dll\""]
                     let fsprojFsFilePaths =
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
-                        Array.filter (fun line -> line.Contains "Compile Include" && not (line.Contains "Program.fs")) |>
-                        Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
-                        Array.map (fun line -> line.Replace ("/>", "")) |>
-                        Array.map (fun line -> line.Replace ("=", "")) |>
-                        Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> PathF.Normalize line) |>
-                        Array.map (fun line -> line.Trim ())
+                        fsprojFileLines
+                        |> Array.map (fun line -> line.Trim ())
+                        |> Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs")
+                        |> Array.filter (fun line -> line.Contains "Compile Include" && not (line.Contains "Program.fs"))
+                        |> Array.map (fun line -> line.Replace ("<Compile Include", ""))
+                        |> Array.map (fun line -> line.Replace ("/>", ""))
+                        |> Array.map (fun line -> line.Replace ("=", ""))
+                        |> Array.map (fun line -> line.Replace ("\"", ""))
+                        |> Array.map (fun line -> PathF.Normalize line)
+                        |> Array.map (fun line -> line.Trim ())
                     let fsprojDefineConstantsOpt =
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "DefineConstants") |>
-                        Array.map (fun line -> line.Replace ("DefineConstants", "")) |>
-                        Array.map (fun line -> line.Replace ("/", "")) |>
-                        Array.map (fun line -> line.Replace (">", "")) |>
-                        Array.map (fun line -> line.Replace ("<", "")) |>
-                        fun fdcs ->
+                        fsprojFileLines
+                        |> Array.map (fun line -> line.Trim ())
+                        |> Array.filter (fun line -> line.Contains "DefineConstants")
+                        |> Array.map (fun line -> line.Replace ("DefineConstants", ""))
+                        |> Array.map (fun line -> line.Replace ("/", ""))
+                        |> Array.map (fun line -> line.Replace (">", ""))
+                        |> Array.map (fun line -> line.Replace ("<", ""))
+                        |> fun fdcs ->
                             if fdcs.Length = 2
                             then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
                             else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
@@ -1862,16 +1854,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     imGuiEntity branch filtering entity world
                 else false
             if filtering || expanded then
-                let children =
-                    entity.GetChildren world |>
-                    Array.ofSeq |>
-                    Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
-                    Array.sortBy fst |>
-                    Array.map snd
-                for child in children do
-                    imGuiEntityHierarchy child world
-                if visible then
-                    ImGui.TreePop ()
+                entity.GetChildren world
+                |> Array.ofSeq
+                |> Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity))
+                |> Array.sortBy fst
+                |> Array.map snd
+                |> Array.iter (fun child -> imGuiEntityHierarchy child world)
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
@@ -1958,10 +1946,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if  (propertyCategory <> "Basic Model Properties" || modelUsed) &&
                 ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
                 let propertyDescriptors =
-                    propertyDescriptors |>
-                    Array.filter (fun pd ->
-                        SimulantPropertyDescriptor.getEditable pd simulant) |>
-                    Array.filter (fun pd ->
+                    propertyDescriptors
+                    |> Array.filter (fun pd ->
+                        SimulantPropertyDescriptor.getEditable pd simulant)
+                    |> Array.filter (fun pd ->
                         match pd.PropertyName with
                         | nameof Entity.Position
                         | nameof Entity.Degrees
@@ -1975,8 +1963,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | nameof Entity.ElevationLocal
                         | nameof Entity.EnabledLocal
                         | nameof Entity.VisibleLocal -> mountActive
-                        | _ -> true) |>
-                    Array.sortBy (fun pd ->
+                        | _ -> true)
+                    |> Array.sortBy (fun pd ->
                         match pd.PropertyName with
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.MountOptPropertyName -> "!01" // and so on...
@@ -2675,11 +2663,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 // entity editing
                 ImGui.BeginChild "Container" |> ignore<bool>
                 let children =
-                    World.getSovereignEntities SelectedGroup world |>
-                    Array.ofSeq |>
-                    Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
-                    Array.sortBy fst |>
-                    Array.map snd
+                    World.getSovereignEntities SelectedGroup world
+                    |> Array.ofSeq
+                    |> Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity))
+                    |> Array.sortBy fst
+                    |> Array.map snd
                 for child in children do
                     imGuiEntityHierarchy child world
                 ImGui.EndChild ()
@@ -2757,12 +2745,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.SetNextItemWidth -1.0f
             ImGui.InputTextWithHint ("##propagationSourcesSearchStr", "[enter search text]", &PropagationSourcesSearchStr, 4096u) |> ignore<bool>
             let propagationSources =
-                World.getPropagationSources world |>
-                Seq.filter (fun entity ->
+                World.getPropagationSources world
+                |> Seq.filter (fun entity ->
                     String.IsNullOrWhiteSpace PropagationSourcesSearchStr ||
-                    entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ())) |>
-                Seq.filter (fun entity -> not (entity.GetProtected world)) |>
-                hashSetPlus HashIdentity.Structural
+                    entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ()))
+                |> Seq.filter (fun entity -> not (entity.GetProtected world))
+                |> hashSetPlus HashIdentity.Structural
             ImGui.BeginChild "Container" |> ignore<bool>
             for entity in propagationSources do
                 let treeNodeFlags = ImGuiTreeNodeFlags.Leaf ||| if Option.contains entity SelectedEntityOpt then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None
@@ -2807,10 +2795,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         if ImGui.SmallButton "as Child" then
                             snapshot DuplicateEntity world
                             let parent =
-                                SelectedEntityOpt |>
-                                Option.map cast<Simulant> |>
-                                Option.orElse (Option.map cast<Simulant> NewEntityParentOpt) |>
-                                Option.defaultValue entity.Group
+                                SelectedEntityOpt
+                                |> Option.map cast<Simulant>
+                                |> Option.orElse (Option.map cast<Simulant> NewEntityParentOpt)
+                                |> Option.defaultValue entity.Group
                             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
                             let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
                             selectEntityOpt (Some duplicate) world
@@ -2823,10 +2811,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         if ImGui.SmallButton "at Local Origin" then
                             snapshot DuplicateEntity world
                             let parent =
-                                SelectedEntityOpt |>
-                                Option.map cast<Simulant> |>
-                                Option.orElse (Option.map cast<Simulant> NewEntityParentOpt) |>
-                                Option.defaultValue entity.Group
+                                SelectedEntityOpt
+                                |> Option.map cast<Simulant>
+                                |> Option.orElse (Option.map cast<Simulant> NewEntityParentOpt)
+                                |> Option.defaultValue entity.Group
                             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
                             let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
                             duplicate.SetPositionLocal v3Zero world
@@ -3137,9 +3125,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
                     InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
                 InteractiveOutputStr <-
-                    InteractiveOutputStr.Split Environment.NewLine |>
-                    Array.filter (not << String.IsNullOrWhiteSpace) |>
-                    String.join Environment.NewLine
+                    InteractiveOutputStr.Split Environment.NewLine
+                    |> Array.filter (not << String.IsNullOrWhiteSpace)
+                    |> String.join Environment.NewLine
                 FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                 FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                 toBottom <- true
@@ -4045,10 +4033,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let viewFrustum = World.getEye3dFrustumView world
             let entities = World.getLightProbes3dInViewBox lightBox (HashSet ()) world
             let lightProbeModels =
-                entities |>
-                Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-                Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-                SList.ofSeq
+                entities
+                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
+                |> SList.ofSeq
             if SList.notEmpty lightProbeModels then
                 World.enqueueRenderMessage3d
                     (RenderStaticModels
@@ -4062,10 +4050,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             // render lights of the selected group in play
             let entities = World.getLights3dInViewBox lightBox (HashSet ()) world
             let lightModels =
-                entities |>
-                Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-                Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-                SList.ofSeq
+                entities
+                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
+                |> SList.ofSeq
             if SList.notEmpty lightModels then
                 World.enqueueRenderMessage3d
                     (RenderStaticModels
@@ -4179,11 +4167,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         NewEntityDispatcherName <- World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         NewEntityElevation <- gaiaState.CreationElevation
         NewEntityDistance <- gaiaState.CreationDistance
-        Trace.Listeners.Add $
-            { new TraceListener () with
-                override this.Write (message : string) = LogStr <- LogStr + message
-                override this.WriteLine (message : string) = LogStr <- LogStr + message + "\n" } |>
-            ignore<int>
+        { new TraceListener () with
+            override this.Write (message : string) = LogStr <- LogStr + message
+            override this.WriteLine (message : string) = LogStr <- LogStr + message + "\n" }
+        |> Trace.Listeners.Add
+        |> ignore<int>
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         let world =
             if not gaiaState.ProjectFreshlyLoaded then

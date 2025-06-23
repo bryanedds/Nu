@@ -247,9 +247,9 @@ module Content =
                     let groupDescriptorStr = File.ReadAllText groupFilePath
                     let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
                     let groupName =
-                        Constants.Engine.NamePropertyName |>
-                        groupDescriptor.GroupProperties.TryFind |>
-                        Option.mapOrDefaultValue symbolToValue "GroupFromFile" // TODO: make constant?
+                        Constants.Engine.NamePropertyName
+                        |> groupDescriptor.GroupProperties.TryFind
+                        |> Option.mapOrDefaultValue symbolToValue "GroupFromFile" // TODO: make constant?
                     let group = screen / groupName
                     World.destroyGroup group world
                 | None -> ()

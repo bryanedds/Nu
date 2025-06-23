@@ -914,19 +914,18 @@ module WorldModule =
 
         /// View the member properties of some SimulantState.
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
-            state |>
-            getType |>
-            (fun ty -> ty.GetProperties true) |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
-            Array.toList
+            getType state
+            |> (fun ty -> ty.GetProperties true)
+            |> Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state))
+            |> Array.toList
 
         /// View the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
-            state.GetXtension () |>
-            Xtension.toSeq |>
-            List.ofSeq |>
-            List.sortBy fst |>
-            List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
+            state.GetXtension ()
+            |> Xtension.toSeq
+            |> List.ofSeq
+            |> List.sortBy fst
+            |> List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
 
         /// Provides a full view of all the properties of some SimulantState.
         static member internal getSimulantStateProperties state =

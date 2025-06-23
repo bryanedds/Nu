@@ -174,8 +174,8 @@ module Metadata =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assetsCollected ->
             let package =
-                assetsCollected |>
-                List.map (fun asset ->
+                assetsCollected
+                |> List.map (fun asset ->
                     vsync {
                         match tryGenerateAssetMetadata asset with
                         | Some metadata ->
@@ -183,13 +183,13 @@ module Metadata =
                                 try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                                 with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                             return Some (asset.AssetTag.AssetName, (lastWriteTime, asset.FilePath, metadata))
-                        | None -> return None }) |>
-                Vsync.Parallel |>
-                Vsync.RunSynchronously |>
-                Array.definitize |>
-                Map.ofArray |>
-                Array.ofSeq |>
-                fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
+                        | None -> return None })
+                |> Vsync.Parallel
+                |> Vsync.RunSynchronously
+                |> Array.definitize
+                |> Map.ofArray
+                |> Array.ofSeq
+                |> fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
             package
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
@@ -290,8 +290,8 @@ module Metadata =
     /// invalidating enumeration in a multi-threaded context.
     /// Thread-safe.
     let getMetadataPackagesLoaded () =
-        MetadataPackagesLoaded.ToArray () |>
-        Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
+        MetadataPackagesLoaded.ToArray ()
+        |> Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
 
     /// Determine that a given asset's metadata exists.
     /// Thread-safe.

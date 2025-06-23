@@ -652,14 +652,14 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
 
         static member getPropagationSources (world : World) =
-            world.WorldExtension.PropagationTargets |>
-            UMap.toSeq |>
-            Seq.map snd |>
-            Seq.concat |>
-            Seq.choose (fun entity -> World.getEntityPropagationSourceOpt entity world) |>
-            hashSetPlus HashIdentity.Structural |>
-            Seq.filter (fun entity -> World.getEntityExists entity world) |>
-            Seq.toArray
+            world.WorldExtension.PropagationTargets
+            |> UMap.toSeq
+            |> Seq.map snd
+            |> Seq.concat
+            |> Seq.choose (fun entity -> World.getEntityPropagationSourceOpt entity world)
+            |> hashSetPlus HashIdentity.Structural
+            |> Seq.filter (fun entity -> World.getEntityExists entity world)
+            |> Seq.toArray
 
         /// Check that entity has entities to propagate its structure to.
         static member hasPropagationTargets entity (world : World) =
@@ -2258,9 +2258,9 @@ module WorldModuleEntity =
             let dispatcherType = getType dispatcher
             let dispatcherTypes = dispatcherType :: Reflection.getBaseTypesExceptObject dispatcherType |> List.rev
             let entityState =
-                dispatcherTypes |>
-                List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
-                List.fold (fun entityState (facetNames, ty) ->
+                dispatcherTypes
+                |> List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty))
+                |> List.fold (fun entityState (facetNames, ty) ->
                     let entityState = Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
                     let definitions = Reflection.getPropertyDefinitionsNoInherit ty
                     Reflection.attachPropertiesViaDefinitions id definitions entityState world)
@@ -2393,12 +2393,12 @@ module WorldModuleEntity =
 
         /// Write multiple entities to a group descriptor.
         static member writeEntities writeOrder writePropagationHistory entities world =
-            entities |>
-            Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world) |>
-            Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world)) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) [] |>
-            Seq.rev |>
-            Seq.toList
+            entities
+            |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
+            |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world))
+            |> Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) []
+            |> Seq.rev
+            |> Seq.toList
 
         /// Write an entity to a file.
         static member writeEntityToFile writeOrder writePropagationHistory (filePath : string) enity world =
@@ -2438,9 +2438,9 @@ module WorldModuleEntity =
             let dispatcherType = getType dispatcher
             let dispatcherTypes = dispatcherType :: Reflection.getBaseTypesExceptObject dispatcherType |> List.rev
             let entityState =
-                dispatcherTypes |>
-                List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
-                List.fold (fun entityState (facetNames, ty) -> 
+                dispatcherTypes
+                |> List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty))
+                |> List.fold (fun entityState (facetNames, ty) -> 
                     let entityState = Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
                     let definitions = Reflection.getPropertyDefinitionsNoInherit ty
                     Reflection.attachPropertiesViaDefinitions id definitions entityState world)

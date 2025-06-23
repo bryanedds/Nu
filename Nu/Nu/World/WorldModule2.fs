@@ -488,12 +488,12 @@ module WorldModule2 =
             World.createSlideScreen6 typeof<'d>.Name nameOpt slideDescriptor destination world
 
         static member private mapEntityDescriptors entityDescriptors =
-            entityDescriptors |>
-            List.map (fun descriptor ->
+            entityDescriptors
+            |> List.map (fun descriptor ->
                 match descriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                 | Atom (entityName, _) | Text (entityName, _) -> (entityName, descriptor)
-                | _ -> failwithumf ()) |>
-            Map.ofList
+                | _ -> failwithumf ())
+            |> Map.ofList
 
         static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (currentEntityOpt : Entity option) world =
 
@@ -523,9 +523,9 @@ module WorldModule2 =
 
             // propagate properties at this level
             let propagatedDescriptor =
-                Set.ofSeq currentDescriptor.EntityProperties.Keys |>
-                Set.addMany propagatedDescriptor.EntityProperties.Keys |>
-                Seq.fold (fun targetDescriptor propertyName ->
+                Set.ofSeq currentDescriptor.EntityProperties.Keys
+                |> Set.addMany propagatedDescriptor.EntityProperties.Keys
+                |> Seq.fold (fun targetDescriptor propertyName ->
                     if  propertyName <> nameof Entity.Name &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
@@ -648,17 +648,17 @@ module WorldModule2 =
 
             // compose fully propagated descriptor in the order they are found in the current descriptor
             let currentDescriptorsOrder =
-                currentDescriptor.EntityDescriptors |>
-                Seq.mapi (fun i currentDescriptor ->
+                currentDescriptor.EntityDescriptors
+                |> Seq.mapi (fun i currentDescriptor ->
                     match currentDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                     | Atom (entityName, _) | Text (entityName, _) -> (entityName, i)
-                    | _ -> ("", Int32.MaxValue)) |>
-                Map.ofSeq
+                    | _ -> ("", Int32.MaxValue))
+                |> Map.ofSeq
             let propagatedDescriptors =
-                propagatedDescriptorOpts |>
-                List.definitize |>
-                List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName) |>
-                List.sortBy (fun propagatedDescriptor ->
+                propagatedDescriptorOpts
+                |> List.definitize
+                |> List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName)
+                |> List.sortBy (fun propagatedDescriptor ->
                     match propagatedDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                     | (Atom (entityName, _) | Text (entityName, _)) ->
                         match currentDescriptorsOrder.TryGetValue entityName with
@@ -674,7 +674,8 @@ module WorldModule2 =
             // propagate entity
             let targets = entity.GetPropagationTargets world
             let targetsValid =
-                Seq.filter (fun (target : Entity) ->
+                targets
+                |> Seq.filter (fun (target : Entity) ->
                     let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
                     let linkHeadOpt = Array.tryHead targetToEntity.Links
                     let linkLastOpt = Array.tryLast targetToEntity.Links
@@ -685,8 +686,7 @@ module WorldModule2 =
                     // NOTE: dummying this out because it causes false negatives.
                     //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
-                    targets |>
-                Array.ofSeq // copy references to avoid enumerator invalidation
+                |> Array.ofSeq // copy references to avoid enumerator invalidation
             let currentDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             for target in targetsValid do
@@ -719,9 +719,9 @@ module WorldModule2 =
                     if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
                             if ancestor.GetExists world && ancestor.HasPropagationTargets world then
-                                ancestor } |>
-            Set.ofSeq |> // also copies references to avoid enumerator invalidation
-            fun ancestors ->
+                                ancestor }
+            |> Set.ofSeq // also copies references to avoid enumerator invalidation
+            |> fun ancestors ->
                 for ancestor in ancestors do
                     if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                         World.propagateEntityStructure ancestor world
@@ -835,19 +835,19 @@ module WorldModule2 =
 
         static member internal registerScreenPhysics screen world =
             let entities =
-                World.getGroups screen world |>
-                Seq.map (flip World.getEntities world) |>
-                Seq.concat |>
-                SList.ofSeq
+                World.getGroups screen world
+                |> Seq.map (flip World.getEntities world)
+                |> Seq.concat
+                |> SList.ofSeq
             for entity in entities do
                 World.registerEntityPhysics entity world
 
         static member internal unregisterScreenPhysics screen world =
             let entities =
-                World.getGroups screen world |>
-                Seq.map (flip World.getEntities world) |>
-                Seq.concat |>
-                SList.ofSeq
+                World.getGroups screen world
+                |> Seq.map (flip World.getEntities world)
+                |> Seq.concat
+                |> SList.ofSeq
             for entity in entities do
                 World.unregisterEntityPhysics entity world
 
@@ -1619,9 +1619,9 @@ module WorldModule2 =
 
                 // sort shadow pass descriptors
                 let shadowPassDescriptors =
-                    shadowPassDescriptorsSortable |>
-                    Array.sortBy fst' |>
-                    Array.map snd'
+                    shadowPassDescriptorsSortable
+                    |> Array.sortBy fst'
+                    |> Array.map snd'
 
                 // render simulant shadows
                 let mutable shadowTexturesCount = 0
@@ -2304,9 +2304,9 @@ module EntityPropertyDescriptor =
             let name = value :?> string
             if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                 let targetNames =
-                    entity.Group.GroupAddress.Names |>
-                    flip Array.append (Array.allButLast entity.Surnames) |>
-                    Array.add name
+                    entity.Group.GroupAddress.Names
+                    |> flip Array.append (Array.allButLast entity.Surnames)
+                    |> Array.add name
                 let target = Nu.Entity targetNames
                 World.renameEntityImmediate entity target world
                 Right ()

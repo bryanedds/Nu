@@ -222,16 +222,16 @@ module AssetGraph =
         let mutable packageDescriptor = Unchecked.defaultof<PackageDescriptor>
         match Map.tryGetValue (packageName, assetGraph.PackageDescriptors_, &packageDescriptor) with
         | true ->
-            collectAssetsFromPackageDescriptor packageName packageDescriptor |>
-            List.groupBy (fun asset -> asset.FilePath) |>
-            List.map snd |>
-            List.map (List.reduce (fun asset asset2 ->
+            collectAssetsFromPackageDescriptor packageName packageDescriptor
+            |> List.groupBy (fun asset -> asset.FilePath)
+            |> List.map snd
+            |> List.map (List.reduce (fun asset asset2 ->
                 { AssetTag = AssetTag.make asset.AssetTag.PackageName asset.AssetTag.AssetName
                   FilePath = asset.FilePath
                   Refinements = List.append asset.Refinements asset2.Refinements
-                  Associations = Set.union asset.Associations asset2.Associations } :> Asset)) |>
-            List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true) |>
-            Right
+                  Associations = Set.union asset.Associations asset2.Associations } :> Asset))
+            |> List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
+            |> Right
         | false -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
     /// Collect all the available assets from an asset graph document.
@@ -239,15 +239,15 @@ module AssetGraph =
         [for entry in assetGraph.PackageDescriptors_ do
             let packageName = entry.Key
             let packageDescriptor = entry.Value
-            yield! collectAssetsFromPackageDescriptor packageName packageDescriptor] |>
-        List.groupBy (fun asset -> asset.FilePath) |>
-        List.map snd |>
-        List.map (List.reduce (fun asset asset2 ->
+            yield! collectAssetsFromPackageDescriptor packageName packageDescriptor]
+        |> List.groupBy (fun asset -> asset.FilePath)
+        |> List.map snd
+        |> List.map (List.reduce (fun asset asset2 ->
             { AssetTag = AssetTag.make asset.AssetTag.PackageName asset.AssetTag.AssetName
               FilePath = asset.FilePath
               Refinements = List.append asset.Refinements asset2.Refinements
-              Associations = Set.union asset.Associations asset2.Associations } :> Asset)) |>
-        List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
+              Associations = Set.union asset.Associations asset2.Associations } :> Asset))
+        |> List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
 
     /// Build all the available assets found in the given asset graph.
     let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
@@ -305,11 +305,11 @@ module AssetGraph =
 
     /// Attempt to make an asset graph.
     let tryMakeFromFile filePath =
-        try File.ReadAllText filePath |>
-            String.unescape |>
-            scvalue<Map<string, PackageDescriptor>> |>
-            make (Some filePath) |>
-            Right
+        try File.ReadAllText filePath
+            |> String.unescape
+            |> scvalue<Map<string, PackageDescriptor>>
+            |> make (Some filePath)
+            |> Right
         with exn -> Left ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
 
 /// A graph of all the assets used in a game.

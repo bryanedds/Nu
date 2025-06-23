@@ -126,15 +126,15 @@ module Effect =
 
             // extract tag tokens
             let tagTokens =
-                dataTokens |>
-                Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
-                Map.ofSeq
+                dataTokens
+                |> Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None)
+                |> Map.ofSeq
 
             // spawn emitters via tokens
             let particleSystem =
-                dataTokens |>
-                Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
-                Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
+                dataTokens
+                |> Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None)
+                |> Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
                     match descriptorObj with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
@@ -160,8 +160,8 @@ module Effect =
                                     Constraint = descriptor.Constraint }
                             Some (name, emitter :> Emitter)
                         | _ -> None
-                    | _ -> None) |>
-                Seq.fold (fun particleSystem (name, emitter) ->
+                    | _ -> None)
+                |> Seq.fold (fun particleSystem (name, emitter) ->
                     ParticleSystem.add name emitter particleSystem)
                     effect.ParticleSystem_
 

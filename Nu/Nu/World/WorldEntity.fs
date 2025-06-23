@@ -671,12 +671,12 @@ module WorldEntityModule =
         /// Sort the given entities by 2d sorting priority.
         /// If there are a lot of entities, this may allocate in the LOH.
         static member sortEntities2d entities world =
-            entities |>
-            Array.ofSeq |>
-            Array.rev |>
-            Array.map (fun (entity : Entity) -> entity.GetSortingPriority2d world) |>
-            Array.sortStableWith SortPriority.compare |>
-            Array.map (fun p -> p.SortTarget :?> Entity)
+            entities
+            |> Array.ofSeq
+            |> Array.rev
+            |> Array.map (fun (entity : Entity) -> entity.GetSortingPriority2d world)
+            |> Array.sortStableWith SortPriority.compare
+            |> Array.map (fun p -> p.SortTarget :?> Entity)
 
         /// Attempt to pick an entity at the given position.
         static member tryPickEntity2d position entities world =
@@ -699,10 +699,10 @@ module WorldEntityModule =
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
-                            entity.RayCast rayWorld world |>
-                            Seq.filter _.IsHit |>
-                            Seq.map (function Hit intersection -> (intersection, entity) | _ -> failwithumf ()) |>
-                            Seq.toArray
+                            entity.RayCast rayWorld world
+                            |> Seq.filter _.IsHit
+                            |> Seq.map (function Hit intersection -> (intersection, entity) | _ -> failwithumf ())
+                            |> Seq.toArray
                         else [||]
                     else [||])
                     entities
@@ -715,22 +715,22 @@ module WorldEntityModule =
             match entity.Parent with
             | :? Entity as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntityChildren parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.rev |>
-                Array.tryFind (fun (order', _) -> order' < order) |>
-                Option.map snd
+                World.getEntityChildren parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.rev
+                |> Array.tryFind (fun (order', _) -> order' < order)
+                |> Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getSovereignEntities parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.rev |>
-                Array.tryFind (fun (order', _) -> order' < order) |>
-                Option.map snd
+                World.getSovereignEntities parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.rev
+                |> Array.tryFind (fun (order', _) -> order' < order)
+                |> Option.map snd
             | _ -> failwithumf ()
 
         /// Try to find the entity among the given entity's peers with the closest next order.
@@ -738,20 +738,20 @@ module WorldEntityModule =
             match entity.Parent with
             | :? Entity as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntityChildren parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.tryFind (fun (order', _) -> order' > order) |>
-                Option.map snd
+                World.getEntityChildren parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.tryFind (fun (order', _) -> order' > order)
+                |> Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getSovereignEntities parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.tryFind (fun (order', _) -> order' > order) |>
-                Option.map snd
+                World.getSovereignEntities parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.tryFind (fun (order', _) -> order' > order)
+                |> Option.map snd
             | _ -> None
 
         /// Swap the orders of two entities.
@@ -777,10 +777,10 @@ module WorldEntityModule =
         /// Generate a sequential, editor-friendly entity name.
         static member generateEntitySequentialName dispatcherName group (world : World) =
             let entityNames =
-                world.EntityStates |> // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
-                Seq.filter (fun entry -> (fst entry).Group = group) |>
-                Seq.map (fun entry -> (fst entry).Name) |>
-                hashSetPlus StringComparer.Ordinal
+                world.EntityStates // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
+                |> Seq.filter (fun entry -> (fst entry).Group = group)
+                |> Seq.map (fun entry -> (fst entry).Name)
+                |> hashSetPlus StringComparer.Ordinal
             World.generateEntitySequentialName2 dispatcherName entityNames
 
         /// Clear any entity on the world's clipboard.
