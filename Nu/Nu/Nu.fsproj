@@ -38,6 +38,9 @@
 		<Compile Include="Core\Relation.fs" />
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
+		<Compile Include="Core\Coroutine.fs" />
+		<Compile Include="Core\Behavior.fs" />
+        <Compile Include="Core\Modifier.fs" />
 		<Compile Include="Core\Constants.fs" />
 		<Compile Include="Core\Globals.fs" />
 		<Compile Include="Transform\Viewport.fs" />
@@ -45,8 +48,6 @@
 		<Compile Include="Transform\Quadtree.fs" />
 		<Compile Include="Transform\Octree.fs" />
 		<Compile Include="Transform\Transform.fs" />
-		<Compile Include="Behaviors\Behavior.fs" />
-		<Compile Include="Behaviors\Modifier.fs" />
 		<Compile Include="JobGraph\JobGraph.fs" />
 		<Compile Include="Assimp\Assimp.fs" />
 		<Compile Include="OpenGL\OpenGL.Hl.fs" />
