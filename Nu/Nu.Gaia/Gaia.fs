@@ -1856,6 +1856,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 |> Array.sortBy fst
                 |> Array.map snd
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)
+                if visible then ImGui.TreePop ()
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
