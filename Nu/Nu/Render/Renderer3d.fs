@@ -1707,7 +1707,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ ->
                 if orientUp && planarBillboard then
                     // TODO: Implement orientUp and planar behavior
-                    m4Identity
+                    let forwardFlat = eyeRotation.Forward.WithY 0.0f
+                    if forwardFlat.MagnitudeSquared > 0.0f then
+                        let forward = forwardFlat.Normalized
+                        let yaw = MathF.Atan2(forward.X, forward.Z) - MathF.PI
+                        Matrix4x4.CreateRotationY yaw
+                    else
+                        m4Identity
                 elif orientUp && not planarBillboard then
                     let eyeFlat = eyeCenter.WithY 0.0f
                     let positionFlat = model.Translation.WithY 0.0f
