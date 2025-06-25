@@ -228,82 +228,79 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private tryLoadRenderPackage packageName renderer =
 
         // attempt to make new asset graph and load its assets
-        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
-        | Right assetGraph ->
-            match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render2d) packageName assetGraph with
-            | Right assetsCollected ->
+        let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+        match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render2d) packageName assetGraph with
+        | Right assetsCollected ->
 
-                // find or create render package
-                let renderPackage =
-                    match Dictionary.tryFind packageName renderer.RenderPackages with
-                    | Some renderPackage -> renderPackage
-                    | None ->
-                        let assetClient =
-                            AssetClient
-                                (OpenGL.Texture.TextureClient None,
-                                 OpenGL.CubeMap.CubeMapClient (),
-                                 OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
-                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
-                        renderer.RenderPackages.[packageName] <- renderPackage
-                        renderPackage
+            // find or create render package
+            let renderPackage =
+                match Dictionary.tryFind packageName renderer.RenderPackages with
+                | Some renderPackage -> renderPackage
+                | None ->
+                    let assetClient =
+                        AssetClient
+                            (OpenGL.Texture.TextureClient None,
+                                OpenGL.CubeMap.CubeMapClient (),
+                                OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
+                    let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
+                    renderer.RenderPackages.[packageName] <- renderPackage
+                    renderPackage
 
-                // categorize existing assets based on the required action
-                let assetsExisting = renderPackage.Assets
-                let assetsToFree = Dictionary ()
-                let assetsToKeep = Dictionary ()
-                for assetEntry in assetsExisting do
-                    let assetName = assetEntry.Key
-                    let (lastWriteTime, asset, renderAsset) = assetEntry.Value
-                    let lastWriteTime' =
+            // categorize existing assets based on the required action
+            let assetsExisting = renderPackage.Assets
+            let assetsToFree = Dictionary ()
+            let assetsToKeep = Dictionary ()
+            for assetEntry in assetsExisting do
+                let assetName = assetEntry.Key
+                let (lastWriteTime, asset, renderAsset) = assetEntry.Value
+                let lastWriteTime' =
+                    try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                if lastWriteTime < lastWriteTime'
+                then assetsToFree.Add (asset.FilePath, renderAsset)
+                else assetsToKeep.Add (assetName, (lastWriteTime, asset, renderAsset))
+
+            // free assets, including memo entries
+            for assetEntry in assetsToFree do
+                let filePath = assetEntry.Key
+                let renderAsset = assetEntry.Value
+                match renderAsset with
+                | RawAsset -> ()
+                | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
+                | FontAsset _ -> ()
+                | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
+                GlRenderer2d.freeRenderAsset renderAsset renderer
+
+            // categorize assets to load
+            let assetsToLoad = HashSet ()
+            for asset in assetsCollected do
+                if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                    assetsToLoad.Add asset |> ignore<bool>
+
+            // preload assets in parallel
+            renderPackage.PackageState.PreloadAssets (true, assetsToLoad)
+
+            // load assets
+            let assetsLoaded = Dictionary ()
+            for asset in assetsToLoad do
+                match GlRenderer2d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
+                | Some renderAsset ->
+                    let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    if lastWriteTime < lastWriteTime'
-                    then assetsToFree.Add (asset.FilePath, renderAsset)
-                    else assetsToKeep.Add (assetName, (lastWriteTime, asset, renderAsset))
+                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
+                | None -> ()
 
-                // free assets, including memo entries
-                for assetEntry in assetsToFree do
-                    let filePath = assetEntry.Key
-                    let renderAsset = assetEntry.Value
-                    match renderAsset with
-                    | RawAsset -> ()
-                    | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
-                    | FontAsset _ -> ()
-                    | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
-                    GlRenderer2d.freeRenderAsset renderAsset renderer
+            // insert assets into package
+            for assetEntry in assetsLoaded do
+                let assetName = assetEntry.Key
+                let (lastWriteTime, asset, renderAsset) = assetEntry.Value
+                renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
 
-                // categorize assets to load
-                let assetsToLoad = HashSet ()
-                for asset in assetsCollected do
-                    if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
-                        assetsToLoad.Add asset |> ignore<bool>
-
-                // preload assets in parallel
-                renderPackage.PackageState.PreloadAssets (true, assetsToLoad)
-
-                // load assets
-                let assetsLoaded = Dictionary ()
-                for asset in assetsToLoad do
-                    match GlRenderer2d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
-                    | Some renderAsset ->
-                        let lastWriteTime =
-                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
-                    | None -> ()
-
-                // insert assets into package
-                for assetEntry in assetsLoaded do
-                    let assetName = assetEntry.Key
-                    let (lastWriteTime, asset, renderAsset) = assetEntry.Value
-                    renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
-
-            // handle error cases
-            | Left failedAssetNames ->
-                Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
-        | Left error ->
-            Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
+        // handle error cases
+        | Left failedAssetNames ->
+            Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
 
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
         let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * Asset * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).

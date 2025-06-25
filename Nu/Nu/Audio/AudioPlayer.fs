@@ -148,70 +148,67 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private tryLoadAudioPackage packageName audioPlayer =
 
-        // attempt to make new asset graph and load its assets
-        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
-        | Right assetGraph ->
-            match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
-            | Right assetsCollected ->
+        // make new asset graph and load its assets
+        let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+        match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
+        | Right assetsCollected ->
 
-                // find or create audio package
-                let audioPackage =
-                    match Dictionary.tryFind packageName audioPlayer.AudioPackages with
-                    | Some audioPackage -> audioPackage
-                    | None ->
-                        let audioPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                        audioPlayer.AudioPackages.[packageName] <- audioPackage
-                        audioPackage
+            // find or create audio package
+            let audioPackage =
+                match Dictionary.tryFind packageName audioPlayer.AudioPackages with
+                | Some audioPackage -> audioPackage
+                | None ->
+                    let audioPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
+                    audioPlayer.AudioPackages.[packageName] <- audioPackage
+                    audioPackage
 
-                // categorize existing assets based on the required action
-                let assetsExisting = audioPackage.Assets
-                let assetsToFree = Dictionary ()
-                let assetsToKeep = Dictionary ()
-                for assetEntry in assetsExisting do
-                    let assetName = assetEntry.Key
-                    let (lastWriteTime, asset, audioAsset) = assetEntry.Value
-                    let lastWriteTime' =
+            // categorize existing assets based on the required action
+            let assetsExisting = audioPackage.Assets
+            let assetsToFree = Dictionary ()
+            let assetsToKeep = Dictionary ()
+            for assetEntry in assetsExisting do
+                let assetName = assetEntry.Key
+                let (lastWriteTime, asset, audioAsset) = assetEntry.Value
+                let lastWriteTime' =
+                    try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                if lastWriteTime < lastWriteTime'
+                then assetsToFree.Add (asset, audioAsset)
+                else assetsToKeep.Add (assetName, (lastWriteTime, asset, audioAsset))
+
+            // attempt to free assets
+            for assetEntry in assetsToFree do
+                let asset = assetEntry.Key
+                let audioAsset = assetEntry.Value
+                if not (SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer) then
+                    assetsToKeep.Add (asset.FilePath, (DateTimeOffset.MinValue.DateTime, asset, audioAsset))
+
+            // categorize assets to load
+            let assetsToLoad = HashSet ()
+            for asset in assetsCollected do
+                if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                    assetsToLoad.Add asset |> ignore<bool>
+
+            // load assets
+            let assetsLoaded = Dictionary ()
+            for asset in assetsToLoad do
+                match SdlAudioPlayer.tryLoadAudioAsset asset with
+                | Some audioAsset ->
+                    let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    if lastWriteTime < lastWriteTime'
-                    then assetsToFree.Add (asset, audioAsset)
-                    else assetsToKeep.Add (assetName, (lastWriteTime, asset, audioAsset))
+                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, audioAsset)
+                | None -> ()
 
-                // attempt to free assets
-                for assetEntry in assetsToFree do
-                    let asset = assetEntry.Key
-                    let audioAsset = assetEntry.Value
-                    if not (SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer) then
-                        assetsToKeep.Add (asset.FilePath, (DateTimeOffset.MinValue.DateTime, asset, audioAsset))
+            // insert assets into package
+            for assetEntry in assetsLoaded do
+                let assetName = assetEntry.Key
+                let (lastWriteTime, asset, audioAsset) = assetEntry.Value
+                audioPackage.Assets.[assetName] <- (lastWriteTime, asset, audioAsset)
 
-                // categorize assets to load
-                let assetsToLoad = HashSet ()
-                for asset in assetsCollected do
-                    if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
-                        assetsToLoad.Add asset |> ignore<bool>
-
-                // load assets
-                let assetsLoaded = Dictionary ()
-                for asset in assetsToLoad do
-                    match SdlAudioPlayer.tryLoadAudioAsset asset with
-                    | Some audioAsset ->
-                        let lastWriteTime =
-                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, audioAsset)
-                    | None -> ()
-
-                // insert assets into package
-                for assetEntry in assetsLoaded do
-                    let assetName = assetEntry.Key
-                    let (lastWriteTime, asset, audioAsset) = assetEntry.Value
-                    audioPackage.Assets.[assetName] <- (lastWriteTime, asset, audioAsset)
-
-            // handle error cases
-            | Left failedAssetNames ->
-                Log.info ("Audio package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
-        | Left error ->
-            Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
+        // handle error case
+        | Left failedAssetNames ->
+            Log.info ("Audio package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
 
     static member private tryGetAudioAsset (assetTag : AssetTag) audioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with

@@ -873,18 +873,16 @@ module WorldModule2 =
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
-                | Right overlayer ->
+                let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays outputOverlayerFilePath
 
-                    // update and apply overlays to all entities
-                    World.setOverlayer overlayer world
-                    let entities = World.getEntities1 world
-                    for entity in entities do
-                        World.applyEntityOverlay overlayerOld overlayer entity world
-                    Right overlayer
+                // update and apply overlays to all entities
+                World.setOverlayer overlayer world
+                let entities = World.getEntities1 world
+                for entity in entities do
+                    World.applyEntityOverlay overlayerOld overlayer entity world
+                Right overlayer
 
-                // propagate errors
-                | Left error -> Left error
+            // propagate errors
             with exn -> Left (scstring exn)
 
         /// Send a message to the subsystems to reload their existing assets.
@@ -910,18 +908,16 @@ module WorldModule2 =
                 //File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile outputAssetGraphFilePath with
-                | Right assetGraph ->
+                let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
-                    // rebuild and reload assets
-                    AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    Metadata.reloadMetadata ()
-                    World.reloadExistingAssets world
-                    World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
-                    Right assetGraph
+                // rebuild and reload assets
+                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                Metadata.reloadMetadata ()
+                World.reloadExistingAssets world
+                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
+                Right assetGraph
 
-                // propagate errors
-                | Left error -> Left error
+            // propagate error
             with exn -> Left (scstring exn)
 
         /// Attempt to reload asset graph, build assets, then reload built assets.

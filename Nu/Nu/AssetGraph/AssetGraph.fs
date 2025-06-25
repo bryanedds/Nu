@@ -95,6 +95,15 @@ module AssetGraph =
         member this.PackageDescriptors =
             this.PackageDescriptors_
 
+    let private AssetGraphStr = """
+[[Default
+ [[Assets Assets/Default [bmp png psd ttf skel json] [PsdToPng] [Render2d]]
+  [Assets Assets/Default [jpg jpeg tga tif tiff dds] [ConvertToDds] [Render3d]]
+  [Assets Assets/Default [cbm fbx gltf glb dae obj mtl raw] [] [Render3d]]
+  [Assets Assets/Default [wav ogg mp3] [] [Audio]]
+  [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
+  [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl bin] [] []]]]]"""
+
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
         | PsdToPng -> if rawAssetExtension = ".psd" then ".png" else rawAssetExtension
@@ -303,14 +312,20 @@ module AssetGraph =
         { FilePathOpt_ = filePathOpt
           PackageDescriptors_ = packageDescriptors }
 
-    /// Attempt to make an asset graph.
-    let tryMakeFromFile filePath =
-        try File.ReadAllText filePath
-            |> String.unescape
-            |> scvalue<Map<string, PackageDescriptor>>
-            |> make (Some filePath)
-            |> Right
-        with exn -> Left ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
+    /// Make an asset graph, attempting to use the file at the given file path.
+    let makeFromFileOpt filePath =
+        let (filePathOpt, packageDescriptors) =
+            if File.Exists filePath then
+                try File.ReadAllText filePath
+                    |> String.unescape
+                    |> scvalue<Map<string, PackageDescriptor>>
+                    |> fun packageDescriptors -> (Some filePath, packageDescriptors)
+                with exn ->
+                    Log.warn ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
+                    (None, scvalue AssetGraphStr)
+            else (None, scvalue AssetGraphStr)
+        make filePathOpt packageDescriptors
+
 
 /// A graph of all the assets used in a game.
 type AssetGraph = AssetGraph.AssetGraph
