@@ -1341,62 +1341,58 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
-    let private tryMakeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport (plugin : NuPlugin) =
+    let private makeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport (plugin : NuPlugin) =
 
-        // attempt to make the world
-        match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin with
-        | Right world ->
+        // make the world
+        let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
 
-            // initialize event filter as not to flood the log
-            World.setEventFilter Constants.Gaia.EventFilter world
+        // initialize event filter as not to flood the log
+        World.setEventFilter Constants.Gaia.EventFilter world
 
-            // attempt to process ImSim once to make sure initial simulants are created
-            World.tryProcessSimulants true world
+        // attempt to process ImSim once to make sure initial simulants are created
+        World.tryProcessSimulants true world
 
-            // apply any selected mode
-            match worldConfig.ModeOpt with
-            | Some mode ->
-                match plugin.EditModes.TryGetValue mode with
-                | (true, modeFn) -> modeFn world
-                | (false, _) -> ()
-            | None -> ()
+        // apply any selected mode
+        match worldConfig.ModeOpt with
+        | Some mode ->
+            match plugin.EditModes.TryGetValue mode with
+            | (true, modeFn) -> modeFn world
+            | (false, _) -> ()
+        | None -> ()
 
-            // attempt to process ImSim again to ensure simulants in new mode are created
-            World.tryProcessSimulants true world
+        // attempt to process ImSim again to ensure simulants in new mode are created
+        World.tryProcessSimulants true world
 
-            // figure out which screen to use
-            let screen =
-                match Game.GetDesiredScreen world with
-                | Desire screen -> screen
-                | DesireNone ->
-                    match Game.GetSelectedScreenOpt world with
-                    | None ->
-                        let screen = Game / "Screen"
-                        if not (screen.GetExists world) then
-                            let screen = World.createScreen (Some "Screen") world
-                            Game.SetDesiredScreen (Desire screen) world
-                            screen
-                        else screen
-                    | Some screen -> screen
-                | DesireIgnore ->
-                    match Game.GetSelectedScreenOpt world with
-                    | None ->
-                        let screen = Game / "Screen"
-                        if not (screen.GetExists world) then
-                            let screen = World.createScreen (Some "Screen") world
-                            World.setSelectedScreen screen world
-                            let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                            World.publishPlus () screen.SelectEvent eventTrace screen false false world
-                            screen
-                        else screen
-                    | Some screen -> screen
+        // figure out which screen to use
+        let screen =
+            match Game.GetDesiredScreen world with
+            | Desire screen -> screen
+            | DesireNone ->
+                match Game.GetSelectedScreenOpt world with
+                | None ->
+                    let screen = Game / "Screen"
+                    if not (screen.GetExists world) then
+                        let screen = World.createScreen (Some "Screen") world
+                        Game.SetDesiredScreen (Desire screen) world
+                        screen
+                    else screen
+                | Some screen -> screen
+            | DesireIgnore ->
+                match Game.GetSelectedScreenOpt world with
+                | None ->
+                    let screen = Game / "Screen"
+                    if not (screen.GetExists world) then
+                        let screen = World.createScreen (Some "Screen") world
+                        World.setSelectedScreen screen world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                        World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        screen
+                    else screen
+                | Some screen -> screen
 
-            // proceed directly to idle state
-            World.selectScreen (IdlingState world.GameTime) screen world
-            Right (screen, world)
-
-        // error
-        | Left error -> Left error
+        // proceed directly to idle state
+        World.selectScreen (IdlingState world.GameTime) screen world
+        (screen, world)
 
     let private tryMakeSdlDeps accompanied windowSize =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Gaia" }
@@ -2842,12 +2838,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.SameLine ()
             if ImGui.Button "Load" then
                 let overlayerFilePath = TargetDir + "/" + Assets.Global.OverlayerFilePath
-                match Overlayer.tryMakeFromFile [] overlayerFilePath with
-                | Right overlayer ->
-                    let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                    OverlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-                | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                let overlayer = Overlayer.makeFromFileOpt [] overlayerFilePath
+                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                OverlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             ImGui.InputTextMultiline ("##overlayerStr", &OverlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
         ImGui.End ()
 
@@ -2864,12 +2858,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 with exn -> MessageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
             ImGui.SameLine ()
             if ImGui.Button "Load" then
-                match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
-                | Right assetGraph ->
-                    let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                    AssetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                | Left error -> MessageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                let assetGraph = AssetGraph.makeFromFileOpt (TargetDir + "/" + Assets.Global.AssetGraphFilePath)
+                let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                AssetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
             ImGui.InputTextMultiline ("##assetGraphStr", &AssetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
         ImGui.End ()
 
@@ -4196,20 +4188,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         selectScreen false screen
         selectGroupInitial screen world
         AssetGraphStr <-
-            match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
-            | Right assetGraph ->
-                let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            | Left error -> MessageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'."); ""
+            let assetGraph = AssetGraph.makeFromFileOpt (TargetDir + "/" + Assets.Global.AssetGraphFilePath)
+            let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+            PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
         OverlayerStr <-
             let overlayerFilePath = TargetDir + "/" + Assets.Global.OverlayerFilePath
-            match Overlayer.tryMakeFromFile [] overlayerFilePath with
-            | Right overlayer ->
-                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'."); ""
+            let overlayer = Overlayer.makeFromFileOpt [] overlayerFilePath
+            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+            PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
         let result = runWithCleanUpAndErrorProtection true world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
@@ -4237,7 +4225,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->
 
-            // attempt to create the world
+            // create the world
             let worldConfig =
                 { Imperative = gaiaState.ProjectImperativeExecution
                   Accompanied = true
@@ -4245,21 +4233,22 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
-            match tryMakeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin with
-            | Right (screen, world) ->
+            let (screen, world) =
+                makeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
 
-                // subscribe to events related to editing
-                World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
-                World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
-                World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
-                World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
+            // subscribe to events related to editing
+            World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
+            World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
+            World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
+            World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
 
-                // run the world
-                runWithCleanUp gaiaState targetDir screen world
-            | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
+            // run the world
+            runWithCleanUp gaiaState targetDir screen world
+
+        // handle error
         | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
