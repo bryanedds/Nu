@@ -1706,6 +1706,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ShadowPass (_, _, _, _, _) -> Matrix4x4.CreateFromQuaternion lookRotation
             | _ ->
                 if orientUp && planarBillboard then
+                    // TODO: Implement orientUp and planar behavior
                     m4Identity
                 elif orientUp && not planarBillboard then
                     let eyeFlat = eyeCenter.WithY 0.0f
