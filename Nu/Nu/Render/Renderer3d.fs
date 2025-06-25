@@ -392,6 +392,7 @@ type RenderBillboard =
       Presence : Presence
       InsetOpt : Box2 option
       PlanarBillboard : bool
+      OrientUp : bool
       MaterialProperties : MaterialProperties
       Material : Material
       ShadowOffset : single
@@ -400,7 +401,7 @@ type RenderBillboard =
       RenderPass : RenderPass }
 
 type RenderBillboards =
-    { Billboards : (Matrix4x4 * bool * Presence * Box2 option * bool) SList
+    { Billboards : (Matrix4x4 * bool * Presence * Box2 option * bool * bool) SList
       MaterialProperties : MaterialProperties
       Material : Material
       ShadowOffset : single
@@ -1704,7 +1705,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             match renderPass with
             | ShadowPass (_, _, _, _, _) -> Matrix4x4.CreateFromQuaternion lookRotation
             | _ ->
-                if orientUp && not planarBillboard then
+                if orientUp && planarBillboard then
+                    m4Identity
+                elif orientUp && not planarBillboard then
                     let eyeFlat = eyeCenter.WithY 0.0f
                     let positionFlat = model.Translation.WithY 0.0f
                     let eyeToPositionFlat = positionFlat - eyeFlat
@@ -1713,7 +1716,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let yaw = MathF.Atan2 (forward.X, forward.Z) - MathF.PI
                         Matrix4x4.CreateRotationY yaw
                     else m4Identity
-                else Matrix4x4.CreateFromQuaternion lookRotation
+                elif not orientUp && planarBillboard then
+                    Matrix4x4.CreateFromQuaternion lookRotation 
+                elif not orientUp && not planarBillboard then
+                    let lookat = Matrix4x4.CreateLookAt(eyeCenter,model.Translation,eyeRotation.Up)
+                    lookat.Inverted
+                else
+                    m4Identity
+                    
         let mutable affineRotation = model
         affineRotation.Translation <- v3Zero
         let mutable billboardMatrix = model * billboardRotation
@@ -3124,12 +3134,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, rb.PlanarBillboard, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, true, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
+                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, rb.PlanarBillboard, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, rb.OrientUp, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                for (model, castShadow, presence, insetOpt, planarBillboard) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, planarBillboard, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, true, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
+                for (model, castShadow, presence, insetOpt, planarBillboard, orientUp) in rbs.Billboards do
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, planarBillboard, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
