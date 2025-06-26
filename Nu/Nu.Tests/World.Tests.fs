@@ -11,7 +11,7 @@ module WorldTests =
 
     let [<Test>] runEmptyFrameThenCleanUp () =
         Nu.init ()
-        let world = World.makeEmpty { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore Live true world
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
