@@ -265,11 +265,12 @@ type BodyType =
     | KinematicCharacter
     | Dynamic
     | DynamicCharacter
+    | Vehicle
 
     // Check that this body type is some sort of character.
     member this.IsCharacter =
         match this with
-        | Static | Kinematic | Dynamic -> false
+        | Static | Kinematic | Dynamic | Vehicle -> false
         | KinematicCharacter | DynamicCharacter -> true
 
 /// The way in which an entity's motion is driven by a corresponding body.
@@ -308,6 +309,12 @@ type [<SymbolicExpansion>] CharacterProperties =
           StairStepForwardMin = 0.02f
           StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
 
+/// The properties needed to describe the vehicle aspects of a body.
+type VehicleProperties =
+    | VehiclePropertiesAbsent
+    | VehiclePropertiesAether
+    | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
+
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
     { Enabled : bool
@@ -327,6 +334,7 @@ type BodyProperties =
       Substance : Substance
       GravityOverride : Vector3 option
       CharacterProperties : CharacterProperties
+      VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int
@@ -437,6 +445,26 @@ type SetBodyAngularVelocityMessage =
     { BodyId : BodyId
       AngularVelocity : Vector3 }
 
+/// A message to the physics system to set the forward input of a vehicle body.
+type SetBodyVehicleForwardInputMessage =
+    { BodyId : BodyId
+      ForwardInput : single }
+
+/// A message to the physics system to set the right input of a vehicle body.
+type SetBodyVehicleRightInputMessage =
+    { BodyId : BodyId
+      RightInput : single }
+
+/// A message to the physics system to set the brake input of a vehicle body.
+type SetBodyVehicleBrakeInputMessage =
+    { BodyId : BodyId
+      BrakeInput : single }
+
+/// A message to the physics system to set the brake input of a vehicle body.
+type SetBodyVehicleHandBrakeInputMessage =
+    { BodyId : BodyId
+      HandBrakeInput : single }
+
 /// A message to the physics system to apply a linear impulse to a body.
 type ApplyBodyLinearImpulseMessage =
     { BodyId : BodyId
@@ -510,6 +538,10 @@ type PhysicsMessage =
     | SetBodyRotationMessage of SetBodyRotationMessage
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
     | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
+    | SetBodyVehicleForwardInputMessage of SetBodyVehicleForwardInputMessage
+    | SetBodyVehicleRightInputMessage of SetBodyVehicleRightInputMessage
+    | SetBodyVehicleBrakeInputMessage of SetBodyVehicleBrakeInputMessage
+    | SetBodyVehicleHandBrakeInputMessage of SetBodyVehicleHandBrakeInputMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage

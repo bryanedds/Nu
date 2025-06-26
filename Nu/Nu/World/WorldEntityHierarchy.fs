@@ -326,6 +326,7 @@ module Freezer3dFacetModule =
                       Substance = Mass 0.0f
                       GravityOverride = None
                       CharacterProperties = CharacterProperties.defaultProperties
+                      VehicleProperties = VehiclePropertiesAbsent
                       CollisionDetection = Discontinuous
                       CollisionCategories = 1
                       CollisionMask = -1

@@ -256,6 +256,30 @@ module WorldPhysics =
             World.handlePhysicsMessage3d setBodyAngularVelocityMessage world
             World.handlePhysicsMessage2d setBodyAngularVelocityMessage world
 
+        /// Send a physics message to set the forward input of a vehicle body with the given body id.
+        static member setBodyVehicleForwardInput forwardInput bodyId world =
+            let setBodyVehicleForwardInputMessage = SetBodyVehicleForwardInputMessage { BodyId = bodyId; ForwardInput = forwardInput }
+            World.handlePhysicsMessage3d setBodyVehicleForwardInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleForwardInputMessage world
+
+        /// Send a physics message to set the right input of a vehicle body with the given body id.
+        static member setBodyVehicleRightInput rightInput bodyId world =
+            let setBodyVehicleRightInputMessage = SetBodyVehicleRightInputMessage { BodyId = bodyId; RightInput = rightInput }
+            World.handlePhysicsMessage3d setBodyVehicleRightInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleRightInputMessage world
+
+        /// Send a physics message to set the brake input of a vehicle body with the given body id.
+        static member setBodyVehicleBrakeInput brakeInput bodyId world =
+            let setBodyVehicleBrakeInputMessage = SetBodyVehicleBrakeInputMessage { BodyId = bodyId; BrakeInput = brakeInput }
+            World.handlePhysicsMessage3d setBodyVehicleBrakeInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleBrakeInputMessage world
+
+        /// Send a physics message to set the hand brake input of a vehicle body with the given body id.
+        static member setBodyVehicleHandBrakeInput handBrakeInput bodyId world =
+            let setBodyVehicleHandBrakeInputMessage = SetBodyVehicleHandBrakeInputMessage { BodyId = bodyId; HandBrakeInput = handBrakeInput }
+            World.handlePhysicsMessage3d setBodyVehicleHandBrakeInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleHandBrakeInputMessage world
+
         /// Send a physics message to apply linear impulse to a body with the given body id.
         static member applyBodyLinearImpulse linearImpulse originWorldOpt bodyId world =
             let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; OriginWorldOpt = originWorldOpt }

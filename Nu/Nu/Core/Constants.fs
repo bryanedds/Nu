@@ -319,6 +319,7 @@ module Physics =
               "Size"
               "BodyEnabled"
               "BodyType"
+              "BodyShape"
               "SleepingAllowed"
               "Friction"
               "Restitution"
@@ -331,7 +332,6 @@ module Physics =
               "CollisionDetection"
               "CollisionCategories"
               "CollisionMask"
-              "BodyShape"
               "Sensor"],
              StringComparer.Ordinal)
 

@@ -20,9 +20,25 @@ type [<Struct>] private CharacterUserData =
       CharacterGravityOverride : Vector3 option
       CharacterProperties : CharacterProperties }
 
-type [<Struct>] private BodyContactEvent =
+type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
     | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
     | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
+    override this.Equals (that : obj) =
+        match that with
+        | :? BodyContactEvent as that ->
+            match this, that with
+            | BodyContactAdded (bodyID, body2ID, contactNormal), BodyContactAdded (bodyID2, body2ID2, contactNormal2) ->
+                bodyID.ID = bodyID2.ID && body2ID.ID = body2ID2.ID && contactNormal = contactNormal2
+            | BodyContactRemoved (bodyID, body2ID), BodyContactRemoved (bodyID2, body2ID2) ->
+                bodyID.ID = bodyID2.ID && body2ID.ID = body2ID2.ID
+            | _ -> false
+        | _ -> false
+    override this.GetHashCode () =
+        match this with
+        | BodyContactAdded (bodyID, body2ID, contactNormal) ->
+            int bodyID.ID ^^^ int body2ID.ID * 131 ^^^ contactNormal.GetHashCode ()
+        | BodyContactRemoved (bodyID, body2ID) ->
+            int bodyID.ID ^^^ int body2ID.ID * 131
 
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
@@ -90,6 +106,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterID, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
+          VehicleConstraints : Dictionary<BodyId, VehicleConstraint>
           mutable BodyUnoptimizedCreationCount : int
           BodyContactLock : obj
           BodyContactEvents : BodyContactEvent HashSet
@@ -494,26 +511,79 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
+    static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
+
+        // configure and create non-character body
+        let mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
+        bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
+        bodyCreationSettings.Friction <- bodyProperties.Friction
+        bodyCreationSettings.Restitution <- bodyProperties.Restitution
+        bodyCreationSettings.LinearVelocity <- bodyProperties.LinearVelocity
+        bodyCreationSettings.LinearDamping <- bodyProperties.LinearDamping
+        bodyCreationSettings.AngularVelocity <- bodyProperties.AngularVelocity
+        bodyCreationSettings.AngularDamping <- bodyProperties.AngularDamping
+        bodyCreationSettings.AllowedDOFs <-
+            (if bodyProperties.AngularFactor.X <> 0.0f then AllowedDOFs.RotationX else enum<_> 0) |||
+            (if bodyProperties.AngularFactor.Y <> 0.0f then AllowedDOFs.RotationY else enum<_> 0) |||
+            (if bodyProperties.AngularFactor.Z <> 0.0f then AllowedDOFs.RotationZ else enum<_> 0) |||
+            AllowedDOFs.TranslationX ||| AllowedDOFs.TranslationY ||| AllowedDOFs.TranslationZ // TODO: P1: consider exposing linear factors if Aether physics also supports it.
+        let massProperties = MassProperties ()
+        massProperties.ScaleToMass mass
+        bodyCreationSettings.MassPropertiesOverride <- massProperties
+        bodyCreationSettings.GravityFactor <-
+            match bodyProperties.GravityOverride with
+            | Some gravity -> gravity.Magnitude
+            | None -> 1.0f
+        bodyCreationSettings.MotionQuality <-
+            match bodyProperties.CollisionDetection with
+            | Discontinuous -> MotionQuality.Discrete
+            | Continuous -> MotionQuality.LinearCast
+        bodyCreationSettings.IsSensor <- bodyProperties.Sensor
+        let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
+        let bodyUserData =
+            { BodyId = bodyId
+              BodyCollisionCategories = bodyProperties.CollisionCategories
+              BodyCollisionMask = bodyProperties.CollisionMask }
+        physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
+        physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
+        physicsEngine.Bodies.Add (bodyId, body.ID)
+        (bodyId, body)
+
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
 
-        // create either a character or a non-character body
+        // create either a character or a non-character body, ensuring we have at least one shape child in order to
+        // avoid jolt error
         use scShapeSettings = new StaticCompoundShapeSettings ()
-        let masses = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
-        let mass = List.sum masses
+        let mass = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine |> List.sum
+        if scShapeSettings.NumSubShapes = 0u then
+            let position = v3Zero
+            let rotation = quatIdentity
+            let centerOfMass = v3Zero
+            scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
         let layer =
             if bodyProperties.Enabled then
                 if bodyProperties.BodyType.IsStatic
                 then Constants.Physics.ObjectLayerNonMoving
                 else Constants.Physics.ObjectLayerMoving
             else Constants.Physics.ObjectLayerDisabled
-        let (motionType, isCharacter) =
+        let (motionType, representationType) =
             match bodyProperties.BodyType with
-            | Static -> (MotionType.Static, false)
-            | Kinematic -> (MotionType.Kinematic, false)
-            | KinematicCharacter -> (MotionType.Kinematic, true)
-            | Dynamic -> (MotionType.Dynamic, false)
-            | DynamicCharacter -> (MotionType.Dynamic, true)
-        if isCharacter then
+            | Static -> (MotionType.Static, Choice1Of3 ())
+            | Kinematic -> (MotionType.Kinematic, Choice1Of3 ())
+            | KinematicCharacter -> (MotionType.Kinematic, Choice2Of3 ())
+            | Dynamic -> (MotionType.Dynamic, Choice1Of3 ())
+            | DynamicCharacter -> (MotionType.Dynamic, Choice2Of3 ())
+            | Vehicle ->
+                match bodyProperties.VehicleProperties with
+                | VehiclePropertiesJolt vehicleConstraintSettings -> (MotionType.Dynamic, Choice3Of3 vehicleConstraintSettings)
+                | _ -> (MotionType.Dynamic, Choice1Of3 ())
+        match representationType with
+        | Choice1Of3 () ->
+
+            // create body
+            PhysicsEngine3d.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
+
+        | Choice2Of3 () ->
 
             // character config
             let characterSettings = CharacterVirtualSettings ()
@@ -599,49 +669,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
-        else
+        | Choice3Of3 vehicleConstraintSettings ->
 
-            // ensure we have at least one shape child in order to avoid jolt error
-            if scShapeSettings.NumSubShapes = 0u then
-                let position = v3Zero
-                let rotation = quatIdentity
-                let centerOfMass = v3Zero
-                scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
+            // create vehicle offset COM shape
+            let offset = v3Down * 1.25f // TODO: P0: expose this as parameter.
+            let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
-            // configure and create non-character body
-            let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
-            bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
-            bodyCreationSettings.Friction <- bodyProperties.Friction
-            bodyCreationSettings.Restitution <- bodyProperties.Restitution
-            bodyCreationSettings.LinearVelocity <- bodyProperties.LinearVelocity
-            bodyCreationSettings.LinearDamping <- bodyProperties.LinearDamping
-            bodyCreationSettings.AngularVelocity <- bodyProperties.AngularVelocity
-            bodyCreationSettings.AngularDamping <- bodyProperties.AngularDamping
-            bodyCreationSettings.AllowedDOFs <-
-                (if bodyProperties.AngularFactor.X <> 0.0f then AllowedDOFs.RotationX else enum<_> 0) |||
-                (if bodyProperties.AngularFactor.Y <> 0.0f then AllowedDOFs.RotationY else enum<_> 0) |||
-                (if bodyProperties.AngularFactor.Z <> 0.0f then AllowedDOFs.RotationZ else enum<_> 0) |||
-                AllowedDOFs.TranslationX ||| AllowedDOFs.TranslationY ||| AllowedDOFs.TranslationZ // TODO: P1: consider exposing linear factors if Aether physics also supports it.
-            let massProperties = MassProperties ()
-            massProperties.ScaleToMass mass
-            bodyCreationSettings.MassPropertiesOverride <- massProperties
-            bodyCreationSettings.GravityFactor <-
-                match bodyProperties.GravityOverride with
-                | Some gravity -> gravity.Magnitude
-                | None -> 1.0f
-            bodyCreationSettings.MotionQuality <-
-                match bodyProperties.CollisionDetection with
-                | Discontinuous -> MotionQuality.Discrete
-                | Continuous -> MotionQuality.LinearCast
-            bodyCreationSettings.IsSensor <- bodyProperties.Sensor
-            let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
-            let bodyUserData =
-                { BodyId = bodyId
-                  BodyCollisionCategories = bodyProperties.CollisionCategories
-                  BodyCollisionMask = bodyProperties.CollisionMask }
-            physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
-            physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
-            physicsEngine.Bodies.Add (bodyId, body.ID)
+            // create vehicle body
+            let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
+            
+            // create vehicle constraint
+            let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
+            vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (layer, 1.0f))
+            physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
+            physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
+
+            // register step listener
+            physicsEngine.PhysicsContext.AddStepListener vehicleConstraint
 
         // HACK: optimize broad phase if we've taken in a lot of bodies.
         // NOTE: Might cause some intemittent run-time pauses when adding bodies.
@@ -698,7 +742,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             character.Dispose ()
         | (false, _) ->
 
-            // otherwise, attempt to destroy non-character body
+            // attempt to destroy wheeled vehicle controller
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, vehicleConstraint) ->
+                physicsEngine.PhysicsContext.RemoveStepListener vehicleConstraint
+                physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
+                physicsEngine.VehicleConstraints.Remove bodyId |> ignore<bool>
+                vehicleConstraint.Dispose ()
+            | (false, _) -> ()
+
+            // attempt to destroy non-character body
             match physicsEngine.Bodies.TryGetValue bodyId with
             | (true, bodyID) ->
                 physicsEngine.Bodies.Remove bodyId |> ignore<bool>
@@ -855,6 +908,34 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.PhysicsContext.BodyInterface.SetAngularVelocity (&bodyID, &setBodyAngularVelocityMessage.AngularVelocity)
         | ValueNone -> ()
 
+    static member private setBodyVehicleForwardInput (setBodyVehicleForwardInputMessage : SetBodyVehicleForwardInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleForwardInputMessage.BodyId with
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.ForwardInput <- setBodyVehicleForwardInputMessage.ForwardInput
+        | (false, _) -> ()
+
+    static member private setBodyVehicleRightInput (setBodyVehicleRightInputMessage : SetBodyVehicleRightInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleRightInputMessage.BodyId with
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.RightInput <- setBodyVehicleRightInputMessage.RightInput
+        | (false, _) -> ()
+
+    static member private setBodyVehicleBrakeInput (setBodyVehicleBrakeInputMessage : SetBodyVehicleBrakeInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleBrakeInputMessage.BodyId with
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.BrakeInput <- setBodyVehicleBrakeInputMessage.BrakeInput
+        | (false, _) -> ()
+
+    static member private setBodyVehicleHandBrakeInput (setBodyVehicleHandBrakeInputMessage : SetBodyVehicleHandBrakeInputMessage) physicsEngine =
+        match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleHandBrakeInputMessage.BodyId with
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.HandBrakeInput <- setBodyVehicleHandBrakeInputMessage.HandBrakeInput
+        | (false, _) -> ()
+
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match PhysicsEngine3d.tryGetBodyID applyBodyLinearImpulseMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
@@ -923,6 +1004,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine3d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine3d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | SetBodyVehicleForwardInputMessage setBodyVehicleForwardInputMessage -> PhysicsEngine3d.setBodyVehicleForwardInput setBodyVehicleForwardInputMessage physicsEngine
+        | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> PhysicsEngine3d.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
+        | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
+        | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -1066,7 +1151,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         // create some physics engine bookkeeping fields that will be used by body contact handlers
         let bodyContactLock = obj ()
         let bodyContactEvents = HashSet ()
-        let bodyUserData = dictPlus HashIdentity.Structural []
+        let bodyUserData = dictPlus (HashIdentity.FromFunctions (fun (bodyID : BodyID) -> int bodyID.ID) (fun (bodyID : BodyID) (bodyID2 : BodyID) -> bodyID.ID = bodyID2.ID)) []
 
         // validate contact with category and mask
         physicsSystem.add_OnContactValidate (fun _ body body2 _ _ ->
@@ -1097,12 +1182,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let body2ID = subShapeIDPair.Body2ID
             lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
-        // create thread job system
-        let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
-        jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
-        jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dBarriersMax
-        jobSystemConfig.numThreads <- Constants.Physics.Collision3dThreads
-        let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
+        // create job system
+        let jobSystem =
+            // TODO: P1: expose this from the wrapper and then uncomment.
+            //if Constants.Engine.RunSynchronously
+            //then new JobSystemSingleThreaded ()
+            //else
+                let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
+                jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
+                jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dBarriersMax
+                jobSystemConfig.numThreads <- Constants.Physics.Collision3dThreads
+                new JobSystemThreadPool (&jobSystemConfig)
 
         // make physics engine
         { PhysicsContext = physicsSystem
@@ -1114,6 +1204,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
+          VehicleConstraints = dictPlus HashIdentity.Structural []
           BodyUnoptimizedCreationCount = 0
           BodyContactLock = bodyContactLock
           BodyContactEvents = bodyContactEvents
@@ -1129,7 +1220,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     interface PhysicsEngine with
 
-        member physicsEngine.GetBodyExists bodyId =
+        member physicsEngine.GetBodyExists bodyId = 
             physicsEngine.Characters.ContainsKey bodyId ||
             physicsEngine.Bodies.ContainsKey bodyId
 
@@ -1365,6 +1456,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyConstraintEvents.Clear ()
             physicsEngine.BodyConstraintUserData.Clear ()
             physicsEngine.BodyConstraints.Clear ()
+
+            // clear wheeled vehicle controllers and vehicle constraints
+            for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
+                physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
+            physicsEngine.VehicleConstraints.Clear ()
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
