@@ -329,8 +329,8 @@ module WorldModule3 =
             WorldTypes.WorldForDebug <- world
             world
 
-        /// Make an empty world.
-        static member makeEmpty config (plugin : NuPlugin) =
+        /// Make a world with stub dependencies.
+        static member makeStub config (plugin : NuPlugin) =
 
             // make the world's event delegate
             let eventGraph =
@@ -386,7 +386,7 @@ module WorldModule3 =
             // fin
             world
 
-        /// Make the world.
+        /// Make the world with the given dependencies.
         static member make sdlDeps config geometryViewport rasterViewport (outerViewport : Viewport) (plugin : NuPlugin) =
 
             // create asset graph
