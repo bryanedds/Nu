@@ -18,7 +18,7 @@ module WorldImGui =
 
     type World with
 
-        static member internal getImGui world =
+        static member internal getImGui (world : World) =
             world.Subsystems.ImGui
 
         static member imGuiTryGetTextureId assetTag world =
@@ -204,9 +204,9 @@ module WorldImGui =
                 if refNeq value' value then promoted <- true
                 value'
             let fields =
-                FSharpType.GetRecordFields (ty, true) |>
-                Array.zip (FSharpValue.GetRecordFields (value, true)) |>
-                Array.map (fun (field, fieldInfo : PropertyInfo) ->
+                FSharpType.GetRecordFields (ty, true)
+                |> Array.zip (FSharpValue.GetRecordFields (value, true))
+                |> Array.map (fun (field, fieldInfo : PropertyInfo) ->
                     match tryReplaceField fieldInfo field with
                     | Some (edited2, field) ->
                         if edited2 then edited <- true

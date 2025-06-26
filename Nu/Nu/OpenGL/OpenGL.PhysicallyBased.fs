@@ -100,8 +100,7 @@ module PhysicallyBased =
           mutable TrianglesCached : Vector3 array option
           VertexBuffer : uint
           InstanceBuffer : uint
-          IndexBuffer : uint
-          PhysicallyBasedVao : uint }
+          IndexBuffer : uint }
 
         /// Lazily access triangles, building them from Vertices and Indices if needed.
         member this.Triangles =
@@ -218,7 +217,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
-            left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
+            left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer
 
         static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
             let hashCode =
@@ -234,7 +233,7 @@ module PhysicallyBased =
                 (hash material.ScatterTexture <<< 18) ^^^
                 (hash material.TwoSided <<< 20) ^^^
                 (int geometry.PrimitiveType <<< 22) ^^^
-                (int geometry.PhysicallyBasedVao <<< 24)
+                (int geometry.VertexBuffer <<< 24)
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
@@ -1265,35 +1264,79 @@ module PhysicallyBased =
         // fin
         (vertexData, indexData, bounds)
 
+    let StaticTexCoordsOffset = (3 (*position*)) * sizeof<single>
+    let StaticNormalOffset =    (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+
+    let CreatePhysicallyBasedStaticVao () =
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 1u, 2, VertexAttribType.Float, false, uint StaticTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 2u, 3, VertexAttribType.Float, false, uint StaticNormalOffset)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 1u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 2u)
+
+        // per instance
+        Gl.VertexArrayAttribFormat (vao, 3u, 4, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 4u, 4, VertexAttribType.Float, false, uint (4 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint (8 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 6u, 4, VertexAttribType.Float, false, uint (12 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 7u, 4, VertexAttribType.Float, false, uint (16 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 8u, 4, VertexAttribType.Float, false, uint (20 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribBinding (vao, 3u, 1u) // NOTE: different index for instance!
+        Gl.VertexArrayAttribBinding (vao, 4u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 5u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 6u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 7u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 8u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 9u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 10u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 3u)
+        Gl.EnableVertexArrayAttrib (vao, 4u)
+        Gl.EnableVertexArrayAttrib (vao, 5u)
+        Gl.EnableVertexArrayAttrib (vao, 6u)
+        Gl.EnableVertexArrayAttrib (vao, 7u)
+        Gl.EnableVertexArrayAttrib (vao, 8u)
+        Gl.EnableVertexArrayAttrib (vao, 9u)
+        Gl.EnableVertexArrayAttrib (vao, 10u)
+        Gl.EnableVertexArrayAttrib (vao, 11u)
+
+        // divisors
+        Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
+        Gl.VertexArrayBindingDivisor (vao, 1u, 1u)
+
+        // fin
+        vao
+
     /// Create physically-based static geometry from a mesh.
     let CreatePhysicallyBasedStaticGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
 
             // make renderable
             if renderable then
 
-                // initialize vao
-                let vao = Gl.GenVertexArray ()
-                Gl.BindVertexArray vao
-                Hl.Assert ()
-
                 // create vertex buffer
                 let vertexBuffer = Gl.GenBuffer ()
-                let texCoordsOffset =   (3 (*position*)) * sizeof<single>
-                let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
                     Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
-                Gl.EnableVertexAttribArray 0u
-                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
-                Gl.EnableVertexAttribArray 1u
-                Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
-                Gl.EnableVertexAttribArray 2u
-                Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
                 Hl.Assert ()
 
                 // create instance buffer
@@ -1301,38 +1344,10 @@ module PhysicallyBased =
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                let strideSize = instanceData.Length * sizeof<single>
                 let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
+                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
-                Gl.EnableVertexAttribArray 3u
-                Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint 0)
-                Gl.VertexAttribDivisor (3u, 1u)
-                Gl.EnableVertexAttribArray 4u
-                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (4 * sizeof<single>))
-                Gl.VertexAttribDivisor (4u, 1u)
-                Gl.EnableVertexAttribArray 5u
-                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (8 * sizeof<single>))
-                Gl.VertexAttribDivisor (5u, 1u)
-                Gl.EnableVertexAttribArray 6u
-                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (12 * sizeof<single>))
-                Gl.VertexAttribDivisor (6u, 1u)
-                Gl.EnableVertexAttribArray 7u
-                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (16 * sizeof<single>))
-                Gl.VertexAttribDivisor (7u, 1u)
-                Gl.EnableVertexAttribArray 8u
-                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (20 * sizeof<single>))
-                Gl.VertexAttribDivisor (8u, 1u)
-                Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
-                Gl.VertexAttribDivisor (9u, 1u)
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
-                Gl.VertexAttribDivisor (10u, 1u)
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
-                Gl.VertexAttribDivisor (11u, 1u)
-                Hl.Assert ()
 
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
@@ -1343,12 +1358,8 @@ module PhysicallyBased =
                     Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
-                // finalize vao
-                Gl.BindVertexArray 0u
-                Hl.Assert ()
-
                 // fin
-                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
 
             // fake buffers
             else
@@ -1365,7 +1376,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1377,8 +1388,7 @@ module PhysicallyBased =
               TrianglesCached = None
               VertexBuffer = vertexBuffer
               InstanceBuffer = instanceBuffer
-              IndexBuffer = indexBuffer
-              PhysicallyBasedVao = vao }
+              IndexBuffer = indexBuffer }
 
         // fin
         geometry
@@ -1388,41 +1398,87 @@ module PhysicallyBased =
         match CreatePhysicallyBasedStaticMesh (indexData, mesh) with
         | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
+    let AnimatedTexCoordsOffset =   (3 (*position*)) * sizeof<single>
+    let AnimatedNormalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let AnimatedBoneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let AnimatedWeightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
+    let AnimatedVertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
+
+    let CreatePhysicallyBasedAnimatedVao () =
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 1u, 2, VertexAttribType.Float, false, uint AnimatedTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 2u, 3, VertexAttribType.Float, false, uint AnimatedNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 3u, 4, VertexAttribType.Float, false, uint AnimatedBoneIdsOffset)
+        Gl.VertexArrayAttribFormat (vao, 4u, 4, VertexAttribType.Float, false, uint AnimatedWeightsOffset)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 1u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 3u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 4u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 2u)
+        Gl.EnableVertexArrayAttrib (vao, 3u)
+        Gl.EnableVertexArrayAttrib (vao, 4u)
+
+        // per instance
+        Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 6u, 4, VertexAttribType.Float, false, uint (4 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 7u, 4, VertexAttribType.Float, false, uint (8 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 8u, 4, VertexAttribType.Float, false, uint (12 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (16 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (20 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 12u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 13u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribBinding (vao, 5u, 1u) // NOTE: different index for instance!
+        Gl.VertexArrayAttribBinding (vao, 6u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 7u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 8u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 9u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 10u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 12u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 13u, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 5u)
+        Gl.EnableVertexArrayAttrib (vao, 6u)
+        Gl.EnableVertexArrayAttrib (vao, 7u)
+        Gl.EnableVertexArrayAttrib (vao, 8u)
+        Gl.EnableVertexArrayAttrib (vao, 9u)
+        Gl.EnableVertexArrayAttrib (vao, 10u)
+        Gl.EnableVertexArrayAttrib (vao, 11u)
+        Gl.EnableVertexArrayAttrib (vao, 12u)
+        Gl.EnableVertexArrayAttrib (vao, 13u)
+
+        // divisors
+        Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
+        Gl.VertexArrayBindingDivisor (vao, 1u, 1u)
+
+        // fin
+        vao
+
     /// Create physically-based animated geometry from a mesh.
     let CreatePhysicallyBasedAnimatedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
 
             // make renderable
             if renderable then
 
-                // initialize vao
-                let vao = Gl.GenVertexArray ()
-                Gl.BindVertexArray vao
-                Hl.Assert ()
-
                 // create vertex buffer
                 let vertexBuffer = Gl.GenBuffer ()
-                let texCoordsOffset =   (3 (*position*)) * sizeof<single>
-                let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-                let boneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-                let weightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
                     Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
-                Gl.EnableVertexAttribArray 0u
-                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
-                Gl.EnableVertexAttribArray 1u
-                Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
-                Gl.EnableVertexAttribArray 2u
-                Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
-                Gl.EnableVertexAttribArray 3u
-                Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint boneIdsOffset)
-                Gl.EnableVertexAttribArray 4u
-                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint weightsOffset)
                 Hl.Assert ()
 
                 // create instance buffer
@@ -1434,33 +1490,6 @@ module PhysicallyBased =
                 let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
-                Gl.EnableVertexAttribArray 5u
-                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint 0)
-                Gl.VertexAttribDivisor (5u, 1u)
-                Gl.EnableVertexAttribArray 6u
-                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (4 * sizeof<single>))
-                Gl.VertexAttribDivisor (6u, 1u)
-                Gl.EnableVertexAttribArray 7u
-                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (8 * sizeof<single>))
-                Gl.VertexAttribDivisor (7u, 1u)
-                Gl.EnableVertexAttribArray 8u
-                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (12 * sizeof<single>))
-                Gl.VertexAttribDivisor (8u, 1u)
-                Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (16 * sizeof<single>))
-                Gl.VertexAttribDivisor (9u, 1u)
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (20 * sizeof<single>))
-                Gl.VertexAttribDivisor (10u, 1u)
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
-                Gl.VertexAttribDivisor (11u, 1u)
-                Gl.EnableVertexAttribArray 12u
-                Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
-                Gl.VertexAttribDivisor (12u, 1u)
-                Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
-                Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -1472,12 +1501,8 @@ module PhysicallyBased =
                     Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
-                // finalize vao
-                Gl.BindVertexArray 0u
-                Hl.Assert ()
-
                 // fin
-                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
 
             // fake buffers
             else
@@ -1494,7 +1519,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1506,8 +1531,7 @@ module PhysicallyBased =
               TrianglesCached = None
               VertexBuffer = vertexBuffer
               InstanceBuffer = instanceBuffer
-              IndexBuffer = indexBuffer
-              PhysicallyBasedVao = vao }
+              IndexBuffer = indexBuffer }
 
         // fin
         geometry
@@ -1517,45 +1541,91 @@ module PhysicallyBased =
         match CreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
         | (vertexData, indexData, bounds) -> CreatePhysicallyBasedAnimatedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
+    let TerrainTexCoordsOffset =    (3 (*position*)) * sizeof<single>
+    let TerrainNormalOffset =       (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let TerrainTintOffset =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let TerrainBlendsOffset =       (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
+    let TerrainBlends2Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*)) * sizeof<single>
+    let TerrainVertexSize =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*) + 4 (*blends2*)) * sizeof<single>
+
+    let CreatePhysicallyBasedTerrainVao () =
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 1u, 2, VertexAttribType.Float, false, uint TerrainTexCoordsOffset)
+        Gl.VertexArrayAttribFormat (vao, 2u, 3, VertexAttribType.Float, false, uint TerrainNormalOffset)
+        Gl.VertexArrayAttribFormat (vao, 3u, 3, VertexAttribType.Float, false, uint TerrainTintOffset)
+        Gl.VertexArrayAttribFormat (vao, 4u, 4, VertexAttribType.Float, false, uint TerrainBlendsOffset)
+        Gl.VertexArrayAttribFormat (vao, 5u, 4, VertexAttribType.Float, false, uint TerrainBlends2Offset)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 1u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 2u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 3u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 4u, 0u)
+        Gl.VertexArrayAttribBinding (vao, 5u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 2u)
+        Gl.EnableVertexArrayAttrib (vao, 3u)
+        Gl.EnableVertexArrayAttrib (vao, 4u)
+        Gl.EnableVertexArrayAttrib (vao, 5u)
+
+        // per instance
+        Gl.VertexArrayAttribFormat (vao, 6u, 4, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribFormat (vao, 7u, 4, VertexAttribType.Float, false, uint (4 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 8u, 4, VertexAttribType.Float, false, uint (8 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (12 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (16 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (20 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 12u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 13u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 14u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribBinding (vao, 6u, 1u) // NOTE: different index for instance!
+        Gl.VertexArrayAttribBinding (vao, 7u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 8u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 9u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 10u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 12u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 13u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 14u, 1u)
+        Gl.EnableVertexArrayAttrib (vao, 6u)
+        Gl.EnableVertexArrayAttrib (vao, 7u)
+        Gl.EnableVertexArrayAttrib (vao, 8u)
+        Gl.EnableVertexArrayAttrib (vao, 9u)
+        Gl.EnableVertexArrayAttrib (vao, 10u)
+        Gl.EnableVertexArrayAttrib (vao, 11u)
+        Gl.EnableVertexArrayAttrib (vao, 12u)
+        Gl.EnableVertexArrayAttrib (vao, 13u)
+        Gl.EnableVertexArrayAttrib (vao, 14u)
+
+        // divisors
+        Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
+        Gl.VertexArrayBindingDivisor (vao, 1u, 1u)
+
+        // fin
+        vao
+
     /// Create physically-based terrain geometry from a mesh.
     let CreatePhysicallyBasedTerrainGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
 
             // make renderable
             if renderable then
 
-                // initialize vao
-                let vao = Gl.GenVertexArray ()
-                Gl.BindVertexArray vao
-                Hl.Assert ()
-
                 // create vertex buffer
                 let vertexBuffer = Gl.GenBuffer ()
-                let texCoordsOffset =   (3 (*position*)) * sizeof<single>
-                let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-                let tintOffset =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-                let blendsOffset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
-                let blends2Offset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*) + 4 (*blends2*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
                     Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
-                Gl.EnableVertexAttribArray 0u
-                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
-                Gl.EnableVertexAttribArray 1u
-                Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
-                Gl.EnableVertexAttribArray 2u
-                Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
-                Gl.EnableVertexAttribArray 3u
-                Gl.VertexAttribPointer (3u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint tintOffset)
-                Gl.EnableVertexAttribArray 4u
-                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint blendsOffset)
-                Gl.EnableVertexAttribArray 5u
-                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint blends2Offset)
-                Hl.Assert ()
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
@@ -1566,34 +1636,6 @@ module PhysicallyBased =
                 let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
-                Gl.EnableVertexAttribArray 6u
-                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint 0) // model fields
-                Gl.VertexAttribDivisor (6u, 1u)
-                Gl.EnableVertexAttribArray 7u
-                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (4 * sizeof<single>))
-                Gl.VertexAttribDivisor (7u, 1u)
-                Gl.EnableVertexAttribArray 8u
-                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (8 * sizeof<single>))
-                Gl.VertexAttribDivisor (8u, 1u)
-                Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (12 * sizeof<single>))
-                Gl.VertexAttribDivisor (9u, 1u)
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (16 * sizeof<single>))
-                Gl.VertexAttribDivisor (10u, 1u)
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (20 * sizeof<single>))
-                Gl.VertexAttribDivisor (11u, 1u)
-                Gl.EnableVertexAttribArray 12u
-                Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
-                Gl.VertexAttribDivisor (12u, 1u)
-                Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
-                Gl.VertexAttribDivisor (13u, 1u)
-                Gl.EnableVertexAttribArray 14u
-                Gl.VertexAttribPointer (14u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (32 * sizeof<single>))
-                Gl.VertexAttribDivisor (14u, 1u)
-                Hl.Assert ()
 
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
@@ -1604,12 +1646,8 @@ module PhysicallyBased =
                     Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
-                // finalize vao
-                Gl.BindVertexArray 0u
-                Hl.Assert ()
-
                 // fin
-                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
 
             // fake buffers
             else
@@ -1626,7 +1664,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1638,8 +1676,7 @@ module PhysicallyBased =
               TrianglesCached = None
               VertexBuffer = vertexBuffer
               InstanceBuffer = instanceBuffer
-              IndexBuffer = indexBuffer
-              PhysicallyBasedVao = vao }
+              IndexBuffer = indexBuffer }
 
         // fin
         geometry
@@ -2300,7 +2337,11 @@ module PhysicallyBased =
     let DrawFilterBoxSurface
         (inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterBoxShader) =
+         shader : Filter.FilterBoxShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.FilterBoxShader
@@ -2313,18 +2354,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -2334,14 +2371,22 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the filter gaussian pass using a physically-based surface.
     let DrawFilterGaussianSurface
         (scale : Vector2,
          inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterGaussianShader) =
+         shader : Filter.FilterGaussianShader,
+         vao : uint) =
 
+        // setup vao
+        Gl.BindVertexArray vao
+        
         // setup shader
         Gl.UseProgram shader.FilterGaussianShader
         Gl.Uniform2 (shader.ScaleUniform, scale.X, scale.Y)
@@ -2354,9 +2399,9 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
@@ -2364,21 +2409,25 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
-
         // teardown shader
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the filter bilateral down-sample pass using a physically-based surface.
     let DrawFilterBilateralDownSampleSurface
         (colorTexture : Texture.Texture,
          depthTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterBilateralDownSampleShader) =
+         shader : Filter.FilterBilateralDownSampleShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.FilterBilateralDownSampleShader
@@ -2394,18 +2443,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown shader
@@ -2414,6 +2459,10 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture1
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the filter bilateral up-sample pass using a physically-based surface.
     let DrawFilterBilateralUpSampleSurface
@@ -2421,7 +2470,11 @@ module PhysicallyBased =
          depthDownSampledTexture : Texture.Texture,
          depthTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterBilateralUpSampleShader) =
+         shader : Filter.FilterBilateralUpSampleShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.FilterBilateralUpSampleShader
@@ -2440,18 +2493,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown shader
@@ -2462,12 +2511,20 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the filter fxaa pass using a physically-based surface.
     let DrawFilterFxaaSurface
         (inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterFxaaShader) =
+         shader : Filter.FilterFxaaShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.FilterFxaaShader
@@ -2480,9 +2537,9 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
@@ -2490,14 +2547,14 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
-
         // teardown shader
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw a batch of physically-based depth surfaces.
     let DrawPhysicallyBasedDepthSurfaces
@@ -2511,7 +2568,9 @@ module PhysicallyBased =
          lightShadowExponent : single,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedShader) =
+         shader : PhysicallyBasedShader,
+         vao : uint,
+         vertexSize) =
 
         // setup dynamic state
         if not material.TwoSided then Gl.Enable EnableCap.CullFace
@@ -2524,6 +2583,9 @@ module PhysicallyBased =
             Gl.DepthFunc DepthFunction.Lequal
             Gl.Enable EnableCap.DepthTest
             Hl.Assert ()
+
+            // setup vao
+            Gl.BindVertexArray vao
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
@@ -2547,9 +2609,9 @@ module PhysicallyBased =
             finally instanceFieldsPtr.Free ()
 
             // setup geometry
-            Gl.BindVertexArray geometry.PhysicallyBasedVao
-            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-            Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+            Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+            Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+            Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
             Hl.Assert ()
 
             // draw geometry
@@ -2560,12 +2622,12 @@ module PhysicallyBased =
         // stop batch
         if batchPhase.Stopping then
 
-            // teardown geometry
-            Gl.BindVertexArray 0u
-            Hl.Assert ()
-
             // teardown shader
             Gl.UseProgram 0u
+            Hl.Assert ()
+
+            // teardown vao
+            Gl.BindVertexArray 0u
             Hl.Assert ()
 
             // teardown state
@@ -2592,7 +2654,9 @@ module PhysicallyBased =
          lightShadowDensity : single,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedShader) =
+         shader : PhysicallyBasedShader,
+         vao : uint,
+         vertexSize : int) =
 
         // setup dynamic state
         if not material.TwoSided then Gl.Enable EnableCap.CullFace
@@ -2605,6 +2669,9 @@ module PhysicallyBased =
             Gl.DepthFunc DepthFunction.Lequal
             Gl.Enable EnableCap.DepthTest
             Hl.Assert ()
+
+            // setup vao
+            Gl.BindVertexArray vao
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
@@ -2665,9 +2732,9 @@ module PhysicallyBased =
             finally instanceFieldsPtr.Free ()
 
             // setup geometry
-            Gl.BindVertexArray geometry.PhysicallyBasedVao
-            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-            Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+            Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+            Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+            Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
             Hl.Assert ()
 
             // draw geometry
@@ -2700,12 +2767,12 @@ module PhysicallyBased =
         // stop batch
         if batchPhase.Stopping then
 
-            // teardown geometry in general
-            Gl.BindVertexArray 0u
-            Hl.Assert ()
-
             // teardown shader
             Gl.UseProgram 0u
+            Hl.Assert ()
+
+            // teardown vao
+            Gl.BindVertexArray 0u
             Hl.Assert ()
 
             // teardown static state
@@ -2774,7 +2841,9 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          depthTest : DepthTest,
          blending : bool,
-         shader : PhysicallyBasedShader) =
+         shader : PhysicallyBasedShader,
+         vao : uint,
+         vertexSize : int) =
 
         // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
         if surfacesCount > 0 then
@@ -2806,6 +2875,9 @@ module PhysicallyBased =
                 Gl.Enable EnableCap.Blend
             if not material.TwoSided then Gl.Enable EnableCap.CullFace
             Hl.Assert ()
+
+            // setup vao
+            Gl.BindVertexArray vao
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
@@ -2935,18 +3007,14 @@ module PhysicallyBased =
             finally instanceFieldsPtr.Free ()
 
             // setup geometry
-            Gl.BindVertexArray geometry.PhysicallyBasedVao
-            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-            Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+            Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+            Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+            Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
             Hl.Assert ()
 
             // draw geometry
             Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
             Hl.ReportDrawCall surfacesCount
-            Hl.Assert ()
-
-            // teardown geometry
-            Gl.BindVertexArray 0u
             Hl.Assert ()
 
             // teardown textures
@@ -2988,6 +3056,10 @@ module PhysicallyBased =
             Gl.UseProgram 0u
             Hl.Assert ()
 
+            // teardown vao
+            Gl.BindVertexArray 0u
+            Hl.Assert ()
+
             // teardown state
             if not depthTest.IsAlwaysPassTest then
                 Gl.DepthFunc DepthFunction.Less
@@ -3011,7 +3083,8 @@ module PhysicallyBased =
          elementsCount : int,
          materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredTerrainShader) =
+         shader : PhysicallyBasedDeferredTerrainShader,
+         vao : uint) =
 
         // setup state
         Gl.DepthFunc DepthFunction.Lequal
@@ -3021,6 +3094,9 @@ module PhysicallyBased =
 
         // enforce layer limit
         let layersCount = min materials.Length Constants.Render.TerrainLayersMax
+
+        // setup vao
+        Gl.BindVertexArray vao
         
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedShader
@@ -3072,18 +3148,14 @@ module PhysicallyBased =
         finally instanceFieldsPtr.Free ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, TerrainVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3094,6 +3166,10 @@ module PhysicallyBased =
         
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown state
@@ -3110,7 +3186,11 @@ module PhysicallyBased =
          lightMapSizes : Vector3 array,
          lightMapsCount : int,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredLightMappingShader) =
+         shader : PhysicallyBasedDeferredLightMappingShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightMappingShader
@@ -3133,19 +3213,15 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.ValidateProgram shader.PhysicallyBasedDeferredLightMappingShader
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3157,6 +3233,10 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the ambient pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredAmbientSurface
@@ -3167,7 +3247,11 @@ module PhysicallyBased =
          lightMapAmbientColors : Color array,
          lightMapAmbientBrightnesses : single array,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredAmbientShader) =
+         shader : PhysicallyBasedDeferredAmbientShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredAmbientShader
@@ -3189,18 +3273,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3212,6 +3292,10 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the irradiance pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredIrradianceSurface
@@ -3221,7 +3305,11 @@ module PhysicallyBased =
          irradianceMap : Texture.Texture,
          irradianceMaps : Texture.Texture array,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredIrradianceShader) =
+         shader : PhysicallyBasedDeferredIrradianceShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredIrradianceShader
@@ -3248,18 +3336,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3278,6 +3362,10 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the environment filter pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredEnvironmentFilterSurface
@@ -3292,7 +3380,11 @@ module PhysicallyBased =
          lightMapMins : Vector3 array,
          lightMapSizes : Vector3 array,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredEnvironmentFilterShader) =
+         shader : PhysicallyBasedDeferredEnvironmentFilterShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredEnvironmentFilterShader
@@ -3329,18 +3421,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3361,6 +3449,10 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the ssao pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredSsaoSurface
@@ -3375,7 +3467,11 @@ module PhysicallyBased =
          ssaoDistanceMax : single,
          ssaoSampleCount : int,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredSsaoShader) =
+         shader : PhysicallyBasedDeferredSsaoShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredSsaoShader
@@ -3399,18 +3495,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3422,6 +3514,10 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the lighting pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightingSurface
@@ -3487,7 +3583,11 @@ module PhysicallyBased =
          shadowNear : single,
          shadowMatrices : single array array,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredLightingShader) =
+         shader : PhysicallyBasedDeferredLightingShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightingShader
@@ -3601,18 +3701,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3648,6 +3744,10 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the bilateral up-sample pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredCompositionSurface
@@ -3660,7 +3760,11 @@ module PhysicallyBased =
          colorTexture : Texture.Texture,
          fogAccumTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredCompositionShader) =
+         shader : PhysicallyBasedDeferredCompositionShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredCompositionShader
@@ -3684,18 +3788,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown textures
@@ -3709,24 +3809,20 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry geometry =
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
         Gl.DeleteBuffers [|geometry.VertexBuffer|]
         Gl.DeleteBuffers [|geometry.InstanceBuffer|]
         Gl.DeleteBuffers [|geometry.IndexBuffer|]
-        Gl.BindVertexArray 0u
-        Gl.DeleteVertexArrays [|geometry.PhysicallyBasedVao|]
 
     /// Destroy physically-based model resources.
     let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) =
-        let surfacesUnique = // NOTE: models deduplicate underlying geometry, so we make sure to only release each vao once.
-            model.Surfaces |>
-            Array.groupBy (fun surface -> surface.PhysicallyBasedGeometry.PhysicallyBasedVao) |>
-            Array.map snd |>
-            Array.map Array.head
-        for surface in surfacesUnique do
+        for surface in model.Surfaces do
             DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry
 
     /// Memoizes physically-based scene loads.
@@ -3843,8 +3939,8 @@ module PhysicallyBased =
                                 let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                 surfaces.Add surface
-                                yield PhysicallyBasedSurface surface|] |>
-                            TreeNode)
+                                yield PhysicallyBasedSurface surface|]
+                            |> TreeNode)
 
                     // fin
                     Right

@@ -92,41 +92,30 @@ type GameplayDispatcher () =
         | CreateSections ->
 
             // create stage sections from random section files
-            let world =
-                List.fold (fun world sectionIndex ->
+            for sectionIndex in 0 .. dec SectionCount do
 
-                    // load a random section from file (except the first section which is always 0)
-                    let section = Simulants.GameplaySection sectionIndex
-                    let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                    let world = World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> snd
+                // load a random section from file (except the first section which is always 0)
+                let section = Simulants.GameplaySection sectionIndex
+                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> ignore<Group>
 
-                    // shift all entities in the loaded section so that they go after the previously loaded section
-                    let sectionXShift = 1024.0f * single sectionIndex
-                    let sectionEntities = World.getEntities section world
-                    Seq.fold (fun world (sectionEntity : Entity) ->
-                        sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
-                        world sectionEntities)
-
-                    world [0 .. dec SectionCount]
-
-            // fin
-            just world
+                // shift all entities in the loaded section so that they go after the previously loaded section
+                let sectionXShift = 1024.0f * single sectionIndex
+                let sectionEntities = World.getEntities section world
+                for sectionEntity in sectionEntities do
+                    sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world
 
         | StartQuitting ->
 
             // publish the gameplay quit event
-            let world = World.publish () screen.QuitEvent screen world
-            just world
+            World.publish () screen.QuitEvent screen world
 
         | DestroySections ->
 
             // destroy stage sections that were created from section files
-            let world =
-                List.fold (fun world sectionIndex ->
-                    let section = Simulants.GameplaySection sectionIndex
-                    World.destroyGroup section world)
-                    world [0 .. dec SectionCount]
-            just world
+            for sectionIndex in 0 .. dec SectionCount do
+                let section = Simulants.GameplaySection sectionIndex
+                World.destroyGroup section world
 
         | UpdateEye ->
 
@@ -137,9 +126,7 @@ type GameplayDispatcher () =
                 let eyeCenter = world.Eye2dCenter
                 let eyeSize = world.Eye2dSize
                 let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
-                let world = World.setEye2dCenter eyeCenter world
-                just world
-            else just world
+                World.setEye2dCenter eyeCenter world
 
     // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =

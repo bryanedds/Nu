@@ -34,11 +34,11 @@ module WorldModule =
     let mutable internal TaskletProcessingStarted = false
 
     /// F# reach-around for adding script unsubscriptions to simulants.
-    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
+    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unsubscribing script subscriptions of simulants.
-    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
+    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for checking that a simulant is selected.
@@ -54,127 +54,104 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
-    let mutable internal evictScreenElements : Screen -> World -> World =
+    let mutable internal evictScreenElements : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unregistering physics entities of an entire screen.
-    let mutable internal admitScreenElements : Screen -> World -> World =
+    let mutable internal admitScreenElements : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
-    let mutable internal registerScreenPhysics : Screen -> World -> World =
+    let mutable internal registerScreenPhysics : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unregistering physics entities of an entire screen.
-    let mutable internal unregisterScreenPhysics : Screen -> World -> World =
+    let mutable internal unregisterScreenPhysics : Screen -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal register : Simulant -> World -> World =
+    let mutable internal register : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal unregister : Simulant -> World -> World =
+    let mutable internal unregister : Simulant -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGame : bool -> Game -> World -> World =
+    let mutable internal tryProcessGame : bool -> Game -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessScreen : bool -> Screen -> World -> World =
+    let mutable internal tryProcessScreen : bool -> Screen -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessGroup : bool -> Group -> World -> World =
+    let mutable internal tryProcessGroup : bool -> Group -> World -> unit =
         Unchecked.defaultof<_>
         
-    let mutable internal tryProcessEntity : bool -> Entity -> World -> World =
+    let mutable internal tryProcessEntity : bool -> Entity -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal signal : obj -> Simulant -> World -> World =
+    let mutable internal signal : obj -> Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal destroyImmediate : Simulant -> World -> World =
+    let mutable internal destroyImmediate : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
-    let mutable internal destroy : Simulant -> World -> World =
+    let mutable internal destroy : Simulant -> World -> unit =
         Unchecked.defaultof<_>
 
     let mutable internal getEmptyEffect : unit -> obj =
         Unchecked.defaultof<_>
 
-    type World with // Construction
-
-        /// Choose a world to be used as the active world for debugging.
-        static member internal choose (world : World) =
-            world.Choose ()
-
-    type World with // Caching
-
-        /// Get the optional cached entity.
-        static member internal getEntityCachedOpt world =
-            world.EntityCachedOpt
-
-        /// Get the simulants.
-        static member internal getSimulants world =
-            world.Simulants
-
     type World with // JobGraph
 
         /// Enqueue a job for threaded execution.
-        static member enqueueJob priority job world =
+        static member enqueueJob priority job (world : World) =
             world.WorldExtension.JobGraph.Enqueue (priority, job)
 
         /// Await a job from threaded execution.
         /// Order of jobs with the same key is not guaranteed.
-        static member tryAwaitJob deadline (jobId : obj) world =
+        static member tryAwaitJob deadline (jobId : obj) (world : World) =
             world.WorldExtension.JobGraph.TryAwait (deadline, jobId)
 
     type World with // Destruction
 
-        static member internal getDestructionListRev world =
+        static member internal getDestructionListRev (world : World) =
             world.WorldExtension.DestructionListRev
 
-        static member internal addSimulantToDestruction simulant world =
-            { world with
-                WorldExtension =
-                    { world.WorldExtension with
-                        DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }}
+        static member internal addSimulantToDestruction simulant (world : World) =
+            let worldExtension = { world.WorldExtension with DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal tryRemoveSimulantFromDestruction simulant world =
-            { world with
-                WorldExtension =
-                    { world.WorldExtension with
-                        DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
+        static member internal tryRemoveSimulantFromDestruction simulant (world : World) =
+            let worldExtension = { world.WorldExtension with DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
     type World with // Dispatchers
 
         /// Get the facets of the world.
-        static member getFacets world =
+        static member getFacets (world : World) =
             world.WorldExtension.Dispatchers.Facets
 
         /// Get the entity dispatchers of the world.
-        static member getEntityDispatchers world =
+        static member getEntityDispatchers (world : World) =
             world.WorldExtension.Dispatchers.EntityDispatchers
 
         /// Get the group dispatchers of the world.
-        static member getGroupDispatchers world =
+        static member getGroupDispatchers (world : World) =
             world.WorldExtension.Dispatchers.GroupDispatchers
 
         /// Get the screen dispatchers of the world.
-        static member getScreenDispatchers world =
+        static member getScreenDispatchers (world : World) =
             world.WorldExtension.Dispatchers.ScreenDispatchers
 
         /// Get the game dispatchers of the world.
-        static member getGameDispatchers world =
+        static member getGameDispatchers (world : World) =
             world.WorldExtension.Dispatchers.GameDispatchers
 
     type World with // AmbientState
 
-        static member internal getAmbientState world =
+        static member internal getAmbientState (world : World) =
             world.AmbientState
 
-        static member internal getAmbientStateBy by world =
-            by world.AmbientState
-
-        static member internal mapAmbientState mapper world =
-            World.choose { world with AmbientState = mapper world.AmbientState }
+        static member internal mapAmbientState mapper (world : World) =
+            world.WorldState <- { world.WorldState with AmbientState = mapper world.AmbientState }
 
         /// Check that the update rate is non-zero.
         static member getAdvancing (world : World) =
@@ -185,11 +162,11 @@ module WorldModule =
             world.Halted
 
         /// Set whether the world state is advancing.
-        static member setAdvancing advancing world =
+        static member setAdvancing advancing (world : World) =
             World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
-        static member setFramePacing clockPacing world =
+        static member setFramePacing clockPacing (world : World) =
             World.mapAmbientState (AmbientState.setFramePacing clockPacing) world
 
         /// Check that the world is executing with imperative semantics where applicable.
@@ -209,39 +186,39 @@ module WorldModule =
             world.Unaccompanied
 
         /// Get collection config value.
-        static member getCollectionConfig world =
-            World.getAmbientStateBy AmbientState.getConfig world
+        static member getCollectionConfig (world : World) =
+            AmbientState.getConfig world.AmbientState
 
         /// Get the the liveness state of the engine.
-        static member getLiveness world =
-            World.getAmbientStateBy AmbientState.getLiveness world
+        static member getLiveness (world : World) =
+            AmbientState.getLiveness world.AmbientState
 
         static member internal updateTime world =
             World.mapAmbientState AmbientState.updateTime world
 
         /// Get the world's update delta time.
         static member getUpdateDelta world =
-            World.getAmbientStateBy AmbientState.getUpdateDelta world
+            AmbientState.getUpdateDelta world.AmbientState
 
         /// Get the world's update time.
         static member getUpdateTime world =
-            World.getAmbientStateBy AmbientState.getUpdateTime world
+            AmbientState.getUpdateTime world.AmbientState
 
         /// Get the world's clock delta time.
         static member getClockDelta world =
-            World.getAmbientStateBy AmbientState.getClockDelta world
+            AmbientState.getClockDelta world.AmbientState
 
         /// Get the world's clock time.
         static member getClockTime world =
-            World.getAmbientStateBy AmbientState.getClockTime world
+            AmbientState.getClockTime world.AmbientState
 
         /// Get the world's game delta time.
         static member getGameDelta world =
-            World.getAmbientStateBy AmbientState.getGameDelta world
+            AmbientState.getGameDelta world.AmbientState
 
         /// Get the world's game time.
         static member getGameTime world =
-            World.getAmbientStateBy AmbientState.getGameTime world
+            AmbientState.getGameTime world.AmbientState
 
         /// Get the current ImSim context.
         static member getContextImSim (world : World) =
@@ -295,19 +272,17 @@ module WorldModule =
             if world.Imperative then
                 world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
                 world.WorldExtension.ContextImSim <- context
-                world
             else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldExtension.ContextImSim; ContextImSim = context }
-                World.choose { world with WorldExtension = worldExtension }
+                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldState.WorldExtension.ContextImSim; ContextImSim = context }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal advanceContext declared context (world : World) =
             if world.Imperative then
                 world.WorldExtension.DeclaredImSim <- declared
                 world.WorldExtension.ContextImSim <- context
-                world
             else
                 let worldExtension = { world.WorldExtension with DeclaredImSim = declared; ContextImSim = context }
-                World.choose { world with WorldExtension = worldExtension }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSimulantsImSim (world : World) =
             world.SimulantsImSim
@@ -315,10 +290,9 @@ module WorldModule =
         static member internal setSimulantsImSim simulantsImSim (world : World) =
             if world.Imperative then
                 world.WorldExtension.SimulantsImSim <- simulantsImSim
-                world
             else
                 let worldExtension = { world.WorldExtension with SimulantsImSim = simulantsImSim }
-                World.choose { world with WorldExtension = worldExtension }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSimulantImSim simulant (world : World) =
             world.SimulantsImSim.[simulant]
@@ -335,7 +309,7 @@ module WorldModule =
             | (true, simulantImSim) ->
                 let simulantImSim = mapper simulantImSim
                 World.addSimulantImSim simulant simulantImSim world
-            | (false, _) -> world
+            | (false, _) -> ()
 
         static member internal mapSimulantImSim mapper simulant world =
             let simulantImSim = World.getSimulantImSim simulant world
@@ -345,7 +319,6 @@ module WorldModule =
         static member internal utilizeSimulantImSim simulant simulantImSim (world : World) =
             if world.Imperative then
                 simulantImSim.SimulantUtilized <- true
-                world
             else
                 let simulantImSim = { simulantImSim with SimulantUtilized = true }
                 let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
@@ -357,10 +330,9 @@ module WorldModule =
         static member internal setSubscriptionsImSim subscriptionsImSim (world : World) =
             if world.Imperative then
                 world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
-                world
             else
                 let worldExtension = { world.WorldExtension with SubscriptionsImSim = subscriptionsImSim }
-                World.choose { world with WorldExtension = worldExtension }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSubscriptionImSim subscription (world : World) =
             world.SubscriptionsImSim.[subscription]
@@ -374,7 +346,7 @@ module WorldModule =
             | (true, subscriptionImSim) ->
                 let subscriptionImSim = mapper subscriptionImSim
                 World.addSubscriptionImSim subscription subscriptionImSim world
-            | (false, _) -> world
+            | (false, _) -> ()
 
         static member internal mapSubscriptionImSim mapper subscription world =
             let subscriptionImSim = World.getSubscriptionImSim subscription world
@@ -384,22 +356,33 @@ module WorldModule =
         static member internal utilizeSubscriptionImSim subscription subscriptionImSim (world : World) =
             if world.Imperative then
                 subscriptionImSim.SubscriptionUtilized <- true
-                world
             else
                 let subscriptionImSim = { subscriptionImSim with SubscriptionUtilized = true }
                 let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
                 World.setSubscriptionsImSim subscriptionsImSim world
 
         /// Switch simulation to use this ambient state.
-        static member internal switchAmbientState world =
-            World.choose { world with AmbientState = AmbientState.switch world.AmbientState }
+        static member internal switchAmbientState (world : World) =
+            let ambientState = AmbientState.switch world.AmbientState
+            world.WorldState <- { world.WorldState with AmbientState = ambientState }
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
-        static member internal getTasklets world =
-            World.getAmbientStateBy AmbientState.getTasklets world
+        static member internal getCoroutines (world : World) =
+            AmbientState.getCoroutines world.AmbientState
+
+        static member internal setCoroutines coroutines world =
+            World.mapAmbientState (AmbientState.setCoroutines coroutines) world
+
+        /// Launch a coroutine to be processed by the engine.
+        static member launchCoroutine pred coroutine (world : World) =
+            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
+            World.mapAmbientState (AmbientState.addCoroutine (pred, coroutine)) world
+
+        static member internal getTasklets (world : World) =
+            AmbientState.getTasklets world.AmbientState
 
         static member internal removeTasklets simulant world =
             World.mapAmbientState (AmbientState.removeTasklets simulant) world
@@ -429,20 +412,20 @@ module WorldModule =
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.
-        static member tryGetWindowFlags world =
-            World.getAmbientStateBy AmbientState.tryGetWindowFlags world
+        static member tryGetWindowFlags (world : World) =
+            AmbientState.tryGetWindowFlags world.AmbientState
 
         /// Attempt to check that the window is minimized.
-        static member tryGetWindowMinimized world =
-            World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
+        static member tryGetWindowMinimized (world : World) =
+            AmbientState.tryGetWindowMinimized world.AmbientState
 
         /// Attempt to check that the window is maximized.
-        static member tryGetWindowMaximized world =
-            World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
+        static member tryGetWindowMaximized (world : World) =
+            AmbientState.tryGetWindowMaximized world.AmbientState
             
         /// Attempt to check that the window is in a full screen state.
-        static member tryGetWindowFullScreen world =
-            World.getAmbientStateBy AmbientState.tryGetWindowFullScreen world
+        static member tryGetWindowFullScreen (world : World) =
+            AmbientState.tryGetWindowFullScreen world.AmbientState
 
         /// Attempt to set the window's full screen state.
         static member trySetWindowFullScreen fullScreen world =
@@ -453,17 +436,16 @@ module WorldModule =
             World.mapAmbientState AmbientState.tryToggleWindowFullScreen world
 
         /// Attempt to get the window position.
-        static member tryGetWindowPosition world =
-            World.getAmbientStateBy (AmbientState.tryGetWindowPosition) world
+        static member tryGetWindowPosition (world : World) =
+            AmbientState.tryGetWindowPosition world.AmbientState
 
         /// Attempt to set the window position.
-        static member trySetWindowPosition position world =
-            World.getAmbientStateBy (AmbientState.trySetWindowPosition position) world
-            world
+        static member trySetWindowPosition position (world : World) =
+            AmbientState.trySetWindowPosition position world.AmbientState
 
         /// Attempt to get the window size.
-        static member tryGetWindowSize world =
-            World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
+        static member tryGetWindowSize (world : World) =
+            AmbientState.tryGetWindowSize world.AmbientState
 
         /// Get the window size, using resolution as default in case there is no window.
         static member getWindowSize world =
@@ -472,9 +454,8 @@ module WorldModule =
             | None -> world.OuterViewport.Bounds.Size
 
         /// Attempt to set the window size.
-        static member trySetWindowSize size world =
-            World.getAmbientStateBy (AmbientState.trySetWindowSize size) world
-            world
+        static member trySetWindowSize size (world : World) =
+            AmbientState.trySetWindowSize size world.AmbientState
 
         /// Get the geometry viewport.
         static member getGeometryViewport (world : World) =
@@ -482,7 +463,8 @@ module WorldModule =
 
         /// Set the geometry viewport.
         static member setGeometryViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with GeometryViewport = viewport }}
+            let worldExtension = { world.WorldExtension with GeometryViewport = viewport }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         /// Get the inner viewport.
         static member getRasterViewport (world : World) =
@@ -490,7 +472,8 @@ module WorldModule =
 
         /// Set the inner viewport.
         static member setRasterViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with RasterViewport = viewport }}
+            let worldExtension = { world.WorldExtension with RasterViewport = viewport }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         /// Get the outer viewport.
         static member getOuterViewport (world : World) =
@@ -498,13 +481,11 @@ module WorldModule =
 
         /// Set the outer viewport.
         static member setOuterViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with OuterViewport = viewport }}
+            let worldExtension = { world.WorldExtension with OuterViewport = viewport }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal getSymbolicsBy by world =
-            World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world
-
-        static member internal getSymbolics world =
-            World.getAmbientStateBy AmbientState.getSymbolics world
+        static member internal getSymbolics (world : World) =
+            AmbientState.getSymbolics world.WorldState.AmbientState
 
         static member internal setSymbolics symbolics world =
             World.mapAmbientState (AmbientState.setSymbolics symbolics) world
@@ -514,11 +495,13 @@ module WorldModule =
 
         /// Try to load a symbol package with the given name.
         static member tryLoadSymbolPackage implicitDelimiters packageName world =
-            World.getSymbolicsBy (Symbolics.tryLoadSymbolPackage implicitDelimiters packageName) world
+            let symbolics = World.getSymbolics world
+            Symbolics.tryLoadSymbolPackage implicitDelimiters packageName symbolics
 
         /// Unload a symbol package with the given name.
         static member unloadSymbolPackage packageName world =
-            World.getSymbolicsBy (Symbolics.unloadSymbolPackage packageName) world
+            let symbolics = World.getSymbolics world
+            Symbolics.unloadSymbolPackage packageName symbolics
 
         /// Try to find a symbol with the given asset tag.
         static member tryGetSymbol assetTag metadata world =
@@ -532,50 +515,47 @@ module WorldModule =
 
         /// Reload all the symbols in symbolics.
         static member reloadSymbols world =
-            World.getSymbolicsBy Symbolics.reloadSymbols world
-            world
+            let symbolics = World.getSymbolics world
+            Symbolics.reloadSymbols symbolics
 
-        static member internal getOverlayerBy by world =
-            let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
-            by overlayer
-
-        static member internal getOverlayer world =
-            World.getOverlayerBy id world
+        static member internal getOverlayer (world : World) =
+            AmbientState.getOverlayer world.AmbientState
 
         static member internal setOverlayer overlayer world =
             World.mapAmbientState (AmbientState.setOverlayer overlayer) world
 
         static member internal tryGetOverlayerPropertyValue propertyName propertyType overlayName facetNames world =
-            World.getOverlayerBy (Overlayer.tryGetPropertyValue propertyName propertyType overlayName facetNames) world
+            let overlayer = World.getOverlayer world
+            Overlayer.tryGetPropertyValue propertyName propertyType overlayName facetNames overlayer
 
         /// Get overlay names.
         static member getOverlayNames world =
-            (World.getOverlayerBy Overlayer.getOverlays world).Keys
+            let overlayer = World.getOverlayer world
+            (Overlayer.getOverlays overlayer).Keys
 
         /// Attempt to get the given dispatcher's optional routed overlay name.
         static member tryGetRoutedOverlayNameOpt dispatcherName world =
-            World.getOverlayerBy (Overlayer.tryGetOverlayNameOpt dispatcherName) world
+            let overlayer = World.getOverlayer world
+            Overlayer.tryGetOverlayNameOpt dispatcherName overlayer
 
         static member internal acknowledgeLightMapRenderRequest world =
             World.mapAmbientState AmbientState.acknowledgeLightMapRenderRequest world
 
         /// Get whether a light map render was requested.
-        static member getLightMapRenderRequested world =
-            World.getAmbientStateBy AmbientState.getLightMapRenderRequested world
+        static member getLightMapRenderRequested (world : World) =
+            AmbientState.getLightMapRenderRequested world.AmbientState
 
         /// Request a light map render for the current frame, such as when a light probe needs to be rendered.
         static member requestLightMapRender world =
             World.mapAmbientState AmbientState.requestLightMapRender world
 
-    type World with // Quadtree
+        /// A coroutine launcher.
+        member this.Launcher =
+            flip (World.launchCoroutine tautology) this
 
-        static member internal getQuadtree world =
-            world.Quadtree
-
-    type World with // Octree
-
-        static member internal getOctree world =
-            world.Octree
+        /// A cancellable coroutine launcher.
+        member this.LauncherWhile pred =
+            flip (World.launchCoroutine pred) this
 
     type World with // Subsystems
 
@@ -583,9 +563,9 @@ module WorldModule =
             world.Subsystems
 
         static member internal setSubsystems subsystems world =
-            World.choose { world with Subsystems = subsystems }
+            world.WorldState <- { world.WorldState with Subsystems = subsystems }
 
-        static member internal mapSubsystems mapper world =
+        static member internal mapSubsystems mapper (world : World) =
             World.setSubsystems (mapper world.Subsystems) world
 
         static member internal cleanUpSubsystems world =
@@ -600,13 +580,13 @@ module WorldModule =
 
     type World with // EventGraph
 
-        static member internal getEventGraph world =
+        static member internal getEventGraph (world : World) =
             world.EventGraph
 
         static member internal setEventGraph eventGraph world =
-            World.choose { world with EventGraph = eventGraph }
+            world.WorldState <- { world.WorldState with EventGraph = eventGraph }
 
-        static member internal mapEventGraph mapper world =
+        static member internal mapEventGraph mapper (world : World) =
             World.setEventGraph (mapper world.EventGraph) world
 
         static member inline internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
@@ -690,35 +670,28 @@ module WorldModule =
             // OPTIMIZATION: fused PublishEventHook for speed.
             if notNull subscriptionsOpt then
                 let mutable (going, enr) = (true, subscriptionsOpt.GetEnumerator ())
-                let mutable (handling, world) = (Cascade, world)
+                let mutable handling = Cascade
                 while going && enr.MoveNext () do
                     let (_, subscriptionEntry) = enr.Current
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
                         if not selectedOnly || getSelected subscriber world then
-                            let result =
-                                let namesLength = subscriber.SimulantAddress.Names.Length
-                                if namesLength >= 4 then
-                                    // OPTIMIZATION: handling common case explicitly first.
-                                    EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                else
-                                    match namesLength with
-                                    | 1 ->
-                                        match subscriber with
-                                        | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); (Cascade, world)
-                                    | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); (Cascade, world)
-                            handling <- fst result
-                            world <- snd result
-                            world |> World.choose |> ignore
-                        else () // nothing to do
+                            let namesLength = subscriber.SimulantAddress.Names.Length
+                            if namesLength >= 4 then
+                                // OPTIMIZATION: handling common case explicitly first.
+                                handling <- EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                            else
+                                match namesLength with
+                                | 1 ->
+                                    match subscriber with
+                                    | :? Game -> handling <- EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | :? GlobalSimulantGeneralized -> handling <- EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized.")
+                                | 2 -> handling <- EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                | 3 -> handling <- EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names.")
                     else going <- false
-                world
-            else world
 
         /// Publish an event with no subscription sorting or wildcard utilization.
         static member inline publishUnsorted<'a, 'p when 'p :> Simulant>
@@ -744,17 +717,16 @@ module WorldModule =
                         then UMap.remove eventAddress subscriptions
                         else UMap.add eventAddress subscriptionEntries subscriptions
                     let unsubscriptions = UMap.remove subscriptionId unsubscriptions
-                    let world = World.setSubscriptions subscriptions world
-                    let world = World.setUnsubscriptions unsubscriptions world
-                    let world = WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Game.Handle world :?> World
-                    world
-                | None -> world
-            | None -> world
+                    World.setSubscriptions subscriptions world
+                    World.setUnsubscriptions unsubscriptions world
+                    WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Game.Handle world
+                | None -> ()
+            | None -> ()
 
         /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
             (subscriptionId : uint64)
-            (callback : Event<'a, 's> -> World -> Handling * World)
+            (callback : Event<'a, 's> -> World -> Handling)
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
@@ -777,43 +749,42 @@ module WorldModule =
                         let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                         UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
                 let unsubscriptions = UMap.add subscriptionId struct (eventAddressObj, subscriber :> Simulant) unsubscriptions
-                let world = World.setSubscriptions subscriptions world
-                let world = World.setUnsubscriptions unsubscriptions world
-                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world :?> World
-                (World.unsubscribe subscriptionId, world)
+                World.setSubscriptions subscriptions world
+                World.setUnsubscriptions unsubscriptions world
+                WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world
+                World.unsubscribe subscriptionId
             else failwith "Event name cannot be empty."
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.subscribePlus Gen.id64 callback eventAddress subscriber world |> snd
+            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.subscribePlus Gen.id64 callback eventAddress subscriber world |> ignore
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitorPlus<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling * World)
+            (callback : Event<'a, 's> -> World -> Handling)
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
             let removalId = Gen.id64
             let monitorId = Gen.id64
-            let world = World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> snd
+            World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> ignore
             let unsubscribe = fun (world : World) ->
-                let world = World.unsubscribe removalId world
-                let world = World.unsubscribe monitorId world
-                world
-            let callback' = fun _ world -> (Cascade, unsubscribe world)
+                World.unsubscribe removalId world
+                World.unsubscribe monitorId world
+            let callback' = fun _ world -> unsubscribe world; Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> itoa subscriber.SimulantAddress
-            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> snd
-            (unsubscribe, world)
+            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> ignore
+            unsubscribe
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
-            World.monitorPlus<'a, 's> callback eventAddress subscriber world |> snd
+            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
+            World.monitorPlus<'a, 's> callback eventAddress subscriber world |> ignore
 
         /// Keep active a subscription for the life span of an entity and a given facet.
         static member sensePlus<'a>
-            (callback : Event<'a, Entity> -> World -> Handling * World)
+            (callback : Event<'a, Entity> -> World -> Handling)
             (eventAddress : 'a Address)
             (entity : Entity)
             (facetName : string)
@@ -821,37 +792,32 @@ module WorldModule =
             let removalId = Gen.id64
             let fastenId = Gen.id64
             let senseId = Gen.id64
-            let world = World.subscribePlus<'a, Entity> senseId callback eventAddress entity world |> snd
+            World.subscribePlus<'a, Entity> senseId callback eventAddress entity world |> ignore
             let unsubscribe = fun (world : World) ->
-                let world = World.unsubscribe removalId world
-                let world = World.unsubscribe fastenId world
-                let world = World.unsubscribe senseId world
-                world
-            let callback' = fun _ world -> (Cascade, unsubscribe world)
+                World.unsubscribe removalId world
+                World.unsubscribe fastenId world
+                World.unsubscribe senseId world
+            let callback' = fun _ world -> unsubscribe world; Cascade
             let callback'' = fun changeEvent world ->
                 let previous = changeEvent.Data.Previous :?> string Set
                 let value = changeEvent.Data.Value :?> string Set
-                if previous.Contains facetName && not (value.Contains facetName)
-                then (Cascade, unsubscribe world)
-                else (Cascade, world)
+                if previous.Contains facetName && not (value.Contains facetName) then unsubscribe world
+                Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
             let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
-            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> snd
-            let world = World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> snd
-            (unsubscribe, world)
+            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
+            World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
+            unsubscribe
 
         /// Keep active a subscription for the life span of an entity and a given facet.
         static member sense<'a>
-            (callback : Event<'a, Entity> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
-            World.sensePlus callback eventAddress subscriber facetName world |> snd
+            (callback : Event<'a, Entity> -> World -> Handling) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
+            World.sensePlus callback eventAddress subscriber facetName world |> ignore
 
     type World with // KeyValueStore (tho part of AmbientState, must come after EventGraph definitions since it publishes)
 
-        static member internal getKeyValueStore world =
-            World.getAmbientStateBy AmbientState.getKeyValueStore world
-
-        static member internal getKeyValueStoreBy by world =
-            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
+        static member internal getKeyValueStore (world : World) =
+            AmbientState.getKeyValueStore world.AmbientState
 
         static member internal setKeyValueStore symbolics world =
             World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
@@ -870,25 +836,26 @@ module WorldModule =
 
         /// Attempt to look up a value from the world's key value store.
         static member tryGetKeyedValue<'a> key world =
-            match World.getKeyValueStoreBy (SUMap.tryFind key) world with
+            let keyValueStore = World.getKeyValueStore world
+            match SUMap.tryFind key keyValueStore with
             | Some value -> Some (value :?> 'a)
             | None -> None
 
         /// Look up a value from the world's key value store, throwing an exception if it is not found.
         static member getKeyedValue<'a> key world =
-            World.getKeyValueStoreBy (SUMap.find key) world :?> 'a
+            let keyValueStore = World.getKeyValueStore world
+            SUMap.find key keyValueStore :?> 'a
 
         /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
             let previousOpt = World.tryGetKeyedValue key world
             let valueOpt = Some (value :> obj)
             let data = { Key = key; PreviousOpt = previousOpt; ValueOpt = valueOpt }
-            let world = World.mapKeyValueStore (SUMap.add key (value :> obj)) world
+            World.mapKeyValueStore (SUMap.add key (value :> obj)) world
             match previousOpt with
             | Some previous ->
-                if previous =/= value
-                then World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
-                else world
+                if previous =/= value then
+                    World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
             | None -> World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
 
         /// Remove a value from the world's key value store.
@@ -896,9 +863,9 @@ module WorldModule =
             let previousOpt = World.tryGetKeyedValue key world
             match previousOpt with
             | Some _ ->
-                let world = World.mapKeyValueStore (SUMap.remove key) world
+                World.mapKeyValueStore (SUMap.remove key) world
                 World.publish { Key = key; PreviousOpt = previousOpt; ValueOpt = None } (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
-            | None -> world
+            | None -> ()
 
         /// Transform a value in the world's key value store if it exists.
         static member mapKeyedValue<'a> (mapper : 'a -> 'a) key world =
@@ -907,59 +874,58 @@ module WorldModule =
     type World with // Plugin
 
         /// Whether the current plugin allow code reloading.
-        static member getAllowCodeReload world =
+        static member getAllowCodeReload (world : World) =
             world.WorldExtension.Plugin.AllowCodeReload
 
         /// Get the user-defined edit modes.
-        static member getEditModes world =
+        static member getEditModes (world : World) =
             world.WorldExtension.Plugin.EditModes
 
         /// Attempt to set the edit mode.
         static member trySetEditMode editMode world =
             match (World.getEditModes world).TryGetValue editMode with
             | (true, callback) -> callback world
-            | (false, _) -> world
+            | (false, _) -> ()
 
         /// Invoke a user-defined callback.
-        static member invoke name args world =
+        static member invoke name args (world : World) =
             world.WorldExtension.Plugin.Invoke name args world
 
         /// Attempt to make an emitter with the given parameters.
-        static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
+        static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
-        static member internal preProcess world =
+        static member internal preProcess (world : World) =
             world.WorldExtension.Plugin.PreProcess world
 
-        static member internal perProcess world =
+        static member internal perProcess (world : World) =
             world.WorldExtension.Plugin.PerProcess world
 
-        static member internal postProcess world =
+        static member internal postProcess (world : World) =
             world.WorldExtension.Plugin.PostProcess world
 
-        static member internal imGuiProcess world =
+        static member internal imGuiProcess (world : World) =
             world.WorldExtension.Plugin.ImGuiProcess world
 
-        static member internal imGuiPostProcess world =
+        static member internal imGuiPostProcess (world : World) =
             world.WorldExtension.Plugin.ImGuiPostProcess world
 
     type World with // Debugging
 
         /// View the member properties of some SimulantState.
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
-            state |>
-            getType |>
-            (fun ty -> ty.GetProperties true) |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
-            Array.toList
+            getType state
+            |> (fun ty -> ty.GetProperties true)
+            |> Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state))
+            |> Array.toList
 
         /// View the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
-            state.GetXtension () |>
-            Xtension.toSeq |>
-            List.ofSeq |>
-            List.sortBy fst |>
-            List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
+            state.GetXtension ()
+            |> Xtension.toSeq
+            |> List.ofSeq
+            |> List.sortBy fst
+            |> List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
 
         /// Provides a full view of all the properties of some SimulantState.
         static member internal getSimulantStateProperties state =
@@ -975,13 +941,14 @@ module WorldModule =
     type World with // Handlers
 
         /// Handle an event by doing nothing.
-        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Cascade, world)
+        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (_ : World) =
+            Cascade
 
         /// Handle an event by swallowing.
-        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, world)
+        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (_ : World) =
+            Resolve
 
         /// Handle an event by exiting the application.
-        static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, World.exit world)
+        static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) world =
+            World.exit world
+            Resolve

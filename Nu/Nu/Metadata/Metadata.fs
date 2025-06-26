@@ -174,8 +174,8 @@ module Metadata =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assetsCollected ->
             let package =
-                assetsCollected |>
-                List.map (fun asset ->
+                assetsCollected
+                |> List.map (fun asset ->
                     vsync {
                         match tryGenerateAssetMetadata asset with
                         | Some metadata ->
@@ -183,13 +183,13 @@ module Metadata =
                                 try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                                 with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                             return Some (asset.AssetTag.AssetName, (lastWriteTime, asset.FilePath, metadata))
-                        | None -> return None }) |>
-                Vsync.Parallel |>
-                Vsync.RunSynchronously |>
-                Array.definitize |>
-                Map.ofArray |>
-                Array.ofSeq |>
-                fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
+                        | None -> return None })
+                |> Vsync.Parallel
+                |> Vsync.RunSynchronously
+                |> Array.definitize
+                |> Map.ofArray
+                |> Array.ofSeq
+                |> fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
             package
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
@@ -216,57 +216,55 @@ module Metadata =
     let reloadMetadata () =
 
         // reload outdated metadata from collected package
-        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
-        | Right assetGraph ->
-            for packageEntry in assetGraph.PackageDescriptors do
-                let metadataPackageName = packageEntry.Key
-                match MetadataPackagesLoaded.TryGetValue metadataPackageName with
-                | (true, metadataPackage) ->
-                    match AssetGraph.tryCollectAssetsFromPackage None metadataPackageName assetGraph with
-                    | Right assetsCollected ->
+        let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+        for packageEntry in assetGraph.PackageDescriptors do
+            let metadataPackageName = packageEntry.Key
+            match MetadataPackagesLoaded.TryGetValue metadataPackageName with
+            | (true, metadataPackage) ->
+                match AssetGraph.tryCollectAssetsFromPackage None metadataPackageName assetGraph with
+                | Right assetsCollected ->
 
-                        // categorize existing assets based on the required action
-                        let assetsExisting = metadataPackage
-                        let assetsToKeep = Dictionary ()
-                        for assetEntry in assetsExisting do
-                            let assetName = assetEntry.Key
-                            let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                            let lastWriteTime' =
-                                try DateTimeOffset (File.GetLastWriteTime filePath)
+                    // categorize existing assets based on the required action
+                    let assetsExisting = metadataPackage
+                    let assetsToKeep = Dictionary ()
+                    for assetEntry in assetsExisting do
+                        let assetName = assetEntry.Key
+                        let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                        let lastWriteTime' =
+                            try DateTimeOffset (File.GetLastWriteTime filePath)
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                        if lastWriteTime >= lastWriteTime' then
+                            assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
+
+                    // categorize assets to load
+                    let assetsToLoad = HashSet ()
+                    for asset in assetsCollected do
+                        if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                            assetsToLoad.Add asset |> ignore<bool>
+
+                    // load assets
+                    let assetsLoaded = Dictionary ()
+                    for asset in assetsToLoad do
+                        match tryGenerateAssetMetadata asset with
+                        | Some assetMetadata ->
+                            let lastWriteTime =
+                                try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                                 with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                            if lastWriteTime >= lastWriteTime' then
-                                assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
+                            assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, assetMetadata)
+                        | None -> ()
 
-                        // categorize assets to load
-                        let assetsToLoad = HashSet ()
-                        for asset in assetsCollected do
-                            if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
-                                assetsToLoad.Add asset |> ignore<bool>
+                    // insert assets into package
+                    for assetEntry in assetsLoaded do
+                        let assetName = assetEntry.Key
+                        let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                        metadataPackage.[assetName] <- (lastWriteTime, filePath, audioAsset)
 
-                        // load assets
-                        let assetsLoaded = Dictionary ()
-                        for asset in assetsToLoad do
-                            match tryGenerateAssetMetadata asset with
-                            | Some assetMetadata ->
-                                let lastWriteTime =
-                                    try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                                assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, assetMetadata)
-                            | None -> ()
+                    // insert package
+                    MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>
 
-                        // insert assets into package
-                        for assetEntry in assetsLoaded do
-                            let assetName = assetEntry.Key
-                            let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                            metadataPackage.[assetName] <- (lastWriteTime, filePath, audioAsset)
-
-                        // insert package
-                        MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>
-
-                    // handle errors if any
-                    | Left error -> Log.info ("Metadata package regeneration failed due to: '" + error)
-                | (false, _) -> ()
-        | Left error -> Log.info ("Metadata regeneration failed due to: '" + error)
+                // handle error case
+                | Left error -> Log.info ("Metadata package regeneration failed due to: '" + error)
+            | (false, _) -> ()
 
     /// Attempt to get the metadata package containing the given asset, attempt to load it if it isn't already.
     /// Thread-safe.
@@ -290,8 +288,8 @@ module Metadata =
     /// invalidating enumeration in a multi-threaded context.
     /// Thread-safe.
     let getMetadataPackagesLoaded () =
-        MetadataPackagesLoaded.ToArray () |>
-        Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
+        MetadataPackagesLoaded.ToArray ()
+        |> Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
 
     /// Determine that a given asset's metadata exists.
     /// Thread-safe.

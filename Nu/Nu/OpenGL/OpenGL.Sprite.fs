@@ -27,6 +27,23 @@ module Sprite =
         // make sprite shader tuple
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
 
+    let VertexSize = sizeof<single> * 2
+
+    let CreateSpriteVao () =
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+
+        // fin
+        vao
+
     /// Create a sprite quad for rendering to a shader matching the one created with Hl.CreateSpriteShader.
     let CreateSpriteQuad onlyUpperRightQuadrant =
 
@@ -42,11 +59,6 @@ module Sprite =
                   +1.0f; -1.0f
                   +1.0f; +1.0f
                   -1.0f; +1.0f|]
-
-        // initialize vao
-        let vao = Gl.GenVertexArray ()
-        Gl.BindVertexArray vao
-        Hl.Assert ()
 
         // create vertex buffer
         let vertexBuffer = Gl.GenBuffer ()
@@ -68,20 +80,13 @@ module Sprite =
         finally indexDataPtr.Free ()
         Hl.Assert ()
 
-        // finalize vao
-        Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
-
         // fin
-        (vertexBuffer, indexBuffer, vao)
+        (vertexBuffer, indexBuffer)
 
     /// Draw a sprite whose indices and vertices were created by Gl.CreateSpriteQuad and whose uniforms and shader match those of CreateSpriteShader.
     let DrawSprite
         (vertices,
          indices,
-         vao,
          viewProjection : Matrix4x4 inref,
          modelViewProjection : single array,
          insetOpt : Box2 voption inref,
@@ -96,7 +101,8 @@ module Sprite =
          texCoords4Uniform,
          colorUniform,
          textureUniform,
-         shader) =
+         shader,
+         vao) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -157,6 +163,9 @@ module Sprite =
         | ValueNone -> ()
         Hl.Assert ()
 
+        // setup vao
+        Gl.BindVertexArray vao
+
         // setup shader
         Gl.UseProgram shader
         Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
@@ -171,18 +180,13 @@ module Sprite =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray vao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, vertices)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indices)
+        Gl.VertexArrayVertexBuffer (vao, 0u, vertices, 0, VertexSize)
+        Gl.VertexArrayElementBuffer (vao, indices)
         Hl.Assert ()
 
         // draw geometry
         Gl.DrawElements (PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown texture
@@ -192,6 +196,9 @@ module Sprite =
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
 
         // teardown state
         Gl.BlendEquation BlendEquationMode.FuncAdd

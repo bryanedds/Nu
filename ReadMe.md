@@ -28,7 +28,7 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/22ae1562-e316-4709-8bf2-ef5f5cd95d49)
+![image](https://github.com/user-attachments/assets/77d6dfac-13ad-48e4-89e2-824a12cbe509)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://github.com/user-attachments/assets/44ec5233-3ed3-4038-9cc4-646bc4ddc96d)
@@ -37,7 +37,7 @@ Real-time WYSIWYG editing with hot asset and live code reloading, and the abilit
 ![image](https://github.com/user-attachments/assets/fa88a1a5-e793-44cb-8113-4a6bf8468d4c)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
-![image](https://github.com/user-attachments/assets/d8406232-2bb9-4b60-b7a0-4a49cfa29236)
+![image](https://github.com/user-attachments/assets/ce2e2ff6-dd28-43d9-a865-652b977fcf81)
 Rendering made efficient with instancing-by-default.
 
 ![image](https://github.com/user-attachments/assets/b715c8d1-4765-426f-8551-0ebd24e65088)

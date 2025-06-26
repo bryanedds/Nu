@@ -339,10 +339,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
         let triangles =
-            vertices |>
-            Seq.chunkBySize 3 |>
-            Seq.map (fun t -> Triangle (&t.[0], &t.[1], &t.[2])) |>
-            Array.ofSeq
+            vertices
+            |> Seq.chunkBySize 3
+            |> Seq.map (fun t -> Triangle (&t.[0], &t.[1], &t.[2]))
+            |> Array.ofSeq
         let shapeSettings = new MeshShapeSettings (triangles)
         shapeSettings.Sanitize ()
         let struct (center, rotation) =
@@ -847,8 +847,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | (true, messages) ->
                     messages.RemoveAll (fun message ->
                         message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
-                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
-                    ignore<int>
+                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex)
+                    |> ignore<int>
                 | (false, _) -> ()
             | None -> ()
 

@@ -14,9 +14,8 @@ type BreakoutPlugin () =
              ("Title", fun world -> Game.SetBreakout Title world)
              ("Credits", fun world -> Game.SetBreakout Credits world)
              ("Gameplay", fun world ->
-                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
-                let world = Game.SetBreakout Gameplay world
-                world)]
+                Simulants.Gameplay.SetGameplay Gameplay.initial world
+                Game.SetBreakout Gameplay world)]
 
     // this specifies which packages are automatically loaded at game start-up.
     override this.InitialPackages =

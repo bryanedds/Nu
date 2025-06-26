@@ -57,72 +57,68 @@ module WorldImSim =
         static member getReinitializingImSim (world : World) =
             world.ReinitializingImSim
 
-        /// ImSim subscribe to the given event address with a user-defined result mapper.
-        static member doSubscriptionPlus<'d, 'r> (mapResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue * World =
+        /// ImSim subscribe to the given event address with a user-defined result.
+        static member doSubscriptionPlus<'d, 'r> (mapResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue =
             let eventAddress' =
                 if not (Array.contains "Event" eventAddress.Names)
                 then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImSim.Names|])
                 else eventAddress
             let subscriptionKey = (name, eventAddress :> Address, eventAddress' :> Address)
-            let world =
-                match world.SubscriptionsImSim.TryGetValue subscriptionKey with
-                | (true, subscriptionImSim) -> World.utilizeSubscriptionImSim subscriptionKey subscriptionImSim world
-                | (false, _) ->
-                    let subId = Gen.id64
-                    let (_, world) =
-                        World.subscribePlus subId (fun event world ->
-                            let mapSubscriptionImSim subscriptionImSim =
-                                let results = subscriptionImSim.Results :?> 'r FQueue
-                                { subscriptionImSim with Results = FQueue.conj (mapResult event.Data) results }
-                            let world = World.tryMapSubscriptionImSim mapSubscriptionImSim subscriptionKey world
-                            (Cascade, world))
-                            eventAddress'
-                            Game
-                            world
-                    World.addSubscriptionImSim subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'r> } world
+            match world.SubscriptionsImSim.TryGetValue subscriptionKey with
+            | (true, subscriptionImSim) -> World.utilizeSubscriptionImSim subscriptionKey subscriptionImSim world
+            | (false, _) ->
+                let subId = Gen.id64
+                let _ =
+                    World.subscribePlus subId (fun event world ->
+                        let mapSubscriptionImSim subscriptionImSim =
+                            let results = subscriptionImSim.Results :?> 'r FQueue
+                            { subscriptionImSim with Results = FQueue.conj (mapResult event.Data) results }
+                        World.tryMapSubscriptionImSim mapSubscriptionImSim subscriptionKey world
+                        Cascade)
+                        eventAddress'
+                        Game
+                        world
+                World.addSubscriptionImSim subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'r> } world
             let results = (World.getSubscriptionImSim subscriptionKey world).Results :?> 'r FQueue
-            let world = World.mapSubscriptionImSim (fun subscriptionImSim -> { subscriptionImSim with Results = FQueue.empty<'r> }) subscriptionKey world
-            (results, world)
+            World.mapSubscriptionImSim (fun subscriptionImSim -> { subscriptionImSim with Results = FQueue.empty<'r> }) subscriptionKey world
+            results
 
         /// ImSim subscribe to the given event address.
-        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue * World =
+        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue =
             World.doSubscriptionPlus<'d, 'd> id name eventAddress world
 
         /// ImGui subscribe to the given screen's selection events.
-        static member doSubscriptionToSelectionEvents name (screen : Screen) (world : World) : SelectionEventData FQueue * World =
-            let (selects, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, Select)) name screen.SelectEvent world
-            let (incomingStarts, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingStart)) name screen.IncomingStartEvent world
-            let (incomingFinishes, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingFinish)) name screen.IncomingFinishEvent world
-            let (outgoingStarts, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, OutgoingStart)) name screen.OutgoingStartEvent world
-            let (outgoingFinishes, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, OutgoingFinish)) name screen.OutgoingFinishEvent world
-            let (deselectings, world) = World.doSubscriptionPlus (fun () -> (Gen.id64, Deselecting)) name screen.DeselectingEvent world
+        static member doSubscriptionToSelectionEvents name (screen : Screen) (world : World) : SelectionEventData FQueue =
+            let selects = World.doSubscriptionPlus (fun () -> (Gen.id64, Select)) name screen.SelectEvent world
+            let incomingStarts = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingStart)) name screen.IncomingStartEvent world
+            let incomingFinishes = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingFinish)) name screen.IncomingFinishEvent world
+            let outgoingStarts = World.doSubscriptionPlus (fun () -> (Gen.id64, OutgoingStart)) name screen.OutgoingStartEvent world
+            let outgoingFinishes = World.doSubscriptionPlus (fun () -> (Gen.id64, OutgoingFinish)) name screen.OutgoingFinishEvent world
+            let deselectings = World.doSubscriptionPlus (fun () -> (Gen.id64, Deselecting)) name screen.DeselectingEvent world
             let results = selects |> Seq.append incomingStarts |> Seq.append incomingFinishes |> Seq.append outgoingStarts |> Seq.append outgoingFinishes |> Seq.append deselectings |> List
             results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
-            let results = results |> Seq.map snd |> FQueue.ofSeq
-            (results, world)
+            results |> Seq.map snd |> FQueue.ofSeq
 
         /// ImGui subscribe to the given entity's body events.
-        static member doSubscriptionToBodyEvents name (entity : Entity) (world : World) : BodyEventData FQueue * World =
-            let (penetrations, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyPenetrationData data)) name entity.BodyPenetrationEvent world
-            let (separationExplicits, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationExplicitData data)) name entity.BodySeparationExplicitEvent world
-            let (separationImplicits, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationImplicitData data)) name entity.BodySeparationImplicitEvent world
-            let (bodyTransforms, world) = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyTransformData data)) name entity.BodyTransformEvent world
+        static member doSubscriptionToBodyEvents name (entity : Entity) (world : World) : BodyEventData FQueue =
+            let penetrations = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyPenetrationData data)) name entity.BodyPenetrationEvent world
+            let separationExplicits = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationExplicitData data)) name entity.BodySeparationExplicitEvent world
+            let separationImplicits = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationImplicitData data)) name entity.BodySeparationImplicitEvent world
+            let bodyTransforms = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyTransformData data)) name entity.BodyTransformEvent world
             let results = penetrations |> Seq.append separationExplicits |> Seq.append separationImplicits |> Seq.append bodyTransforms |> List
             results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
-            let results = results |> Seq.map snd |> FQueue.ofSeq
-            (results, world)
+            results |> Seq.map snd |> FQueue.ofSeq
 
         /// TODO: document this!
         static member initBodyResult mapResult (entity : Entity) world =
-            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetrationData event.Data) world)) entity.BodyPenetrationEvent entity world
-            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicitData event.Data) world)) entity.BodySeparationExplicitEvent entity world
-            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicitData event.Data) world)) entity.BodySeparationImplicitEvent entity world
-            let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransformData event.Data) world)) entity.BodyTransformEvent entity world
-            world
+            World.monitor (fun event world -> mapResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
+            World.monitor (fun event world -> mapResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world
+            World.monitor (fun event world -> mapResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
+            World.monitor (fun event world -> mapResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
 
         /// TODO: document this!
         static member initSpineSkeletonAnimationResult mapResult (entity : Entity) world =
-            World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ event.Data) world)) entity.SpineSkeletonAnimationTriggerEvent entity world
+            World.monitor (fun event world -> mapResult (FQueue.conj $ event.Data) world; Cascade) entity.SpineSkeletonAnimationTriggerEvent entity world
 
         /// Clear the current ImSim context.
         static member scopeWorld world =
@@ -132,21 +128,20 @@ module WorldImSim =
         static member beginGame args (world : World) =
             if world.ContextImSim.Names.Length > 0 then raise (InvalidOperationException "ImSim game declared outside of valid ImSim context (must be called in World context).")
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImSim.Names)
-            let world = World.setContext gameAddress world
+            World.setContext gameAddress world
             let game = Nu.Game gameAddress
-            let (initializing, world) =
+            let initializing =
                 match world.SimulantsImSim.TryGetValue game.GameAddress with
-                | (true, gameImSim) -> (false, World.utilizeSimulantImSim game.GameAddress gameImSim world)
+                | (true, gameImSim) ->
+                    World.utilizeSimulantImSim game.GameAddress gameImSim world
+                    false
                 | (false, _) ->
-                    let world = World.addSimulantImSim game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
-                    (true, world)
+                    World.addSimulantImSim game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    true
             let initializing = initializing || Reinitializing
-            Seq.fold
-                (fun world arg ->
-                    if initializing || not arg.ArgStatic
-                    then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
+            for arg in args do
+                if initializing || not arg.ArgStatic then
+                    game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         /// End the ImSim declaration of a group with the given arguments.
         static member endGame (world : World) =
@@ -157,116 +152,97 @@ module WorldImSim =
         /// Make the game the current ImSim context.
         static member scopeGame (args : Game ArgImSim seq) world =
             let game = Game
-            let world = World.setContext game.GameAddress world
-            Seq.fold
-                (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
-                world args
+            World.setContext game.GameAddress world
+            for arg in args do
+                game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         (* NOTE: most of ImSim's screen functions are defined in WorldModule2.fs so they can access the internal screen transition APIs. *)
 
         /// Make a screen the current ImSim context.
         static member scopeScreen (screen : Screen) (args : Screen ArgImSim seq) world =
-            let world = World.setContext screen.ScreenAddress world
-            Seq.fold
-                (fun world arg ->
-                    if screen.GetExists world
-                    then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
+            World.setContext screen.ScreenAddress world
+            for arg in args do
+                if screen.GetExists world then
+                    screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
-        static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (args : Group ArgImSim seq) (world : World) : 'r * World =
+        static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (args : Group ArgImSim seq) (world : World) : 'r =
             if world.ContextImSim.Names.Length < 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
-            let world = World.setContext groupAddress world
+            World.setContext groupAddress world
             let group = Nu.Group groupAddress
             let groupCreation = not (group.GetExists world)
-            let (initializing, world) =
+            let initializing =
                 match world.SimulantsImSim.TryGetValue group.GroupAddress with
-                | (true, groupImSim) -> (false, World.utilizeSimulantImSim group.GroupAddress groupImSim world)
+                | (true, groupImSim) ->
+                    World.utilizeSimulantImSim group.GroupAddress groupImSim world
+                    false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating group
-                    let world = World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) }
                         World.tryMapSimulantImSim mapGroupImSim group.GroupAddress world
-                    let world = init mapResult group world
+                    init mapResult group world
 
                     // create group only when needed
-                    let world =
-                        if groupCreation then
-                            match groupFilePathOpt with
-                            | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                            | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> snd
-                        else world
+                    if groupCreation then
+                        match groupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> ignore<Group>
+                        | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> ignore<Group>
 
                     // protect group
-                    let world = World.setGroupProtected true group world |> snd'
+                    World.setGroupProtected true group world |> ignore<bool>
 
                     // fin
-                    (true, world)
+                    true
 
             let initializing = initializing || Reinitializing
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && group.GetExists world
-                        then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world =
-                if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world
-                then WorldModule.tryProcessGroup true group world
-                else world
+            for arg in args do
+                if (initializing || not arg.ArgStatic) && group.GetExists world then
+                    group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
+            if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
+                WorldModule.tryProcessGroup true group world
             let result = match (World.getSimulantImSim group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
-            let world = World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) group.GroupAddress world
-            (result, world)
+            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) group.GroupAddress world
+            result
 
         static member inline private beginGroup4<'d> name groupFilePathOpt args world =
-            World.beginGroupPlus6 () (fun _ _ world -> world) name groupFilePathOpt args world |> snd
+            World.beginGroupPlus6 () (fun _ _ _ -> ()) name groupFilePathOpt args world
 
         /// Begin the ImSim declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
             if world.ContextImSim.Names.Length < 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
-            let world = World.setContext groupAddress world
+            World.setContext groupAddress world
             let group = Nu.Group groupAddress
-            let world = // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
-                if  group.Name = "Scene" &&
-                    group.GetExists world &&
-                    Seq.isEmpty (World.getSovereignEntities group world) &&
-                    getTypeName (group.GetDispatcher world) = nameof GroupDispatcher then
-                    World.destroyGroupImmediate group world
-                else world
+            // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
+            if  group.Name = "Scene" &&
+                group.GetExists world &&
+                Seq.isEmpty (World.getSovereignEntities group world) &&
+                getTypeName (group.GetDispatcher world) = nameof GroupDispatcher then
+                World.destroyGroupImmediate group world
             let groupCreation = not (group.GetExists world)
-            let (initializing, world) =
+            let initializing =
                 match world.SimulantsImSim.TryGetValue group.GroupAddress with
                 | (true, groupImSim) ->
-                    (false, World.utilizeSimulantImSim group.GroupAddress groupImSim world)
+                    World.utilizeSimulantImSim group.GroupAddress groupImSim world
+                    false
                 | (false, _) ->
-                    let world =
-                        if groupCreation then
-                            let groupDescriptorStr = File.ReadAllText groupFilePath
-                            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                            let world = World.readGroup groupDescriptor (Some name) group.Screen world |> snd
-                            World.setGroupProtected true group world |> snd'
-                        else world
-                    let world = World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
-                    (true, world)
+                    if groupCreation then
+                        let groupDescriptorStr = File.ReadAllText groupFilePath
+                        let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                        World.readGroup groupDescriptor (Some name) group.Screen world |> ignore<Group>
+                        World.setGroupProtected true group world |> ignore<bool>
+                    World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    true
             let initializing = initializing || Reinitializing
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && group.GetExists world
-                        then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world =
-                if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world
-                then WorldModule.tryProcessGroup true group world
-                else world
-            world
+            for arg in args do
+                if (initializing || not arg.ArgStatic) && group.GetExists world then
+                    group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
+            if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
+                WorldModule.tryProcessGroup true group world
 
         /// Begin the ImSim declaration of a group with the given arguments.
         static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name args world =
@@ -286,13 +262,10 @@ module WorldImSim =
 
         /// Make a group the current ImSim context.
         static member scopeGroup (group : Group) (args : Group ArgImSim seq) world =
-            let world = World.setContext group.GroupAddress world
-            Seq.fold
-                (fun world arg ->
-                    if group.GetExists world
-                    then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
+            World.setContext group.GroupAddress world
+            for arg in args do
+                if group.GetExists world then
+                    group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         /// Begin the ImSim declaration of a entity read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
@@ -301,107 +274,88 @@ module WorldImSim =
             // create entity as and when appropriate
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in a Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
-            let world = World.setContext entityAddress world
+            World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
-            let (initializing, world) =
+            let initializing =
                 match world.SimulantsImSim.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
-                    (false, World.utilizeSimulantImSim entity.EntityAddress entityImSim world)
+                    World.utilizeSimulantImSim entity.EntityAddress entityImSim world
+                    false
                 | (false, _) ->
-                    let world =
-                        if entityCreation then
-                            let entityDescriptorStr = File.ReadAllText entityFilePath
-                            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                            let world = World.readEntity false true entityDescriptor (Some name) entity.Parent world |> snd
-                            World.setEntityProtected true entity world |> snd'
-                        else world
-                    let world = World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
-                    (true, world)
+                    if entityCreation then
+                        let entityDescriptorStr = File.ReadAllText entityFilePath
+                        let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+                        World.readEntity false true entityDescriptor (Some name) entity.Parent world |> ignore<Entity>
+                        World.setEntityProtected true entity world |> ignore<bool>
+                    World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    true
 
             // entity-specific initialization
             let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && entity.GetExists world then
-                            mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
-                            entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world =
-                if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1
-                then entity.SetMountOpt (Some (Relation.makeParent ())) world
-                else world
-            let world =
-                if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
-                then WorldModule.tryProcessEntity true entity world
-                else world
-            world
+            for arg in args do
+                if (initializing || not arg.ArgStatic) && entity.GetExists world then
+                    mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                    entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
+            if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
+                entity.SetMountOpt (Some (Relation.makeParent ())) world
+            if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
+                WorldModule.tryProcessEntity true entity world
 
         /// Begin the ImSim declaration of an entity with the given arguments.
-        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r * World =
+        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r =
 
             // create entity as and when appropriate
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
-            let world = World.setContext entityAddress world
+            World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
-            let (initializing, world) =
+            let initializing =
                 match world.SimulantsImSim.TryGetValue entity.EntityAddress with
-                | (true, entityImSim) -> (false, World.utilizeSimulantImSim entity.EntityAddress entityImSim world)
+                | (true, entityImSim) ->
+                    World.utilizeSimulantImSim entity.EntityAddress entityImSim world
+                    false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating entity
-                    let world =
-                        let world = World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
-                        let mapResult (mapper : 'r -> 'r) world =
-                            let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) }
-                            World.tryMapSimulantImSim mapEntityImSim entity.EntityAddress world
-                        init mapResult entity world
+                    World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
+                    let mapResult (mapper : 'r -> 'r) world =
+                        let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) }
+                        World.tryMapSimulantImSim mapEntityImSim entity.EntityAddress world
+                    init mapResult entity world
 
                     // create entity only when needed
-                    let world =
-                        if entityCreation
-                        then World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
-                        else world
+                    if entityCreation then
+                        World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
 
                     // protect entity
-                    let world = World.setEntityProtected true entity world |> snd'
+                    World.setEntityProtected true entity world |> ignore<bool>
 
                     // fin
-                    (true, world)
+                    true
 
             // entity-specific initialization
             let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && entity.GetExists world then
-                            mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
-                            entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world =
-                if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1
-                then entity.SetMountOpt (Some (Relation.makeParent ())) world
-                else world
-            let world =
-                if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world
-                then WorldModule.tryProcessEntity true entity world
-                else world
+            for arg in args do
+                if (initializing || not arg.ArgStatic) && entity.GetExists world then
+                    mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                    entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
+            if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
+                entity.SetMountOpt (Some (Relation.makeParent ())) world
+            if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
+                WorldModule.tryProcessEntity true entity world
 
             // update result
             let result = match (World.getSimulantImSim entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
-            let world = World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) entity.EntityAddress world
-            (result, world)
+            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) entity.EntityAddress world
+            result
 
         /// Begin the ImSim declaration of an entity with the given arguments.
         static member beginEntity<'d when 'd :> EntityDispatcher> name args world =
-            World.beginEntityPlus<'d, unit> () (fun _ _ world -> world) name args world |> snd
+            World.beginEntityPlus<'d, unit> () (fun _ _ _ -> ()) name args world
 
         /// End the ImSim declaration of an entity.
         static member endEntity (world : World) =
@@ -418,29 +372,26 @@ module WorldImSim =
         /// ImSim declare an entity read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member doEntityFromFile name entityFilePath args world =
-            let world = World.beginEntityFromFile name entityFilePath args world
+            World.beginEntityFromFile name entityFilePath args world
             World.endEntity world
 
         /// ImSim declare an entity with the given arguments.
         static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name args world =
-            let (result, world) = World.beginEntityPlus<'d, 'r> zero init name args world
-            let world = World.endEntity world
-            (result, world)
+            let result = World.beginEntityPlus<'d, 'r> zero init name args world
+            World.endEntity world
+            result
 
         /// ImSim declare an entity with the given arguments.
         static member doEntity<'d when 'd :> EntityDispatcher> name args world =
-            let world = World.beginEntity<'d> name args world
+            World.beginEntity<'d> name args world
             World.endEntity world
 
         /// Make an entity the current ImSim context.
         static member scopeEntity (entity : Entity) (args : Entity ArgImSim seq) world =
-            let world = World.setContext entity.EntityAddress world
-            Seq.fold
-                (fun world arg ->
-                    if entity.GetExists world
-                    then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
+            World.setContext entity.EntityAddress world
+            for arg in args do
+                if entity.GetExists world then
+                    entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         /// Begin the ImSim declaration of associated gui entities with the given arguments.
         static member beginAssociation name args world = World.beginEntity<GuiDispatcher> name args world
@@ -471,35 +422,35 @@ module WorldImSim =
 
         /// ImSim declare a button with the given arguments.
         static member doButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.ClickEvent entity world
+            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.ClickEvent entity world
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// ImSim declare a toggle button with the given arguments.
         static member doToggleButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.ToggleEvent entity world
-            let (toggleChanged, world) = World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
-            (world.DeclaredEntity.GetToggled world, toggleChanged, world)
+            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.ToggleEvent entity world
+            let toggleChanged = World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
+            (world.DeclaredEntity.GetToggled world, toggleChanged)
 
         /// ImSim declare a radio button with the given arguments.
         static member doRadioButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.DialEvent entity world
-            let (dialChanged, world) = World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
-            (world.DeclaredEntity.GetDialed world, dialChanged, world)
+            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.DialEvent entity world
+            let dialChanged = World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
+            (world.DeclaredEntity.GetDialed world, dialChanged)
 
         /// ImSim declare a fill bar with the given arguments.
         static member doFillBar name args world = World.doEntity<FillBarDispatcher> name args world
 
         /// ImSim declare a feeler with the given arguments.
         static member doFeeler name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.TouchEvent entity world
-            let (touchChanged, world) = World.doEntityPlus<FeelerDispatcher, _> false init name args world
-            (world.DeclaredEntity.GetTouched world, touchChanged, world)
+            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.TouchEvent entity world
+            let touchChanged = World.doEntityPlus<FeelerDispatcher, _> false init name args world
+            (world.DeclaredEntity.GetTouched world, touchChanged)
 
         /// ImSim declare a text box entity with the given arguments.
         static member doTextBox name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.TextEditEvent entity world
-            let (textChanged, world) = World.doEntityPlus<TextBoxDispatcher, _> false init name args world
-            (world.DeclaredEntity.GetText world, textChanged, world)
+            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.TextEditEvent entity world
+            let textChanged = World.doEntityPlus<TextBoxDispatcher, _> false init name args world
+            (world.DeclaredEntity.GetText world, textChanged)
 
         /// ImSim declare an fps entity with the given arguments.
         static member doFps name args world = World.doEntity<FpsDispatcher> name args world
@@ -515,43 +466,42 @@ module WorldImSim =
 
         /// ImSim declare a 2d block with the given arguments.
         static member doBlock2d name args world =
-            let (results, world) = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 2d box with the given arguments.
         static member doBox2d name args world =
-            let (results, world) = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 2d sphere with the given arguments.
         static member doSphere2d name args world =
-            let (results, world) = World.doEntityPlus<Sphere2dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Sphere2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 2d ball with the given arguments.
         static member doBall2d name args world =
-            let (results, world) = World.doEntityPlus<Ball2dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Ball2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 2d character with the given arguments.
         static member doCharacter2d name args world =
-            let (results, world) = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a tile map with the given arguments.
         static member doTileMap name args world =
-            let (results, world) = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a user-defined tile map with the given arguments.
         static member doTmxMap name args world =
-            let (results, world) = World.doEntityPlus<TmxMapDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<TmxMapDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a tile map with the given arguments.
         static member doSpineSkeleton name args world =
-            let (results, world) = World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
-            (results, world)
+            World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
 
         /// ImSim declare a 3d light probe with the given arguments.
         static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
@@ -570,23 +520,23 @@ module WorldImSim =
 
         /// ImSim declare a 3d block with the given arguments.
         static member doBlock3d name args world =
-            let (results, world) = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 3d box with the given arguments.
         static member doBox3d name args world =
-            let (results, world) = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 3d sphere with the given arguments.
         static member doSphere3d name args world =
-            let (results, world) = World.doEntityPlus<Sphere3dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Sphere3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 3d ball with the given arguments.
         static member doBall3d name args world =
-            let (results, world) = World.doEntityPlus<Ball3dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Ball3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a static billboard with the given arguments.
         static member doStaticBillboard name args world = World.doEntity<StaticBillboardDispatcher> name args world
@@ -602,41 +552,41 @@ module WorldImSim =
 
         /// ImSim declare a sensor model with the given arguments.
         static member doSensorModel name args world =
-            let (results, world) = World.doEntityPlus<SensorModelDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<SensorModelDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a rigid model with the given arguments.
         static member doRigidModel name args world =
-            let (results, world) = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a static model surface with the given arguments.
         static member doStaticModelSurface name args world = World.doEntity<StaticModelSurfaceDispatcher> name args world
 
         /// ImSim declare a sensor model surface with the given arguments.
         static member doSensorModelSurface name args world =
-            let (results, world) = World.doEntityPlus<SensorModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<SensorModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a rigid model surface with the given arguments.
         static member doRigidModelSurface name args world =
-            let (results, world) = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 3d character with the given arguments.
         static member doCharacter3d name args world =
-            let (results, world) = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 3d body joint with the given arguments.
         static member doBodyJoint3d name args world =
-            let (results, world) = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyJointId world, results, world)
+            let results = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyJointId world, results)
 
         /// ImSim declare a terrain with the given arguments.
         static member doTerrain name args world =
-            let (results, world) = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name args world
-            (world.DeclaredEntity.GetBodyId world, results, world)
+            let results = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyId world, results)
 
         /// ImSim declare a 3d nav config with the given arguments.
         static member doNav3dConfig name args world = World.doEntity<Nav3dConfigDispatcher> name args world

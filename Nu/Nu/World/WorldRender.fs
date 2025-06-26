@@ -11,20 +11,26 @@ module WorldRender =
 
     type World with
 
-        static member internal getRendererProcess world =
+        static member internal getRendererProcess (world : World) =
             world.Subsystems.RendererProcess
 
         static member internal withRendererProcess fn world =
             fn (World.getRendererProcess world)
 
         /// Get the current configuration of the 3d renderer.
-        static member getRenderer3dConfig world =
+        static member getRenderer3dConfig (world : World) =
             world.Subsystems.RendererProcess.Renderer3dConfig
 
         /// Set the current configuration of the 3d renderer.
         static member setRenderer3dConfig config world =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
             world
+
+        /// Map the configuration of the 3d renderer.
+        static member mapRenderer3dConfig mapper world =
+            let config = World.getRenderer3dConfig world
+            let config = mapper config
+            World.setRenderer3dConfig config world
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
@@ -52,19 +58,16 @@ module WorldRender =
         static member loadRenderPackage3d packageName world =
             let loadRenderPackageUseMessage = LoadRenderPackage3d packageName
             World.enqueueRenderMessage3d loadRenderPackageUseMessage world
-            world
 
         /// Unload a 3d render package should be unloaded since its assets will not be used again soon.
         static member unloadRenderPackage3d packageName world =
             let unloadRenderPackageMessage = UnloadRenderPackage3d packageName
             World.enqueueRenderMessage3d unloadRenderPackageMessage world
-            world
 
         /// Send a message to the 3d renderer to reload its rendering assets.
         static member reloadRenderAssets3d world =
             let reloadRenderAssetsMessage = ReloadRenderAssets3d
             World.enqueueRenderMessage3d reloadRenderAssetsMessage world
-            world
 
         /// Send a message to the render to create the given user-defined static model.
         static member createUserDefinedStaticModel surfaceDescriptors bounds staticModel world =
@@ -103,19 +106,16 @@ module WorldRender =
         static member loadRenderPackage2d packageName world =
             let loadRenderPackageUseMessage = LoadRenderPackage2d packageName
             World.enqueueRenderMessage2d loadRenderPackageUseMessage world
-            world
 
         /// Unload a 2d render package should be unloaded since its assets will not be used again soon.
         static member unloadRenderPackage2d packageName world =
             let unloadRenderPackageMessage = UnloadRenderPackage2d packageName
             World.enqueueRenderMessage2d unloadRenderPackageMessage world
-            world
 
         /// Send a message to the 2d renderer to reload its rendering assets.
         static member reloadRenderAssets2d world =
             let reloadRenderAssetsMessage = ReloadRenderAssets2d
             World.enqueueRenderMessage2d reloadRenderAssetsMessage world
-            world
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessageImGui (message : RenderMessageImGui) world =
@@ -125,7 +125,6 @@ module WorldRender =
         static member reloadRenderAssetsImGui world =
             let reloadRenderAssetsMessage = ReloadRenderAssets
             World.enqueueRenderMessageImGui reloadRenderAssetsMessage world
-            world
 
         /// Render a gui sprite.
         static member renderGuiSprite absolute perimeter spriteImage offset elevation color world =

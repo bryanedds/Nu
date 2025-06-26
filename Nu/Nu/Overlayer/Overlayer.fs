@@ -40,9 +40,9 @@ type Overlay =
             [|for sourceType in sourceTypes do
                 yield sourceType
                 for sourceTypeDecomposed in Reflection.getBaseTypesExceptObject sourceType do
-                    yield sourceTypeDecomposed|] |>
-            HashSet |>
-            Seq.toList
+                    yield sourceTypeDecomposed|]
+            |> HashSet
+            |> Seq.toList
 
         // get the descriptors needed to construct the overlays
         let overlayDescriptors =
@@ -287,24 +287,28 @@ module Overlayer =
         let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
         let overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
         let routes =
-            (intrinsicOverlays @ extrinsicOverlays) |>
-            List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
-            List.concat |>
-            Map.ofList
+            (intrinsicOverlays @ extrinsicOverlays)
+            |> List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName)))
+            |> List.concat
+            |> Map.ofList
         { IntrinsicOverlays = intrinsicOverlays
           ExtrinsicOverlays = extrinsicOverlays
           Overlays = overlays
           Routes = routes }
 
-    /// Attempt to make an overlayer by loading overlays from a file and then combining it with
-    /// the given intrinsic overlays.
-    let tryMakeFromFile intrinsicOverlays (filePath : string) =
-        try let extrinsicOverlays =
-                File.ReadAllText filePath |>
-                String.unescape |>
-                scvalue<Overlay list>
-            make intrinsicOverlays extrinsicOverlays |> Right
-        with exn -> Left ("Could not make overlayer from file '" + filePath + "' due to: " + scstring exn)
+    /// Make an overlayer by attempting to load extrinsic overlays from a file and then combining it with the given
+    /// intrinsic overlays.
+    let makeFromFileOpt intrinsicOverlays (filePath : string) =
+        let extrinsicOverlays =
+            if File.Exists filePath then
+                try File.ReadAllText filePath
+                    |> String.unescape
+                    |> scvalue<Overlay list>
+                with exn ->
+                    Log.warn ("Could not open overlayer file '" + filePath + "' due to: " + scstring exn)
+                    []
+            else []
+        make intrinsicOverlays extrinsicOverlays
 
 /// Defines the manner in which overlays are applied to targets.
 type Overlayer = Overlayer.Overlayer

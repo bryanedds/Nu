@@ -8,7 +8,7 @@ open Prime
 
 /// The Stream construct.
 type [<ReferenceEquality>] Stream<'a> =
-    { Subscribe : World -> 'a Address * (World -> World) * World }
+    { Subscribe : World -> 'a Address * (World -> unit) }
 
 [<RequireQualifiedAccess>]
 module Stream =
@@ -23,23 +23,23 @@ module Stream =
             let unsubscribe = fun world -> World.unsubscribe subscriptionId world
             let callback = fun evt world ->
                 let eventTrace = EventTrace.record "Stream" "make" "" evt.Trace
-                let world = World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
-            (subscriptionAddress, unsubscribe, world)
+                World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> ignore
+            (subscriptionAddress, unsubscribe)
         { Subscribe = subscribe }
 
     /// Generalize a stream's data type to obj.
     let [<DebuggerHidden; DebuggerStepThrough>] generalize<'a>
         (stream : Stream<'a>) : Stream<obj> =
-        { Subscribe = fun world -> let (address, unsub, world) = stream.Subscribe world in (atooa address, unsub, world) }
+        { Subscribe = fun world -> let (address, unsub) = stream.Subscribe world in (atooa address, unsub) }
 
-    (* Side-Effecting Combinators *)
+    (* Advanced Combinators *)
 
     /// Track changes in a stream using a stateful tracker function, transforms the tracked state, and produces a new
     /// stream with the transformed values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEffect4
-        (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool * World)
+    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus4
+        (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool)
         (transformer : 'c -> 'b)
         (state : 'c)
         (stream : Stream<'a>) :
@@ -47,146 +47,137 @@ module Stream =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let stateId = Gen.id64
-            let world = World.addEventState stateId state world
+            World.addEventState stateId state world
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'b> (scstring subscriptionId)
-            let (eventAddress, unsubscribe, world) = stream.Subscribe world
+            let (eventAddress, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun world ->
-                let world = World.removeEventState stateId world
-                let world = unsubscribe world
+                World.removeEventState stateId world
+                unsubscribe world
                 World.unsubscribe subscriptionId world
             let callback = fun evt world ->
                 let state = World.getEventState stateId world
-                let (state, tracked, world) = tracker state evt world
-                let world = World.addEventState stateId state world
-                let world =
-                    if tracked then
-                        let eventData = transformer state
-                        let eventTrace = EventTrace.record "Stream" "trackEvent4" "" evt.Trace
-                        World.publishPlus<'b, Simulant> eventData subscriptionAddress eventTrace globalSimulant false false world
-                    else world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
-            (subscriptionAddress, unsubscribe, world)
+                let (state, tracked) = tracker state evt world
+                World.addEventState stateId state world
+                if tracked then
+                    let eventData = transformer state
+                    let eventTrace = EventTrace.record "Stream" "trackEvent4" "" evt.Trace
+                    World.publishPlus<'b, Simulant> eventData subscriptionAddress eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> ignore
+            (subscriptionAddress, unsubscribe)
         { Subscribe = subscribe }
 
     /// Tracks changes in a stream using a stateful tracker function and produces a new stream with updated values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEffect2
-        (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool * World)
+    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus2
+        (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool)
         (stream : Stream<'a>) :
         Stream<'a> =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let stateId = Gen.id64
-            let world = World.addEventState stateId None world
+            World.addEventState stateId None world
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
-            let (eventAddress, unsubscribe, world) = stream.Subscribe world
+            let (eventAddress, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun world ->
-                let world = World.removeEventState stateId world
-                let world = unsubscribe world
+                World.removeEventState stateId world
+                unsubscribe world
                 World.unsubscribe subscriptionId world
             let callback = fun evt world ->
                 let stateOpt = World.getEventState stateId world
                 let state = match stateOpt with Some state -> state | None -> evt.Data
-                let (state, tracked, world) = tracker state evt world
-                let world = World.addEventState stateId state world
-                let world =
-                    if tracked then
-                        let eventTrace = EventTrace.record "Stream" "trackEvent2" "" evt.Trace
-                        World.publishPlus<'a, Simulant> state subscriptionAddress eventTrace globalSimulant false false world
-                    else world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
-            (subscriptionAddress, unsubscribe, world)
+                let (state, tracked) = tracker state evt world
+                World.addEventState stateId state world
+                if tracked then
+                    let eventTrace = EventTrace.record "Stream" "trackEvent2" "" evt.Trace
+                    World.publishPlus<'a, Simulant> state subscriptionAddress eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> ignore
+            (subscriptionAddress, unsubscribe)
         { Subscribe = subscribe }
 
     /// Tracks changes using a stateful tracker function and creates a stream that optionally processes events based on the state.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEffect
-        (tracker : 'b -> World -> 'b * bool * World) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
+    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus
+        (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let stateId = Gen.id64
-            let world = World.addEventState stateId state world
+            World.addEventState stateId state world
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
-            let (eventAddress, unsubscribe, world) = stream.Subscribe world
+            let (eventAddress, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun world ->
-                let world = World.removeEventState stateId world
-                let world = unsubscribe world
+                World.removeEventState stateId world
+                unsubscribe world
                 World.unsubscribe subscriptionId world
             let callback = fun evt world ->
                 let state = World.getEventState stateId world
-                let (state, tracked, world) = tracker state world
-                let world = World.addEventState stateId state world
-                let world =
-                    if tracked then
-                        let eventTrace = EventTrace.record "Stream" "trackEvent" "" evt.Trace
-                        World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
-                    else world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
-            (subscriptionAddress, unsubscribe, world)
+                let (state, tracked) = tracker state world
+                World.addEventState stateId state world
+                if tracked then
+                    let eventTrace = EventTrace.record "Stream" "trackEvent" "" evt.Trace
+                    World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> ignore
+            (subscriptionAddress, unsubscribe)
         { Subscribe = subscribe }
 
     /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldThenEffect (f : 'b -> Event<'a, Simulant> -> World -> 'b * World) g s (stream : Stream<'a>) : Stream<'c> =
-        trackEffect4 (fun b a w -> (Triple.insert true (f b a w))) g s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldThenPlus (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
+        trackPlus4 (fun b a w -> (f b a w, true)) g s stream
 
     /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldEffect (f : 'b -> Event<'a, Simulant> -> World -> 'b * World) s (stream : Stream<'a>) : Stream<'b> =
-        trackEffect4 (fun b a w -> (Triple.insert true (f b a w))) id s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldPlus (f : 'b -> Event<'a, Simulant> -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
+        trackPlus4 (fun b a w -> (f b a w, true)) id s stream
 
     /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduceEffect (f : 'a -> Event<'a, Simulant> -> World -> 'a * World) (stream : Stream<'a>) : Stream<'a> =
-        trackEffect2 (fun a a2 w -> (Triple.insert true (f a a2 w))) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] reducePlus (f : 'a -> Event<'a, Simulant> -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
+        trackPlus2 (fun a a2 w -> (f a a2 w, true)) stream
 
     /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterEffect
-        (pred : Event<'a, Simulant> -> World -> bool * World) (stream : Stream<'a>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] filterPlus
+        (pred : Event<'a, Simulant> -> World -> bool) (stream : Stream<'a>) =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
-            let (eventAddress, unsubscribe, world) = stream.Subscribe world
+            let (eventAddress, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun world ->
-                let world = unsubscribe world
+                unsubscribe world
                 World.unsubscribe subscriptionId world
             let callback = fun evt world ->
-                let (passed, world) = pred evt world
-                let world =
-                    if passed then
-                        let eventTrace = EventTrace.record "Stream" "filterEffect" "" evt.Trace
-                        World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
-                    else world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
-            (subscriptionAddress, unsubscribe, world)
+                if pred evt world then
+                    let eventTrace = EventTrace.record "Stream" "filterEffect" "" evt.Trace
+                    World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> ignore
+            (subscriptionAddress, unsubscribe)
         { Subscribe = subscribe }
 
     /// Map over a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapEffect
-        (mapper : Event<'a, Simulant> -> World -> 'b * World) (stream : Stream<'a>) : Stream<'b> =
+    let [<DebuggerHidden; DebuggerStepThrough>] mapPlus
+        (mapper : Event<'a, Simulant> -> World -> 'b) (stream : Stream<'a>) : Stream<'b> =
         let subscribe = fun (world : World) ->
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'b> (scstring subscriptionId)
-            let (eventAddress, unsubscribe, world) = stream.Subscribe world
+            let (eventAddress, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun world ->
-                let world = unsubscribe world
+                unsubscribe world
                 World.unsubscribe subscriptionId world
             let callback = fun evt world ->
-                let (eventData, world) = mapper evt world
+                let eventData = mapper evt world
                 let eventTrace = EventTrace.record "Stream" "mapEffect" "" evt.Trace
-                let world = World.publishPlus<'b, Simulant> eventData subscriptionAddress eventTrace globalSimulant false false world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
-            (subscriptionAddress, unsubscribe, world)
+                World.publishPlus<'b, Simulant> eventData subscriptionAddress eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> ignore
+            (subscriptionAddress, unsubscribe)
         { Subscribe = subscribe }
 
     /// Map over two streams.
-    let [<DebuggerHidden; DebuggerStepThrough>] map2Effect
-        (mapper : Event<'a, Simulant> -> Event<'b, Simulant> -> World -> 'c * World)
+    let [<DebuggerHidden; DebuggerStepThrough>] map2Plus
+        (mapper : Event<'a, Simulant> -> Event<'b, Simulant> -> World -> 'c)
         (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
         let subscribe = fun (world : World) ->
 
@@ -194,19 +185,20 @@ module Stream =
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let stateId = Gen.id64
             let state = (List.empty<Event<'a, Simulant>>, List.empty<Event<'b, Simulant>>)
-            let world = World.addEventState stateId state world
+            World.addEventState stateId state world
             let subscriptionId = Gen.id64
             let subscriptionId' = Gen.id64
             let subscriptionId'' = Gen.id64
-            let (subscriptionAddress, unsubscribe, world) = stream.Subscribe world
-            let (subscriptionAddress', unsubscribe', world) = stream2.Subscribe world
+            let (subscriptionAddress, unsubscribe) = stream.Subscribe world
+            let (subscriptionAddress', unsubscribe') = stream2.Subscribe world
             let subscriptionAddress'' = ntoa<'c> (scstring subscriptionId'')
 
             // unsubscribe from 'a and 'b events, and remove event state
             let unsubscribe = fun world ->
-                let world = unsubscribe (unsubscribe' world)
-                let world = World.unsubscribe subscriptionId world
-                let world = World.unsubscribe subscriptionId' world
+                unsubscribe' world
+                unsubscribe world
+                World.unsubscribe subscriptionId world
+                World.unsubscribe subscriptionId' world
                 World.removeEventState stateId world
 
             // callback for 'a events
@@ -214,168 +206,78 @@ module Stream =
                 let eventTrace = EventTrace.record "Stream" "map2Effect" "'a" evt.Trace
                 let (aList : Event<'a, Simulant> list, bList : Event<'b, Simulant> list) = World.getEventState stateId world
                 let aList = evt :: aList
-                let (state, world) =
+                let state =
                     match (List.rev aList, List.rev bList) with
                     | (a :: aList, b :: bList) ->
                         let state = (aList, bList)
-                        let (eventData, world) = mapper a b world
-                        let world = World.publishPlus<'c, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
-                        (state, world)
-                    | state -> (state, world)
-                let world = World.addEventState stateId state world
-                (Cascade, world)
+                        let eventData = mapper a b world
+                        World.publishPlus<'c, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
+                        state
+                    | state -> state
+                World.addEventState stateId state world
+                Cascade
 
             // callback for 'b events
             let callback' = fun evt world ->
                 let eventTrace = EventTrace.record "Stream" "map2Effect" "'b" evt.Trace
                 let (aList : Event<'a, Simulant> list, bList : Event<'b, Simulant> list) = World.getEventState stateId world
                 let bList = evt :: bList
-                let (state, world) =
+                let state =
                     match (List.rev aList, List.rev bList) with
                     | (a :: aList, b :: bList) ->
                         let state = (aList, bList)
-                        let (eventData, world) = mapper a b world
-                        let world = World.publishPlus<'c, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
-                        (state, world)
-                    | state -> (state, world)
-                let world = World.addEventState stateId state world
-                (Cascade, world)
+                        let eventData = mapper a b world
+                        World.publishPlus<'c, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
+                        state
+                    | state -> state
+                World.addEventState stateId state world
+                Cascade
 
             // subscripe 'a and 'b events
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback subscriptionAddress globalSimulant world |> snd
-            let world = World.subscribePlus<'b, Simulant> subscriptionId callback' subscriptionAddress' globalSimulant world |> snd
-            (subscriptionAddress'', unsubscribe, world)
+            World.subscribePlus<'a, Simulant> subscriptionId callback subscriptionAddress globalSimulant world |> ignore
+            World.subscribePlus<'b, Simulant> subscriptionId callback' subscriptionAddress' globalSimulant world |> ignore
+            (subscriptionAddress'', unsubscribe)
 
         // fin
         { Subscribe = subscribe }
-
-    (* Event-Accessing Combinators *)
-
-    /// Track changes in a stream using a stateful tracker function, transforms the tracked state, and produces a new
-    /// stream with the transformed values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
-        (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool)
-        (transformer : 'c -> 'b)
-        (state : 'c)
-        (stream : Stream<'a>) :
-        Stream<'b> =
-        trackEffect4 (fun state evt world -> Triple.append world (tracker state evt world)) transformer state stream
-
-    /// Tracks changes in a stream using a stateful tracker function and produces a new stream with updated values.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent2
-        (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool)
-        (stream : Stream<'a>) :
-        Stream<'a> =
-        trackEffect2 (fun state evt world -> Triple.append world (tracker state evt world)) stream
-
-    /// Tracks changes using a stateful tracker function and creates a stream that optionally processes events based on the state.
-    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent
-        (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
-        trackEffect (fun state world -> Triple.append world (tracker state world)) state stream
-
-    /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldThenEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldThenEffect (fun state evt world -> (f state evt world, world)) g s stream
-
-    /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        foldEffect (fun state evt world -> (f state evt world, world)) s stream
-
-    /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduceEvent (f : 'a -> Event<'a, Simulant> -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        reduceEffect (fun value evt world -> (f value evt world, world)) stream
-
-    /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterEvent
-        (pred : Event<'a, Simulant> -> World -> bool) (stream : Stream<'a>) =
-        filterEffect (fun evt world -> (pred evt world, world)) stream
-
-    /// Map over a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapEvent
-        (mapper : Event<'a, Simulant> -> World -> 'b) (stream : Stream<'a>) : Stream<'b> =
-        mapEffect (fun evt world -> (mapper evt world, world)) stream
-
-    /// Map over two streams by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] map2Event
-        (mapper : Event<'a, Simulant> -> Event<'b, Simulant> -> World -> 'c) (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
-        map2Effect (fun evtA evtB world -> (mapper evtA evtB world, world)) stream stream2
-
-    (* World-Accessing Combinators *)
-
-    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld4
-        (tracker : 'c -> 'a -> World -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a>) : Stream<'b> =
-        trackEvent4 (fun c evt world -> tracker c evt.Data world) transformer state stream
-
-    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld2
-        (tracker : 'a -> 'a -> World -> 'a * bool) (stream : Stream<'a>) : Stream<'a> =
-        trackEvent2 (fun a evt world -> tracker a evt.Data world) stream
-
-    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld
-        (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
-        trackEvent tracker state stream
-
-    /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldThenWorld (f : 'b -> 'a -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldThenEvent (fun b evt world -> f b evt.Data world) g s stream
-
-    /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldWorld (f : 'b -> 'a -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        foldEvent (fun b evt world -> f b evt.Data world) s stream
-
-    /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduceWorld (f : 'a -> 'a -> World -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        reduceEvent (fun a evt world -> f a evt.Data world) stream
-
-    /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterWorld (pred : 'a -> World -> bool) (stream : Stream<'a>) =
-        filterEvent (fun evt world -> pred evt.Data world) stream
-
-    /// Map over a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapWorld (mapper : 'a -> World -> 'b) (stream : Stream<'a>) : Stream<'b> =
-        mapEvent (fun evt world -> mapper evt.Data world) stream
-
-    /// Map over two streams by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] map2World
-        (mapper : 'a -> 'b -> World -> 'c) (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
-        map2Event (fun evtA evtB world -> mapper evtA.Data evtB.Data world) stream stream2
 
     (* Primitive Combinators *)
 
     let [<DebuggerHidden; DebuggerStepThrough>] track4
         (tracker : 'c -> 'a -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a>) : Stream<'b> =
-        trackWorld4 (fun c a _ -> tracker c a) transformer state stream
+        trackPlus4 (fun c a _ -> tracker c a.Data) transformer state stream
 
     let [<DebuggerHidden; DebuggerStepThrough>] track2
         (tracker : 'a -> 'a -> 'a * bool) (stream : Stream<'a>) : Stream<'a> =
-        trackWorld2 (fun a a2 _ -> tracker a a2) stream
+        trackPlus2 (fun a a2 _ -> tracker a a2.Data) stream
 
     let [<DebuggerHidden; DebuggerStepThrough>] track
         (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
-        trackWorld (fun b _ -> tracker b) state stream
+        trackPlus (fun b _ -> tracker b) state stream
 
     let [<DebuggerHidden; DebuggerStepThrough>] foldThen (f : 'b -> 'a -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldThenWorld (fun b a _ -> f b a) g s stream
+        foldThenPlus (fun b a _ -> f b a.Data) g s stream
 
     /// Fold over a stream, aggegating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] fold (f : 'b -> 'a -> 'b) s (stream : Stream<'a>) : Stream<'b> =
-        foldWorld (fun b a _ -> f b a) s stream
+        foldPlus (fun b a _ -> f b a.Data) s stream
 
     /// Reduce over a stream, accumulating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] reduce (f : 'a -> 'a -> 'a) (stream : Stream<'a>) : Stream<'a> =
-        reduceWorld (fun a a2 _ -> f a a2) stream
+        reducePlus (fun a a2 _ -> f a a2.Data) stream
 
     /// Filter a stream by the given 'pred' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : 'a -> bool) (stream : Stream<'a>) =
-        filterWorld (fun a _ -> pred a) stream
+        filterPlus (fun a _ -> pred a.Data) stream
 
     /// Map over a stream by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : 'a -> 'b) (stream : Stream<'a>) : Stream<'b> =
-        mapWorld (fun a _ -> mapper a) stream
+        mapPlus (fun a _ -> mapper a.Data) stream
 
     /// Map over two streams by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] map2
         (mapper : 'a -> 'b -> 'c) (stream : Stream<'a>) (stream2 : Stream<'b>) : Stream<'c> =
-        map2World (fun a b _ -> mapper a b) stream stream2
+        map2Plus (fun a b _ -> mapper a.Data b.Data) stream stream2
 
     /// Combine two streams. Combination is in 'product form', which is defined as a pair of the data of the combined
     /// events. Think of it as 'zip' for event streams.
@@ -391,32 +293,33 @@ module Stream =
             let subscriptionId = Gen.id64
             let subscriptionId' = Gen.id64
             let subscriptionId'' = Gen.id64
-            let (subscriptionAddress, unsubscribe, world) = stream.Subscribe world
-            let (subscriptionAddress', unsubscribe', world) = stream2.Subscribe world
+            let (subscriptionAddress, unsubscribe) = stream.Subscribe world
+            let (subscriptionAddress', unsubscribe') = stream2.Subscribe world
             let subscriptionAddress'' = ntoa<Either<'a, 'b>> (scstring subscriptionId'')
             let globalSimulant = World.getGlobalSimulantGeneralized world
             let unsubscribe = fun world ->
-                let world = unsubscribe (unsubscribe' world)
-                let world = World.unsubscribe subscriptionId world
+                unsubscribe' world
+                unsubscribe world
+                World.unsubscribe subscriptionId world
                 World.unsubscribe subscriptionId' world
             let callback = fun evt world ->
                 let eventData = Left evt.Data
                 let eventTrace = EventTrace.record "Stream" "sum" "a" evt.Trace
-                let world = World.publishPlus<Either<'a, 'b>, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
-                (Cascade, world)
+                World.publishPlus<Either<'a, 'b>, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
+                Cascade
             let callback' = fun evt world ->
                 let eventData = Right evt.Data
                 let eventTrace = EventTrace.record "Stream" "sum" "b" evt.Trace
-                let world = World.publishPlus<Either<'a, 'b>, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
-                (Cascade, world)
-            let world = World.subscribePlus<'b, Simulant> subscriptionId' callback' subscriptionAddress' globalSimulant world |> snd
-            let world = World.subscribePlus<'a, Simulant> subscriptionId callback subscriptionAddress globalSimulant world |> snd
-            (subscriptionAddress'', unsubscribe, world)
+                World.publishPlus<Either<'a, 'b>, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'b, Simulant> subscriptionId' callback' subscriptionAddress' globalSimulant world |> ignore
+            World.subscribePlus<'a, Simulant> subscriptionId callback subscriptionAddress globalSimulant world |> ignore
+            (subscriptionAddress'', unsubscribe)
         { Subscribe = subscribe }
 
     /// Take events from a stream while predicate is true.
     let [<DebuggerHidden; DebuggerStepThrough>] during pred stream =
-        trackEffect (fun () world -> ((), pred world, world)) () stream
+        trackPlus (fun () world -> ((), pred world)) () stream
 
     /// Terminate a stream when a given stream receives a value.
     let [<DebuggerHidden; DebuggerStepThrough>] until
@@ -426,23 +329,24 @@ module Stream =
             let subscriptionId = Gen.id64
             let subscriptionId' = Gen.id64
             let subscriptionId'' = Gen.id64
-            let (subscriptionAddress, unsubscribe, world) = stream.Subscribe world
-            let (subscriptionAddress', unsubscribe', world) = stream2.Subscribe world
+            let (subscriptionAddress, unsubscribe) = stream.Subscribe world
+            let (subscriptionAddress', unsubscribe') = stream2.Subscribe world
             let subscriptionAddress'' = ntoa<'a> (scstring subscriptionId'')
             let unsubscribe = fun world ->
-                let world = unsubscribe (unsubscribe' world)
-                let world = World.unsubscribe subscriptionId' world
+                unsubscribe' world
+                unsubscribe world
+                World.unsubscribe subscriptionId' world
                 World.unsubscribe subscriptionId world
             let callback = fun _ world ->
-                let world = unsubscribe world
-                (Cascade, world)
+                unsubscribe world
+                Cascade
             let callback' = fun evt world ->
                 let eventTrace = EventTrace.record "Stream" "until" "" evt.Trace
-                let world = World.publishPlus<'a, Simulant> evt.Data subscriptionAddress'' eventTrace globalSimulant false false world
-                (Cascade, world)
-            let world = World.subscribePlus<'a, Simulant> subscriptionId' callback' subscriptionAddress' globalSimulant world |> snd
-            let world = World.subscribePlus<'b, Simulant> subscriptionId callback subscriptionAddress globalSimulant world |> snd
-            (subscriptionAddress'', unsubscribe, world)
+                World.publishPlus<'a, Simulant> evt.Data subscriptionAddress'' eventTrace globalSimulant false false world
+                Cascade
+            World.subscribePlus<'a, Simulant> subscriptionId' callback' subscriptionAddress' globalSimulant world |> ignore
+            World.subscribePlus<'b, Simulant> subscriptionId callback subscriptionAddress globalSimulant world |> ignore
+            (subscriptionAddress'', unsubscribe)
         { Subscribe = subscribe }
 
     /// Terminate a stream when the subscriber is unregistered from the world.
@@ -459,18 +363,18 @@ module Stream =
         let subscribe = fun world ->
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
-            let (address, unsubscribe, world) = stream.Subscribe world
+            let (address, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun world ->
-                let world = unsubscribe world
+                unsubscribe world
                 World.unsubscribe subscriptionId world
-            let world = World.subscribePlus<'a, 's> subscriptionId callback address subscriber world |> snd
-            (subscriptionAddress, unsubscribe, world)
+            World.subscribePlus<'a, 's> subscriptionId callback address subscriber world |> ignore
+            (subscriptionAddress, unsubscribe)
         let stream = { Subscribe = subscribe }
-        stream.Subscribe world |> _bc
+        stream.Subscribe world |> snd
 
     /// Subscribe to a stream, handling each event with the given callback.
     let [<DebuggerHidden; DebuggerStepThrough>] subscribe callback subscriber stream world =
-        subscribeEffect (fun evt world -> (Cascade, callback evt world)) subscriber stream world |> snd
+        subscribeEffect (fun evt world -> callback evt world; Cascade) subscriber stream world |> ignore
 
     /// Subscribe to a stream until the subscriber is removed from the world,
     /// returning both an unsubscription procedure as well as the world as augmented with said
@@ -480,7 +384,7 @@ module Stream =
 
     /// Subscribe to a stream until the subscriber is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] monitor callback subscriber stream world =
-        monitorEffect (fun evt world -> (Cascade, callback evt world)) subscriber stream world |> snd
+        monitorEffect (fun evt world -> callback evt world; Cascade) subscriber stream world |> ignore
 
     /// Subscribe to a stream for the life span of an entity and a given facet.
     let [<DebuggerHidden; DebuggerStepThrough>] senseEffect<'a> callback (entity : Entity) facetName stream world =
@@ -489,38 +393,37 @@ module Stream =
             let fastenId = Gen.id64
             let subscriptionId = Gen.id64
             let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
-            let (address, unsubscribe, world) = stream.Subscribe world
+            let (address, unsubscribe) = stream.Subscribe world
             let unsubscribe = fun (world : World) ->
-                let world = unsubscribe world
-                let world = World.unsubscribe removalId world
-                let world = World.unsubscribe fastenId world
-                let world = World.unsubscribe subscriptionId world
-                world
-            let callback' = fun _ world -> (Cascade, unsubscribe world)
+                unsubscribe world
+                World.unsubscribe removalId world
+                World.unsubscribe fastenId world
+                World.unsubscribe subscriptionId world
+            let callback' = fun _ world -> unsubscribe world; Cascade
             let callback'' = fun changeEvent world ->
                 let previous = changeEvent.Data.Previous :?> string Set
                 let value = changeEvent.Data.Value :?> string Set
                 if previous.Contains facetName && not (value.Contains facetName)
-                then (Cascade, unsubscribe world)
-                else (Cascade, world)
+                then unsubscribe world; Cascade
+                else Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
             let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
-            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> snd
-            let world = World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> snd
-            let world = World.subscribePlus<'a, Entity> subscriptionId callback address entity world |> snd
-            (subscriptionAddress, unsubscribe, world)
+            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
+            World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
+            World.subscribePlus<'a, Entity> subscriptionId callback address entity world |> ignore
+            (subscriptionAddress, unsubscribe)
         let stream = { Subscribe = subscribe }
-        stream.Subscribe world |> _bc
+        stream.Subscribe world |> snd
 
     /// Subscribe to a stream for the life span of an entity and a given facet.
     let [<DebuggerHidden; DebuggerStepThrough>] sense callback entity facet stream world =
-        senseEffect (fun evt world -> (Cascade, callback evt world)) entity facet stream world |> snd
+        senseEffect (fun evt world -> callback evt world; Cascade) entity facet stream world |> ignore
 
     /// Insert a persistent state value into the stream.
     let [<DebuggerHidden; DebuggerStepThrough>] insert state stream =
-        stream |>
-        fold (fun (stateOpt, _) b -> (Some (Option.defaultValue state stateOpt), b)) (None, Unchecked.defaultof<_>) |>
-        map (mapFst Option.get)
+        stream
+        |> fold (fun (stateOpt, _) b -> (Some (Option.defaultValue state stateOpt), b)) (None, Unchecked.defaultof<_>)
+        |> map (mapFst Option.get)
 
     (* Derived Combinators *)
 
@@ -576,22 +479,21 @@ module Stream =
 
     /// Filter a stream of options for actual values.
     let [<DebuggerHidden; DebuggerStepThrough>] definitize (stream : Stream<'a option>) =
-        stream |>
-        filter Option.isSome |>
-        map Option.get
+        stream
+        |> filter Option.isSome
+        |> map Option.get
 
     /// Filter events with unchanging data.
     let [<DebuggerHidden; DebuggerStepThrough>] optimizeBy (by : 'a -> 'b) (stream : Stream<'a>) =
-        fold
-            (fun (s, _) a ->
-                let n = by a
-                match s with
-                | None -> (Some n, Some a)
-                | Some b -> if b = n then (Some n, None) else (Some n, Some a))
+        stream
+        |> fold (fun (s, _) a ->
+            let n = by a
+            match s with
+            | None -> (Some n, Some a)
+            | Some b -> if b = n then (Some n, None) else (Some n, Some a))
             (None, None)
-            stream |>
-        map snd |>
-        definitize
+        |> map snd
+        |> definitize
 
     /// Filter events with unchanging data.
     let [<DebuggerHidden; DebuggerStepThrough>] optimize (stream : Stream<'a>) =
@@ -655,19 +557,19 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] id (stream : _ Stream) = stream
 
     /// Take events from a stream only when World.getAdvancing evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream = filterEvent (fun _ -> World.getAdvancing) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream = filterPlus (fun _ -> World.getAdvancing) stream
 
     /// Take events from a stream only when World.getHalted evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream = filterEvent (fun _ -> World.getHalted) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream = filterPlus (fun _ -> World.getHalted) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream = filterEvent (fun _ -> World.getSelected simulant) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream = filterPlus (fun _ -> World.getSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterEvent (fun _ -> WorldTypes.getSelectedScreenIdling) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterPlus (fun _ -> WorldTypes.getSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterEvent (fun _ -> WorldTypes.getSelectedScreenTransitioning) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterPlus (fun _ -> WorldTypes.getSelectedScreenTransitioning) stream

@@ -453,8 +453,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 | (true, messages) ->
                     messages.RemoveAll (fun message ->
                         message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
-                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
-                    ignore<int>
+                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex)
+                    |> ignore<int>
                 | (false, _) -> ()
             | None -> ()
 
@@ -541,12 +541,12 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | (false, _) -> ()
 
     static member private getBodyContactNormals bodyId physicsEngine =
-        PhysicsEngine2d.getBodyContacts bodyId physicsEngine |>
-        Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
+        PhysicsEngine2d.getBodyContacts bodyId physicsEngine
+        |> Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
 
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
-        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine |>
-        Array.filter (fun normal ->
+        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
+        |> Array.filter (fun normal ->
             let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
             theta < Constants.Physics.GroundAngleMax)
  
@@ -554,11 +554,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
-            groundNormals |>
-            Seq.map (fun normal -> struct (normal.Dot v3Down, normal)) |>
-            Seq.maxBy fst' |>
-            snd' |>
-            Some
+            groundNormals
+            |> Seq.map (fun normal -> struct (normal.Dot v3Down, normal))
+            |> Seq.maxBy fst'
+            |> snd'
+            |> Some
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with

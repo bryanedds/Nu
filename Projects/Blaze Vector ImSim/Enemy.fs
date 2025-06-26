@@ -38,37 +38,25 @@ type EnemyDispatcher () =
     override this.Process (entity, world) =
 
         // process walking
-        let world =
-            let eyeBounds = world.Eye2dBounds
-            let entityBounds = entity.GetBounds world
-            if world.Advancing && entityBounds.Box2.Intersects eyeBounds then
-                let bodyId = entity.GetBodyId world
-                World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
-            else world
+        let bodyId = entity.GetBodyId world
+        let entityBounds = entity.GetBounds world
+        if world.Advancing && entityBounds.Box2.Intersects world.Eye2dBounds then
+            World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
 
         // process hits
-        let (penetrations, world) = World.doSubscription "Penetrations" entity.BodyPenetrationEvent world
+        let penetrations = World.doSubscription "Penetrations" entity.BodyPenetrationEvent world
         let hits =
             Seq.filter (fun penetration ->
                 match penetration.BodyShapePenetratee.BodyId.BodySource with
                 | :? Entity as penetratee -> penetratee.Is<BulletDispatcher> world
                 | _ -> false)
                 penetrations
-        let world =
-            if Seq.notEmpty hits then
-                let world = entity.Health.Map dec world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
-                world
-            else world
+        if Seq.notEmpty hits then
+            entity.Health.Map dec world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
 
         // process death
-        let world =
-            if entity.GetHealth world <= 0 then
-                let world = World.publish entity entity.DeathEvent entity world
-                let world = World.destroyEntity entity world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
-                world
-            else world
-
-        // fin
-        world
+        if entity.GetHealth world <= 0 then
+            World.publish entity entity.DeathEvent entity world
+            World.destroyEntity entity world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world

@@ -115,7 +115,6 @@ module SpriteBatch =
 
             // setup vao
             Gl.BindVertexArray env.Vao
-            Hl.Assert ()
 
             // setup shader
             Gl.UseProgram env.Shader
@@ -223,12 +222,14 @@ module SpriteBatch =
     /// Destroy the given sprite batch environment.
     let CreateSpriteBatchEnv shaderFilePath =
 
-        // create vao
-        let vao = Gl.GenVertexArray ()
-        Hl.Assert ()
-
         // create shader
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader shaderFilePath
+        Hl.Assert ()
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
         Hl.Assert ()
 
         // create env

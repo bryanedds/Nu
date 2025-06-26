@@ -326,7 +326,7 @@ type OverlayNameDescriptor =
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
-      ScheduledOp : 'w -> 'w }
+      ScheduledOp : 'w -> unit }
 
 /// Configuration parameters for the world.
 type [<ReferenceEquality>] WorldConfig =
@@ -370,6 +370,7 @@ type Timers =
       PostUpdateGameTimer : Stopwatch
       PostUpdateScreensTimer : Stopwatch
       PostUpdateGroupsTimer : Stopwatch
+      CoroutinesTimer : Stopwatch
       TaskletsTimer : Stopwatch
       DestructionTimer : Stopwatch
       PerProcessTimer : Stopwatch
@@ -407,6 +408,7 @@ type Timers =
           PostUpdateGameTimer = Stopwatch ()
           PostUpdateScreensTimer = Stopwatch ()
           PostUpdateGroupsTimer = Stopwatch ()
+          CoroutinesTimer = Stopwatch ()
           TaskletsTimer = Stopwatch ()
           DestructionTimer = Stopwatch ()
           PerProcessTimer = Stopwatch ()
@@ -452,6 +454,7 @@ module AmbientState =
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
+              Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -598,6 +601,20 @@ module AmbientState =
     let mapKeyValueStore mapper state =
         let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
+
+    /// Get the active coroutines.
+    let getCoroutines state =
+        state.Coroutines
+
+    /// Set the active coroutines.
+    let setCoroutines coroutines state =
+        { state with Coroutines = coroutines }
+
+    /// Add a coroutine to the active coroutines.
+    let addCoroutine coroutine state =
+        let id = Gen.id64
+        let coroutines = OMap.add id coroutine state.Coroutines
+        { state with Coroutines = coroutines }
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -752,6 +769,7 @@ module AmbientState =
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
+          Coroutines = OMap.makeEmpty HashIdentity.Structural config
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

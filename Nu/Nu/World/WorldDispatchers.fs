@@ -25,6 +25,7 @@ type GuiDispatcher () =
     static member Properties =
         [define Entity.Absolute true
          define Entity.Size Constants.Engine.EntityGuiSizeDefault
+         define Entity.Presence Omnipresent
          define Entity.Elevation 1.0f
          define Entity.ElevationLocal 1.0f
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault]
@@ -145,9 +146,8 @@ type FpsDispatcher () =
         let currentDateTime = DateTimeOffset.Now
         let elapsedDateTime = currentDateTime - startDateTime
         if elapsedDateTime.TotalSeconds >= 5.0 then
-            let world = entity.SetStartUpdateTime world.UpdateTime world
+            entity.SetStartUpdateTime world.UpdateTime world
             entity.SetStartDateTime currentDateTime world
-        else world
 
     static member Properties =
         [nonPersistent Entity.StartUpdateTime 0L
@@ -155,7 +155,7 @@ type FpsDispatcher () =
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
-            let world = resetIntermittent entity world
+            resetIntermittent entity world
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTimeOffset.Now
             let elapsedDateTime = currentDateTime - startDateTime
@@ -164,8 +164,6 @@ type FpsDispatcher () =
             if not (Double.IsNaN frames) then
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
                 entity.SetText framesStr world
-            else world
-        else world
 
 /// Gives an entity the base behavior of a gui panel.
 type PanelDispatcher () =
@@ -297,8 +295,6 @@ type Character2dDispatcher () =
             let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetCharacter2dFacingLeft false world
             elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
-            else world
-        else world
 
     override this.Render (_, entity, world) =
         let bodyId = entity.GetBodyId world
@@ -450,19 +446,17 @@ type SensorModelDispatcher () =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
-        let world =
-            match bodyShape with
-            | StaticModelShape staticModelShape ->
-                if staticModelShape.StaticModel <> staticModel then
-                    let staticModelShape =
-                        { StaticModel = staticModel
-                          Profile = staticModelShape.Profile
-                          TransformOpt = staticModelShape.TransformOpt
-                          PropertiesOpt = staticModelShape.PropertiesOpt }
-                    entity.SetBodyShape (StaticModelShape staticModelShape) world
-                else world
-            | _ -> world
-        (Cascade, world)
+        match bodyShape with
+        | StaticModelShape staticModelShape ->
+            if staticModelShape.StaticModel <> staticModel then
+                let staticModelShape =
+                    { StaticModel = staticModel
+                      Profile = staticModelShape.Profile
+                      TransformOpt = staticModelShape.TransformOpt
+                      PropertiesOpt = staticModelShape.PropertiesOpt }
+                entity.SetBodyShape (StaticModelShape staticModelShape) world
+        | _ -> ()
+        Cascade
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -475,9 +469,8 @@ type SensorModelDispatcher () =
          define Entity.NavShape EmptyNavShape]
 
     override this.Register (entity, world) =
-        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
-        world
+        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
 
 /// Gives an entity the base behavior of physics-driven rigid model.
 type RigidModelDispatcher () =
@@ -487,27 +480,24 @@ type RigidModelDispatcher () =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
-        let world =
-            match bodyShape with
-            | StaticModelShape staticModelShape ->
-                if staticModelShape.StaticModel <> staticModel then
-                    let staticModelShape =
-                        { StaticModel = staticModel
-                          Profile = staticModelShape.Profile
-                          TransformOpt = staticModelShape.TransformOpt
-                          PropertiesOpt = staticModelShape.PropertiesOpt }
-                    entity.SetBodyShape (StaticModelShape staticModelShape) world
-                else world
-            | _ -> world
-        (Cascade, world)
+        match bodyShape with
+        | StaticModelShape staticModelShape ->
+            if staticModelShape.StaticModel <> staticModel then
+                let staticModelShape =
+                    { StaticModel = staticModel
+                      Profile = staticModelShape.Profile
+                      TransformOpt = staticModelShape.TransformOpt
+                      PropertiesOpt = staticModelShape.PropertiesOpt }
+                entity.SetBodyShape (StaticModelShape staticModelShape) world
+        | _ -> ()
+        Cascade
 
     static let updateNavShape evt world =
         let entity = evt.Subscriber : Entity
-        let world =
-            match entity.GetBodyType world with
-            | Static -> entity.SetNavShape BoundsNavShape world
-            | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape NavShape.EmptyNavShape world
-        (Cascade, world)
+        match entity.GetBodyType world with
+        | Static -> entity.SetNavShape BoundsNavShape world
+        | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape NavShape.EmptyNavShape world
+        Cascade
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -519,10 +509,9 @@ type RigidModelDispatcher () =
          define Entity.NavShape StaticModelNavShape]
 
     override this.Register (entity, world) =
-        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
-        let world = World.monitor updateNavShape entity.BodyType.ChangeEvent entity world
-        world
+        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
+        World.monitor updateNavShape entity.BodyType.ChangeEvent entity world
 
 /// Gives an entity the base behavior of an indexed static model.
 type StaticModelSurfaceDispatcher () =
@@ -540,20 +529,18 @@ type SensorModelSurfaceDispatcher () =
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
         let surfaceIndex = entity.GetSurfaceIndex world
-        let world =
-            match bodyShape with
-            | StaticModelSurfaceShape staticModelSurfaceShape ->
-                if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
-                    let staticModelShape =
-                        { StaticModel = staticModel
-                          SurfaceIndex = surfaceIndex
-                          Profile = staticModelSurfaceShape.Profile
-                          TransformOpt = staticModelSurfaceShape.TransformOpt
-                          PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                    entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
-                else world
-            | _ -> world
-        (Cascade, world)
+        match bodyShape with
+        | StaticModelSurfaceShape staticModelSurfaceShape ->
+            if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
+                let staticModelShape =
+                    { StaticModel = staticModel
+                      SurfaceIndex = surfaceIndex
+                      Profile = staticModelSurfaceShape.Profile
+                      TransformOpt = staticModelSurfaceShape.TransformOpt
+                      PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+        | _ -> ()
+        Cascade
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -566,9 +553,8 @@ type SensorModelSurfaceDispatcher () =
          define Entity.NavShape EmptyNavShape]
 
     override this.Register (entity, world) =
-        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        let world = World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
-        world
+        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
 
 /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
 type RigidModelSurfaceDispatcher () =
@@ -579,20 +565,18 @@ type RigidModelSurfaceDispatcher () =
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
         let surfaceIndex = entity.GetSurfaceIndex world
-        let world =
-            match bodyShape with
-            | StaticModelSurfaceShape staticModelSurfaceShape ->
-                if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
-                    let staticModelShape =
-                        { StaticModel = staticModel
-                          SurfaceIndex = surfaceIndex
-                          Profile = staticModelSurfaceShape.Profile
-                          TransformOpt = staticModelSurfaceShape.TransformOpt
-                          PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                    entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
-                else world
-            | _ -> world
-        (Cascade, world)
+        match bodyShape with
+        | StaticModelSurfaceShape staticModelSurfaceShape ->
+            if staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex then
+                let staticModelShape =
+                    { StaticModel = staticModel
+                      SurfaceIndex = surfaceIndex
+                      Profile = staticModelSurfaceShape.Profile
+                      TransformOpt = staticModelSurfaceShape.TransformOpt
+                      PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
+        | _ -> ()
+        Cascade
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -604,10 +588,9 @@ type RigidModelSurfaceDispatcher () =
          define Entity.NavShape StaticModelSurfaceNavShape]
 
     override this.Register (entity, world) =
-        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        let world = World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
-        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
-        world
+        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
+        World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
 
 /// Gives an entity the base behavior of basic static billboard emitter.
 type BasicStaticBillboardEmitterDispatcher () =
@@ -710,8 +693,7 @@ type Character3dDispatcher () =
             if turnRightness >= 0.01f then Animation.make GameTime.zero None "TurnRight" Loop 1.0f (max 0.025f turnRightness) None :: animations
             elif turnLeftness >= 0.01f then Animation.make GameTime.zero None "TurnLeft" Loop 1.0f (max 0.025f turnLeftness) None :: animations
             else animations
-        let world = entity.SetAnimations (List.toArray animations) world
-        world
+        entity.SetAnimations (List.toArray animations) world
 
 /// Gives an entity the base behavior of a physics-driven 3d joint.
 type BodyJoint3dDispatcher () =
@@ -753,7 +735,7 @@ type Nav3dConfigDispatcher () =
         [define Entity.Nav3dConfig Nav3dConfig.defaultConfig]
 
     override this.Register (entity, world) =
-        World.monitor (fun _ world -> (Cascade, propagateNav3dConfig entity world)) (entity.ChangeEvent (nameof entity.Nav3dConfig)) entity world
+        World.monitor (fun _ world -> propagateNav3dConfig entity world; Cascade) (entity.ChangeEvent (nameof entity.Nav3dConfig)) entity world
 
     override this.Edit (op, entity, world) =
         match op with
@@ -771,10 +753,9 @@ type Nav3dConfigDispatcher () =
                 // draw edges and points
                 World.imGuiSegments3dPlus nbrData.NavInteriorEdges 1.0f computeEdgeColor world
                 World.imGuiSegments3dPlus nbrData.NavExteriorEdges 1.0f computeEdgeColor world
-                world
 
-            | None -> world
-        | _ -> world
+            | None -> ()
+        | _ -> ()
 
 /// Enables common operations on 3D entities that intersect this entity's bounds.
 /// TODO: P1: implement EditAreaDispatcher for 2D entities.
