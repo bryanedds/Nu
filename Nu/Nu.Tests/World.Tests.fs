@@ -25,11 +25,9 @@ module WorldTests =
             let outerViewport = Viewport.makeOuter windowSize
             let rasterViewport = Viewport.makeRaster outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
-            match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport (TestPlugin ()) with
-            | Right world ->
-                let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore Live true world
-                Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
-            | Left _ -> Assert.Fail ()
+            let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport (TestPlugin ())
+            let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore Live true world
+            Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
         | Left _ -> Assert.Fail ()
 
     let [<Test; Category "Integration">] runIntegrationFrameThenCleanUpThreeTimes () =
