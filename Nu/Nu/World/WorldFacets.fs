@@ -1416,55 +1416,18 @@ type RigidBodyFacet () =
     static let createWheelSettingsWV front position =
         let settings = new JoltPhysicsSharp.WheelSettingsWV ()
         settings.Position <- position
-        settings.SuspensionForcePoint <- v3Zero
-        settings.SuspensionDirection <- v3Down
-        settings.SteeringAxis <- v3Up
-        settings.WheelUp <- v3Up
         settings.WheelForward <- v3Forward
-        settings.SuspensionMinLength <- 0.3f
-        settings.SuspensionMaxLength <- 0.5f
-        settings.SuspensionPreloadLength <- 0.0f
-        settings.SuspensionSpring <- JoltPhysicsSharp.SpringSettings (JoltPhysicsSharp.SpringMode.FrequencyAndDamping, 3.0f, 0.5f)
-        settings.Radius <- 0.3f
-        settings.Width <- 0.1f
-        settings.EnableSuspensionForcePoint <- false
-        settings.Inertia <- 0.9f
-        //settings.AngularDamping <- 0.2f // TODO: P1: make sure thie gets exposed from JoltPhysicsSharp.
-        settings.MaxSteerAngle <- if front then Math.DegreesToRadians 70.0f else 0.0f
-        settings.MaxBrakeTorque <- 1500.0f
-        settings.MaxHandBrakeTorque <- if front then 0.0f else 4000.0f
+        if not front then
+            settings.MaxSteerAngle <- 0.0f
+            settings.MaxHandBrakeTorque <- 0.0f
         settings
 
     static let createVehiclePropertiesJolt () =
 
-        // vehicle engine config
-        let mutable vehicleEngineSettings = JoltPhysicsSharp.VehicleEngineSettings ()
-        vehicleEngineSettings.MaxTorque <- 500.0f
-        vehicleEngineSettings.MinRPM <- 1000.0f
-        vehicleEngineSettings.MaxRPM <- 6000.0f
-        vehicleEngineSettings.Inertia <- 0.5f
-        vehicleEngineSettings.AngularDamping <- 0.2f
-
-        // vehicle transmission config
-        let vehicleTransmissionSettings = new JoltPhysicsSharp.VehicleTransmissionSettings ()
-        vehicleTransmissionSettings.Mode <- JoltPhysicsSharp.TransmissionMode.Auto
-        vehicleTransmissionSettings.SwitchTime <- 0.5f
-        vehicleTransmissionSettings.ClutchReleaseTime <- 0.3f
-        vehicleTransmissionSettings.SwitchLatency <- 0.5f
-        vehicleTransmissionSettings.ShiftUpRPM <- 4000.0f
-        vehicleTransmissionSettings.ShiftDownRPM <- 2000.0f
-        vehicleTransmissionSettings.ClutchStrength <- 10.0f
-
         // vehicle controller config
+        let mutable differential = JoltPhysicsSharp.VehicleDifferentialSettings (LeftWheel = 0, RightWheel = 1)
         let wheeledVehicleControllerSettings = new JoltPhysicsSharp.WheeledVehicleControllerSettings ()
-        wheeledVehicleControllerSettings.Engine <- vehicleEngineSettings
-        wheeledVehicleControllerSettings.Transmission <- vehicleTransmissionSettings
-        wheeledVehicleControllerSettings.DifferentialLimitedSlipRatio <- 1.4f
         wheeledVehicleControllerSettings.DifferentialsCount <- 1
-        let mutable differential = JoltPhysicsSharp.VehicleDifferentialSettings ()
-        differential.LeftWheel <- 0
-        differential.RightWheel <- 1
-        differential.LimitedSlipRatio <- wheeledVehicleControllerSettings.DifferentialLimitedSlipRatio
         wheeledVehicleControllerSettings.SetDifferential (0, differential)
 
         // vehicle wheels config
@@ -1472,18 +1435,16 @@ type RigidBodyFacet () =
             [|for i in 0 .. dec 4 do
                 let position =
                     match i with
-                    | 0 -> v3 -0.8f 0.6f -3.0f // front left
-                    | 1 -> v3 0.8f 0.6f -3.0f // front right
-                    | 2 -> v3 -0.8f 0.6f 1.5f // back left
-                    | 3 -> v3 0.8f 0.6f 1.5f // back right
+                    | 0 -> v3 -0.8f -0.3f -3.0f // front left
+                    | 1 -> v3 0.8f -0.3f -3.0f // front right
+                    | 2 -> v3 -0.8f -0.3f 1.5f // back left
+                    | 3 -> v3 0.8f -0.3f 1.5f // back right
                     | _ -> failwithumf ()
                 createWheelSettingsWV (i < 2) position :> JoltPhysicsSharp.WheelSettings|]
 
         // vehicle constraint config
         let vehicleConstraintSettings = new JoltPhysicsSharp.VehicleConstraintSettings ()
-        vehicleConstraintSettings.Up <- v3Up
         vehicleConstraintSettings.Forward <- v3Forward
-        vehicleConstraintSettings.MaxPitchRollAngle <- MathF.PI
         vehicleConstraintSettings.Wheels <- wheelSettings
         vehicleConstraintSettings.Controller <- wheeledVehicleControllerSettings
 

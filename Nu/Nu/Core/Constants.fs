@@ -329,6 +329,7 @@ module Physics =
               "Substance"
               "GravityOverride"
               "CharacterProperties"
+              "VehicleProperties"
               "CollisionDetection"
               "CollisionCategories"
               "CollisionMask"
