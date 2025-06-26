@@ -14,9 +14,6 @@ module WorldRender =
         static member internal getRendererProcess (world : World) =
             world.Subsystems.RendererProcess
 
-        static member internal withRendererProcess fn world =
-            fn (World.getRendererProcess world)
-
         /// Get the current configuration of the 3d renderer.
         static member getRenderer3dConfig (world : World) =
             world.Subsystems.RendererProcess.Renderer3dConfig
@@ -24,7 +21,6 @@ module WorldRender =
         /// Set the current configuration of the 3d renderer.
         static member setRenderer3dConfig config world =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
-            world
 
         /// Map the configuration of the 3d renderer.
         static member mapRenderer3dConfig mapper world =
