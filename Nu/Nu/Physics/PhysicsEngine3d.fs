@@ -107,7 +107,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterUserData : Dictionary<CharacterID, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
           VehicleConstraints : Dictionary<BodyId, VehicleConstraint>
-          StepListeners : Dictionary<BodyId, PhysicsStepListener>
           mutable BodyUnoptimizedCreationCount : int
           BodyContactLock : obj
           BodyContactEvents : BodyContactEvent HashSet
@@ -686,9 +685,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
 
             // register step listener
-            let stepListener = vehicleConstraint.AsPhysicsStepListener
-            physicsEngine.StepListeners.Add (bodyId, stepListener)
-            physicsEngine.PhysicsContext.AddStepListener stepListener
+            physicsEngine.PhysicsContext.AddStepListener vehicleConstraint
 
         // HACK: optimize broad phase if we've taken in a lot of bodies.
         // NOTE: Might cause some intemittent run-time pauses when adding bodies.
@@ -748,9 +745,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // attempt to destroy wheeled vehicle controller
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) ->
-                let stepListener = physicsEngine.StepListeners.[bodyId]
-                physicsEngine.PhysicsContext.RemoveStepListener stepListener                
-                physicsEngine.StepListeners.Remove bodyId |> ignore<bool>
+                physicsEngine.PhysicsContext.RemoveStepListener vehicleConstraint
                 physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
                 physicsEngine.VehicleConstraints.Remove bodyId |> ignore<bool>
                 vehicleConstraint.Dispose ()
@@ -915,22 +910,30 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private setBodyVehicleForwardInput (setBodyVehicleForwardInputMessage : SetBodyVehicleForwardInputMessage) physicsEngine =
         match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleForwardInputMessage.BodyId with
-        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetForwardInput setBodyVehicleForwardInputMessage.ForwardInput
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.ForwardInput <- setBodyVehicleForwardInputMessage.ForwardInput
         | (false, _) -> ()
 
     static member private setBodyVehicleRightInput (setBodyVehicleRightInputMessage : SetBodyVehicleRightInputMessage) physicsEngine =
         match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleRightInputMessage.BodyId with
-        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetRightInput setBodyVehicleRightInputMessage.RightInput
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.RightInput <- setBodyVehicleRightInputMessage.RightInput
         | (false, _) -> ()
 
     static member private setBodyVehicleBrakeInput (setBodyVehicleBrakeInputMessage : SetBodyVehicleBrakeInputMessage) physicsEngine =
         match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleBrakeInputMessage.BodyId with
-        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetBrakeInput setBodyVehicleBrakeInputMessage.BrakeInput
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.BrakeInput <- setBodyVehicleBrakeInputMessage.BrakeInput
         | (false, _) -> ()
 
     static member private setBodyVehicleHandBrakeInput (setBodyVehicleHandBrakeInputMessage : SetBodyVehicleHandBrakeInputMessage) physicsEngine =
         match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleHandBrakeInputMessage.BodyId with
-        | (true, vehicleConstraint) -> vehicleConstraint.WheeledVehicleController.SetHandBrakeInput setBodyVehicleHandBrakeInputMessage.HandBrakeInput
+        | (true, vehicleConstraint) ->
+            let wheeledVehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            wheeledVehicleController.HandBrakeInput <- setBodyVehicleHandBrakeInputMessage.HandBrakeInput
         | (false, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
@@ -1202,7 +1205,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
           VehicleConstraints = dictPlus HashIdentity.Structural []
-          StepListeners = dictPlus HashIdentity.Structural []
           BodyUnoptimizedCreationCount = 0
           BodyContactLock = bodyContactLock
           BodyContactEvents = bodyContactEvents
@@ -1454,11 +1456,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyConstraintEvents.Clear ()
             physicsEngine.BodyConstraintUserData.Clear ()
             physicsEngine.BodyConstraints.Clear ()
-
-            // clear step listeners
-            for stepListener in physicsEngine.StepListeners.Values do
-                physicsEngine.PhysicsContext.RemoveStepListener stepListener
-            physicsEngine.StepListeners.Clear ()
 
             // clear wheeled vehicle controllers and vehicle constraints
             for vehicleConstraint in physicsEngine.VehicleConstraints.Values do

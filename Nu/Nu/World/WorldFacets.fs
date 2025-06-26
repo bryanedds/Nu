@@ -1438,57 +1438,61 @@ type RigidBodyFacet () =
         (Cascade, world)
 
     static let createWheelSettingsWV front position =
-        new JoltPhysicsSharp.WheelSettingsWV
-            (position = position,
-             suspensionForcePoint = v3Zero,
-             suspensionDirection = v3Down,
-             steeringAxis = v3Up,
-             wheelUp = v3Up,
-             wheelForward = v3Forward,
-             suspensionMinLength = 0.3f,
-             suspensionMaxLength = 0.5f,
-             suspensionPreloadLength = 0.0f,
-             suspensionSpring = JoltPhysicsSharp.SpringSettings (JoltPhysicsSharp.SpringMode.FrequencyAndDamping, 3.0f, 0.5f),
-             radius = 0.3f,
-             width = 0.1f,
-             enableSuspensionForcePoint = false,
-             inertia = 0.9f,
-             angularDamping = 0.2f,
-             maxSteerAngle = (if front then Math.DegreesToRadians 70.0f else 0.0f),
-             maxBrakeTorque = 1500.0f,
-             maxHandBrakeTorque = (if front then 0.0f else 4000.0f))
+        let settings = new JoltPhysicsSharp.WheelSettingsWV ()
+        settings.Position <- position
+        settings.SuspensionForcePoint <- v3Zero
+        settings.SuspensionDirection <- v3Down
+        settings.SteeringAxis <- v3Up
+        settings.WheelUp <- v3Up
+        settings.WheelForward <- v3Forward
+        settings.SuspensionMinLength <- 0.3f
+        settings.SuspensionMaxLength <- 0.5f
+        settings.SuspensionPreloadLength <- 0.0f
+        settings.SuspensionSpring <- JoltPhysicsSharp.SpringSettings (JoltPhysicsSharp.SpringMode.FrequencyAndDamping, 3.0f, 0.5f)
+        settings.Radius <- 0.3f
+        settings.Width <- 0.1f
+        settings.EnableSuspensionForcePoint <- false
+        settings.Inertia <- 0.9f
+        //settings.AngularDamping <- 0.2f // TODO: P1: make sure thie gets exposed from JoltPhysicsSharp.
+        settings.MaxSteerAngle <- if front then Math.DegreesToRadians 70.0f else 0.0f
+        settings.MaxBrakeTorque <- 1500.0f
+        settings.MaxHandBrakeTorque <- if front then 0.0f else 4000.0f
+        settings
 
     static let createVehiclePropertiesJolt () =
 
         // vehicle engine config
-        let vehicleEngineSettings =
-            new JoltPhysicsSharp.VehicleEngineSettings
-                (maxTorque = 500.0f,
-                 minRPM = 1000.0f,
-                 maxRPM = 6000.0f,
-                 inertia = 0.5f,
-                 angularDamping = 0.2f)
+        let mutable vehicleEngineSettings = JoltPhysicsSharp.VehicleEngineSettings ()
+        vehicleEngineSettings.MaxTorque <- 500.0f
+        vehicleEngineSettings.MinRPM <- 1000.0f
+        vehicleEngineSettings.MaxRPM <- 6000.0f
+        vehicleEngineSettings.Inertia <- 0.5f
+        vehicleEngineSettings.AngularDamping <- 0.2f
 
         // vehicle transmission config
-        let vehicleTransmissionSettings =
-            new JoltPhysicsSharp.VehicleTransmissionSettings
-                (mode = JoltPhysicsSharp.TransmissionMode.Auto,
-                 switchTime = 0.5f,
-                 clutchReleaseTime = 0.3f,
-                 switchLatency = 0.5f,
-                 shiftUpRPM = 4000.0f,
-                 shiftDownRPM = 2000.0f,
-                 clutchStrength = 10.0f)
+        let vehicleTransmissionSettings = new JoltPhysicsSharp.VehicleTransmissionSettings ()
+        vehicleTransmissionSettings.Mode <- JoltPhysicsSharp.TransmissionMode.Auto
+        vehicleTransmissionSettings.SwitchTime <- 0.5f
+        vehicleTransmissionSettings.ClutchReleaseTime <- 0.3f
+        vehicleTransmissionSettings.SwitchLatency <- 0.5f
+        vehicleTransmissionSettings.ShiftUpRPM <- 4000.0f
+        vehicleTransmissionSettings.ShiftDownRPM <- 2000.0f
+        vehicleTransmissionSettings.ClutchStrength <- 10.0f
 
         // vehicle controller config
-        let wheeledVehicleControllerSettings =
-            new JoltPhysicsSharp.WheeledVehicleControllerSettings
-                (engine = vehicleEngineSettings,
-                 transmission = vehicleTransmissionSettings,
-                 differentialLimitedSlipRatio = 1.4f)
+        let wheeledVehicleControllerSettings = new JoltPhysicsSharp.WheeledVehicleControllerSettings ()
+        wheeledVehicleControllerSettings.Engine <- vehicleEngineSettings
+        wheeledVehicleControllerSettings.Transmission <- vehicleTransmissionSettings
+        wheeledVehicleControllerSettings.DifferentialLimitedSlipRatio <- 1.4f
+        wheeledVehicleControllerSettings.DifferentialsCount <- 1
+        let mutable differential = JoltPhysicsSharp.VehicleDifferentialSettings ()
+        differential.LeftWheel <- 0
+        differential.RightWheel <- 1
+        differential.LimitedSlipRatio <- wheeledVehicleControllerSettings.DifferentialLimitedSlipRatio
+        wheeledVehicleControllerSettings.SetDifferential (0, differential)
 
         // vehicle wheels config
-        let wheelSettingsWVs =
+        let wheelSettings =
             [|for i in 0 .. dec 4 do
                 let position =
                     match i with
@@ -1497,16 +1501,15 @@ type RigidBodyFacet () =
                     | 2 -> v3 -0.8f 0.6f 1.5f // back left
                     | 3 -> v3 0.8f 0.6f 1.5f // back right
                     | _ -> failwithumf ()
-                createWheelSettingsWV (i < 2) position|]
+                createWheelSettingsWV (i < 2) position :> JoltPhysicsSharp.WheelSettings|]
 
         // vehicle constraint config
-        let vehicleConstraintSettings =
-            new JoltPhysicsSharp.VehicleConstraintSettings
-               (up = v3Up,
-                forward = v3Forward,
-                maxPitchRollAngle = MathF.PI,
-                wheels = wheelSettingsWVs,
-                settings = wheeledVehicleControllerSettings)
+        let vehicleConstraintSettings = new JoltPhysicsSharp.VehicleConstraintSettings ()
+        vehicleConstraintSettings.Up <- v3Up
+        vehicleConstraintSettings.Forward <- v3Forward
+        vehicleConstraintSettings.MaxPitchRollAngle <- MathF.PI
+        vehicleConstraintSettings.Wheels <- wheelSettings
+        vehicleConstraintSettings.Controller <- wheeledVehicleControllerSettings
 
         // fin
         VehiclePropertiesJolt vehicleConstraintSettings
