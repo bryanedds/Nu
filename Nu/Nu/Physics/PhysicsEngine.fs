@@ -571,6 +571,8 @@ type PhysicsEngine =
     abstract GetBodyGrounded : bodyId : BodyId -> bool
     /// Check that the body with the given body id is a sensor.
     abstract GetBodySensor : bodyId : BodyId -> bool
+    /// Get the wheel speed framed in terms of the clutch (0.0f if not a wheeled vehicle).
+    abstract GetWheelSpeedAtClutch : bodyId : BodyId -> single
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     /// Handle a physics message from an external source.
@@ -598,6 +600,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodySensor _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetWheelSpeedAtClutch _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None

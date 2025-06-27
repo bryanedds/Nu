@@ -1288,6 +1288,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
+        member physicsEngine.GetWheelSpeedAtClutch bodyId =
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, vehicleConstraint) ->
+                let controller = vehicleConstraint.GetController<WheeledVehicleController> ()
+                controller.WheelSpeedAtClutch
+            | (false, _) -> 0.0f
+
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =

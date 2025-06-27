@@ -176,6 +176,15 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        static member getWheelSpeedAtClutch bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetWheelSpeedAtClutch bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetWheelSpeedAtClutch bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
         /// Ray cast against 3d physics bodies.
         static member rayCast3dBodies ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)

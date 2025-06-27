@@ -684,6 +684,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 i <- inc i
             sensor
 
+        member physicsEngine.GetWheelSpeedAtClutch _ =
+            0.0f // no vehicle support
+
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
