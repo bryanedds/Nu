@@ -10,7 +10,7 @@ open Prime
 type [<ReferenceEquality>] Stream<'a> =
     { Subscribe : World -> 'a Address * (World -> unit) }
 
-[<RequireQualifiedAccess>]
+/// Stream operators.
 module Stream =
 
     /// Make a stream of an event at the given address.

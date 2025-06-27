@@ -57,7 +57,7 @@ module ChainBuilder =
     /// Builds chains.
     let [<DebuggerHidden>] chain = ChainBuilder ()
 
-[<RequireQualifiedAccess>]
+/// Chain operators.
 module Chain =
 
     /// Functor map for the chain monad.
