@@ -388,6 +388,7 @@ type Timers =
       mutable GcTotalTime : TimeSpan
       mutable GcFrameTime : TimeSpan }
 
+    /// Make timers.
     static member make () =
         let gcTime = GC.GetTotalPauseDuration ()
         { InputTimer = Stopwatch ()

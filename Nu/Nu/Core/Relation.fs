@@ -71,6 +71,7 @@ type RelationConverter (pointType : Type) =
             else failconv "Invalid RelationConverter conversion from source." None
 
 /// A relation that can be resolved to an address via contextual resolution.
+/// OPTIMIZATION: Links is an array only for speed; it is invalid to mutate it.
 type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
     { Links : Link array }
 

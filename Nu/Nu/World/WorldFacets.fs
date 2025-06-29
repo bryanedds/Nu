@@ -15,7 +15,7 @@ open Nu.Particles
 [<AutoOpen>]
 module Declarative =
 
-    /// The global Game simulant.
+    /// The ubiquitous Game simulant.
     let Game = Game.Handle
 
     /// Declaratively exposes Screen lenses and events.

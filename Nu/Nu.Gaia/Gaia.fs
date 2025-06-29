@@ -2442,7 +2442,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             ImGui.SameLine ()
-            ImGui.Text "w/ Overlay"
+            ImGui.Text "w/"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
             let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
