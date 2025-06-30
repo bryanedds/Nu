@@ -37,7 +37,7 @@ type JumpBoxDispatcher () =
             | BodyPenetrationData _ -> game.Collisions.Map inc world
             | _ -> ()
 
-        // declare a control panel
+        // declare a control panel with a flow layout
         let layout = Flow (FlowDownward, FlowUnlimited)
         World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= layout] world
 
