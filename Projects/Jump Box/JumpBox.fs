@@ -38,10 +38,12 @@ type JumpBoxDispatcher () =
             | _ -> ()
 
         // declare a control panel
-        World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
+        let layout = Flow (FlowDownward, FlowUnlimited)
+        World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= layout] world
 
         // declare a collision counter
-        World.doText "Collisions" [Entity.Text @= "Collisions: " + string (game.GetCollisions world)] world
+        let collisions = game.GetCollisions world
+        World.doText "Collisions" [Entity.Text @= "Collisions: " + string collisions] world
 
         // declare a jump button
         let canJump = World.getBodyGrounded boxBodyId world
@@ -49,8 +51,8 @@ type JumpBoxDispatcher () =
             World.jumpBody false 8.0f boxBodyId world
 
         // declare the a bar the fills based on up to 10 collisions and a text that displays when the bar is full
-        World.doFillBar "FillBar" [Entity.Fill @= single (game.GetCollisions world) / 10.0f] world
-        if game.GetCollisions world >= 10 then
+        World.doFillBar "FillBar" [Entity.Fill @= single collisions / 10.0f] world
+        if collisions >= 10 then
             World.doText "Full!" [Entity.Text .= "Full!"] world
 
         // finish declaring the control panel, group, and screen
