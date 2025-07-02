@@ -57,8 +57,8 @@ module WorldDataToken =
                       Material = billboard.Material
                       ShadowOffset = billboard.ShadowOffset
                       DepthTest =  LessThanOrEqualTest
-                      PlanarBillboard = false
-                      OrientUp = false
+                      OrientUp = true
+                      Planar = true
                       RenderType = billboard.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderBillboard renderBillboard) world

@@ -2538,12 +2538,12 @@ module StaticBillboardFacetExtensions =
         member this.GetShadowOffset world : single = this.Get (nameof this.ShadowOffset) world
         member this.SetShadowOffset (value : single) world = this.Set (nameof this.ShadowOffset) value world
         member this.ShadowOffset = lens (nameof this.ShadowOffset) this this.GetShadowOffset this.SetShadowOffset
-        member this.GetPlanarBillboard world : bool = this.Get(nameof this.PlanarBillboard) world
-        member this.SetPlanarBillboard (value : bool) world = this.Set(nameof this.PlanarBillboard) value world
-        member this.PlanarBillboard = lens (nameof this.PlanarBillboard) this this.GetPlanarBillboard this.SetPlanarBillboard
         member this.GetOrientUp world : bool = this.Get(nameof this.OrientUp) world
         member this.SetOrientUp (value : bool) world = this.Set(nameof this.OrientUp) value world
         member this.OrientUp = lens (nameof this.OrientUp) this this.GetOrientUp this.SetOrientUp
+        member this.GetPlanar world : bool = this.Get(nameof this.Planar) world
+        member this.SetPlanar (value : bool) world = this.Set(nameof this.Planar) value world
+        member this.Planar = lens (nameof this.Planar) this this.GetPlanar this.SetPlanar
 
 /// Augments an entity with a static billboard.
 type StaticBillboardFacet () =
@@ -2556,8 +2556,8 @@ type StaticBillboardFacet () =
          define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
-         define Entity.PlanarBillboard false
-         define Entity.OrientUp true]
+         define Entity.OrientUp true
+         define Entity.Planar true]
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -2570,15 +2570,15 @@ type StaticBillboardFacet () =
             let material = entity.GetMaterial world
             let shadowOffset = entity.GetShadowOffset world
             let depthTest = entity.GetDepthTest world
-            let planarBillboard = entity.GetPlanarBillboard world
             let orientUp = entity.GetOrientUp world
+            let planar = entity.GetPlanar world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; PlanarBillboard = planarBillboard; OrientUp = orientUp;
+                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
                       MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
                 world
 
@@ -2620,8 +2620,8 @@ type AnimatedBillboardFacet () =
          define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
-         define Entity.PlanarBillboard false
-         define Entity.OrientUp true]
+         define Entity.OrientUp true
+         define Entity.Planar true]
 
     override this.Update (entity, world) =
         if not (entity.GetEnabled world) then
@@ -2638,15 +2638,15 @@ type AnimatedBillboardFacet () =
             let material = entity.GetMaterial world
             let shadowOffset = entity.GetShadowOffset world
             let depthTest = entity.GetDepthTest world
-            let planarBillboard = entity.GetPlanarBillboard world
             let orientUp = entity.GetOrientUp world
+            let planar = entity.GetPlanar world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; PlanarBillboard = planarBillboard; OrientUp = orientUp;
+                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
                       MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
                 world
 
