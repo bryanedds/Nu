@@ -5,6 +5,7 @@ open Prime
 open Nu
 open BlazeVector
 
+// this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
     | Quit

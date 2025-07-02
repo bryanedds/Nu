@@ -5,6 +5,7 @@ open Prime
 open Nu
 open TerraFirma
 
+// this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
     | Quit
