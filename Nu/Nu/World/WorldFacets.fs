@@ -1413,16 +1413,19 @@ type RigidBodyFacet () =
         entity.PropagatePhysics world
         Cascade
 
-    static let createWheelSettingsWV front position =
-        let settings = new JoltPhysicsSharp.WheelSettingsWV ()
-        settings.Position <- position
-        settings.WheelForward <- v3Forward
-        if not front then
-            settings.MaxSteerAngle <- 0.0f
-            settings.MaxHandBrakeTorque <- 0.0f
-        settings
+    static let createVehiclePropertiesAether () =
+        VehiclePropertiesAether
 
     static let createVehiclePropertiesJolt () =
+
+        let createWheelSettingsWV front position =
+            let settings = new JoltPhysicsSharp.WheelSettingsWV ()
+            settings.Position <- position
+            settings.WheelForward <- v3Forward
+            if not front then
+                settings.MaxSteerAngle <- 0.0f
+                settings.MaxHandBrakeTorque <- 0.0f
+            settings
 
         // vehicle controller config
         let mutable differential = JoltPhysicsSharp.VehicleDifferentialSettings (LeftWheel = 0, RightWheel = 1)
@@ -1509,7 +1512,10 @@ type RigidBodyFacet () =
         let mutable transform = entity.GetTransform world
         let vehicleProperties =
             match entity.GetBodyType world with
-            | Vehicle -> if is2d then VehiclePropertiesAether else createVehiclePropertiesJolt ()
+            | Vehicle ->
+                match entity.GetVehicleProperties world with
+                | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesAether () else createVehiclePropertiesJolt ()
+                | _ as properties -> properties
             | _ -> VehiclePropertiesAbsent
         let bodyProperties =
             { Enabled = entity.GetBodyEnabled world
