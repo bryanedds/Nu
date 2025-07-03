@@ -47,6 +47,7 @@ module Gaia =
     let mutable private Futures = [] : (SnapshotType * WorldState) list
     let mutable private SelectedWindowOpt = Option<string>.None
     let mutable private SelectedWindowRestoreRequested = 0
+    let mutable private ViewResetRequested = false
     let mutable private EntityPropertiesFocusRequested = false
     let mutable private TimelineChanged = false
     let mutable private ManipulationActive = false
@@ -2534,6 +2535,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
+            if ImGui.Button "Reset View" then ViewResetRequested <- true
+            ImGui.SameLine ()
+            ImGui.Text "|"
+            ImGui.SameLine ()
             ImGui.Text "Capture Mode"
             ImGui.SameLine ()
             let mutable captureMode = CaptureMode
@@ -4127,6 +4132,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             World.setEye2dCenter DesiredEye2dCenter world
             World.setEye3dCenter DesiredEye3dCenter world
             World.setEye3dRotation DesiredEye3dRotation world
+
+        // reset view if requested
+        if ViewResetRequested then
+            File.Delete "imgui.ini" // NOTE: this is needed to reset windows to their default positions.
+            World.recreateImGui false world
+            ViewResetRequested <- false
 
     let rec private runWithCleanUpAndErrorProtection firstFrame world =
         try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess Live firstFrame world

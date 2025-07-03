@@ -1826,7 +1826,7 @@ and [<ReferenceEquality>] Dispatchers =
 
 /// The subsystems contained by the engine.
 and [<ReferenceEquality>] internal Subsystems =
-    { ImGui : ImGui
+    { mutable ImGui : ImGui
       PhysicsEngine2d : PhysicsEngine
       PhysicsEngine3d : PhysicsEngine
       RendererProcess : RendererProcess

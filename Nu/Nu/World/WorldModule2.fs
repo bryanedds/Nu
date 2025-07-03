@@ -38,6 +38,14 @@ module WorldModule2 =
 
     type World with
 
+        /// Recreate the ImGui subsystem with the given stub and display size.
+        /// TODO: see if we can use any upcoming window reset feature to avoid having to do or exposing this. See -
+        /// https://github.com/ocornut/imgui/issues/8500
+        static member recreateImGui stub (world : World) =
+            let outerViewport = Viewport.makeOuter Constants.Render.DisplayVirtualResolution
+            world.Subsystems.ImGui.CleanUp ()
+            world.Subsystems.ImGui <- ImGui (stub, outerViewport.Bounds.Size)
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
