@@ -176,11 +176,29 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
-        static member getWheelSpeedAtClutch bodyId (world : World) =
+        static member getBodyWheelSpeedAtClutch bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetWheelSpeedAtClutch bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetWheelSpeedAtClutch bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
+        static member getBodyWheelModelMatrix wheelModelRight wheelModelUp wheelIndex bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                m4Identity
+
+        static member getBodyWheelAngularVelocity wheelIndex bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetWheelAngularVelocity (wheelIndex, bodyId)
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetWheelAngularVelocity (wheelIndex, bodyId)
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 0.0f

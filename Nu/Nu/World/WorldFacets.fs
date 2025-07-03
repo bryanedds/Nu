@@ -1547,6 +1547,15 @@ type RigidBodyFacet () =
     override this.UnregisterPhysics (entity, world) =
         World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
+    override this.Edit (op, entity, world) =
+        match (op, entity.GetBodyType world) with
+        | (ViewportOverlay _, Vehicle) ->
+            let bodyId = entity.GetBodyId world
+            for i in 0 .. dec 4 do
+                let wheelModelMatrix = World.getBodyWheelModelMatrix v3Right v3Up i bodyId world
+                World.imGuiCircle3d wheelModelMatrix.Translation 5.0f false Color.Purple world
+        | (_, _) -> ()
+
 [<AutoOpen>]
 module BodyJointFacetExtensions =
     type Entity with
