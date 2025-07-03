@@ -1553,7 +1553,7 @@ type RigidBodyFacet () =
             let bodyId = entity.GetBodyId world
             for i in 0 .. dec 4 do
                 let wheelModelMatrix = World.getBodyWheelModelMatrix v3Right v3Up i bodyId world
-                World.imGuiCircle3d wheelModelMatrix.Translation 5.0f false Color.Purple world
+                World.imGuiCircle3d wheelModelMatrix.Translation 5.0f false Color.Yellow world
         | (_, _) -> ()
 
 [<AutoOpen>]
