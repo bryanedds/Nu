@@ -819,6 +819,8 @@ module WorldModule2 =
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
+            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbe3dFacet> world && entity.GetProbeStale world) entities3d then
+                World.requestLightMapRender world
                 
         static member internal evictScreenElements screen world =
             let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SArray.ofSeq
