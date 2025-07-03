@@ -1295,6 +1295,21 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 controller.WheelSpeedAtClutch
             | (false, _) -> 0.0f
 
+        member physicsEngine.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
+                let mutable wheelModelRight = wheelModelRight
+                let mutable wheelModelUp = wheelModelUp
+                vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp)
+            | (_, _) -> m4Identity
+
+        member physicsEngine.GetWheelAngularVelocity (wheelIndex, bodyId) =
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
+                let wheel = vehicleConstraint.GetWheel<WheelWV> wheelIndex
+                wheel.AngularVelocity
+            | (_, _) -> 0.0f
+
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
