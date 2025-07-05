@@ -2901,7 +2901,7 @@ module PhysicallyBased =
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
         if surfacesCount > 0 then
 
-            // setup dynamic state
+            // setup state
             match depthTest with
             | LessThanTest ->
                 Gl.DepthFunc DepthFunction.Less
@@ -3073,7 +3073,7 @@ module PhysicallyBased =
             Gl.BindVertexArray 0u
             Hl.Assert ()
 
-            // teardown dynamic state
+            // teardown state
             if not depthTest.IsAlwaysPassTest then
                 Gl.DepthFunc DepthFunction.Less
                 Gl.Disable EnableCap.DepthTest
