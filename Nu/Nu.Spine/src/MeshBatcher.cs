@@ -226,8 +226,7 @@ namespace Spine
                 Gl.Uniform1(uTexture, 0);
 
                 // setup texture
-                Gl.ActiveTexture(TextureUnit.Texture0);
-                Gl.BindTexture(TextureTarget.Texture2d, texture);
+                Gl.BindTextureUnit(0u, texture);
 
                 // setup geometry
                 Gl.BindBuffer(BufferTarget.ArrayBuffer, vbo);

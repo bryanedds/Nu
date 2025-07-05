@@ -283,8 +283,7 @@ module CubeMap =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap.TextureId)
+        Gl.BindTextureUnit (0u, cubeMap.TextureId)
         Hl.Assert ()
 
         // setup geometry
