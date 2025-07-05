@@ -2159,11 +2159,21 @@ type [<ReferenceEquality>] GlRenderer3d =
             (batchPhase, viewArray, projectionArray, bonesArray, eyeCenter,
              parameters.Count, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
+    static member private beginPhysicallyBasedForwardShader
+        viewArray projectionArray eyeCenter
+        lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity fogEnabled fogStart fogFinish fogColor ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity
+        brdfTexture irradianceMap environmentFilterMap irradianceMaps shader vao =
+
+        // begin shader
+        OpenGL.PhysicallyBased.BeginPhysicallyBasedForwardShader
+            (viewArray, projectionArray, eyeCenter,
+             lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, fogEnabled, fogStart, fogFinish, fogColor, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity,
+             brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, shader, vao)
+
     static member private renderPhysicallyBasedForwardSurfaces
-        viewArray projectionArray bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
-        eyeCenter lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity fogEnabled fogStart fogFinish fogColor ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity
-        brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
-        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowNear shadowMatrices
+        bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
+        irradianceMaps environmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) depthTest blending shader vao vertexSize renderer =
 
         // ensure we have a large enough instance fields array
@@ -2207,11 +2217,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-            (viewArray, projectionArray, bonesArrays, parameters.Length, renderer.InstanceFields,
-             eyeCenter, lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, fogEnabled, fogStart, fogFinish, fogColor, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity,
-             brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, shadowMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount,
-             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowNear, shadowMatrices,
+            (bonesArrays, parameters.Length, renderer.InstanceFields,
+             irradianceMaps, environmentFilterMaps, shadowTextures, shadowMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount,
+             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, shader, vao, vertexSize)
+
+    static member private endPhysicallyBasedForwardShader shader vao =
+
+        // end shader
+        OpenGL.PhysicallyBased.EndPhysicallyBasedForwardShader (shader, vao)
 
     static member private renderPhysicallyBasedTerrain
         viewArray geometryProjectionArray eyeCenter
@@ -2488,10 +2502,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightProjectionArray = lightProjection.ToArray ()
 
         // deferred render static surface shadows
-        let mutable enr = renderTasks.DeferredStatic.GetEnumerator ()
         let mutable i = 0
-        while enr.MoveNext () do
-            let entry = enr.Current
+        for entry in renderTasks.DeferredStatic do
             let batchPhase =
                 match renderTasks.DeferredStatic.Count with
                 | 1 -> SingletonPhase
@@ -2779,10 +2791,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // render static surfaces deferred
-        let mutable enr = renderTasks.DeferredStatic.GetEnumerator ()
         let mutable i = 0
-        while enr.MoveNext () do
-            let entry = enr.Current
+        for entry in renderTasks.DeferredStatic do
             let batchPhase =
                 match renderTasks.DeferredStatic.Count with
                 | 1 -> SingletonPhase
@@ -3028,9 +3038,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         | None -> ()
 
         // forward render surfaces to composition buffer
+        let forwardSsvfSteps =
+            renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
+        let forwardShaderAndVaos =
+            [(renderer.PhysicallyBasedShaders.ForwardStaticShader, renderer.PhysicallyBasedStaticVao)
+             (renderer.PhysicallyBasedShaders.ForwardAnimatedShader, renderer.PhysicallyBasedAnimatedVao)]
+        for (shader, vao) in forwardShaderAndVaos do
+            GlRenderer3d.beginPhysicallyBasedForwardShader
+                viewArray rasterProjectionArray eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                fogEnabled renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogColor ssvfEnabled forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
+                renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear shader vao
         for (model, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
-            let ssvfSteps =
-                renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get blurred.
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
                 SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
@@ -3050,14 +3069,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                     (bonesArrays, renderer.PhysicallyBasedShaders.ForwardAnimatedShader, renderer.PhysicallyBasedAnimatedVao, OpenGL.PhysicallyBased.AnimatedVertexSize)
                 | ValueNone -> ([||], renderer.PhysicallyBasedShaders.ForwardStaticShader, renderer.PhysicallyBasedStaticVao, OpenGL.PhysicallyBased.StaticVertexSize)
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
-                viewArray rasterProjectionArray bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
-                eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
-                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                fogEnabled renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogColor ssvfEnabled ssvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
-                renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count)
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear shadowMatrices
+                bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count)
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowMatrices
                 surface depthTest true shader vao vertexSize renderer
             OpenGL.Hl.Assert ()
+        for (shader, vao) in forwardShaderAndVaos do
+            GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
         // setup filter 0 buffer and viewport
         let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
