@@ -247,7 +247,6 @@ namespace Spine
                 Gl.DrawElements(PrimitiveType.Triangles, num_indices, DrawElementsType.UnsignedShort, IntPtr.Zero);
 
                 // teardown shader
-                Gl.BindTexture(TextureTarget.Texture2d, 0u);
                 Gl.UseProgram(0u);
 
                 // teardown vao

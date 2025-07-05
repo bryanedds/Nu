@@ -2342,6 +2342,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.FilterBoxShader
@@ -2364,11 +2365,6 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -2386,6 +2382,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
         
         // setup shader
         Gl.UseProgram shader.FilterGaussianShader
@@ -2410,8 +2407,6 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -2428,6 +2423,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.FilterBilateralDownSampleShader
@@ -2454,10 +2450,6 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -2475,6 +2467,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.FilterBilateralUpSampleShader
@@ -2504,12 +2497,6 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -2525,6 +2512,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.FilterFxaaShader
@@ -2548,8 +2536,6 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -2586,6 +2572,7 @@ module PhysicallyBased =
 
             // setup vao
             Gl.BindVertexArray vao
+            Hl.Assert ()
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
@@ -2672,6 +2659,7 @@ module PhysicallyBased =
 
             // setup vao
             Gl.BindVertexArray vao
+            Hl.Assert ()
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
@@ -2741,28 +2729,6 @@ module PhysicallyBased =
             Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
             Hl.ReportDrawCall surfacesCount
             Hl.Assert ()
-
-            // teardown textures
-            Gl.ActiveTexture TextureUnit.Texture0
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture1
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture2
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture3
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture4
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture5
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture6
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture7
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture8
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture9
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
         // stop batch
         if batchPhase.Stopping then
@@ -2931,9 +2897,11 @@ module PhysicallyBased =
 
             // setup vao
             Gl.BindVertexArray vao
+            Hl.Assert ()
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
+            Hl.Assert ()
 
             // setup position-specific state
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
@@ -3035,36 +3003,6 @@ module PhysicallyBased =
             Hl.ReportDrawCall surfacesCount
             Hl.Assert ()
 
-            // teardown textures
-            Gl.ActiveTexture TextureUnit.Texture0
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture1
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture2
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture3
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture4
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture5
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.ActiveTexture TextureUnit.Texture6
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            // NOTE: textures 7 through 9 are configured in begin / end functions.
-            for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-            for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-            for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-            Hl.Assert ()
-
             // teardown shader
             Gl.UseProgram 0u
             Hl.Assert ()
@@ -3085,14 +3023,7 @@ module PhysicallyBased =
 
     /// End the process of drawing with a forward shader.
     let EndPhysicallyBasedForwardShader (_ : PhysicallyBasedShader, _ : uint) =
-
-        // teardown common textures
-        Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Gl.ActiveTexture TextureUnit.Texture9
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        () // nothing to do
 
     let DrawPhysicallyBasedTerrain
         (view : single array,
@@ -3121,6 +3052,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
         
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedShader
@@ -3181,12 +3113,6 @@ module PhysicallyBased =
         Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
         Hl.Assert ()
-
-        // teardown textures
-        for i in 0 .. dec layersCount * 5 do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
         
         // teardown shader
         Gl.UseProgram 0u
@@ -3215,6 +3141,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightMappingShader
@@ -3248,13 +3175,6 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -3276,6 +3196,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredAmbientShader
@@ -3307,13 +3228,6 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -3334,6 +3248,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredIrradianceShader
@@ -3370,20 +3285,6 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 4 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -3409,6 +3310,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredEnvironmentFilterShader
@@ -3455,22 +3357,6 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 5 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -3496,6 +3382,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredSsaoShader
@@ -3527,13 +3414,6 @@ module PhysicallyBased =
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader
@@ -3612,6 +3492,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightingShader
@@ -3735,37 +3616,6 @@ module PhysicallyBased =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture9
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture10
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -3789,6 +3639,7 @@ module PhysicallyBased =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredCompositionShader
@@ -3820,15 +3671,6 @@ module PhysicallyBased =
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
-        Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader

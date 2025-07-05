@@ -276,6 +276,7 @@ module CubeMap =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.CubeMapShader
@@ -297,8 +298,6 @@ module CubeMap =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
