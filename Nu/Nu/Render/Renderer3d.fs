@@ -3156,7 +3156,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderLightProbe3d rlp ->
                 let renderTasks = GlRenderer3d.getRenderTasks rlp.RenderPass renderer
                 if renderTasks.LightProbes.ContainsKey rlp.LightProbeId then
-                    Log.infoOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
+                    Log.warnOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
                     renderTasks.LightProbes.Remove rlp.LightProbeId |> ignore<bool>
                 renderTasks.LightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.AmbientColor, rlp.AmbientBrightness, rlp.Bounds))
             | RenderLightMap3d rlm ->
@@ -3248,7 +3248,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
 
-        // light map pre-passes and shadow pass accumulation
+        // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
 
             // fallback light map pre-pass
@@ -3473,8 +3473,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                             renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax)
 
                             // update renderer values or next shadow
-                            // NOTE: this behavior completely DEPENDS on shadow face messages for a shadow map
-                            // being received and processed in numerical order.
+                            // NOTE: this behavior completely DEPENDS on shadow face messages for a shadow map being
+                            // received and processed in numerical order.
                             if shadowFace = 0 then
                                 renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMax
                             elif shadowFace = dec 6 then
