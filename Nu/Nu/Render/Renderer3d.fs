@@ -619,32 +619,33 @@ type RenderMessage3d =
     | UnloadRenderPackage3d of string
     | ReloadRenderAssets3d
 
-    member this.PrePass =
+    /// Determines the render phase of the message for internal uses.
+    member this.RenderPhase =
         match this with
-        | CreateUserDefinedStaticModel _ -> true
-        | DestroyUserDefinedStaticModel _ -> true
-        | RenderSkyBox _ -> true
-        | RenderLightProbe3d _ -> true
-        | RenderLightMap3d _ -> true
-        | RenderLight3d _ -> true
-        | RenderBillboard renderBillboard -> not renderBillboard.RenderPass.IsNormalPass
-        | RenderBillboards renderBillboards -> not renderBillboards.RenderPass.IsNormalPass
-        | RenderBillboardParticles renderBillboardParticles -> not renderBillboardParticles.RenderPass.IsNormalPass
-        | RenderStaticModelSurface renderStaticModelSurface -> not renderStaticModelSurface.RenderPass.IsNormalPass
-        | RenderStaticModel renderStaticModel -> not renderStaticModel.RenderPass.IsNormalPass
-        | RenderStaticModels renderStaticModels -> not renderStaticModels.RenderPass.IsNormalPass
-        | RenderCachedStaticModel cachedStaticModelMessage -> not cachedStaticModelMessage.CachedStaticModelRenderPass.IsNormalPass
-        | RenderCachedStaticModelSurface cachedStaticModelSurfaceMessage -> not cachedStaticModelSurfaceMessage.CachedStaticModelSurfaceRenderPass.IsNormalPass
-        | RenderUserDefinedStaticModel renderUserDefinedStaticModel -> not renderUserDefinedStaticModel.RenderPass.IsNormalPass
-        | RenderAnimatedModel renderAnimatedModel -> not renderAnimatedModel.RenderPass.IsNormalPass
-        | RenderAnimatedModels renderAnimatedModels -> not renderAnimatedModels.RenderPass.IsNormalPass
-        | RenderCachedAnimatedModel cachedAnimatedModelMessage -> not cachedAnimatedModelMessage.CachedAnimatedModelRenderPass.IsNormalPass
-        | RenderTerrain renderTerrain -> not renderTerrain.RenderPass.IsNormalPass
-        | ConfigureLighting3d _ -> true
-        | ConfigureRenderer3d _ -> true
-        | LoadRenderPackage3d _ -> true
-        | UnloadRenderPackage3d _ -> true
-        | ReloadRenderAssets3d -> true
+        | CreateUserDefinedStaticModel _ -> Choice1Of3 ()
+        | DestroyUserDefinedStaticModel _ -> Choice1Of3 ()
+        | RenderSkyBox _ -> Choice1Of3 ()
+        | RenderLightProbe3d _ -> Choice1Of3 ()
+        | RenderLightMap3d _ -> Choice1Of3 ()
+        | RenderLight3d _ -> Choice1Of3 ()
+        | RenderBillboard renderBillboard -> renderBillboard.RenderPass.Category
+        | RenderBillboards renderBillboards -> renderBillboards.RenderPass.Category
+        | RenderBillboardParticles renderBillboardParticles -> renderBillboardParticles.RenderPass.Category
+        | RenderStaticModelSurface renderStaticModelSurface -> renderStaticModelSurface.RenderPass.Category
+        | RenderStaticModel renderStaticModel -> renderStaticModel.RenderPass.Category
+        | RenderStaticModels renderStaticModels -> renderStaticModels.RenderPass.Category
+        | RenderCachedStaticModel cachedStaticModelMessage -> cachedStaticModelMessage.CachedStaticModelRenderPass.Category
+        | RenderCachedStaticModelSurface cachedStaticModelSurfaceMessage -> cachedStaticModelSurfaceMessage.CachedStaticModelSurfaceRenderPass.Category
+        | RenderUserDefinedStaticModel renderUserDefinedStaticModel -> renderUserDefinedStaticModel.RenderPass.Category
+        | RenderAnimatedModel renderAnimatedModel -> renderAnimatedModel.RenderPass.Category
+        | RenderAnimatedModels renderAnimatedModels -> renderAnimatedModels.RenderPass.Category
+        | RenderCachedAnimatedModel cachedAnimatedModelMessage -> cachedAnimatedModelMessage.CachedAnimatedModelRenderPass.Category
+        | RenderTerrain renderTerrain -> renderTerrain.RenderPass.Category
+        | ConfigureLighting3d _ -> Choice1Of3 ()
+        | ConfigureRenderer3d _ -> Choice1Of3 ()
+        | LoadRenderPackage3d _ -> Choice1Of3 ()
+        | UnloadRenderPackage3d _ -> Choice1Of3 ()
+        | ReloadRenderAssets3d -> Choice1Of3 ()
 
 /// A sortable light map.
 /// OPTIMIZATION: mutable field for caching distance squared.
@@ -931,8 +932,7 @@ type Renderer3d =
         eyeFieldOfView : single ->
         geometryViewport : Viewport ->
         rasterViewport : Viewport ->
-        renderMessagesPrePass : RenderMessage3d List ->
-        renderMessagesPerPass : RenderMessage3d List ->
+        renderMessages : Dictionary<Choice<unit, uint64, unit>, RenderMessage3d SList> ->
         unit
 
     /// Handle render clean up by freeing all loaded render assets.
@@ -945,7 +945,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
-        member renderer.Render _ _ _ _ _ _ _ _ _ _ _ = ()
+        member renderer.Render _ _ _ _ _ _ _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -1885,8 +1885,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let direction = lightMatrix.Rotation.Down
                     let unculled =
                         match renderPass with
-                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false true presence lightBounds
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false true presence lightBounds
                         | _ -> false
                     if unculled then
                         let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
@@ -1923,9 +1923,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let properties = if scatterType <> properties.ScatterType then { properties with ScatterTypeOpt = ValueSome scatterType } else properties
                     let unculled =
                         match renderPass with
-                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                         | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
+                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
                     if unculled then
                         GlRenderer3d.categorizeStaticModelSurface (&surfaceMatrix, castShadow, presence, &insetOpt, &properties, surface, depthTest, renderType, renderPass, ValueSome renderTasks, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
@@ -2522,7 +2522,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = twoSided }
         surfaceMaterial
 
-    static member private categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation (messages : _ List) (staticModelsToDestroy : _ SList) renderer =
+    static member private categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation (messages : _ SList) (staticModelsToDestroy : _ SList) renderer =
         for message in messages do
             match message with
             | CreateUserDefinedStaticModel cudsm ->
@@ -3263,7 +3263,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
     /// Render 3d surfaces.
-    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessagesPrePass renderMessagesPerPass renderer =
+    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer (renderMessages : Dictionary<_, _ SList>) renderer =
 
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
@@ -3274,9 +3274,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.GeometryViewport <- geometryViewport
         renderer.RasterViewport <- rasterViewport
 
-        // categorize pre-pass messages
+        // categorize early messages
         let staticModelsToDestroy = SList.make ()
-        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPrePass staticModelsToDestroy renderer
+        let messagesEarly = match renderMessages.TryGetValue (Choice1Of3 ()) with (true, messages) -> messages | (false, _) -> SList.make ()
+        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation messagesEarly staticModelsToDestroy renderer
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
@@ -3395,6 +3396,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match renderPass with
                     | ShadowPass (shadowLightId, shadowFaceInfoOpt, shadowLightType, shadowRotation, _) when lightId = shadowLightId && shadowFaceInfoOpt.IsNone && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
 
+                        // flush and categorize relevant shadow messages
+                        OpenGL.Gl.Flush ()
+                        let messagesShadow = match renderMessages.TryGetValue (Choice2Of3 lightId) with (true, messages) -> messages | (false, _) -> SList.make ()
+                        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation messagesShadow staticModelsToDestroy renderer
+
                         // attempt to set up shadow texture drawing
                         let (shadowOrigin, shadowView, shadowProjection) =
                             match shadowLightType with
@@ -3479,6 +3485,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                         match shadowLightType with
                         | PointLight ->
 
+                            // flush and categorize relevant shadow messages
+                            OpenGL.Gl.Flush ()
+                            let messagesShadow = match renderMessages.TryGetValue (Choice2Of3 lightId) with (true, messages) -> messages | (false, _) -> SList.make ()
+                            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation messagesShadow staticModelsToDestroy renderer
+
                             // destructure shadow face info
                             let (shadowFace, shadowView, shadowProjection) = shadowFaceInfoOpt.Value
                             let shadowViewProjection = shadowView * shadowProjection
@@ -3513,9 +3524,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | SpotLight (_, _) | DirectionalLight -> failwithumf ()
                     | _ -> ()
 
-        // flush (1 of 3) and categorize per-pass messages
+        // flush and categorize late messages
         OpenGL.Gl.Flush ()
-        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPerPass staticModelsToDestroy renderer
+        let messagesLate = match renderMessages.TryGetValue (Choice3Of3 ()) with (true, messages) -> messages | (false, _) -> SList.make ()
+        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation messagesLate staticModelsToDestroy renderer
 
         // top-level geometry pass
         let view = Viewport.getView3d eyeCenter eyeRotation
@@ -3529,7 +3541,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
             renderbuffer framebuffer
 
-        // flush (2 of 3)
+        // flush late operations
         OpenGL.Gl.Flush ()
 
         // reset terrain geometry book-keeping
@@ -3561,7 +3573,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // clear lighting config dirty flag
         renderer.LightingConfigChanged <- false
 
-        // flush (3 of 3)
+        // flush remaining operations
         OpenGL.Gl.Flush ()
 
     /// Make a GlRenderer3d.
@@ -3898,9 +3910,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.RendererConfig =
             renderer.RendererConfig
 
-        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessagesPrePass renderMessagesPerPass =
-            if renderMessagesPerPass.Count > 0 then
-                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessagesPrePass renderMessagesPerPass renderer
+        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
+            if renderMessages.Count > 0 then
+                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapVao|]

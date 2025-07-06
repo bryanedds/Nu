@@ -1516,7 +1516,6 @@ module WorldModule2 =
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
-                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 | LightMapPass (_, lightMapBounds) ->
                     let hashSet = HashSet ()
                     World.getElements3dInViewBox lightMapBounds hashSet world
@@ -1524,10 +1523,11 @@ module WorldModule2 =
                         if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
+                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 match renderPass with
-                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _, _) -> ()
+                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 world.Timers.RenderGatherTimer.Stop ()
 
                 // render game

@@ -51,9 +51,16 @@ type [<Struct>] RenderType =
 
 /// Describes the nature of the rendering that takes place.
 type RenderPass =
-    | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
     | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | NormalPass
+
+    /// The category used internally for ordering renderer categorization.
+    member this.Category =
+        match this with
+        | LightMapPass _ -> Choice1Of3 ()
+        | ShadowPass (lightId, _, _, _, _) -> Choice2Of3 lightId
+        | NormalPass -> Choice3Of3 ()
 
     /// Check that a render pass should displace another.
     static member displaces renderPass renderPass2 =
