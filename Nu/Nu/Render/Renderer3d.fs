@@ -2092,7 +2092,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         forwardSurfacesSortBuffer
 
     static member private renderPhysicallyBasedDepthSurfaces
-        batchPhase eyeCenter viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
+        batchPhase eyeCenter viewArray projectionArray viewProjectionArray bonesArray (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
 
         // ensure we have a large enough instance fields array
@@ -2108,11 +2108,11 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // draw surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDepthSurfaces
-            (batchPhase, eyeCenter, viewArray, projectionArray, bonesArray, parameters.Count,
+            (batchPhase, eyeCenter, viewArray, projectionArray, viewProjectionArray, bonesArray, parameters.Count,
              renderer.InstanceFields, renderer.LightingConfig.LightShadowExponent, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
+        batchPhase viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
                                                                       
         // ensure we have a large enough instance fields array
@@ -2156,17 +2156,17 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-            (batchPhase, viewArray, projectionArray, bonesArray, eyeCenter,
+            (batchPhase, viewArray, projectionArray, viewProjectionArray, bonesArray, eyeCenter,
              parameters.Count, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
     static member private beginPhysicallyBasedForwardShader
-        viewArray projectionArray eyeCenter
+        viewArray projectionArray viewProjectionArray eyeCenter
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity fogEnabled fogStart fogFinish fogColor ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity
         brdfTexture irradianceMap environmentFilterMap irradianceMaps shader vao =
 
         // begin shader
         OpenGL.PhysicallyBased.BeginPhysicallyBasedForwardShader
-            (viewArray, projectionArray, eyeCenter,
+            (viewArray, projectionArray, viewProjectionArray, eyeCenter,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, fogEnabled, fogStart, fogFinish, fogColor, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity,
              brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, shader, vao)
 
@@ -2228,7 +2228,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.EndPhysicallyBasedForwardShader (shader, vao)
 
     static member private renderPhysicallyBasedTerrain
-        viewArray geometryProjectionArray eyeCenter
+        viewArray projectionArray viewProjectionArray eyeCenter
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity terrainDescriptor geometry shader vao renderer =
         let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)                
         let elementsCount = dec resolutionX * dec resolutionY * 6
@@ -2336,7 +2336,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                    materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission
                    texelHeight * materialProperties.Height|])
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
-            (viewArray, geometryProjectionArray, eyeCenter,
+            (viewArray, projectionArray, viewProjectionArray, eyeCenter,
              instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader, vao)
         OpenGL.Hl.Assert ()
 
@@ -2495,11 +2495,12 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = twoSided }
         surfaceMaterial
 
-    static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) lightType renderTasks renderer =
+    static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) (lightViewProjection : Matrix4x4) lightType renderTasks renderer =
 
         // compute matrix arrays
         let lightViewArray = lightView.ToArray ()
         let lightProjectionArray = lightProjection.ToArray ()
+        let lightViewProjectionArray = lightViewProjection.ToArray ()
 
         // deferred render static surface shadows
         let mutable i = 0
@@ -2514,7 +2515,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                batchPhase lightOrigin lightViewArray lightProjectionArray [||] entry.Value
+                batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
                 entry.Key shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
             i <- inc i
@@ -2535,7 +2536,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
                 | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays parameters
+                SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays parameters
                 surfaceKey.AnimatedSurface shadowShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
             OpenGL.Hl.Assert ()
 
@@ -2547,7 +2548,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
                 | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
             GlRenderer3d.renderPhysicallyBasedTerrain
-                lightViewArray lightProjectionArray lightOrigin
+                lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 descriptor geometry shadowShader renderer.PhysicallyBasedTerrainVao renderer
 
@@ -2565,7 +2566,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
                     | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays (List ([struct (model, false, presence, texCoordsOffset, properties)]))
+                    SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                     surface shadowShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
                 OpenGL.Hl.Assert ()
             | ValueNone ->
@@ -2575,7 +2576,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                     | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    SingletonPhase lightOrigin lightViewArray lightProjectionArray [||] (List ([struct (model, false, presence, texCoordsOffset, properties)]))
+                    SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                     surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
                 OpenGL.Hl.Assert ()
 
@@ -2585,6 +2586,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (lightOrigin : Vector3)
         (lightView : Matrix4x4)
         (lightProjection : Matrix4x4)
+        (lightViewProjection : Matrix4x4)
         (lightType : LightType)
         (shadowResolution : Vector2i)
         (renderbuffer : uint)
@@ -2604,7 +2606,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // actually render shadow
-        GlRenderer3d.renderShadow lightOrigin lightView lightProjection lightType renderTasks renderer
+        GlRenderer3d.renderShadow lightOrigin lightView lightProjection lightViewProjection lightType renderTasks renderer
 
         // unbind shadow mapping frame buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
@@ -2617,6 +2619,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (shadowFace : int)
         (shadowView : Matrix4x4)
         (shadowProjection : Matrix4x4)
+        (shadowViewProjection : Matrix4x4)
         (shadowResolution : Vector2i)
         (shadowMap : OpenGL.Texture.Texture)
         (renderbuffer : uint)
@@ -2636,7 +2639,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
         
         // render to shadow map face
-        GlRenderer3d.renderShadow lightOrigin shadowView shadowProjection PointLight renderTasks renderer
+        GlRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowViewProjection PointLight renderTasks renderer
         OpenGL.Hl.Assert ()
         
         let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + shadowFace)
@@ -2657,6 +2660,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (viewSkyBox : Matrix4x4)
         (geometryFrustum : Frustum)
         (geometryProjection : Matrix4x4)
+        (geometryViewProjection : Matrix4x4)
         (rasterBounds : Box2i)
         (rasterProjection : Matrix4x4)
         (renderbuffer : uint)
@@ -2668,9 +2672,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewInverseArray = viewInverse.ToArray ()
         let viewSkyBoxArray = viewSkyBox.ToArray ()
         let geometryProjectionArray = geometryProjection.ToArray ()
+        let geometryViewProjectionArray = geometryViewProjection.ToArray ()
         let rasterProjectionArray = rasterProjection.ToArray ()
         let rasterProjectionInverse = rasterProjection.Inverted
         let rasterProjectionInverseArray = rasterProjectionInverse.ToArray ()
+        let rasterViewProjection = view * rasterProjection
+        let rasterViewProjectionArray = rasterViewProjection.ToArray ()
+        let rasterViewProjectionSkyBox = viewSkyBox * rasterProjection
+        let rasterViewProjectionSkyBoxArray = rasterViewProjectionSkyBox.ToArray ()
 
         // get ambient lighting, sky box opt, and fallback light map
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = GlRenderer3d.getLastSkyBoxOpt renderPass renderer
@@ -2802,7 +2811,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                batchPhase viewArray geometryProjectionArray [||] eyeCenter entry.Value
+                batchPhase viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter entry.Value
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 entry.Key renderer.PhysicallyBasedShaders.DeferredStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
@@ -2817,7 +2826,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let boneArray = surfaceKey.BoneTransforms.[i].ToArray ()
                 bonesArrays.[i] <- boneArray
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                SingletonPhase viewArray geometryProjectionArray bonesArrays eyeCenter parameters
+                SingletonPhase viewArray geometryProjectionArray geometryViewProjectionArray bonesArrays eyeCenter parameters
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surfaceKey.AnimatedSurface renderer.PhysicallyBasedShaders.DeferredAnimatedShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
             OpenGL.Hl.Assert ()
@@ -2825,7 +2834,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // render terrains deferred
         for (descriptor, geometry) in renderTasks.DeferredTerrains do
             GlRenderer3d.renderPhysicallyBasedTerrain
-                viewArray geometryProjectionArray eyeCenter
+                viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
                 descriptor geometry renderer.PhysicallyBasedShaders.DeferredTerrainShader renderer.PhysicallyBasedTerrainVao renderer
 
@@ -2925,7 +2934,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // deferred render ssao quad
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSsaoSurface
-                    (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray,
+                    (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, rasterViewProjectionArray,
                      depthTexture, normalPlusTexture, [|ssaoResolution.X; ssaoResolution.Y|],
                      renderer.LightingConfig.SsaoIntensity, renderer.LightingConfig.SsaoBias, renderer.LightingConfig.SsaoRadius, renderer.LightingConfig.SsaoDistanceMax, renderer.RendererConfig.SsaoSampleCount,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredSsaoShader, renderer.PhysicallyBasedStaticVao)
@@ -2962,7 +2971,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssrEnabled = if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0
         let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
-            (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin, renderer.LightingConfig.LightAmbientBoostCutoff, renderer.LightingConfig.LightAmbientBoostScalar,
+            (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, rasterViewProjectionArray, renderer.LightingConfig.LightCutoffMargin, renderer.LightingConfig.LightAmbientBoostCutoff, renderer.LightingConfig.LightAmbientBoostScalar,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
              sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
              ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
@@ -3038,7 +3047,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // attempt to render sky box to composition buffer
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, rasterProjectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.SkyBoxShader, renderer.CubeMapVao)
+            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, rasterProjectionArray, rasterViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.SkyBoxShader, renderer.CubeMapVao)
             OpenGL.Hl.Assert ()
         | None -> ()
 
@@ -3050,7 +3059,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              (renderer.PhysicallyBasedShaders.ForwardAnimatedShader, renderer.PhysicallyBasedAnimatedVao)]
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.beginPhysicallyBasedForwardShader
-                viewArray rasterProjectionArray eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                viewArray rasterProjectionArray rasterViewProjectionArray eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogColor ssvfEnabled forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
                 renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear shader vao
@@ -3388,9 +3397,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                         if shouldDraw then
 
                             // draw shadow texture
+                            let shadowViewProjection = shadowView * shadowProjection
                             let shadowResolution = renderer.GeometryViewport.ShadowTextureResolution
                             let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
-                            GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
+                            GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowViewProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
 
                             // filter shadows on the x (presuming that viewport already configured correctly)
                             let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowTextureBuffers2Array.[shadowTextureBufferIndex]
@@ -3441,6 +3451,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                             // destructure shadow face info
                             let (shadowFace, shadowView, shadowProjection) = shadowFaceInfoOpt.Value
+                            let shadowViewProjection = shadowView * shadowProjection
 
                             // draw shadow texture when not cached
                             // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map
@@ -3456,7 +3467,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             if shouldDraw then
                                 let shadowResolution = renderer.GeometryViewport.ShadowMapResolution
                                 let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowMapBuffersArray.[shadowMapBufferIndex]
-                                GlRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
+                                GlRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowViewProjection shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
                             // remember the utilized index for the next frame
                             renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax)
@@ -3473,17 +3484,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | _ -> ()
 
         // top-level geometry pass
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
+        let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
+        let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
+        let geometryViewProjection = view * geometryProjection
+        let rasterProjection = Viewport.getProjection3d eyeFieldOfView rasterViewport
         GlRenderer3d.renderGeometry
             normalPass normalTasks renderer
-            true None eyeCenter
-            (Viewport.getView3d eyeCenter eyeRotation)
-            (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)
-            (Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport)
-            (Viewport.getProjection3d eyeFieldOfView geometryViewport)
-            rasterViewport.Bounds
-            (Viewport.getProjection3d eyeFieldOfView rasterViewport)
-            renderbuffer
-            framebuffer
+            true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
+            renderbuffer framebuffer
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()

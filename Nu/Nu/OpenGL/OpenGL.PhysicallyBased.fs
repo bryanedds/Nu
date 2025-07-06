@@ -309,6 +309,7 @@ module PhysicallyBased =
     type PhysicallyBasedShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ViewProjectionUniform : int
           BonesUniforms : int array
           EyeCenterUniform : int
           LightCutoffMarginUniform : int
@@ -373,6 +374,7 @@ module PhysicallyBased =
     type PhysicallyBasedDeferredTerrainShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ViewProjectionUniform : int
           EyeCenterUniform : int
           LightShadowSamplesUniform : int
           LightShadowBiasUniform : int
@@ -448,6 +450,7 @@ module PhysicallyBased =
           ViewInverseUniform : int
           ProjectionUniform : int
           ProjectionInverseUniform : int
+          ViewProjectionUniform : int
           DepthTextureUniform : int
           NormalPlusTextureUniform : int
           SsaoResolution : int
@@ -465,6 +468,7 @@ module PhysicallyBased =
           ViewInverseUniform : int
           ProjectionUniform : int
           ProjectionInverseUniform : int
+          ViewProjectionUniform : int
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -1783,6 +1787,7 @@ module PhysicallyBased =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let bonesUniforms =
             Array.init Constants.Render.BonesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "bones[" + string i + "]")
@@ -1891,6 +1896,7 @@ module PhysicallyBased =
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ViewProjectionUniform = viewProjectionUniform
           BonesUniforms = bonesUniforms
           EyeCenterUniform = eyeCenterUniform
           LightCutoffMarginUniform = lightCutoffMarginUniform
@@ -1962,6 +1968,7 @@ module PhysicallyBased =
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
         let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
@@ -1988,6 +1995,7 @@ module PhysicallyBased =
         { EyeCenterUniform = eyeCenterUniform
           ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ViewProjectionUniform = viewProjectionUniform
           LightShadowSamplesUniform = lightShadowSamplesUniform
           LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
@@ -2158,6 +2166,7 @@ module PhysicallyBased =
         let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let ssaoResolution = Gl.GetUniformLocation (shader, "ssaoResolution")
@@ -2173,6 +2182,7 @@ module PhysicallyBased =
           ViewInverseUniform = viewInverseUniform
           ProjectionUniform = projectionUniform
           ProjectionInverseUniform = projectionInverseUniform
+          ViewProjectionUniform = viewProjectionUniform
           DepthTextureUniform = depthTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
           SsaoResolution = ssaoResolution
@@ -2196,6 +2206,7 @@ module PhysicallyBased =
         let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -2293,6 +2304,7 @@ module PhysicallyBased =
           ViewInverseUniform = viewInverseUniform
           ProjectionUniform = projectionUniform
           ProjectionInverseUniform = projectionInverseUniform
+          ViewProjectionUniform = viewProjectionUniform
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
@@ -2594,6 +2606,7 @@ module PhysicallyBased =
          eyeCenter : Vector3,
          view : single array,
          projection : single array,
+         viewProjection : single array,
          bones : single array array,
          surfacesCount : int,
          instanceFields : single array,
@@ -2625,6 +2638,7 @@ module PhysicallyBased =
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
             Gl.UniformMatrix4 (shader.ViewUniform, false, view)
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+            Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
@@ -2676,6 +2690,7 @@ module PhysicallyBased =
         (batchPhase : BatchPhase,
          view : single array,
          projection : single array,
+         viewProjection : single array,
          bones : single array array,
          eyeCenter : Vector3,
          surfacesCount : int,
@@ -2711,6 +2726,7 @@ module PhysicallyBased =
             Gl.UseProgram shader.PhysicallyBasedShader
             Gl.UniformMatrix4 (shader.ViewUniform, false, view)
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+            Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
@@ -2789,6 +2805,7 @@ module PhysicallyBased =
     let BeginPhysicallyBasedForwardShader
         (view : single array,
          projection : single array,
+         viewProjection : single array,
          eyeCenter : Vector3,
          lightCutoffMargin : single,
          lightAmbientColor : Color,
@@ -2819,6 +2836,7 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor.R, lightAmbientColor.G, lightAmbientColor.B)
@@ -3050,6 +3068,7 @@ module PhysicallyBased =
     let DrawPhysicallyBasedTerrain
         (view : single array,
          projection : single array,
+         viewProjection : single array,
          eyeCenter : Vector3,
          instanceFields : single array,
          lightShadowSamples : int,
@@ -3080,6 +3099,7 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
         Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
@@ -3395,6 +3415,7 @@ module PhysicallyBased =
          viewInverse : single array,
          projection : single array,
          projectionInverse : single array,
+         viewProjection : single array,
          depthTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
          ssaoResolution : int array,
@@ -3418,6 +3439,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 1)
         Gl.Uniform2 (shader.SsaoResolution, ssaoResolution)
@@ -3458,6 +3480,7 @@ module PhysicallyBased =
          viewInverse : single array,
          projection : single array,
          projectionInverse : single array,
+         viewProjection : single array,
          lightCutoffMargin : single,
          lightAmbientBoostCutoff : single,
          lightAmbientBoostScalar : single,
@@ -3531,6 +3554,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         Gl.Uniform1 (shader.LightAmbientBoostCutoffUniform, lightAmbientBoostCutoff)
         Gl.Uniform1 (shader.LightAmbientBoostScalarUniform, lightAmbientBoostScalar)
