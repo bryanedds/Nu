@@ -484,7 +484,6 @@ module Freezer3dFacetModule =
                     | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
                     | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
                     | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
-                    | ReflectionPass (_, _) -> false
 
             // render unculled surfaces
             let bounds = entity.GetBounds world

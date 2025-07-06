@@ -54,7 +54,6 @@ type RenderPass =
     | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
     | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
-    | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
     /// Check that a render pass should displace another.
     static member displaces renderPass renderPass2 =
@@ -68,7 +67,6 @@ type RenderPass =
                 | struct (Some faceInfo, Some faceInfo2) -> Triple.fst faceInfo = Triple.fst faceInfo2
                 | struct (None, None) -> true
                 | struct (_, _) ->  false
-            | (ReflectionPass (reflectorId, _), ReflectionPass (reflectorId2, _)) -> reflectorId = reflectorId2
             | (_, _) -> false
         else false
 

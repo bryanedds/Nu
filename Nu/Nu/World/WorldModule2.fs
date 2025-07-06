@@ -1524,12 +1524,10 @@ module WorldModule2 =
                         if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
-                | ReflectionPass (_, _) -> ()
                 match renderPass with
                 | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _, _) -> ()
-                | ReflectionPass (_, _) -> ()
                 world.Timers.RenderGatherTimer.Stop ()
 
                 // render game
