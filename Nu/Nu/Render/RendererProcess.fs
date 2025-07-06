@@ -52,12 +52,18 @@ type RendererInline () =
     let mutable terminated = false
     let mutable windowOpt = Option<Window>.None
     let mutable glFinishRequired = false
-    let mutable messages3d = List ()
+    let mutable messages3dPrePass = List ()
+    let mutable messages3dPerPass = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
     let mutable dependenciesOpt = Option<nativeint * Renderer3d * Renderer2d * RendererImGui>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
+
+    let enqueueMessage3d (message : RenderMessage3d) =
+        if message.PrePass
+        then messages3dPrePass.Add message
+        else messages3dPerPass.Add message
 
     interface RendererProcess with
 
@@ -120,22 +126,22 @@ type RendererInline () =
 
         member ri.EnqueueMessage3d message =
             match dependenciesOpt with
-            | Some _ -> messages3d.Add message 
+            | Some _ -> enqueueMessage3d message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, depthTest, renderType, renderPass) =
             match dependenciesOpt with
-            | Some _ -> messages3d.Add (RenderStaticModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; StaticModel = staticModel; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
+            | Some _ -> enqueueMessage3d (RenderStaticModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; StaticModel = staticModel; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
             match dependenciesOpt with
-            | Some _ -> messages3d.Add (RenderStaticModelSurface { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; StaticModel = staticModel; SurfaceIndex = surfaceIndex; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
+            | Some _ -> enqueueMessage3d (RenderStaticModelSurface { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; StaticModel = staticModel; SurfaceIndex = surfaceIndex; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
             match dependenciesOpt with
-            | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualRenderedSurfaceIndices = drsIndices; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
+            | Some _ -> enqueueMessage3d (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualRenderedSurfaceIndices = drsIndices; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.EnqueueMessage2d message =
@@ -154,7 +160,8 @@ type RendererInline () =
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.ClearMessages () =
-            messages3d.Clear ()
+            messages3dPrePass.Clear ()
+            messages3dPerPass.Clear ()
             messages2d.Clear ()
             messagesImGui.Clear ()
 
@@ -167,8 +174,9 @@ type RendererInline () =
                 OpenGL.Hl.Assert ()
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3d
-                messages3d.Clear ()
+                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3dPrePass messages3dPerPass
+                messages3dPrePass.Clear ()
+                messages3dPerPass.Clear ()
                 OpenGL.Hl.Assert ()
 
                 // render 2d
@@ -213,12 +221,12 @@ type RendererThread () =
     let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Vector2i * Viewport * Viewport * Viewport * ImDrawDataPtr>.None
+    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Vector2i * Viewport * Viewport * Viewport * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swapRequested = false
     let [<VolatileField>] mutable swapCompleted = false
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let [<VolatileField>] mutable messageBufferIndex = 0
-    let messageBuffers3d = [|List (); List ()|]
+    let messageBuffers3d = [|(List (), List ()); (List (), List ())|]
     let messageBuffers2d = [|List (); List ()|]
     let messageBuffersImGui = [|List (); List ()|]
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
@@ -235,6 +243,12 @@ type RendererThread () =
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+
+    let enqueueMessage3d (message : RenderMessage3d) =
+        let (messages3dPrePass, messages3dPerPass) = messageBuffers3d.[messageBufferIndex]
+        if message.PrePass
+        then messages3dPrePass.Add message
+        else messages3dPerPass.Add message
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -372,7 +386,7 @@ type RendererThread () =
 
             // wait until submission is provided
             while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
-            let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, windowSize, geometryViewport, rasterViewport, outerViewport, drawData) = Option.get submissionOpt
+            let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3dPrePass, messages3dPerPass, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, windowSize, geometryViewport, rasterViewport, outerViewport, drawData) = Option.get submissionOpt
             submissionOpt <- None
 
             // guard against early termination
@@ -383,10 +397,13 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3d
-                freeStaticModelMessages messages3d
-                freeStaticModelSurfaceMessages messages3d
-                freeAnimatedModelMessages messages3d
+                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3dPrePass messages3dPerPass
+                freeStaticModelMessages messages3dPrePass
+                freeStaticModelMessages messages3dPerPass
+                freeStaticModelSurfaceMessages messages3dPrePass
+                freeStaticModelSurfaceMessages messages3dPerPass
+                freeAnimatedModelMessages messages3dPrePass
+                freeAnimatedModelMessages messages3dPerPass
                 renderer3dConfig <- renderer3d.RendererConfig
                 OpenGL.Hl.Assert ()
 
@@ -487,7 +504,7 @@ type RendererThread () =
                     cachedMessage.CachedStaticModel <- rsm.StaticModel
                     cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
                     cachedMessage.CachedStaticModelRenderPass <- rsm.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+                    enqueueMessage3d cachedStaticModelMessage
                 | _ -> failwithumf ()
             | RenderStaticModelSurface rsms ->
                 let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
@@ -503,7 +520,7 @@ type RendererThread () =
                     cachedMessage.CachedStaticModelSurfaceIndex <- rsms.SurfaceIndex
                     cachedMessage.CachedStaticModelSurfaceRenderType <- rsms.RenderType
                     cachedMessage.CachedStaticModelSurfaceRenderPass <- rsms.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+                    enqueueMessage3d cachedStaticModelSurfaceMessage
                 | _ -> failwithumf ()
             | RenderAnimatedModel ram ->
                 let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
@@ -518,9 +535,9 @@ type RendererThread () =
                     cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
                     cachedMessage.CachedAnimatedModelDepthTest <- ram.DepthTest
                     cachedMessage.CachedAnimatedModelRenderPass <- ram.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
+                    enqueueMessage3d cachedAnimatedModelMessage
                 | _ -> failwithumf ()
-            | _ -> messageBuffers3d.[messageBufferIndex].Add message
+            | _ -> enqueueMessage3d message
 
         member rt.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, depthTest, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
@@ -536,7 +553,7 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelDepthTest <- depthTest
                 cachedMessage.CachedStaticModelRenderType <- renderType
                 cachedMessage.CachedStaticModelRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+                enqueueMessage3d cachedStaticModelMessage
             | _ -> failwithumf ()
 
         member rt.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
@@ -555,7 +572,7 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelSurfaceDepthTest <- depthTest
                 cachedMessage.CachedStaticModelSurfaceRenderType <- renderType
                 cachedMessage.CachedStaticModelSurfaceRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+                enqueueMessage3d cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
         member rt.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
@@ -575,7 +592,7 @@ type RendererThread () =
                 cachedMessage.CachedAnimatedModelDepthTest <- depthTest
                 cachedMessage.CachedAnimatedModelRenderType <- renderType
                 cachedMessage.CachedAnimatedModelRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
+                enqueueMessage3d cachedAnimatedModelMessage
             | _ -> failwithumf ()
 
         member rt.EnqueueMessage2d message =
@@ -633,20 +650,23 @@ type RendererThread () =
 
         member rt.ClearMessages () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messageBuffers3d.[messageBufferIndex].Clear ()
+            let (messages3dPrePass, messages3dPerPass) = messageBuffers3d.[messageBufferIndex]
+            messages3dPrePass.Clear ()
+            messages3dPerPass.Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
             messageBuffersImGui.[messageBufferIndex].Clear ()
 
         member rt.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin geometryViewport rasterViewport outerViewport drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            let messages3d = messageBuffers3d.[messageBufferIndex]
+            let (messages3dPrePass, messages3dPerPass) = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
             let messagesImGui = messageBuffersImGui.[messageBufferIndex]
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
-            messageBuffers3d.[messageBufferIndex].Clear ()
+            (fst messageBuffers3d.[messageBufferIndex]).Clear ()
+            (snd messageBuffers3d.[messageBufferIndex]).Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
             messageBuffersImGui.[messageBufferIndex].Clear ()
-            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, rasterViewport, outerViewport, drawData)
+            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3dPrePass, messages3dPerPass, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, rasterViewport, outerViewport, drawData)
 
         member rt.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

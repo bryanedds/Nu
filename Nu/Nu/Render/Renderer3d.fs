@@ -619,6 +619,33 @@ type RenderMessage3d =
     | UnloadRenderPackage3d of string
     | ReloadRenderAssets3d
 
+    member this.PrePass =
+        match this with
+        | CreateUserDefinedStaticModel _ -> true
+        | DestroyUserDefinedStaticModel _ -> true
+        | RenderSkyBox _ -> true
+        | RenderLightProbe3d _ -> true
+        | RenderLightMap3d _ -> true
+        | RenderLight3d _ -> true
+        | RenderBillboard renderBillboard -> not renderBillboard.RenderPass.IsNormalPass
+        | RenderBillboards renderBillboards -> not renderBillboards.RenderPass.IsNormalPass
+        | RenderBillboardParticles renderBillboardParticles -> not renderBillboardParticles.RenderPass.IsNormalPass
+        | RenderStaticModelSurface renderStaticModelSurface -> not renderStaticModelSurface.RenderPass.IsNormalPass
+        | RenderStaticModel renderStaticModel -> not renderStaticModel.RenderPass.IsNormalPass
+        | RenderStaticModels renderStaticModels -> not renderStaticModels.RenderPass.IsNormalPass
+        | RenderCachedStaticModel cachedStaticModelMessage -> not cachedStaticModelMessage.CachedStaticModelRenderPass.IsNormalPass
+        | RenderCachedStaticModelSurface cachedStaticModelSurfaceMessage -> not cachedStaticModelSurfaceMessage.CachedStaticModelSurfaceRenderPass.IsNormalPass
+        | RenderUserDefinedStaticModel renderUserDefinedStaticModel -> not renderUserDefinedStaticModel.RenderPass.IsNormalPass
+        | RenderAnimatedModel renderAnimatedModel -> not renderAnimatedModel.RenderPass.IsNormalPass
+        | RenderAnimatedModels renderAnimatedModels -> not renderAnimatedModels.RenderPass.IsNormalPass
+        | RenderCachedAnimatedModel cachedAnimatedModelMessage -> not cachedAnimatedModelMessage.CachedAnimatedModelRenderPass.IsNormalPass
+        | RenderTerrain renderTerrain -> not renderTerrain.RenderPass.IsNormalPass
+        | ConfigureLighting3d _ -> true
+        | ConfigureRenderer3d _ -> true
+        | LoadRenderPackage3d _ -> true
+        | UnloadRenderPackage3d _ -> true
+        | ReloadRenderAssets3d -> true
+
 /// A sortable light map.
 /// OPTIMIZATION: mutable field for caching distance squared.
 type private SortableLightMap =
@@ -904,7 +931,9 @@ type Renderer3d =
         eyeFieldOfView : single ->
         geometryViewport : Viewport ->
         rasterViewport : Viewport ->
-        renderMessages : RenderMessage3d List -> unit
+        renderMessagesPrePass : RenderMessage3d List ->
+        renderMessagesPerPass : RenderMessage3d List ->
+        unit
 
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
@@ -916,7 +945,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
-        member renderer.Render _ _ _ _ _ _ _ _ _ _ = ()
+        member renderer.Render _ _ _ _ _ _ _ _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -978,8 +1007,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
-          mutable ReloadAssetsRequested : bool
-          RenderMessages : RenderMessage3d List }
+          mutable ReloadAssetsRequested : bool }
 
     static member private radicalInverse (bits : uint) =
         let mutable bits = bits
@@ -2495,6 +2523,111 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = twoSided }
         surfaceMaterial
 
+    static member private categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation (messages : _ List) (staticModelsToDestroy : _ SList) renderer =
+        for message in messages do
+            match message with
+            | CreateUserDefinedStaticModel cudsm ->
+                GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
+            | DestroyUserDefinedStaticModel dudsm ->
+                staticModelsToDestroy.Add dudsm.StaticModel 
+            | RenderSkyBox rsb ->
+                let renderTasks = GlRenderer3d.getRenderTasks rsb.RenderPass renderer
+                renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
+            | RenderLightProbe3d rlp ->
+                let renderTasks = GlRenderer3d.getRenderTasks rlp.RenderPass renderer
+                if renderTasks.LightProbes.ContainsKey rlp.LightProbeId then
+                    Log.warnOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
+                    renderTasks.LightProbes.Remove rlp.LightProbeId |> ignore<bool>
+                renderTasks.LightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.AmbientColor, rlp.AmbientBrightness, rlp.Bounds))
+            | RenderLightMap3d rlm ->
+                let renderTasks = GlRenderer3d.getRenderTasks rlm.RenderPass renderer
+                renderTasks.LightMapRenders.Add rlm.LightProbeId |> ignore<bool>
+            | RenderLight3d rl ->
+                let direction = rl.Rotation.Down
+                let renderTasks = GlRenderer3d.getRenderTasks rl.RenderPass renderer
+                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
+                let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
+                let light =
+                    { SortableLightId = rl.LightId
+                      SortableLightOrigin = rl.Origin
+                      SortableLightRotation = rl.Rotation
+                      SortableLightDirection = direction
+                      SortableLightColor = rl.Color
+                      SortableLightBrightness = rl.Brightness
+                      SortableLightAttenuationLinear = rl.AttenuationLinear
+                      SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
+                      SortableLightCutoff = rl.LightCutoff
+                      SortableLightType = rl.LightType.Enumerate
+                      SortableLightConeInner = coneInner
+                      SortableLightConeOuter = coneOuter
+                      SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
+                      SortableLightDesireFog = if rl.DesireFog then 1 else 0
+                      SortableLightBounds = rl.Bounds
+                      SortableLightDistance = Single.MaxValue }
+                renderTasks.Lights.Add light
+                if rl.DesireShadows then
+                    renderer.LightsDesiringShadows.[rl.LightId] <- light
+            | RenderBillboard rb ->
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
+                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
+                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, rb.OrientUp, rb.Planar, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
+            | RenderBillboards rbs ->
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
+                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
+                for (model, castShadow, presence, insetOpt, orientUp, planar) in rbs.Billboards do
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, planar, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
+            | RenderBillboardParticles rbps ->
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
+                for particle in rbps.Particles do
+                    let billboardMatrix =
+                        Matrix4x4.CreateAffine
+                            (particle.Transform.Position,
+                             particle.Transform.Rotation,
+                             particle.Transform.Size * particle.Transform.Scale)
+                    let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
+                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, true, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderer)
+            | RenderStaticModelSurface rsms ->
+                let insetOpt = Option.toValueOption rsms.InsetOpt
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
+            | RenderStaticModel rsm ->
+                let insetOpt = Option.toValueOption rsm.InsetOpt
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
+            | RenderStaticModels rsms ->
+                for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
+                    let insetOpt = Option.toValueOption insetOpt
+                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
+            | RenderCachedStaticModel csmm ->
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
+            | RenderCachedStaticModelSurface csmsm ->
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceDepthTest, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
+            | RenderUserDefinedStaticModel rudsm ->
+                let insetOpt = Option.toValueOption rudsm.InsetOpt
+                let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
+                GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderer)
+                staticModelsToDestroy.Add assetTag
+            | RenderAnimatedModel rsm ->
+                let insetOpt = Option.toValueOption rsm.InsetOpt
+                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
+            | RenderAnimatedModels rams ->
+                GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, rams.RenderPass, renderer)
+            | RenderCachedAnimatedModel camm ->
+                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, camm.CachedAnimatedModelRenderPass, renderer)
+            | RenderTerrain rt ->
+                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
+            | ConfigureLighting3d l3c ->
+                if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
+                renderer.LightingConfig <- l3c
+            | ConfigureRenderer3d r3c ->
+                renderer.RendererConfig <- r3c
+            | LoadRenderPackage3d packageName ->
+                GlRenderer3d.handleLoadRenderPackage packageName renderer
+            | UnloadRenderPackage3d packageName ->
+                GlRenderer3d.handleUnloadRenderPackage packageName renderer
+            | ReloadRenderAssets3d ->
+                renderer.ReloadAssetsRequested <- true
+
     static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) (lightViewProjection : Matrix4x4) lightType renderTasks renderer =
 
         // compute matrix arrays
@@ -3131,7 +3264,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
     /// Render 3d surfaces.
-    static member render (frustumInterior : Frustum) frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView geometryViewport (rasterViewport : Viewport) renderbuffer framebuffer renderMessages renderer =
+    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessagesPrePass renderMessagesPerPass renderer =
 
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
@@ -3142,111 +3275,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.GeometryViewport <- geometryViewport
         renderer.RasterViewport <- rasterViewport
 
-        // categorize messages
-        let userDefinedStaticModelsToDestroy = SList.make ()
-        for message in renderMessages do
-            match message with
-            | CreateUserDefinedStaticModel cudsm ->
-                GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
-            | DestroyUserDefinedStaticModel dudsm ->
-                userDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
-            | RenderSkyBox rsb ->
-                let renderTasks = GlRenderer3d.getRenderTasks rsb.RenderPass renderer
-                renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
-            | RenderLightProbe3d rlp ->
-                let renderTasks = GlRenderer3d.getRenderTasks rlp.RenderPass renderer
-                if renderTasks.LightProbes.ContainsKey rlp.LightProbeId then
-                    Log.warnOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
-                    renderTasks.LightProbes.Remove rlp.LightProbeId |> ignore<bool>
-                renderTasks.LightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.AmbientColor, rlp.AmbientBrightness, rlp.Bounds))
-            | RenderLightMap3d rlm ->
-                let renderTasks = GlRenderer3d.getRenderTasks rlm.RenderPass renderer
-                renderTasks.LightMapRenders.Add rlm.LightProbeId |> ignore<bool>
-            | RenderLight3d rl ->
-                let direction = rl.Rotation.Down
-                let renderTasks = GlRenderer3d.getRenderTasks rl.RenderPass renderer
-                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
-                let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
-                let light =
-                    { SortableLightId = rl.LightId
-                      SortableLightOrigin = rl.Origin
-                      SortableLightRotation = rl.Rotation
-                      SortableLightDirection = direction
-                      SortableLightColor = rl.Color
-                      SortableLightBrightness = rl.Brightness
-                      SortableLightAttenuationLinear = rl.AttenuationLinear
-                      SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
-                      SortableLightCutoff = rl.LightCutoff
-                      SortableLightType = rl.LightType.Enumerate
-                      SortableLightConeInner = coneInner
-                      SortableLightConeOuter = coneOuter
-                      SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
-                      SortableLightDesireFog = if rl.DesireFog then 1 else 0
-                      SortableLightBounds = rl.Bounds
-                      SortableLightDistance = Single.MaxValue }
-                renderTasks.Lights.Add light
-                if rl.DesireShadows then
-                    renderer.LightsDesiringShadows.[rl.LightId] <- light
-            | RenderBillboard rb ->
-                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
-                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, rb.OrientUp, rb.Planar, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
-            | RenderBillboards rbs ->
-                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
-                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                for (model, castShadow, presence, insetOpt, orientUp, planar) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, planar, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
-            | RenderBillboardParticles rbps ->
-                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
-                for particle in rbps.Particles do
-                    let billboardMatrix =
-                        Matrix4x4.CreateAffine
-                            (particle.Transform.Position,
-                             particle.Transform.Rotation,
-                             particle.Transform.Size * particle.Transform.Scale)
-                    let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
-                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, true, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderer)
-            | RenderStaticModelSurface rsms ->
-                let insetOpt = Option.toValueOption rsms.InsetOpt
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
-            | RenderStaticModel rsm ->
-                let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
-            | RenderStaticModels rsms ->
-                for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
-                    let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
-            | RenderCachedStaticModel csmm ->
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
-            | RenderCachedStaticModelSurface csmsm ->
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceDepthTest, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
-            | RenderUserDefinedStaticModel rudsm ->
-                let insetOpt = Option.toValueOption rudsm.InsetOpt
-                let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
-                GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderer)
-                userDefinedStaticModelsToDestroy.Add assetTag
-            | RenderAnimatedModel rsm ->
-                let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
-            | RenderAnimatedModels rams ->
-                GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, rams.RenderPass, renderer)
-            | RenderCachedAnimatedModel camm ->
-                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, camm.CachedAnimatedModelRenderPass, renderer)
-            | RenderTerrain rt ->
-                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
-            | ConfigureLighting3d l3c ->
-                if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
-                renderer.LightingConfig <- l3c
-            | ConfigureRenderer3d r3c ->
-                renderer.RendererConfig <- r3c
-            | LoadRenderPackage3d packageName ->
-                GlRenderer3d.handleLoadRenderPackage packageName renderer
-            | UnloadRenderPackage3d packageName ->
-                GlRenderer3d.handleUnloadRenderPackage packageName renderer
-            | ReloadRenderAssets3d ->
-                renderer.ReloadAssetsRequested <- true
+        // categorize pre-pass messages
+        let staticModelsToDestroy = SList.make ()
+        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPrePass staticModelsToDestroy renderer
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
@@ -3482,6 +3513,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         | SpotLight (_, _) | DirectionalLight -> failwithumf ()
                     | _ -> ()
+                    
+        // categorize per-pass messages
+        GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPerPass staticModelsToDestroy renderer
 
         // top-level geometry pass
         let view = Viewport.getView3d eyeCenter eyeRotation
@@ -3512,7 +3546,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.LightsDesiringShadows.Clear ()
 
         // destroy user-defined static models
-        for staticModel in userDefinedStaticModelsToDestroy do
+        for staticModel in staticModelsToDestroy do
             GlRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
 
         // reload render assets upon request
@@ -3848,8 +3882,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
-              ReloadAssetsRequested = false
-              RenderMessages = List () }
+              ReloadAssetsRequested = false }
 
         // fin
         renderer
@@ -3859,9 +3892,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.RendererConfig =
             renderer.RendererConfig
 
-        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
-            if renderMessages.Count > 0 then
-                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
+        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessagesPrePass renderMessagesPerPass =
+            if renderMessagesPerPass.Count > 0 then
+                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessagesPrePass renderMessagesPerPass renderer
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapVao|]
