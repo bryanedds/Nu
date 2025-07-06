@@ -176,7 +176,8 @@ module Sprite =
         Hl.Assert ()
         
         // setup texture
-        Gl.BindTextureUnit (0u, texture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, texture.TextureId)
         Hl.Assert ()
 
         // setup geometry

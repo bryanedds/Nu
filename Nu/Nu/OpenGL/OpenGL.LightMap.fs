@@ -233,7 +233,8 @@ module LightMap =
         Gl.Uniform1 (shader.RoughnessUniform, roughness)
         Gl.Uniform1 (shader.ResolutionUniform, resolution)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
-        Gl.BindTextureUnit (0u, cubeMap.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap.TextureId)
         Hl.Assert ()
 
         // setup geometry

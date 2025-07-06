@@ -126,7 +126,8 @@ module SpriteBatch =
             Gl.Uniform4 (env.ColorsUniform, env.Colors)
             Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
             Gl.Uniform1 (env.TexUniform, 0)
-            Gl.BindTextureUnit (0u, texture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture0
+            Gl.BindTexture (TextureTarget.Texture2d, texture.TextureId)
             Hl.Assert ()
 
             // draw geometry

@@ -163,7 +163,6 @@ type GlRendererImGui
             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.Repeat)
             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.Repeat)
-            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
             let fontTextureMetadata = OpenGL.Texture.TextureMetadata.make fontTextureWidth fontTextureHeight
             fontTexture <- OpenGL.Texture.EagerTexture { TextureMetadata = fontTextureMetadata; TextureId = fontTextureId }
             fonts.SetTexID (nativeint fontTexture.TextureId)
@@ -277,7 +276,8 @@ type GlRendererImGui
                         if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
                             if pcmd.UserCallback = nativeint 0 then
                                 let clip = pcmd.ClipRect
-                                OpenGL.Gl.BindTextureUnit (0u, uint pcmd.TextureId)
+                                OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+                                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
                                 OpenGL.Gl.Scissor
                                     (int clip.X + bounds.Min.X,
                                      viewport.Bounds.Size.Y - int clip.W + bounds.Min.Y,

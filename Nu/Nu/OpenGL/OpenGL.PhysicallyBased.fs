@@ -2416,7 +2416,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, inputTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2456,7 +2457,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, inputTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2496,8 +2498,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, colorTexture.TextureId)
-        Gl.BindTextureUnit (1u, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2539,9 +2543,12 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, colorDownSampledTexture.TextureId)
-        Gl.BindTextureUnit (1u, depthDownSampledTexture.TextureId)
-        Gl.BindTextureUnit (2u, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, colorDownSampledTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, depthDownSampledTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2579,7 +2586,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, inputTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2751,16 +2759,26 @@ module PhysicallyBased =
         if surfacesCount > 0 then
 
             // setup textures
-            Gl.BindTextureUnit (0u, material.AlbedoTexture.TextureId)
-            Gl.BindTextureUnit (1u, material.RoughnessTexture.TextureId)
-            Gl.BindTextureUnit (2u, material.MetallicTexture.TextureId)
-            Gl.BindTextureUnit (3u, material.AmbientOcclusionTexture.TextureId)
-            Gl.BindTextureUnit (4u, material.EmissionTexture.TextureId)
-            Gl.BindTextureUnit (5u, material.NormalTexture.TextureId)
-            Gl.BindTextureUnit (6u, material.HeightTexture.TextureId)
-            Gl.BindTextureUnit (7u, material.SubdermalTexture.TextureId)
-            Gl.BindTextureUnit (8u, material.FinenessTexture.TextureId)
-            Gl.BindTextureUnit (9u, material.ScatterTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture0
+            Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture1
+            Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture2
+            Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture3
+            Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture4
+            Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture5
+            Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture6
+            Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture7
+            Gl.BindTexture (TextureTarget.Texture2d, material.SubdermalTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture8
+            Gl.BindTexture (TextureTarget.Texture2d, material.FinenessTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture9
+            Gl.BindTexture (TextureTarget.Texture2d, material.ScatterTexture.TextureId)
             Hl.Assert ()
 
             // update instance buffer
@@ -2870,9 +2888,12 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup common textures
-        Gl.BindTextureUnit (7u, brdfTexture.TextureId)
-        Gl.BindTextureUnit (8u, irradianceMap.TextureId)
-        Gl.BindTextureUnit (9u, environmentFilterMap.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap.TextureId)
         Hl.Assert ()
 
         // teardown shader
@@ -3006,22 +3027,33 @@ module PhysicallyBased =
             Hl.Assert ()
 
             // setup textures
-            Gl.BindTextureUnit (0u, material.AlbedoTexture.TextureId)
-            Gl.BindTextureUnit (1u, material.RoughnessTexture.TextureId)
-            Gl.BindTextureUnit (2u, material.MetallicTexture.TextureId)
-            Gl.BindTextureUnit (3u, material.AmbientOcclusionTexture.TextureId)
-            Gl.BindTextureUnit (4u, material.EmissionTexture.TextureId)
-            Gl.BindTextureUnit (5u, material.NormalTexture.TextureId)
-            Gl.BindTextureUnit (6u, material.HeightTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture0
+            Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture1
+            Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture2
+            Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture3
+            Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture4
+            Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture5
+            Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture6
+            Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
             // NOTE: textures 7 through 9 are configured in begin / end functions.
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Gl.BindTextureUnit (10 + i |> uint, irradianceMaps.[i].TextureId)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Gl.BindTextureUnit (10 + i + Constants.Render.LightMapsMaxForward |> uint, environmentFilterMaps.[i].TextureId)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
             for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-                Gl.BindTextureUnit (10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> uint, shadowTextures.[i].TextureId)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+                Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i].TextureId)
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Gl.BindTextureUnit (10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> uint, shadowMaps.[i].TextureId)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
             Hl.Assert ()
 
             // update instance buffer
@@ -3121,15 +3153,20 @@ module PhysicallyBased =
 
         // setup textures
         for i in 0 .. dec layersCount do
-            Gl.BindTextureUnit (i |> uint, materials.[i].AlbedoTexture.TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].AlbedoTexture.TextureId)
         for i in 0 .. dec layersCount do
-            Gl.BindTextureUnit (i + Constants.Render.TerrainLayersMax |> uint, materials.[i].RoughnessTexture.TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].RoughnessTexture.TextureId)
         for i in 0 .. dec layersCount do
-            Gl.BindTextureUnit (i + Constants.Render.TerrainLayersMax * 2 |> uint, materials.[i].AmbientOcclusionTexture.TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].AmbientOcclusionTexture.TextureId)
         for i in 0 .. dec layersCount do
-            Gl.BindTextureUnit (i + Constants.Render.TerrainLayersMax * 3 |> uint, materials.[i].NormalTexture.TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].NormalTexture.TextureId)
         for i in 0 .. dec layersCount do
-            Gl.BindTextureUnit (i + Constants.Render.TerrainLayersMax * 4 |> uint, materials.[i].HeightTexture.TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].HeightTexture.TextureId)
         Hl.Assert ()
 
         // update instance buffer
@@ -3200,8 +3237,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, normalPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3258,8 +3297,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, lightMappingTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3312,12 +3353,17 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, normalPlusTexture.TextureId)
-        Gl.BindTextureUnit (2u, lightMappingTexture.TextureId)
-        Gl.BindTextureUnit (3u, irradianceMap.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap.TextureId)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.BindTextureUnit (4 + i |> uint, irradianceMaps.[i].TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 4 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3381,13 +3427,19 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, materialTexture.TextureId)
-        Gl.BindTextureUnit (2u, normalPlusTexture.TextureId)
-        Gl.BindTextureUnit (3u, lightMappingTexture.TextureId)
-        Gl.BindTextureUnit (4u, environmentFilterMap.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, materialTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap.TextureId)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.BindTextureUnit (5 + i |> uint, environmentFilterMaps.[i].TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 5 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3451,8 +3503,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, normalPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3631,21 +3685,34 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, albedoTexture.TextureId)
-        Gl.BindTextureUnit (2u, materialTexture.TextureId)
-        Gl.BindTextureUnit (3u, normalPlusTexture.TextureId)
-        Gl.BindTextureUnit (4u, subdermalPlusTexture.TextureId)
-        Gl.BindTextureUnit (5u, scatterPlusTexture.TextureId)
-        Gl.BindTextureUnit (6u, brdfTexture.TextureId)
-        Gl.BindTextureUnit (7u, ambientTexture.TextureId)
-        Gl.BindTextureUnit (8u, irradianceTexture.TextureId)
-        Gl.BindTextureUnit (9u, environmentFilterTexture.TextureId)
-        Gl.BindTextureUnit (10u, ssaoTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, materialTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, ambientTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture10
+        Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture.TextureId)
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-            Gl.BindTextureUnit (11 + i |> uint, shadowTextures.[i].TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i].TextureId)
         for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-            Gl.BindTextureUnit (11 + i + Constants.Render.ShadowTexturesMax |> uint, shadowMaps.[i].TextureId)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 11 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3701,9 +3768,12 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, depthTexture.TextureId)
-        Gl.BindTextureUnit (1u, colorTexture.TextureId)
-        Gl.BindTextureUnit (2u, fogAccumTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, fogAccumTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
