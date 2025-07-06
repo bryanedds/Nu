@@ -389,7 +389,10 @@ module PhysicallyBased =
 
     /// Describes a light mapping pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredLightMappingShader =
-        { PositionTextureUniform : int
+        { EyeCenterUniform : int
+          ViewInverseUniform : int
+          ProjectionInverseUniform : int
+          DepthTextureUniform : int
           NormalPlusTextureUniform : int
           LightMapOriginsUniforms : int array
           LightMapMinsUniforms : int array
@@ -399,7 +402,10 @@ module PhysicallyBased =
 
     /// Describes an ambient pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredAmbientShader =
-        { PositionTextureUniform : int
+        { EyeCenterUniform : int
+          ViewInverseUniform : int
+          ProjectionInverseUniform : int
+          DepthTextureUniform : int
           LightMappingTextureUniform : int
           LightMapAmbientColorUniform : int
           LightMapAmbientBrightnessUniform : int
@@ -409,7 +415,10 @@ module PhysicallyBased =
 
     /// Describes an irradiance pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredIrradianceShader =
-        { PositionTextureUniform : int
+        { EyeCenterUniform : int
+          ViewInverseUniform : int
+          ProjectionInverseUniform : int
+          DepthTextureUniform : int
           NormalPlusTextureUniform : int
           LightMappingTextureUniform : int
           IrradianceMapUniform : int
@@ -419,7 +428,9 @@ module PhysicallyBased =
     /// Describes an environment filter pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredEnvironmentFilterShader =
         { EyeCenterUniform : int
-          PositionTextureUniform : int
+          ViewInverseUniform : int
+          ProjectionInverseUniform : int
+          DepthTextureUniform : int
           MaterialTextureUniform : int
           NormalPlusTextureUniform : int
           LightMappingTextureUniform : int
@@ -432,9 +443,12 @@ module PhysicallyBased =
 
     /// Describes an ssao pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredSsaoShader =
-        { ViewUniform : int
+        { EyeCenterUniform : int
+          ViewUniform : int
+          ViewInverseUniform : int
           ProjectionUniform : int
-          PositionTextureUniform : int
+          ProjectionInverseUniform : int
+          DepthTextureUniform : int
           NormalPlusTextureUniform : int
           SsaoResolution : int
           SsaoIntensity : int
@@ -448,7 +462,9 @@ module PhysicallyBased =
     type PhysicallyBasedDeferredLightingShader =
         { EyeCenterUniform : int
           ViewUniform : int
+          ViewInverseUniform : int
           ProjectionUniform : int
+          ProjectionInverseUniform : int
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -481,7 +497,7 @@ module PhysicallyBased =
           SsrEdgeVerticalMarginUniform : int
           SsrLightColorUniform : int
           SsrLightBrightnessUniform : int
-          PositionTextureUniform : int
+          DepthTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
           NormalPlusTextureUniform : int
@@ -514,11 +530,13 @@ module PhysicallyBased =
     /// Describes the composition pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredCompositionShader =
         { EyeCenterUniform : int
+          ViewInverseUniform : int
+          ProjectionInverseUniform : int
           FogEnabledUniform : int
           FogStartUniform : int
           FogFinishUniform : int
           FogColorUniform : int
-          PositionTextureUniform : int
+          DepthTextureUniform : int
           ColorTextureUniform : int
           FogAccumTextureUniform : int
           PhysicallyBasedDeferredCompositionShader : uint }
@@ -1941,9 +1959,9 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
-        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
         let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
@@ -1967,9 +1985,9 @@ module PhysicallyBased =
                 Gl.GetUniformLocation (shader, "heightTextures[" + string i + "]")
 
         // make shader record
-        { ViewUniform = viewUniform
+        { EyeCenterUniform = eyeCenterUniform
+          ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
-          EyeCenterUniform = eyeCenterUniform
           LightShadowSamplesUniform = lightShadowSamplesUniform
           LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
@@ -1991,7 +2009,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let lightMapOriginsUniforms =
             Array.init lightMapsMax $ fun i ->
@@ -2005,7 +2026,10 @@ module PhysicallyBased =
         let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
 
         // make shader record
-        { PositionTextureUniform = positionTextureUniform
+        { EyeCenterUniform = eyeCenterUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionInverseUniform = projectionInverseUniform
+          DepthTextureUniform = depthTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
           LightMapOriginsUniforms = lightMapOriginsUniforms
           LightMapMinsUniforms = lightMapMinsUniforms
@@ -2021,7 +2045,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
         let lightMapAmbientColorUniform = Gl.GetUniformLocation (shader, "lightMapAmbientColor")
         let lightMapAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightMapAmbientBrightness")
@@ -2033,7 +2060,10 @@ module PhysicallyBased =
                 Gl.GetUniformLocation (shader, "lightMapAmbientBrightnesses[" + string i + "]")
 
         // make shader record
-        { PositionTextureUniform = positionTextureUniform
+        { EyeCenterUniform = eyeCenterUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionInverseUniform = projectionInverseUniform
+          DepthTextureUniform = depthTextureUniform
           LightMappingTextureUniform = lightMappingTextureUniform
           LightMapAmbientColorUniform = lightMapAmbientColorUniform
           LightMapAmbientBrightnessUniform = lightMapAmbientBrightnessUniform
@@ -2049,7 +2079,10 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
@@ -2058,7 +2091,10 @@ module PhysicallyBased =
                 Gl.GetUniformLocation (shader, "irradianceMaps[" + string i + "]")
 
         // make shader record
-        { PositionTextureUniform = positionTextureUniform
+        { EyeCenterUniform = eyeCenterUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionInverseUniform = projectionInverseUniform
+          DepthTextureUniform = depthTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
           LightMappingTextureUniform = lightMappingTextureUniform
           IrradianceMapUniform = irradianceMapUniform
@@ -2074,7 +2110,9 @@ module PhysicallyBased =
 
         // retrieve uniforms
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
@@ -2094,7 +2132,9 @@ module PhysicallyBased =
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
-          PositionTextureUniform = positionTextureUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionInverseUniform = projectionInverseUniform
+          DepthTextureUniform = depthTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
           LightMappingTextureUniform = lightMappingTextureUniform
@@ -2113,9 +2153,12 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let ssaoResolution = Gl.GetUniformLocation (shader, "ssaoResolution")
         let ssaoIntensity = Gl.GetUniformLocation (shader, "ssaoIntensity")
@@ -2125,9 +2168,12 @@ module PhysicallyBased =
         let ssaoSampleCount = Gl.GetUniformLocation (shader, "ssaoSampleCount")
 
         // make shader record
-        { ViewUniform = viewUniform
+        { EyeCenterUniform = eyeCenterUniform
+          ViewUniform = viewUniform
+          ViewInverseUniform = viewInverseUniform
           ProjectionUniform = projectionUniform
-          PositionTextureUniform = positionTextureUniform
+          ProjectionInverseUniform = projectionInverseUniform
+          DepthTextureUniform = depthTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
           SsaoResolution = ssaoResolution
           SsaoIntensity = ssaoIntensity
@@ -2147,7 +2193,9 @@ module PhysicallyBased =
         // retrieve uniforms
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -2180,7 +2228,7 @@ module PhysicallyBased =
         let ssrEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeVerticalMargin")
         let ssrLightColorUniform = Gl.GetUniformLocation (shader, "ssrLightColor")
         let ssrLightBrightnessUniform = Gl.GetUniformLocation (shader, "ssrLightBrightness")
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
@@ -2242,7 +2290,9 @@ module PhysicallyBased =
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
           ViewUniform = viewUniform
+          ViewInverseUniform = viewInverseUniform
           ProjectionUniform = projectionUniform
+          ProjectionInverseUniform = projectionInverseUniform
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
@@ -2275,7 +2325,7 @@ module PhysicallyBased =
           SsrEdgeVerticalMarginUniform = ssrEdgeVerticalMarginUniform
           SsrLightColorUniform = ssrLightColorUniform
           SsrLightBrightnessUniform = ssrLightBrightnessUniform
-          PositionTextureUniform = positionTextureUniform
+          DepthTextureUniform = depthTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
@@ -2314,21 +2364,25 @@ module PhysicallyBased =
 
         // retrieve uniforms
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
         let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
         let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
         let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
         let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
-        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
         let fogAccumTextureUniform = Gl.GetUniformLocation (shader, "fogAccumTexture")
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionInverseUniform = projectionInverseUniform
           FogEnabledUniform = fogEnabledUniform
           FogStartUniform = fogStartUniform
           FogFinishUniform = fogFinishUniform
           FogColorUniform = fogColorUniform
-          PositionTextureUniform = positionTextureUniform
+          DepthTextureUniform = depthTextureUniform
           ColorTextureUniform = colorTextureUniform
           FogAccumTextureUniform = fogAccumTextureUniform
           PhysicallyBasedDeferredCompositionShader = shader }
@@ -3092,7 +3146,10 @@ module PhysicallyBased =
 
     /// Draw the light mapping pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightMappingSurface
-        (positionTexture : Texture.Texture,
+        (eyeCenter : Vector3,
+         viewInverse : single array,
+         projectionInverse : single array,
+         depthTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
          lightMapOrigins : Vector3 array,
          lightMapMins : Vector3 array,
@@ -3108,7 +3165,10 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightMappingShader
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 1)
         for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxDeferred) do
             Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
@@ -3120,7 +3180,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, normalPlusTexture.TextureId)
         Hl.Assert ()
 
@@ -3145,7 +3205,10 @@ module PhysicallyBased =
 
     /// Draw the ambient pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredAmbientSurface
-        (positionTexture : Texture.Texture,
+        (eyeCenter : Vector3,
+         viewInverse : single array,
+         projectionInverse : single array,
+         depthTexture : Texture.Texture,
          lightMappingTexture : Texture.Texture,
          lightMapAmbientColor : Color,
          lightMapAmbientBrightness : single,
@@ -3161,7 +3224,10 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredAmbientShader
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.LightMappingTextureUniform, 1)
         Gl.Uniform3 (shader.LightMapAmbientColorUniform, lightMapAmbientColor.R, lightMapAmbientColor.G, lightMapAmbientColor.B)
         Gl.Uniform1 (shader.LightMapAmbientBrightnessUniform, lightMapAmbientBrightness)
@@ -3172,7 +3238,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, lightMappingTexture.TextureId)
         Hl.Assert ()
 
@@ -3196,7 +3262,10 @@ module PhysicallyBased =
 
     /// Draw the irradiance pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredIrradianceSurface
-        (positionTexture : Texture.Texture,
+        (eyeCenter : Vector3,
+         viewInverse : single array,
+         projectionInverse : single array,
+         depthTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
          lightMappingTexture : Texture.Texture,
          irradianceMap : Texture.Texture,
@@ -3211,7 +3280,10 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredIrradianceShader
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 1)
         Gl.Uniform1 (shader.LightMappingTextureUniform, 2)
         Gl.Uniform1 (shader.IrradianceMapUniform, 3)
@@ -3220,7 +3292,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, normalPlusTexture.TextureId)
         Gl.BindTextureUnit (2u, lightMappingTexture.TextureId)
         Gl.BindTextureUnit (3u, irradianceMap.TextureId)
@@ -3249,7 +3321,9 @@ module PhysicallyBased =
     /// Draw the environment filter pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredEnvironmentFilterSurface
         (eyeCenter : Vector3,
-         positionTexture : Texture.Texture,
+         viewInverse : single array,
+         projectionInverse : single array,
+         depthTexture : Texture.Texture,
          materialTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
          lightMappingTexture : Texture.Texture,
@@ -3269,7 +3343,9 @@ module PhysicallyBased =
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredEnvironmentFilterShader
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.MaterialTextureUniform, 1)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 2)
         Gl.Uniform1 (shader.LightMappingTextureUniform, 3)
@@ -3285,7 +3361,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, materialTexture.TextureId)
         Gl.BindTextureUnit (2u, normalPlusTexture.TextureId)
         Gl.BindTextureUnit (3u, lightMappingTexture.TextureId)
@@ -3314,9 +3390,12 @@ module PhysicallyBased =
 
     /// Draw the ssao pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredSsaoSurface
-        (view : single array,
+        (eyeCenter : Vector3,
+         view : single array,
+         viewInverse : single array,
          projection : single array,
-         positionTexture : Texture.Texture,
+         projectionInverse : single array,
+         depthTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
          ssaoResolution : int array,
          ssaoIntensity : single,
@@ -3334,9 +3413,12 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredSsaoShader
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 1)
         Gl.Uniform2 (shader.SsaoResolution, ssaoResolution)
         Gl.Uniform1 (shader.SsaoIntensity, ssaoIntensity)
@@ -3347,7 +3429,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, normalPlusTexture.TextureId)
         Hl.Assert ()
 
@@ -3373,7 +3455,9 @@ module PhysicallyBased =
     let DrawPhysicallyBasedDeferredLightingSurface
         (eyeCenter : Vector3,
          view : single array,
+         viewInverse : single array,
          projection : single array,
+         projectionInverse : single array,
          lightCutoffMargin : single,
          lightAmbientBoostCutoff : single,
          lightAmbientBoostScalar : single,
@@ -3404,7 +3488,7 @@ module PhysicallyBased =
          ssrEdgeVerticalMargin : single,
          ssrLightColor : Color,
          ssrLightBrightness : single,
-         positionTexture : Texture.Texture,
+         depthTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
@@ -3444,7 +3528,9 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedDeferredLightingShader
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         Gl.Uniform1 (shader.LightAmbientBoostCutoffUniform, lightAmbientBoostCutoff)
         Gl.Uniform1 (shader.LightAmbientBoostScalarUniform, lightAmbientBoostScalar)
@@ -3475,7 +3561,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrEdgeVerticalMarginUniform, ssrEdgeVerticalMargin)
         Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor.R, ssrLightColor.G, ssrLightColor.B)
         Gl.Uniform1 (shader.SsrLightBrightnessUniform, ssrLightBrightness)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
@@ -3521,7 +3607,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, albedoTexture.TextureId)
         Gl.BindTextureUnit (2u, materialTexture.TextureId)
         Gl.BindTextureUnit (3u, normalPlusTexture.TextureId)
@@ -3559,11 +3645,13 @@ module PhysicallyBased =
     /// Draw the bilateral up-sample pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredCompositionSurface
         (eyeCenter : Vector3,
+         viewInverse : single array,
+         projectionInverse : single array,
          fogEnabled : int,
          fogStart : single,
          fogFinish : single,
          fogColor : Color,
-         positionTexture : Texture.Texture,
+         depthTexture : Texture.Texture,
          colorTexture : Texture.Texture,
          fogAccumTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
@@ -3577,17 +3665,19 @@ module PhysicallyBased =
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredCompositionShader
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
         Gl.Uniform1 (shader.FogStartUniform, fogStart)
         Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
         Gl.Uniform4 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B, fogColor.A)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.ColorTextureUniform, 1)
         Gl.Uniform1 (shader.FogAccumTextureUniform, 2)
         Hl.Assert ()
 
         // setup textures
-        Gl.BindTextureUnit (0u, positionTexture.TextureId)
+        Gl.BindTextureUnit (0u, depthTexture.TextureId)
         Gl.BindTextureUnit (1u, colorTexture.TextureId)
         Gl.BindTextureUnit (2u, fogAccumTexture.TextureId)
         Hl.Assert ()
