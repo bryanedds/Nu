@@ -215,7 +215,7 @@ type RendererThread () =
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Vector2i * Viewport * Viewport * Viewport * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swapRequested = false
-    let [<VolatileField>] mutable swapCompleted = false
+    let [<VolatileField>] mutable swapRequestAcknowledged = false
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
@@ -413,8 +413,8 @@ type RendererThread () =
                     // guard against early termination
                     if not terminated then
 
-                        // notify swap is completed
-                        swapCompleted <- true
+                        // acknowledge swap request
+                        swapRequestAcknowledged <- true
 
                         // swap, optionally finishing
                         if glFinishRequired then OpenGL.Gl.Finish ()
@@ -455,7 +455,7 @@ type RendererThread () =
                             while not swapRequested && not terminated do ()
                             swapRequested <- false
                             if not terminated then
-                                swapCompleted <- true))
+                                swapRequestAcknowledged <- true))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
@@ -651,8 +651,8 @@ type RendererThread () =
         member rt.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swapRequested <- true
-            while not swapCompleted && not terminated do Thread.Yield () |> ignore<bool>
-            swapCompleted <- false
+            while not swapRequestAcknowledged && not terminated do Thread.Yield () |> ignore<bool>
+            swapRequestAcknowledged <- false
 
         member rt.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
