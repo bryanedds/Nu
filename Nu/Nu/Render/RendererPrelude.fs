@@ -51,10 +51,10 @@ type [<Struct>] RenderType =
 
 /// Describes the nature of the rendering that takes place.
 type RenderPass =
-    | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
     | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
+    | NormalPass
 
     /// Check that a render pass should displace another.
     static member displaces renderPass renderPass2 =
