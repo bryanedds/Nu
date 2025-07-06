@@ -3265,8 +3265,6 @@ type [<ReferenceEquality>] GlRenderer3d =
     /// Render 3d surfaces.
     static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessagesPrePass renderMessagesPerPass renderer =
 
-        let sw = Diagnostics.Stopwatch.StartNew ()
-
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
             GlRenderer3d.invalidateCaches renderer
@@ -3279,10 +3277,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         // categorize pre-pass messages
         let staticModelsToDestroy = SList.make ()
         GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPrePass staticModelsToDestroy renderer
-
-        sw.Stop ()
-        Log.info ("Phase 1 " + string sw.ElapsedMilliseconds)
-        sw.Restart ()
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
@@ -3519,17 +3513,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | SpotLight (_, _) | DirectionalLight -> failwithumf ()
                     | _ -> ()
 
-        sw.Stop ()
-        Log.info ("Phase 2 " + string sw.ElapsedMilliseconds)
-        sw.Restart ()
-                    
         // flush (1 of 3) and categorize per-pass messages
         OpenGL.Gl.Flush ()
         GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPerPass staticModelsToDestroy renderer
-
-        sw.Stop ()
-        Log.info ("Phase 3 " + string sw.ElapsedMilliseconds)
-        sw.Restart ()
 
         // top-level geometry pass
         let view = Viewport.getView3d eyeCenter eyeRotation
@@ -3545,10 +3531,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // flush (2 of 3)
         OpenGL.Gl.Flush ()
-
-        sw.Stop ()
-        Log.info ("Phase 4 " + string sw.ElapsedMilliseconds)
-        sw.Restart ()
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
@@ -3581,9 +3563,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // flush (3 of 3)
         OpenGL.Gl.Flush ()
-
-        sw.Stop ()
-        Log.info ("Phase 5 " + string sw.ElapsedMilliseconds)
 
     /// Make a GlRenderer3d.
     static member make glContext window geometryViewport rasterViewport =
