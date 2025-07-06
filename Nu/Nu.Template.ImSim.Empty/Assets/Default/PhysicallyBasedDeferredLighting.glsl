@@ -918,8 +918,6 @@ void main()
         color = vec4(lightAccum + scatterAccum + diffuse + emission * albedo + specular, 1.0);
 
         // write depth
-        float near = projection[2].w / (projection[2].z - 1.0);
-        float far = projection[2].w / (projection[2].z + 1.0);
-        depth = depthViewToDepthBuffer(near, far, positionView.z);
+        depth = depthInput;
     }
 }

@@ -43,17 +43,16 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 
 void main()
 {
-    vec4 color = texture(colorTexture, texCoordsOut, 0);
-    if (color.w == 1.0) // ensure fragment written
+    float depth = texture(depthTexture, texCoordsOut, 0).r;
+    if (depth != 0.0) // ensure fragment written
     {
         // apply volumetric fog
         vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
-        vec3 color = color.xyz + fogAccum;
+        vec3 color = texture(colorTexture, texCoordsOut, 0).xyz + fogAccum;
 
         // compute and apply global fog when enabled
         if (fogEnabled == 1)
         {
-            float depth = texture(depthTexture, texCoordsOut, 0).r;
             vec4 position = depthToPosition(depth, texCoordsOut);
             float distance = length(position.xyz - eyeCenter);
             float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
