@@ -19,7 +19,10 @@ const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
 const int LIGHT_MAPS_MAX = 27;
 
-uniform sampler2D positionTexture;
+uniform vec3 eyeCenter;
+uniform mat4 viewInverse;
+uniform mat4 projectionInverse;
+uniform sampler2D depthTexture;
 uniform sampler2D normalPlusTexture;
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
@@ -44,6 +47,15 @@ bool contains(vec3 min1, vec3 size1, vec3 min2, vec3 size2)
     return
         all(greaterThanEqual(min1, min2)) &&
         all(lessThanEqual(max1, max2));
+}
+
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    float z = depth * 2.0 - 1.0;
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionView = projectionInverse * positionClip;
+    positionView /= positionView.w;
+    return viewInverse * positionView;
 }
 
 vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
@@ -72,10 +84,13 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
 
 void main()
 {
-    // ensure position was written
-    vec4 position = texture(positionTexture, texCoordsOut);
-    if (position.w == 1.0)
+    // ensure fragment was written
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth != 0.0)
     {
+        // recover position from depth
+        vec4 position = depthToPosition(depth, texCoordsOut);
+
         // retrieve remaining data from geometry buffers
         vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
         vec3 normal = normalPlus.xyz;

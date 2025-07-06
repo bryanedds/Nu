@@ -59,9 +59,12 @@ const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
     vec3(0.430, -0.194, -0.881),    vec3(-0.568, -0.537, -0.623),   vec3(-0.598, 0.707, -0.377),    vec3(0.366, -0.804, 0.469),
     vec3(0.062, 0.981, -0.184),     vec3(0.211, -0.936, 0.281),     vec3(0.151, -0.988, -0.027),    vec3(-0.949, -0.169, 0.266));
 
+uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
-uniform sampler2D positionTexture;
+uniform mat4 viewInverse;
+uniform mat4 projectionInverse;
+uniform sampler2D depthTexture;
 uniform sampler2D normalPlusTexture;
 uniform ivec2 ssaoResolution;
 uniform float ssaoIntensity;
@@ -90,12 +93,24 @@ float randomAngle()
     return result;
 }
 
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    float z = depth * 2.0 - 1.0;
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionView = projectionInverse * positionClip;
+    positionView /= positionView.w;
+    return viewInverse * positionView;
+}
+
 void main()
 {
-    // ensure position was written
-    vec4 position = texture(positionTexture, texCoordsOut);
-    if (position.w == 1.0)
+    // ensure fragment was written
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth != 0.0)
     {
+        // recover position from depth
+        vec4 position = depthToPosition(depth, texCoordsOut);
+
         // retrieve remaining data from geometry buffers
         vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
@@ -136,11 +151,12 @@ void main()
             // ensure we're not sampling too far from origin and thus blowing the texture cache
             if (distanceScreen < ssaoDistanceMax)
             {
-                // ensure sample position is actually written
-                vec4 samplePosition = texture(positionTexture, samplingPositionScreen);
-                if (samplePosition.w == 1.0)
+                // ensure sample is actually written
+                float sampleDepth = texture(depthTexture, samplingPositionScreen).r;
+                if (sampleDepth != 0.0)
                 {
                     // compute sample position in view space
+                    vec4 samplePosition = depthToPosition(sampleDepth, samplingPositionScreen);
                     vec4 samplePositionView = view * samplePosition;
 
                     // perform range check and accumulate if occluded

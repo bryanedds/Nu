@@ -20,7 +20,9 @@ const float REFLECTION_LOD_MAX = 7.0;
 const int LIGHT_MAPS_MAX = 27;
 
 uniform vec3 eyeCenter;
-uniform sampler2D positionTexture;
+uniform mat4 viewInverse;
+uniform mat4 projectionInverse;
+uniform sampler2D depthTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
 uniform sampler2D lightMappingTexture;
@@ -33,6 +35,15 @@ uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 in vec2 texCoordsOut;
 
 layout(location = 0) out vec4 frag;
+
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    float z = depth * 2.0 - 1.0;
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionView = projectionInverse * positionClip;
+    positionView /= positionView.w;
+    return viewInverse * positionView;
+}
 
 vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
 {
@@ -48,10 +59,13 @@ vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize
 
 void main()
 {
-    // ensure position was written
-    vec4 position = texture(positionTexture, texCoordsOut);
-    if (position.w == 1.0)
+    // ensure fragment was written
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth != 0.0)
     {
+        // recover position from depth
+        vec4 position = depthToPosition(depth, texCoordsOut);
+
         // retrieve remaining data from geometry buffers
         float roughness = texture(materialTexture, texCoordsOut).r;
         vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;

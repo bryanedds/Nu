@@ -35,6 +35,8 @@ vec4[](
 uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewInverse;
+uniform mat4 projectionInverse;
 uniform float lightCutoffMargin;
 uniform float lightAmbientBoostCutoff;
 uniform float lightAmbientBoostScalar;
@@ -65,7 +67,7 @@ uniform float ssrEdgeHorizontalMargin;
 uniform float ssrEdgeVerticalMargin;
 uniform vec3 ssrLightColor;
 uniform float ssrLightBrightness;
-uniform sampler2D positionTexture;
+uniform sampler2D depthTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
@@ -163,6 +165,15 @@ vec3 fresnelSchlick(float cosTheta, vec3 f0)
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 {
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    float z = depth * 2.0 - 1.0;
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionView = projectionInverse * positionClip;
+    positionView /= positionView.w;
+    return viewInverse * positionView;
 }
 
 float depthViewToDepthBuffer(float near, float far, float depthView)
@@ -616,7 +627,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularScreen, out float specularScreenWeight)
+void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularScreen, out float specularScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -628,7 +639,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
-    vec2 texSize = textureSize(positionTexture, 0).xy;
+    vec2 texSize = textureSize(depthTexture, 0).xy;
     vec4 startFrag4 = projection * startView;
     vec2 startFrag = startFrag4.xy / startFrag4.w;
     startFrag = startFrag * 0.5 + 0.5;
@@ -644,6 +655,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
     // initialize current fragment
     vec2 currentFrag = startFrag;
     vec2 currentTexCoords = currentFrag / texSize;
+    float currentDepth = depth;
     vec4 currentPosition = position;
     vec4 currentPositionView = positionView;
 
@@ -663,7 +675,8 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
         // advance frag values
         currentFrag += stepAmount;
         currentTexCoords = currentFrag / texSize;
-        currentPosition = texture(positionTexture, currentTexCoords);
+        currentDepth = texture(depthTexture, currentTexCoords).r;
+        currentPosition = depthToPosition(currentDepth, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
@@ -673,7 +686,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
         float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
-        if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
+        if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
@@ -682,7 +695,8 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentTexCoords = currentFrag / texSize;
-                currentPosition = texture(positionTexture, currentTexCoords);
+                currentDepth = texture(depthTexture, currentTexCoords).r;
+                currentPosition = depthToPosition(currentDepth, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
 
@@ -691,7 +705,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
                 float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
-                if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
+                if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space specular color and weight
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
@@ -729,10 +743,13 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
 
 void main()
 {
-    // ensure position was written
-    vec4 position = texture(positionTexture, texCoordsOut);
-    if (position.w == 1.0)
+    // ensure fragment was written
+    float depthInput = texture(depthTexture, texCoordsOut).r;
+    if (depthInput != 0.0)
     {
+        // recover position from depth
+        vec4 position = depthToPosition(depthInput, texCoordsOut);
+
         // retrieve remaining data from geometry buffers
         vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
         vec4 material = texture(materialTexture, texCoordsOut);
@@ -874,19 +891,20 @@ void main()
         float specularScreenWeight = 0.0;
         if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
         {
-            vec2 texSize = textureSize(positionTexture, 0).xy;
+            vec2 texSize = textureSize(depthTexture, 0).xy;
             float texelHeight = 1.0 / texSize.y;
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
-            vec4 positionBelow = texture(positionTexture, texCoordsBelow);
-            computeSsr(positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+            float depthBelow = texture(depthTexture, texCoordsBelow).r;
+            vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
+            computeSsr(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
 
             // if hit failed, try again on the proper tex coord
             if (specularScreenWeight == 0.0)
             {
                 vec2 texCoords = texCoordsOut;
                 texCoords.y = max(0.0, texCoords.y);
-                computeSsr(position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+                computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
             }
         }
 
