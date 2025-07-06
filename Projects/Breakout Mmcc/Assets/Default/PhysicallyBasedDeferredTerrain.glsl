@@ -24,6 +24,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewProjection;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -60,7 +61,7 @@ void main()
     blendsOut[0] = blends[0];
     blendsOut[1] = blends[1];
     tintOut = tint;
-    gl_Position = projection * view * positionOut;
+    gl_Position = viewProjection * positionOut;
 }
 
 #shader fragment
