@@ -3514,7 +3514,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | SpotLight (_, _) | DirectionalLight -> failwithumf ()
                     | _ -> ()
                     
-        // categorize per-pass messages
+        // flush (1 of 3) and categorize per-pass messages
+        OpenGL.Gl.Flush ()
         GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessagesPerPass staticModelsToDestroy renderer
 
         // top-level geometry pass
@@ -3528,6 +3529,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             normalPass normalTasks renderer
             true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
             renderbuffer framebuffer
+
+        // flush (2 of 3)
+        OpenGL.Gl.Flush ()
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
@@ -3557,6 +3561,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // clear lighting config dirty flag
         renderer.LightingConfigChanged <- false
+
+        // flush (3 of 3)
+        OpenGL.Gl.Flush ()
 
     /// Make a GlRenderer3d.
     static member make glContext window geometryViewport rasterViewport =
