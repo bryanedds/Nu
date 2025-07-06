@@ -55,7 +55,8 @@ void main()
         {
             float depth = texture(depthTexture, texCoordsOut, 0).r;
             vec4 position = depthToPosition(depth, texCoordsOut);
-            float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish)) * fogColor.a;
+            float distance = length(position.xyz - eyeCenter);
+            float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
             color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
         }
 
