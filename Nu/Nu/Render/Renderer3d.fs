@@ -148,18 +148,18 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
 
     /// Get the hash code for this material.
-    static member getHashCode this =
-        hash this.AlbedoImageOpt ^^^
-        hash this.RoughnessImageOpt ^^^
-        hash this.MetallicImageOpt ^^^
-        hash this.AmbientOcclusionImageOpt ^^^
-        hash this.EmissionImageOpt ^^^
-        hash this.NormalImageOpt ^^^
-        hash this.HeightImageOpt ^^^
-        hash this.SubdermalImageOpt ^^^
-        hash this.FinenessImageOpt ^^^
-        hash this.ScatterImageOpt ^^^
-        hash this.TwoSidedOpt
+    static member hash material =
+        hash material.AlbedoImageOpt ^^^
+        hash material.RoughnessImageOpt ^^^
+        hash material.MetallicImageOpt ^^^
+        hash material.AmbientOcclusionImageOpt ^^^
+        hash material.EmissionImageOpt ^^^
+        hash material.NormalImageOpt ^^^
+        hash material.HeightImageOpt ^^^
+        hash material.SubdermalImageOpt ^^^
+        hash material.FinenessImageOpt ^^^
+        hash material.ScatterImageOpt ^^^
+        hash material.TwoSidedOpt
 
     /// Check that two materials are equal.
     static member equals this that =
@@ -177,7 +177,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.TwoSidedOpt = that.TwoSidedOpt
 
     override this.GetHashCode () =
-        Material.getHashCode this
+        Material.hash this
 
     override this.Equals (that : obj) =
         match that with

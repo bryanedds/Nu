@@ -456,8 +456,8 @@ module Texture =
         | EagerTexture of EagerTexture
         | LazyTexture of LazyTexture
 
-        static member getHashCode this =
-            match this with
+        static member hash texture =
+            match texture with
             | EmptyTexture -> 0
             | EagerTexture eagerTexture -> hash eagerTexture.TextureId
             | LazyTexture lazyTexture -> lazyTexture.GetHashCode ()
@@ -496,7 +496,7 @@ module Texture =
             | LazyTexture lazyTexture -> lazyTexture.Destroy ()
 
         override this.GetHashCode () =
-            Texture.getHashCode this
+            Texture.hash this
 
         override this.Equals that =
             match that with
