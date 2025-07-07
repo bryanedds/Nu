@@ -40,7 +40,7 @@ type RendererProcess =
         /// Submit enqueued render messages for processing.
         abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Vector2i -> Viewport -> Viewport -> Viewport -> ImDrawDataPtr -> unit
         /// Request to swap the underlying render buffer.
-        abstract Swap : unit -> unit
+        abstract RequestSwap : unit -> unit
         /// Terminate the rendering process, blocking until termination is complete.
         abstract Terminate : unit -> unit
         end
@@ -187,7 +187,7 @@ type RendererInline () =
 
             | None -> ()
 
-        member ri.Swap () =
+        member ri.RequestSwap () =
             match windowOpt with
             | Some (SglWindow window) ->
                 if glFinishRequired then OpenGL.Gl.Finish ()
@@ -648,7 +648,7 @@ type RendererThread () =
             messageBuffersImGui.[messageBufferIndex].Clear ()
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, rasterViewport, outerViewport, drawData)
 
-        member rt.Swap () =
+        member rt.RequestSwap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swapRequested <- true
             while not swapRequestAcknowledged && not terminated do Thread.Yield () |> ignore<bool>
