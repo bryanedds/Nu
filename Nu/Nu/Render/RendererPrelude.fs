@@ -53,13 +53,14 @@ type [<Struct>] RenderType =
 type RenderPass =
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
     | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
     | NormalPass
 
-    /// The category used internally for ordering renderer categorization.
-    member this.Category =
+    member this.RenderPhase =
         match this with
         | LightMapPass _ -> Choice1Of3 ()
         | ShadowPass (lightId, _, _, _, _) -> Choice2Of3 lightId
+        | ReflectionPass _ -> Choice3Of3 ()
         | NormalPass -> Choice3Of3 ()
 
     /// Check that a render pass should displace another.

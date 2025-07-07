@@ -628,19 +628,19 @@ type RenderMessage3d =
         | RenderLightProbe3d _ -> Choice1Of3 ()
         | RenderLightMap3d _ -> Choice1Of3 ()
         | RenderLight3d _ -> Choice1Of3 ()
-        | RenderBillboard renderBillboard -> renderBillboard.RenderPass.Category
-        | RenderBillboards renderBillboards -> renderBillboards.RenderPass.Category
-        | RenderBillboardParticles renderBillboardParticles -> renderBillboardParticles.RenderPass.Category
-        | RenderStaticModelSurface renderStaticModelSurface -> renderStaticModelSurface.RenderPass.Category
-        | RenderStaticModel renderStaticModel -> renderStaticModel.RenderPass.Category
-        | RenderStaticModels renderStaticModels -> renderStaticModels.RenderPass.Category
-        | RenderCachedStaticModel cachedStaticModelMessage -> cachedStaticModelMessage.CachedStaticModelRenderPass.Category
-        | RenderCachedStaticModelSurface cachedStaticModelSurfaceMessage -> cachedStaticModelSurfaceMessage.CachedStaticModelSurfaceRenderPass.Category
-        | RenderUserDefinedStaticModel renderUserDefinedStaticModel -> renderUserDefinedStaticModel.RenderPass.Category
-        | RenderAnimatedModel renderAnimatedModel -> renderAnimatedModel.RenderPass.Category
-        | RenderAnimatedModels renderAnimatedModels -> renderAnimatedModels.RenderPass.Category
-        | RenderCachedAnimatedModel cachedAnimatedModelMessage -> cachedAnimatedModelMessage.CachedAnimatedModelRenderPass.Category
-        | RenderTerrain renderTerrain -> renderTerrain.RenderPass.Category
+        | RenderBillboard renderBillboard -> renderBillboard.RenderPass.RenderPhase
+        | RenderBillboards renderBillboards -> renderBillboards.RenderPass.RenderPhase
+        | RenderBillboardParticles renderBillboardParticles -> renderBillboardParticles.RenderPass.RenderPhase
+        | RenderStaticModelSurface renderStaticModelSurface -> renderStaticModelSurface.RenderPass.RenderPhase
+        | RenderStaticModel renderStaticModel -> renderStaticModel.RenderPass.RenderPhase
+        | RenderStaticModels renderStaticModels -> renderStaticModels.RenderPass.RenderPhase
+        | RenderCachedStaticModel cachedStaticModelMessage -> cachedStaticModelMessage.CachedStaticModelRenderPass.RenderPhase
+        | RenderCachedStaticModelSurface cachedStaticModelSurfaceMessage -> cachedStaticModelSurfaceMessage.CachedStaticModelSurfaceRenderPass.RenderPhase
+        | RenderUserDefinedStaticModel renderUserDefinedStaticModel -> renderUserDefinedStaticModel.RenderPass.RenderPhase
+        | RenderAnimatedModel renderAnimatedModel -> renderAnimatedModel.RenderPass.RenderPhase
+        | RenderAnimatedModels renderAnimatedModels -> renderAnimatedModels.RenderPass.RenderPhase
+        | RenderCachedAnimatedModel cachedAnimatedModelMessage -> cachedAnimatedModelMessage.CachedAnimatedModelRenderPass.RenderPhase
+        | RenderTerrain renderTerrain -> renderTerrain.RenderPass.RenderPhase
         | ConfigureLighting3d _ -> Choice1Of3 ()
         | ConfigureRenderer3d _ -> Choice1Of3 ()
         | LoadRenderPackage3d _ -> Choice1Of3 ()
@@ -1925,6 +1925,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                         | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
+                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
                         | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
                     if unculled then
                         GlRenderer3d.categorizeStaticModelSurface (&surfaceMatrix, castShadow, presence, &insetOpt, &properties, surface, depthTest, renderType, renderPass, ValueSome renderTasks, renderer)
@@ -2365,7 +2366,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, projectionArray, viewProjectionArray, eyeCenter,
              instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader, vao)
-        OpenGL.Hl.Assert ()
 
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
         let albedoTexture =

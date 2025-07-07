@@ -1523,10 +1523,12 @@ module WorldModule2 =
                         if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
+                | ReflectionPass (_, _) -> ()
                 | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 match renderPass with
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _, _) -> ()
+                | ReflectionPass (_, _) -> ()
                 | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 world.Timers.RenderGatherTimer.Stop ()
 
@@ -1834,7 +1836,7 @@ module WorldModule2 =
 
                                                                     // process rendering (1/2)
                                                                     let rendererProcess = World.getRendererProcess world
-                                                                    if not firstFrame then rendererProcess.Swap ()
+                                                                    if not firstFrame then rendererProcess.RequestSwap ()
 
                                                                     // process frame pacing mechanics
                                                                     if world.Timers.MainThreadTimer.IsRunning then
