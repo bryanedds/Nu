@@ -2341,7 +2341,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 // game menu
                 if ImGui.BeginMenu "Game" then
                     if ImGui.MenuItem "New Project" then ShowNewProjectDialog <- true
-                    if ImGui.MenuItem ("Open Project", "Ctrl+Shit+O") then ShowOpenProjectDialog <- true
+                    if ImGui.MenuItem ("Open Project", "Ctrl+Shift+O") then ShowOpenProjectDialog <- true
                     if ImGui.MenuItem "Close Project" then ShowCloseProjectDialog <- true
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo world |> ignore<bool>
