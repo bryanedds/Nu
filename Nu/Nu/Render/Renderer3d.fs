@@ -120,9 +120,9 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone }
-
+          
 /// Material description for surfaces.
-type [<SymbolicExpansion>] Material =
+type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     { AlbedoImageOpt : Image AssetTag voption
       RoughnessImageOpt : Image AssetTag voption
       MetallicImageOpt : Image AssetTag voption
@@ -146,6 +146,47 @@ type [<SymbolicExpansion>] Material =
     member this.FinenessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName) this.FinenessImageOpt
     member this.ScatterImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialScatterName) this.ScatterImageOpt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
+
+    /// Get the hash code for this material.
+    static member getHashCode this =
+        hash this.AlbedoImageOpt ^^^
+        hash this.RoughnessImageOpt ^^^
+        hash this.MetallicImageOpt ^^^
+        hash this.AmbientOcclusionImageOpt ^^^
+        hash this.EmissionImageOpt ^^^
+        hash this.NormalImageOpt ^^^
+        hash this.HeightImageOpt ^^^
+        hash this.SubdermalImageOpt ^^^
+        hash this.FinenessImageOpt ^^^
+        hash this.ScatterImageOpt ^^^
+        hash this.TwoSidedOpt
+
+    /// Check that two materials are equal.
+    static member equals this that =
+        refEq this that ||
+        this.AlbedoImageOpt = that.AlbedoImageOpt &&
+        this.RoughnessImageOpt = that.RoughnessImageOpt &&
+        this.MetallicImageOpt = that.MetallicImageOpt &&
+        this.AmbientOcclusionImageOpt = that.AmbientOcclusionImageOpt &&
+        this.EmissionImageOpt = that.EmissionImageOpt &&
+        this.NormalImageOpt = that.NormalImageOpt &&
+        this.HeightImageOpt = that.HeightImageOpt &&
+        this.SubdermalImageOpt = that.SubdermalImageOpt &&
+        this.FinenessImageOpt = that.FinenessImageOpt &&
+        this.ScatterImageOpt = that.ScatterImageOpt &&
+        this.TwoSidedOpt = that.TwoSidedOpt
+
+    override this.GetHashCode () =
+        Material.getHashCode this
+
+    override this.Equals (that : obj) =
+        match that with
+        | :? Material as that -> Material.equals this that
+        | _ -> false
+
+    interface IEquatable<Material> with
+        member this.Equals that =
+            Material.equals this that
 
 [<RequireQualifiedAccess>]
 module Material =

@@ -50,7 +50,7 @@ type [<Struct>] RenderType =
     | ForwardRenderType of Subsort : single * Sort : single
 
 /// Describes the nature of the rendering that takes place.
-type RenderPass =
+type [<CustomEquality; NoComparison>] RenderPass =
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
     | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
@@ -60,17 +60,56 @@ type RenderPass =
     static member displaces renderPass renderPass2 =
         if renderPass <> renderPass2 then
             match (renderPass, renderPass2) with
-            | (NormalPass, NormalPass) -> failwithumf ()
-            | (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
-            | (ShadowPass (lightId, faceInfoOpt, _, _, _), ShadowPass (lightId2, faceInfoOpt2, _, _, _)) ->
-                lightId = lightId2 &&
+            | (LightMapPass (id, _), LightMapPass (id2, _)) -> id = id2
+            | (ShadowPass (id, faceInfoOpt, _, _, _), ShadowPass (id2, faceInfoOpt2, _, _, _)) ->
+                id = id2 &&
                 match struct (faceInfoOpt, faceInfoOpt2) with
                 | struct (Some faceInfo, Some faceInfo2) -> Triple.fst faceInfo = Triple.fst faceInfo2
                 | struct (None, None) -> true
                 | struct (_, _) ->  false
-            | (ReflectionPass (reflectorId, _), ReflectionPass (reflectorId2, _)) -> reflectorId = reflectorId2
+            | (ReflectionPass (id, _), ReflectionPass (id2, _)) -> id = id2
+            | (NormalPass, NormalPass) -> failwithumf ()
             | (_, _) -> false
         else false
+
+    static member private equals this that =
+        refEq this that ||
+        match this with
+        | LightMapPass (id, _) ->
+            match that with
+            | LightMapPass (id2, _) -> id = id2
+            | _ -> false
+        | ShadowPass (id, faceInfoOpt, _, _, _) ->
+            match that with
+            | ShadowPass (id2, faceInfoOpt2, _, _, _) ->
+                id = id2 &&
+                match faceInfoOpt with
+                | Some (faceIndex, _, _) ->
+                    match faceInfoOpt2 with
+                    | Some (faceIndex2, _, _) -> faceIndex = faceIndex2
+                    | None -> false
+                | None -> faceInfoOpt2.IsNone
+            | _ -> false
+        | ReflectionPass (id, _) ->
+            match that with
+            | ReflectionPass (id2, _) -> id = id2
+            | _ -> false
+        | NormalPass -> that.IsNormalPass
+
+    override this.GetHashCode () =
+        match this with
+        | LightMapPass (id, _) -> hash id
+        | ShadowPass (id, faceInfoOpt, _, _, _) -> 1 ^^^ hash id ^^^ match faceInfoOpt with Some (faceIndex, _, _) -> hash faceIndex | None -> 0
+        | ReflectionPass (id, _) -> 2 ^^^ hash id
+        | NormalPass -> 3
+
+    override this.Equals that =
+        match that with
+        | :? RenderPass as that -> RenderPass.equals this that
+        | _ -> false
+
+    interface IEquatable<RenderPass> with
+        member this.Equals that = RenderPass.equals this that
 
 /// An asset that is used for rendering.
 type RenderAsset =

@@ -375,9 +375,11 @@ module Texture =
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
     /// A texture that's immediately loaded.
-    type [<Struct>] EagerTexture =
+    type [<Struct; NoEquality; NoComparison>] EagerTexture =
         { TextureMetadata : TextureMetadata
           TextureId : uint }
+
+        /// Destroy this texture's backing OpenGL texture.
         member this.Destroy () =
             Gl.DeleteTextures [|this.TextureId|]
 
@@ -449,25 +451,61 @@ module Texture =
                     fullServeAttempted <- true
 
     /// A 2d texture.
-    type Texture =
+    type [<CustomEquality; NoComparison>] Texture =
         | EmptyTexture
         | EagerTexture of EagerTexture
         | LazyTexture of LazyTexture
+
+        static member getHashCode this =
+            match this with
+            | EmptyTexture -> 0
+            | EagerTexture eagerTexture -> hash eagerTexture.TextureId
+            | LazyTexture lazyTexture -> lazyTexture.GetHashCode ()
+
+        static member equals this that =
+            match this with
+            | EmptyTexture ->
+                match that with
+                | EmptyTexture -> true
+                | _ -> false
+            | EagerTexture eagerThis ->
+                match that with
+                | EagerTexture eagerThat -> eagerThis.TextureId = eagerThat.TextureId
+                | _ -> false
+            | LazyTexture lazyThis ->
+                match that with
+                | LazyTexture lazyThat -> lazyThis = lazyThat
+                | _ -> false
+
         member this.TextureMetadata =
             match this with
             | EmptyTexture -> TextureMetadata.empty
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
+
         member this.TextureId =
             match this with
             | EmptyTexture -> 0u
             | EagerTexture eagerTexture -> eagerTexture.TextureId
             | LazyTexture lazyTexture -> lazyTexture.TextureId
+
         member this.Destroy () =
             match this with
             | EmptyTexture -> ()
             | EagerTexture eagerTexture -> eagerTexture.Destroy ()
             | LazyTexture lazyTexture -> lazyTexture.Destroy ()
+
+        override this.GetHashCode () =
+            Texture.getHashCode this
+
+        override this.Equals that =
+            match that with
+            | :? Texture as texture -> Texture.equals this texture
+            | _ -> false
+
+        interface System.IEquatable<Texture> with
+            member this.Equals that =
+                Texture.equals this that
 
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
