@@ -2338,7 +2338,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, projectionArray, viewProjectionArray, eyeCenter,
              instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader, vao)
-        OpenGL.Hl.Assert ()
 
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
         let albedoTexture =
