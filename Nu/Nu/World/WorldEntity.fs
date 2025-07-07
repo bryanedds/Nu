@@ -563,25 +563,45 @@ module WorldEntityModule =
             match entityStateOpt :> obj with
             | null -> ()
             | _ ->
+
+                // transfer entity state to destination
                 let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
                 let children = World.getEntityChildren source world
                 let order = World.getEntityOrder source world
                 World.destroyEntityImmediateInternal false source world
                 World.addEntity entityState destination world
+
+                // update order
                 World.setEntityOrder order destination world |> ignore<bool>
+
+                // rename children
                 for child in children do
                     let destination = destination / child.Name
                     World.renameEntityImmediate child destination world
+
+                // update publish update flag
+                World.updateEntityPublishUpdateFlag destination world |> ignore<bool>
+
+                // update presence property from override
+                World.updateEntityPresenceOverride destination world
+
+                // process if needed
                 if WorldModule.UpdatingSimulants && World.getEntitySelected destination world then
                     WorldModule.tryProcessEntity true destination world
+
+                // update propagation sources
                 for target in World.getPropagationTargets source world do
                     if World.getEntityExists target world then
                         World.setEntityPropagationSourceOpt (Some destination) target world |> ignore<bool>
+
+                // insert a propagated descriptor if needed
                 match World.getEntityPropagatedDescriptorOpt destination world with
                 | None when World.hasPropagationTargets destination world ->
                     let propagatedDescriptor = World.writeEntity false false EntityDescriptor.empty destination world
                     World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> ignore<bool>
                 | Some _ | None -> ()
+
+                // mount
                 let mountOpt = World.getEntityMountOpt destination world
                 if  source.Parent <> destination.Parent &&
                     Option.isSome mountOpt &&

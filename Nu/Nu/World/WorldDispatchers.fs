@@ -26,9 +26,12 @@ type GuiDispatcher () =
         [define Entity.Absolute true
          define Entity.Size Constants.Engine.EntityGuiSizeDefault
          define Entity.Presence Omnipresent
-         define Entity.Elevation 1.0f
-         define Entity.ElevationLocal 1.0f
-         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault]
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
+         define Entity.Layout Manual
+         define Entity.LayoutMargin v2Zero
+         define Entity.LayoutOrder 0
+         define Entity.DockType DockCenter
+         define Entity.GridPosition v2iZero]
 
 /// A 3d entity dispatcher.
 type Entity3dDispatcher (physical, lightProbe, light) =

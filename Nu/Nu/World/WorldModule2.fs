@@ -1997,6 +1997,8 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2189,6 +2191,8 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
