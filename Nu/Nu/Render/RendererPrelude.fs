@@ -75,28 +75,32 @@ type [<CustomEquality; NoComparison>] RenderPass =
     static member private equals this that =
         refEq this that ||
         match this with
-        | LightMapPass (id, _) ->
+        | LightMapPass (id, bounds) ->
             match that with
-            | LightMapPass (id2, _) -> id = id2
+            | LightMapPass (id2, bounds2) -> id = id2 && box3Eq bounds bounds2
             | _ -> false
-        | ShadowPass (id, faceInfoOpt, _, _, _) ->
+        | ShadowPass (id, faceInfoOpt, lightType, rotation, frustum) ->
             match that with
-            | ShadowPass (id2, faceInfoOpt2, _, _, _) ->
+            | ShadowPass (id2, faceInfoOpt2, lightType2, rotation2, frustum2) ->
                 id = id2 &&
-                match faceInfoOpt with
-                | Some (faceIndex, _, _) ->
+                (match faceInfoOpt with
+                 | Some (faceIndex, view, projection) ->
                     match faceInfoOpt2 with
-                    | Some (faceIndex2, _, _) -> faceIndex = faceIndex2
+                    | Some (faceIndex2, view2, projection2) -> faceIndex = faceIndex2 && m4Eq view view2 && m4Eq projection projection2
                     | None -> false
-                | None -> faceInfoOpt2.IsNone
+                 | None -> faceInfoOpt2.IsNone) &&
+                lightType = lightType2 &&
+                quatEq rotation rotation2 &&
+                frustum = frustum2
             | _ -> false
-        | ReflectionPass (id, _) ->
+        | ReflectionPass (id, frustum) ->
             match that with
-            | ReflectionPass (id2, _) -> id = id2
+            | ReflectionPass (id2, frustum2) -> id = id2 && frustum = frustum2
             | _ -> false
         | NormalPass -> that.IsNormalPass
 
     override this.GetHashCode () =
+        // OPTIMIZATION: we only hash certain parts of the render pass in order to make hashing cheaper.
         match this with
         | LightMapPass (id, _) -> hash id
         | ShadowPass (id, faceInfoOpt, _, _, _) -> 1 ^^^ hash id ^^^ match faceInfoOpt with Some (faceIndex, _, _) -> hash faceIndex | None -> 0
