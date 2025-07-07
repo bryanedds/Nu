@@ -219,6 +219,9 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer
 
+        static member comparer =
+            HashIdentity.FromFunctions PhysicallyBasedSurface.hash PhysicallyBasedSurface.equals
+
         static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
             let hashCode =
                 (hash material.AlbedoTexture) ^^^
@@ -266,7 +269,7 @@ module PhysicallyBased =
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
-        let comparer = HashIdentity.FromFunctions hash equals
+        let comparer = PhysicallyBasedSurface.comparer
 
     /// A light probe inside a physically-based static model.
     type PhysicallyBasedLightProbe =
