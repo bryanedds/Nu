@@ -50,7 +50,7 @@ void main()
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     albedoOut = albedo;
     materialOut = material;
-    normalOut = mat3(model) * normal;
+    normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     gl_Position = viewProjection * positionOut;
 }
