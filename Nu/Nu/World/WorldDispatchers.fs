@@ -213,7 +213,8 @@ type Box2dDispatcher () =
          typeof<StaticSpriteFacet>]
 
     static member Properties =
-        [define Entity.BodyType Dynamic
+        [define Entity.MountOpt None
+         define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })]
 
 /// Gives an entity the base behavior of a rigid 2d sphere using static physics.
@@ -237,7 +238,8 @@ type Ball2dDispatcher () =
          typeof<StaticSpriteFacet>]
 
     static member Properties =
-        [define Entity.BodyType Dynamic
+        [define Entity.MountOpt None
+         define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticImage Assets.Default.Ball]
 
@@ -277,7 +279,8 @@ type Character2dDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.CelSize (v2 28.0f 28.0f)
+        [define Entity.MountOpt None
+         define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.BodyType Dynamic
@@ -631,7 +634,8 @@ type Box3dDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyType Dynamic]
+        [define Entity.MountOpt None
+         define Entity.BodyType Dynamic]
 
 /// Gives an entity the base behavior of a rigid 3d sphere using static physics.
 type Sphere3dDispatcher () =
@@ -656,7 +660,8 @@ type Ball3dDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyType Dynamic
+        [define Entity.MountOpt None
+         define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticModel Assets.Default.BallModel]
 
@@ -669,7 +674,8 @@ type Character3dDispatcher () =
          typeof<AnimatedModelFacet>]
 
     static member Properties =
-        [define Entity.BodyType KinematicCharacter
+        [define Entity.MountOpt None
+         define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
     override this.Update (entity, world) =
