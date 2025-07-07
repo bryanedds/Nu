@@ -43,8 +43,9 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 
 void main()
 {
+    // ensure fragment written
     float depth = texture(depthTexture, texCoordsOut, 0).r;
-    if (depth != 0.0) // ensure fragment written
+    if (depth != 0.0)
     {
         // apply volumetric fog
         vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;

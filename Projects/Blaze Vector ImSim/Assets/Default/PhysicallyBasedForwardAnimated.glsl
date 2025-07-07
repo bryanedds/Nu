@@ -746,8 +746,8 @@ void main()
     // compute and apply global fog when enabled
     if (fogEnabled == 1)
     {
-        float depth = length(position.xyz - eyeCenter);
-        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish)) * fogColor.a;
+        float distance = length(position.xyz - eyeCenter);
+        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
         color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
 
