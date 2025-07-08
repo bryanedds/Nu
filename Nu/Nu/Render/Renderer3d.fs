@@ -483,8 +483,8 @@ type StaticModelSurfaceBundle =
       DepthTest : DepthTest
       RenderType : RenderType }
 
-type RenderStaticModelSurfaceBundle =
-    { StaticModelSurfaceBundle : StaticModelSurfaceBundle
+type RenderStaticModelSurfaceBundles =
+    { StaticModelSurfaceBundles : StaticModelSurfaceBundle array
       RenderPass : RenderPass }
 
 type RenderStaticModel =
@@ -658,7 +658,7 @@ type RenderMessage3d =
     | RenderBillboards of RenderBillboards
     | RenderBillboardParticles of RenderBillboardParticles
     | RenderStaticModelSurface of RenderStaticModelSurface
-    | RenderStaticModelSurfaceBundle of RenderStaticModelSurfaceBundle
+    | RenderStaticModelSurfaceBundles of RenderStaticModelSurfaceBundles
     | RenderStaticModel of RenderStaticModel
     | RenderStaticModels of RenderStaticModels
     | RenderCachedStaticModel of CachedStaticModelMessage
@@ -3393,8 +3393,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
-            | RenderStaticModelSurfaceBundle rsmsb ->
-                GlRenderer3d.categorizeStaticModelSurfaceBundle (rsmsb.StaticModelSurfaceBundle.BundleId, rsmsb.StaticModelSurfaceBundle.StaticModelSurfaces, rsmsb.StaticModelSurfaceBundle.Material, rsmsb.StaticModelSurfaceBundle.StaticModel, rsmsb.StaticModelSurfaceBundle.SurfaceIndex, rsmsb.StaticModelSurfaceBundle.DepthTest, rsmsb.StaticModelSurfaceBundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, rsmsb.RenderPass, renderer)
+            | RenderStaticModelSurfaceBundles rsmsb ->
+                let renderPass = rsmsb.RenderPass
+                for bundle in rsmsb.StaticModelSurfaceBundles do
+                    GlRenderer3d.categorizeStaticModelSurfaceBundle (bundle.BundleId, bundle.StaticModelSurfaces, bundle.Material, bundle.StaticModel, bundle.SurfaceIndex, bundle.DepthTest, bundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
