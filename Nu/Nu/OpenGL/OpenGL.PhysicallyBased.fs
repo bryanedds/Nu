@@ -216,8 +216,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.FinenessTexture = right.SurfaceMaterial.FinenessTexture &&
             left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
-            left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
-            left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer
+            refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
 
         static member comparer =
             HashIdentity.FromFunctions PhysicallyBasedSurface.hash PhysicallyBasedSurface.equals

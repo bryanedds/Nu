@@ -156,7 +156,10 @@ module WorldEntityHierarchy =
         static member freezeEntityHierarchy surfaceMaterialsPopulated (parent : Entity) world =
             let mutable boundsOpt = Option<Box3>.None // using mutation because I was in a big hurry when I wrote this
             let frozenEntities = List ()
-            let frozenBundles = Dictionary<Presence * Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType, Guid * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List> ()
+            let frozenBundles =
+                Dictionary<
+                    Presence * Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
+                    Guid * StaticModel AssetTag * int * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
@@ -183,8 +186,8 @@ module WorldEntityHierarchy =
                             let frozenKey = (presence, material, surface, depthTest, renderType)
                             let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties)
                             match frozenBundles.TryGetValue frozenKey with
-                            | (true, (_, bundle)) -> bundle.Add frozenValue
-                            | (false, _) -> frozenBundles.Add (frozenKey, (Gen.id, List [frozenValue]))
+                            | (true, (_, _, _, bundle)) -> bundle.Add frozenValue
+                            | (false, _) -> frozenBundles.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
                             if entity.GetBodyFreezableWhenSurfaceFreezable world then
                                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                 let navShape = entity.GetNavShape world
@@ -237,8 +240,8 @@ module WorldEntityHierarchy =
                                 let frozenKey = (presence, material, surface, depthTest, renderType)
                                 let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties)
                                 match frozenBundles.TryGetValue frozenKey with
-                                | (true, (_, bundle)) -> bundle.Add frozenValue
-                                | (false, _) -> frozenBundles.Add (frozenKey, (Gen.id, List [frozenValue]))
+                                | (true, (_, _, _, bundle)) -> bundle.Add frozenValue
+                                | (false, _) -> frozenBundles.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
                                 if entity.GetBodyFreezableWhenSurfaceFreezable world then
                                     let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                     let navShape = entity.GetNavShape world
@@ -267,13 +270,14 @@ module WorldEntityHierarchy =
             let frozenBundles =
                 frozenBundles
                 |> Seq.map (fun entry ->
-                    let (presence, material, surface, depthTest, renderType) = entry.Key
-                    let (bundleId, bundle) = entry.Value
+                    let (presence, material, _, depthTest, renderType) = entry.Key
+                    let (bundleId, staticModel, surfaceIndex, bundle) = entry.Value
                     let bundle =
                         { BundleId = bundleId
                           StaticModelSurfaces = bundle
                           Material = material
-                          Surface = surface
+                          StaticModel = staticModel
+                          SurfaceIndex = surfaceIndex
                           DepthTest = depthTest
                           RenderType = renderType }
                     (presence, bundle))
