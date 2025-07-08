@@ -1870,6 +1870,10 @@ and [<ReferenceEquality>] WorldState =
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
           WorldExtension : WorldExtension }
 
+    override this.ToString () =
+        // NOTE: Too big to print in the debugger, so printing nothing.
+        ""
+
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
 /// game, messages to by consumed by the various engine subsystems, and general configuration data. For better
 /// ergonomics, the World type keeps a mutable reference to the functional WorldState, which is updated by the engine
@@ -2148,6 +2152,10 @@ and [<NoEquality; NoComparison>] World =
         let eyeRotation = this.Eye3dRotation
         let eyeFieldOfView = this.Eye3dFieldOfView
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
+
+    override this.ToString () =
+        // NOTE: Too big to print in the debugger, so printing nothing.
+        ""
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values and configurations.
