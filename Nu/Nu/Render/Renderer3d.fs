@@ -2284,8 +2284,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // blit parameters to instance fields
         let mutable i = 0
-        for _ in 0 .. dec parameters.Count do
-            let struct (model, _, presence, texCoordsOffset, properties, bounds) = parameters.[i]
+        for j in 0 .. dec parameters.Count do
+            let struct (model, _, presence, texCoordsOffset, properties, bounds) = parameters.[j]
             let unculled =
                 match renderPass with
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
