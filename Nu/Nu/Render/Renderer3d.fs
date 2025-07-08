@@ -3314,7 +3314,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
     /// Render 3d surfaces.
-    static member render (frustumInterior : Frustum) frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView geometryViewport (rasterViewport : Viewport) renderbuffer framebuffer renderMessages renderer =
+    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessages renderer =
 
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
