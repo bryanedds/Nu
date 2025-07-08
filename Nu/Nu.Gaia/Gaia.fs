@@ -486,8 +486,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
 
-    let private containsProperty propertyDescriptor simulant world =
-        SimulantPropertyDescriptor.containsPropertyDescriptor propertyDescriptor simulant world
+    let private containsProperty propertyName simulant world =
+        SimulantPropertyDescriptor.containsPropertyDescriptor propertyName simulant world
 
     let private getPropertyValue propertyDescriptor simulant world =
         SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
@@ -2876,6 +2876,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             match PropertyFocusedOpt with
             | Some (propertyDescriptor, simulant) when
                 World.getExists simulant world &&
+                containsProperty propertyDescriptor.PropertyName simulant world &&
                 propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
                 ToSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                 OfSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge

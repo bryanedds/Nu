@@ -2975,12 +2975,12 @@ module GamePropertyDescriptor =
 [<RequireQualifiedAccess>]
 module SimulantPropertyDescriptor =
 
-    let containsPropertyDescriptor propertyDescriptor (simulant : Simulant) world =
+    let containsPropertyDescriptor propertyName (simulant : Simulant) world =
         match simulant with
-        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyDescriptor entity world
-        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyDescriptor group world
-        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyDescriptor screen world
-        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyDescriptor game world
+        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyName entity world
+        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyName group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyName screen world
+        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyName game world
         | _ -> failwithumf ()
 
     let getPropertyDescriptors (simulant : Simulant) world =
