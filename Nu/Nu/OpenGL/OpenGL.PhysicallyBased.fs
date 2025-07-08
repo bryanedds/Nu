@@ -74,7 +74,8 @@ module PhysicallyBased =
           SubdermalTexture : Texture.Texture
           FinenessTexture : Texture.Texture
           ScatterTexture : Texture.Texture
-          TwoSided : bool }
+          TwoSided : bool
+          Names : string }
 
         /// The empty material.
         static member empty =
@@ -88,7 +89,8 @@ module PhysicallyBased =
               SubdermalTexture = Texture.EmptyTexture
               FinenessTexture = Texture.EmptyTexture
               ScatterTexture = Texture.EmptyTexture
-              TwoSided = false }
+              TwoSided = false
+              Names = "" }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
     type PhysicallyBasedGeometry =
@@ -216,6 +218,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.FinenessTexture = right.SurfaceMaterial.FinenessTexture &&
             left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
+            left.SurfaceMaterial.Names = right.SurfaceMaterial.Names &&
             refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
 
         static member comparer =
@@ -234,7 +237,8 @@ module PhysicallyBased =
                 (hash material.FinenessTexture <<< 16) ^^^
                 (hash material.ScatterTexture <<< 18) ^^^
                 (hash material.TwoSided <<< 20) ^^^
-                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 22
+                (hash material.Names <<< 22) ^^^
+                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 23
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
@@ -1011,6 +1015,19 @@ module PhysicallyBased =
             | ValueSome twoSided -> twoSided
             | ValueNone -> material.IsTwoSided
 
+        // compose names when not rendering so that surfaces can be correlated without textures
+        let names =
+            if not renderable then
+                albedoTextureSlotFilePath + "/" +
+                roughnessTextureSlot.FilePath + "/" +
+                metallicTextureSlot.FilePath + "/" +
+                ambientOcclusionTextureSlotA.FilePath + "/" +
+                ambientOcclusionTextureSlotB.FilePath + "/" +
+                emissionTextureSlot.FilePath + "/" +
+                normalTextureSlot.FilePath + "/" +
+                heightTextureSlot.FilePath
+            else ""
+
         // make properties
         let properties =
             { Albedo = color albedo.R albedo.G albedo.B albedo.A
@@ -1036,7 +1053,8 @@ module PhysicallyBased =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
-              TwoSided = twoSided }
+              TwoSided = twoSided
+              Names = names }
 
         // fin
         (properties, material)

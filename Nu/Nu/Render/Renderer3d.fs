@@ -1460,7 +1460,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SubdermalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.SubdermalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
                       FinenessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.FinenessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
                       ScatterTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ScatterImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
-                      TwoSided = surfaceDescriptor.TwoSided }
+                      TwoSided = surfaceDescriptor.TwoSided
+                      Names = "" }
 
                 // create vertex data, truncating it when required
                 let vertexCount = surfaceDescriptor.Positions.Length
@@ -2593,7 +2594,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
-              TwoSided = true }
+              TwoSided = true
+              Names = "" }
         struct (properties, material)
 
     static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial inref, renderer) =
@@ -2682,7 +2684,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
-              TwoSided = twoSided }
+              TwoSided = twoSided
+              Names = "" }
         surfaceMaterial
 
     static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) (lightViewProjection : Matrix4x4) lightFrustum lightType renderTasks renderer =
@@ -3996,7 +3999,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
-              TwoSided = false }
+              TwoSided = false
+              Names = "" }
 
         // create physically-based buffers using the display viewport
         let physicallyBasedBuffers = OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
