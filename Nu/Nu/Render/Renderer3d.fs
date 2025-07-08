@@ -2236,8 +2236,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         let mutable i = 0
         for j in 0 .. dec parameters.Count do
-            let struct (model, _, presence, _, _, bounds) = parameters.[j]
+            let struct (model, castShadow, presence, _, _, bounds) = parameters.[j]
             let unculled =
+                castShadow &&
                 Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
             if unculled then
                 model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
