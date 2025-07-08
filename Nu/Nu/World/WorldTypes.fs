@@ -367,7 +367,6 @@ and SnapshotType =
     | FreezeEntities
     | ThawEntities
     | Permafreeze
-    | Permasplit
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
@@ -410,7 +409,6 @@ and SnapshotType =
         | FreezeEntities -> (scstringMemo this).Spaced
         | ThawEntities -> (scstringMemo this).Spaced
         | Permafreeze -> (scstringMemo this).Spaced
-        | Permasplit -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
         | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"

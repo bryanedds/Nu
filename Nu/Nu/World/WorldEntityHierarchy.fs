@@ -409,70 +409,6 @@ module Freezer3dFacetModule =
                 if descendent.GetExists world && descendent.GetSurfaceFreezable world then
                     World.destroyEntityImmediate descendent world
 
-        /// Permanently split a freezer entity's descendents into more spatially-coherent freezers.
-        member this.Permasplit world =
-            let splitParent =
-                match this.Parent with
-                | :? Group as group -> group / (this.Name + "Split")
-                | :? Entity as entity -> entity / (this.Name + "Split")
-                | _ -> failwithumf ()
-            let descendents =
-                this.GetDescendants world
-                |> Array.ofSeq
-                |> Array.sortByDescending (fun descendant -> descendant.Names.Length)
-            if splitParent.GetExists world then
-                Log.error ("Failed to permasplit due to already existing entity '" + scstring splitParent + ".")
-            elif Array.exists (fun (descendent : Entity) -> descendent.GetProtected world) descendents then
-                Log.error "Failed to permasplit due to protected entity in existing hierarchy."
-            else
-                let frozen = this.GetFrozen world
-                let presence = this.GetPresence world
-                let presenceConferred = this.GetPresenceConferred world
-                let surfaceMaterialsPopulated = this.GetSurfaceMaterialsPopulated world
-                if not frozen then this.SetFrozen true world // ensure we're frozen so we get the total bounds from the entity
-                let offset = -(this.GetBounds world).Min // use offset to bring div ops into positive space
-                this.SetFrozen false world
-                World.createEntity DefaultOverlay (Some splitParent.Surnames) splitParent.Group world |> ignore<Entity>
-                let splitSize = Constants.Engine.OctnodeSize
-                let splits = dictPlus HashIdentity.Structural []
-                for descendent in descendents do
-                    if  descendent.GetExists world &&
-                        descendent.GetSurfaceFreezable world &&
-                        getType (descendent.GetDispatcher world) <> typeof<Entity3dDispatcher> then
-                        let bounds = descendent.GetBounds world
-                        let divs = (bounds.Center + offset) / splitSize
-                        let evens = v3 (divs.X |> int |> single) (divs.Y |> int |> single) (divs.Z |> int |> single)
-                        let splitKey = evens * splitSize - offset
-                        let split =
-                            match splits.TryGetValue splitKey with
-                            | (true, split : Entity) -> split
-                            | (false, _) ->
-                                let dispatcher = this.GetDispatcher world
-                                let dispatacherName = getTypeName dispatcher
-                                let split = World.createEntity6 false dispatacherName DefaultOverlay (Some (Array.append splitParent.Surnames [|scstring splitKey|])) this.Group world
-                                split.SetMountOpt (Some (Relation.makeParent ())) world
-                                split.SetStaticModel (AssetTag.makeEmpty ()) world
-                                split.SetPositionLocal splitKey world
-                                split.SetPresence presence world
-                                split.SetPresenceConferred presenceConferred world
-                                split.SetSurfaceMaterialsPopulated surfaceMaterialsPopulated world
-                                split.SetPickable false world
-                                splits.Add (splitKey, split)
-                                split
-                        let descendent' =
-                            if descendent.Has<StaticModelSurfaceFacet> world && descendent.Name.StartsWith "Geometry"
-                            then split / descendent.Parent.Name // probably generic geometry imported from another engine's scene, so using a likely more descriptive parent name
-                            else split / descendent.Name
-                        let descendent' =
-                            if descendent'.GetExists world
-                            then split / (descendent'.Name + Gen.name)
-                            else descendent'
-                        World.renameEntityImmediate descendent descendent' world
-                for split in splits.Values do
-                    split.SetFrozen frozen world
-                World.destroyEntityImmediate this world
-                World.renameEntityImmediate splitParent this world
-
     /// Gives an entity the ability to freeze hierarchies of 3D entities.
     type Freezer3dFacet () =
         inherit Facet (false, false, false)
@@ -536,9 +472,6 @@ module Freezer3dFacetModule =
                 if ImGui.Button "Permafreeze" then
                     append.EditContext.Snapshot Permafreeze world
                     entity.Permafreeze world
-                if ImGui.Button "Permasplit" then
-                    append.EditContext.Snapshot Permasplit world
-                    entity.Permasplit world
             | _ -> ()
 
 [<AutoOpen>]
