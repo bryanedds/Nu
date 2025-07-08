@@ -158,7 +158,7 @@ module WorldEntityHierarchy =
             let frozenEntities = List ()
             let frozenBundles =
                 Dictionary<
-                    Presence * Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
+                    Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
                     Guid * StaticModel AssetTag * int * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -183,7 +183,7 @@ module WorldEntityHierarchy =
                             frozenEntities.Add entity
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces.[surfaceIndex]
-                            let frozenKey = (presence, material, surface, depthTest, renderType)
+                            let frozenKey = (material, surface, depthTest, renderType)
                             let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, entityBounds)
                             match frozenBundles.TryGetValue frozenKey with
                             | (true, (_, _, _, bundle)) -> bundle.Add frozenValue
@@ -237,7 +237,7 @@ module WorldEntityHierarchy =
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces.[surfaceIndex]
-                                let frozenKey = (presence, material, surface, depthTest, renderType)
+                                let frozenKey = (material, surface, depthTest, renderType)
                                 let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, surfaceBounds)
                                 match frozenBundles.TryGetValue frozenKey with
                                 | (true, (_, _, _, bundle)) -> bundle.Add frozenValue
@@ -270,17 +270,15 @@ module WorldEntityHierarchy =
             let frozenBundles =
                 frozenBundles
                 |> Seq.map (fun entry ->
-                    let (presence, material, _, depthTest, renderType) = entry.Key
+                    let (material, _, depthTest, renderType) = entry.Key
                     let (bundleId, staticModel, surfaceIndex, bundle) = entry.Value
-                    let bundle =
-                        { BundleId = bundleId
-                          StaticModelSurfaces = bundle
-                          Material = material
-                          StaticModel = staticModel
-                          SurfaceIndex = surfaceIndex
-                          DepthTest = depthTest
-                          RenderType = renderType }
-                    (presence, bundle))
+                    { BundleId = bundleId
+                      StaticModelSurfaces = bundle
+                      Material = material
+                      StaticModel = staticModel
+                      SurfaceIndex = surfaceIndex
+                      DepthTest = depthTest
+                      RenderType = renderType })
                 |> Seq.toArray
             (frozenBundles, Array.ofSeq frozenShapes, world)
 
@@ -307,8 +305,8 @@ module WorldEntityHierarchy =
 module Freezer3dFacetModule =
 
     type Entity with
-        member this.GetFrozenBundles world : (Presence * StaticModelSurfaceBundle) array = this.Get (nameof this.FrozenBundles) world
-        member this.SetFrozenBundles (value : (Presence * StaticModelSurfaceBundle) array) world = this.Set (nameof this.FrozenBundles) value world
+        member this.GetFrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.FrozenBundles) world
+        member this.SetFrozenBundles (value : StaticModelSurfaceBundle array) world = this.Set (nameof this.FrozenBundles) value world
         member this.FrozenBundles = lens (nameof this.FrozenBundles) this this.GetFrozenBundles this.SetFrozenBundles
         member this.GetFrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.FrozenShapes) world
         member this.SetFrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
@@ -498,29 +496,9 @@ module Freezer3dFacetModule =
             World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
 
         override this.Render (renderPass, entity, world) =
-
-            // compute intersection function based on render pass
-            let intersects =
-                let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
-                let exterior = World.getGameEye3dFrustumExterior Game world
-                let imposter = World.getGameEye3dFrustumImposter Game world
-                let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
-                fun probe light presence (bounds : Box3) ->
-                    match renderPass with
-                    | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
-                    | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
-                    | ReflectionPass (_, _) -> false
-                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
-
-            // render unculled surfaces
-            let bounds = entity.GetBounds world
-            let presenceConferred = entity.GetPresenceConferred world
-            if intersects false false presenceConferred bounds then
-                let bundles = entity.GetFrozenBundles world
-                for i in 0 .. dec bundles.Length do
-                    let (presence, bundle) = bundles.[i]
-                    if intersects false false presence bounds then
-                        World.enqueueRenderMessage3d (RenderStaticModelSurfaceBundle { StaticModelSurfaceBundle = bundle; RenderPass = renderPass }) world
+            let bundles = entity.GetFrozenBundles world
+            for bundle in bundles do
+                World.enqueueRenderMessage3d (RenderStaticModelSurfaceBundle { StaticModelSurfaceBundle = bundle; RenderPass = renderPass }) world
 
         override this.RegisterPhysics (entity, world) =
             entity.RegisterFrozenShapesPhysics world
