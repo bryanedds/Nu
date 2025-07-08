@@ -238,7 +238,7 @@ module PhysicallyBased =
                 (hash material.ScatterTexture <<< 18) ^^^
                 (hash material.TwoSided <<< 20) ^^^
                 (hash material.Names <<< 22) ^^^
-                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 23
+                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 24
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
