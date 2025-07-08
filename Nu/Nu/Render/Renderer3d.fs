@@ -476,7 +476,7 @@ type RenderStaticModelSurface =
 
 type StaticModelSurfaceBundle =
     { BundleId : Guid
-      StaticModelSurfaces : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List
+      StaticModelSurfaces : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List
       Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
@@ -862,7 +862,7 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
       DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticBundles : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)>
+      DeferredStaticBundles : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
@@ -1902,6 +1902,10 @@ type [<ReferenceEquality>] GlRenderer3d =
          surfaceIndex,
          depthTest,
          renderType,
+         frustumInterior,
+         frustumExterior,
+         frustumImposter,
+         lightBox,
          renderPass,
          renderer) =
         let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
@@ -1926,8 +1930,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
                                 { surface with SurfaceMaterial = surfaceMaterial }
                             else surface
-                        for struct (model, _, presence, insetOpt, properties) in staticModelSurfaces do
-                            renderTasks.Forward.Add struct (subsort, sort, model, presence, insetOpt, properties, ValueNone, surface, depthTest)
+                        for struct (model, _, presence, insetOpt, properties, bounds) in staticModelSurfaces do
+                            let unculled =
+                                match renderPass with
+                                | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
+                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
+                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
+                            if unculled then
+                                renderTasks.Forward.Add struct (subsort, sort, model, presence, insetOpt, properties, ValueNone, surface, depthTest)
             | _ -> ()
         | ValueNone -> ()
 
@@ -2259,6 +2270,64 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
             (batchPhase, viewArray, projectionArray, viewProjectionArray, bonesArray, eyeCenter,
              parameters.Count, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
+
+    static member private renderPhysicallyBasedDeferredSurfaceBundle
+        frustumInterior frustumExterior frustumImposter lightBox renderPass
+        viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List)
+        lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
+                                                                      
+        // ensure we have a large enough instance fields array
+        let mutable length = renderer.InstanceFields.Length
+        while parameters.Count * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        if renderer.InstanceFields.Length < length then
+            renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // blit parameters to instance fields
+        let mutable i = 0
+        for _ in 0 .. dec parameters.Count do
+            let struct (model, _, presence, texCoordsOffset, properties, bounds) = parameters.[i]
+            let unculled =
+                match renderPass with
+                | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
+                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
+                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
+            if unculled then
+                model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+                let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+                let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
+                let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+                let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+                i <- inc i
+
+        // draw deferred surfaces
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+            (SingletonPhase, viewArray, projectionArray, viewProjectionArray, bonesArray, eyeCenter,
+             i, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
     static member private beginPhysicallyBasedForwardShader
         viewArray projectionArray viewProjectionArray eyeCenter
@@ -2750,6 +2819,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
 
     static member private renderGeometry
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        lightBox
         renderPass
         renderTasks
         renderer
@@ -2920,8 +2993,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         // render static surface bundles
         for entry in renderTasks.DeferredStaticBundles do
             let struct (surface, bundle) = entry.Value
-            GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                SingletonPhase viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter bundle
+            GlRenderer3d.renderPhysicallyBasedDeferredSurfaceBundle
+                frustumInterior frustumExterior frustumImposter lightBox renderPass
+                viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter bundle
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surface renderer.PhysicallyBasedShaders.DeferredStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
@@ -3320,7 +3394,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderStaticModelSurfaceBundle rsmsb ->
-                GlRenderer3d.categorizeStaticModelSurfaceBundle (rsmsb.StaticModelSurfaceBundle.BundleId, rsmsb.StaticModelSurfaceBundle.StaticModelSurfaces, rsmsb.StaticModelSurfaceBundle.Material, rsmsb.StaticModelSurfaceBundle.StaticModel, rsmsb.StaticModelSurfaceBundle.SurfaceIndex, rsmsb.StaticModelSurfaceBundle.DepthTest, rsmsb.StaticModelSurfaceBundle.RenderType, rsmsb.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceBundle (rsmsb.StaticModelSurfaceBundle.BundleId, rsmsb.StaticModelSurfaceBundle.StaticModelSurfaces, rsmsb.StaticModelSurfaceBundle.Material, rsmsb.StaticModelSurfaceBundle.StaticModel, rsmsb.StaticModelSurfaceBundle.SurfaceIndex, rsmsb.StaticModelSurfaceBundle.DepthTest, rsmsb.StaticModelSurfaceBundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, rsmsb.RenderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
@@ -3414,7 +3488,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         // create reflection map
                         let reflectionMap =
                             OpenGL.LightMap.CreateReflectionMap
-                                (GlRenderer3d.renderGeometry renderPass (GlRenderer3d.getRenderTasks renderPass renderer) renderer,
+                                (GlRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter lightBox renderPass (GlRenderer3d.getRenderTasks renderPass renderer) renderer,
                                  Constants.Render.ReflectionMapResolution,
                                  lightProbeOrigin,
                                  lightProbeAmbientColor,
@@ -3602,7 +3676,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let geometryViewProjection = view * geometryProjection
         let rasterProjection = Viewport.getProjection3d eyeFieldOfView rasterViewport
         GlRenderer3d.renderGeometry
-            normalPass normalTasks renderer
+            frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
             true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
             renderbuffer framebuffer
 
