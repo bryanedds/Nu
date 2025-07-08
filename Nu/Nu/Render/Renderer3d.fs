@@ -1925,11 +1925,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let bundle = struct (surface, staticModelSurfaces)
                         renderTasks.DeferredStaticBundles.Add (bundleId, bundle)
                     | ForwardRenderType (subsort, sort) ->
-                        let surface = // OPTIMIZATION: apply surface material only if effective.
-                            if material <> Material.empty then
-                                let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
-                                { surface with SurfaceMaterial = surfaceMaterial }
-                            else surface
                         for struct (model, _, presence, insetOpt, properties, bounds) in staticModelSurfaces do
                             let unculled =
                                 match renderPass with
