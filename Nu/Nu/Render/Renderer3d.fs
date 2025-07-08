@@ -479,9 +479,7 @@ type StaticModelSurfaceBundle =
       StaticModelSurfaces : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List
       Material : Material
       StaticModel : StaticModel AssetTag
-      SurfaceIndex : int
-      DepthTest : DepthTest
-      RenderType : RenderType }
+      SurfaceIndex : int }
 
 type RenderStaticModelSurfaceBundles =
     { StaticModelSurfaceBundles : StaticModelSurfaceBundle array
@@ -1901,12 +1899,6 @@ type [<ReferenceEquality>] GlRenderer3d =
          material,
          staticModel,
          surfaceIndex,
-         depthTest,
-         renderType,
-         frustumInterior,
-         frustumExterior,
-         frustumImposter,
-         lightBox,
          renderPass,
          renderer) =
         let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
@@ -1921,20 +1913,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
                             { surface with SurfaceMaterial = surfaceMaterial }
                         else surface
-                    match renderType with
-                    | DeferredRenderType ->
-                        let bundle = struct (surface, staticModelSurfaces)
-                        renderTasks.DeferredStaticBundles.Add (bundleId, bundle)
-                    | ForwardRenderType (subsort, sort) ->
-                        for struct (model, _, presence, insetOpt, properties, bounds) in staticModelSurfaces do
-                            let unculled =
-                                match renderPass with
-                                | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
-                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
-                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
-                            if unculled then
-                                renderTasks.Forward.Add struct (subsort, sort, model, presence, insetOpt, properties, ValueNone, surface, depthTest)
+                    let bundle = struct (surface, staticModelSurfaces)
+                    renderTasks.DeferredStaticBundles.Add (bundleId, bundle)
             | _ -> ()
         | ValueNone -> ()
 
@@ -3435,7 +3415,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurfaceBundles rsmsb ->
                 let renderPass = rsmsb.RenderPass
                 for bundle in rsmsb.StaticModelSurfaceBundles do
-                    GlRenderer3d.categorizeStaticModelSurfaceBundle (bundle.BundleId, bundle.StaticModelSurfaces, bundle.Material, bundle.StaticModel, bundle.SurfaceIndex, bundle.DepthTest, bundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderer)
+                    GlRenderer3d.categorizeStaticModelSurfaceBundle (bundle.BundleId, bundle.StaticModelSurfaces, bundle.Material, bundle.StaticModel, bundle.SurfaceIndex, renderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
