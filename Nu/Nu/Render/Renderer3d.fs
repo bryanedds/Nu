@@ -2275,7 +2275,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         frustumInterior frustumExterior frustumImposter lightBox renderPass
         viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List)
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
-                                                                      
+
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
         while parameters.Count * Constants.Render.InstanceFieldCount > length do length <- length * 2
@@ -2990,7 +2990,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // render static surface bundles
+        // render static surface bundles deferred
         for entry in renderTasks.DeferredStaticBundles do
             let struct (surface, bundle) = entry.Value
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaceBundle
