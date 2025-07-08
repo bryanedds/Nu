@@ -1742,7 +1742,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          depthTest,
          renderType,
          renderPass,
-         renderer) =
+         renderTasks,
+         _ : GlRenderer3d) =
         let texCoordsOffset =
             match insetOpt with
             | Some inset ->
@@ -1771,7 +1772,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             affineRotation.Translation <- v3Zero
             let mutable billboardMatrix = model * billboardRotation
             billboardMatrix.Translation <- model.Translation + lookRotation.Forward * shadowOffset
-            let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
             match renderType with
             | DeferredRenderType ->
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
@@ -1820,7 +1820,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             affineRotation.Translation <- v3Zero
             let mutable billboardMatrix = model * billboardRotation
             billboardMatrix.Translation <- model.Translation
-            let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
             match renderType with
             | DeferredRenderType ->
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
@@ -1896,20 +1895,20 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ValueNone -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
     static member private categorizeStaticModelSurfaceBundle
-        (bundleId,
-         staticModelSurfaces,
-         material,
-         staticModel,
-         surfaceIndex,
-         depthTest,
-         renderType,
-         frustumInterior,
-         frustumExterior,
-         frustumImposter,
-         lightBox,
-         renderPass,
+        (bundleId : Guid,
+         staticModelSurfaces : _ List,
+         material : Material,
+         staticModel : StaticModel AssetTag,
+         surfaceIndex : int,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         frustumInterior : Frustum,
+         frustumExterior : Frustum,
+         frustumImposter : Frustum,
+         lightBox : Box3,
+         renderPass : RenderPass,
+         renderTasks : RenderTasks,
          renderer) =
-        let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
         match GlRenderer3d.tryGetRenderAsset staticModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -1952,13 +1951,13 @@ type [<ReferenceEquality>] GlRenderer3d =
          depthTest : DepthTest,
          renderType : RenderType,
          renderPass : RenderPass,
+         renderTasks : RenderTasks,
          renderer) =
         let renderStyle = match renderType with DeferredRenderType -> Deferred | ForwardRenderType (subsort, sort) -> Forward (subsort, sort)
         match GlRenderer3d.tryGetRenderAsset staticModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset (_, modelAsset) ->
-                let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
                 for light in modelAsset.Lights do
                     let lightMatrix = light.LightMatrix * model
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
@@ -2024,7 +2023,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          drsIndices : int Set,
          depthTest : DepthTest,
          renderType : RenderType,
-         renderPass : RenderPass,
+         renderTasks : RenderTasks,
          renderer) =
 
         // ensure we have the required animated model
@@ -2034,7 +2033,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | AnimatedModelAsset modelAsset ->
 
                 // render animated surfaces
-                let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
                 for i in 0 .. dec modelAsset.Surfaces.Length do
 
                     // compute tex coords offset
@@ -2088,7 +2086,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          drsIndices : int Set,
          depthTest : DepthTest,
          renderType : RenderType,
-         renderPass : RenderPass,
+         renderTasks : RenderTasks,
          renderer) =
 
         // ensure we have the required animated model
@@ -2098,7 +2096,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | AnimatedModelAsset modelAsset ->
 
                 // render animated surfaces
-                let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
                 for i in 0 .. dec modelAsset.Surfaces.Length do
 
                     // render animated surfaces
@@ -2147,7 +2144,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeTerrain
         (visible : bool,
          terrainDescriptor : TerrainDescriptor,
-         renderPass : RenderPass,
+         renderTasks : RenderTasks,
          renderer) =
 
         // attempt to create terrain geometry
@@ -2162,7 +2159,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         // attempt to add terrain to appropriate render list when visible
         // TODO: also add found geometry to render list so it doesn't have to be looked up redundantly?
         if visible then
-            let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
             match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
             | (true, terrainGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, terrainGeometry)
             | (false, _) -> ()
@@ -3412,14 +3408,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, rb.OrientUp, rb.Planar, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rb.RenderPass renderer
+                GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, rb.OrientUp, rb.Planar, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderTasks, renderer)
             | RenderBillboards rbs ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
+                let renderTasks = GlRenderer3d.getRenderTasks rbs.RenderPass renderer
                 for (model, castShadow, presence, insetOpt, orientUp, planar) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, planar, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, planar, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderTasks, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rbps.RenderPass renderer
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateAffine
@@ -3428,40 +3427,49 @@ type [<ReferenceEquality>] GlRenderer3d =
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, true, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, true, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderTasks, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderStaticModelSurfaceBundles rsmsb ->
                 let renderPass = rsmsb.RenderPass
+                let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
                 for bundle in rsmsb.StaticModelSurfaceBundles do
-                    GlRenderer3d.categorizeStaticModelSurfaceBundle (bundle.BundleId, bundle.StaticModelSurfaces, bundle.Material, bundle.StaticModel, bundle.SurfaceIndex, bundle.DepthTest, bundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderer)
+                    GlRenderer3d.categorizeStaticModelSurfaceBundle (bundle.BundleId, bundle.StaticModelSurfaces, bundle.Material, bundle.StaticModel, bundle.SurfaceIndex, bundle.DepthTest, bundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rsm.RenderPass renderer
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderTasks, renderer)
             | RenderStaticModels rsms ->
+                let renderTasks = GlRenderer3d.getRenderTasks rsms.RenderPass renderer
                 for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
+                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
             | RenderCachedStaticModel csmm ->
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
             | RenderCachedStaticModelSurface csmsm ->
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceDepthTest, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rudsm.RenderPass renderer
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rsm.RenderPass renderer
+                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.DepthTest, rsm.RenderType, renderTasks, renderer)
             | RenderAnimatedModels rams ->
-                GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, rams.RenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rams.RenderPass renderer
+                GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, renderTasks, renderer)
             | RenderCachedAnimatedModel camm ->
-                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, camm.CachedAnimatedModelRenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
+                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
-                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
+                let renderTasks = GlRenderer3d.getRenderTasks rt.RenderPass renderer
+                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
             | ConfigureLighting3d l3c ->
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
