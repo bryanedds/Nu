@@ -474,6 +474,19 @@ type RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+type StaticModelSurfaceBundle =
+    { BundleId : Guid
+      StaticModelSurfaces : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List
+      Material : Material
+      StaticModel : StaticModel AssetTag
+      SurfaceIndex : int
+      DepthTest : DepthTest
+      RenderType : RenderType }
+
+type RenderStaticModelSurfaceBundle =
+    { StaticModelSurfaceBundle : StaticModelSurfaceBundle
+      RenderPass : RenderPass }
+
 type RenderStaticModel =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
@@ -645,6 +658,7 @@ type RenderMessage3d =
     | RenderBillboards of RenderBillboards
     | RenderBillboardParticles of RenderBillboardParticles
     | RenderStaticModelSurface of RenderStaticModelSurface
+    | RenderStaticModelSurfaceBundle of RenderStaticModelSurfaceBundle
     | RenderStaticModel of RenderStaticModel
     | RenderStaticModels of RenderStaticModels
     | RenderCachedStaticModel of CachedStaticModelMessage
@@ -848,6 +862,7 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
       DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticBundles : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
@@ -863,6 +878,7 @@ type [<ReferenceEquality>] private RenderTasks =
           LightMaps = List ()
           Lights = List ()
           DeferredStatic = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
+          DeferredStaticBundles = dictPlus HashIdentity.Structural []
           DeferredAnimated = dictPlus AnimatedModelSurfaceKey.comparer []
           DeferredTerrains = List ()
           Forward = List ()
@@ -887,6 +903,8 @@ type [<ReferenceEquality>] private RenderTasks =
             renderTasks.DeferredStatic.Remove removal |> ignore<bool>
         renderTasks.DeferredStaticRemovals.Clear ()
 
+        renderTasks.DeferredStaticBundles.Clear ()
+
         for entry in renderTasks.DeferredAnimated do
             if entry.Value.Count = 0
             then renderTasks.DeferredAnimatedRemovals.Add entry.Key
@@ -909,6 +927,10 @@ type [<ReferenceEquality>] private RenderTasks =
                     OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
                     (static_.Value, staticCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+            let deferredStaticBundlesCached =
+                renderTasks.DeferredStaticBundles.Count = renderTasksCached.DeferredStaticBundles.Count &&
+                (renderTasks.DeferredStaticBundles, renderTasksCached.DeferredStaticBundles)
+                ||> Seq.forall2 (fun staticBundle staticBundleCached -> staticBundle.Key = staticBundleCached.Key)
             let deferredAnimatedCached =
                 renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
                 (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated)
@@ -924,6 +946,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
                     terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
             deferredStaticCached &&
+            deferredStaticBundlesCached &&
             deferredAnimatedCached &&
             deferredTerrainsCached
         else false
@@ -1870,6 +1893,45 @@ type [<ReferenceEquality>] GlRenderer3d =
                     GlRenderer3d.categorizeStaticModelSurface (&model, castShadow, presence, &insetOpt, &properties, surface, depthTest, renderType, renderPass, ValueNone, renderer)
             | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
+
+    static member private categorizeStaticModelSurfaceBundle (bundleId, staticModelSurfaces, material, staticModel, surfaceIndex, depthTest, renderType, renderPass, renderer) =
+        let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
+        match renderType with
+        | DeferredRenderType ->
+            let mutable bundle = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+            if not (renderTasks.DeferredStaticBundles.TryGetValue (bundleId, &bundle)) then
+                match GlRenderer3d.tryGetRenderAsset staticModel renderer with
+                | ValueSome renderAsset ->
+                    match renderAsset with
+                    | StaticModelAsset (_, modelAsset) ->
+                        if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
+                            let surface = modelAsset.Surfaces.[surfaceIndex]
+                            let surface = // OPTIMIZATION: apply surface material only if effective.
+                                if material <> Material.empty then
+                                    let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
+                                    { surface with SurfaceMaterial = surfaceMaterial }
+                                else surface
+                            let bundle = struct (surface, staticModelSurfaces)
+                            renderTasks.DeferredStaticBundles.Add (bundleId, bundle)
+                    | _ -> Log.warnOnce "Non-static model assets are not supported in static model surface bundles."
+                | ValueNone -> Log.warnOnce ("Could not find render asset for static model '" + string staticModel + "'.")
+            else Log.warnOnce ("Deferred render bundle with id '" + string bundleId + "' already exists. This is likely a bug in the code that generates the render messages.")
+        | ForwardRenderType (subsort, sort) ->
+            match GlRenderer3d.tryGetRenderAsset staticModel renderer with
+            | ValueSome renderAsset ->
+                match renderAsset with
+                | StaticModelAsset (_, modelAsset) ->
+                    if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
+                        let surface = modelAsset.Surfaces.[surfaceIndex]
+                        let surface = // OPTIMIZATION: apply surface material only if effective.
+                            if material <> Material.empty then
+                                let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
+                                { surface with SurfaceMaterial = surfaceMaterial }
+                            else surface
+                        for struct (model, _, presence, insetOpt, properties) in staticModelSurfaces do
+                            renderTasks.Forward.Add struct (subsort, sort, model, presence, insetOpt, properties, ValueNone, surface, depthTest)
+                | _ -> Log.warnOnce "Non-static model assets are not supported in static model surface bundles."
+            | ValueNone -> Log.warnOnce ("Could not find render asset for static model '" + string staticModel + "'.")
 
     static member private categorizeStaticModel
         (frustumInterior : Frustum,
@@ -2857,6 +2919,15 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
+        // render static surface bundles
+        for entry in renderTasks.DeferredStaticBundles do
+            let struct (surface, bundle) = entry.Value
+            GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
+                SingletonPhase viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter bundle
+                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                surface renderer.PhysicallyBasedShaders.DeferredStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
+            OpenGL.Hl.Assert ()
+
         // render animated surfaces deferred
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key
@@ -3250,6 +3321,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
+            | RenderStaticModelSurfaceBundle rsmsb ->
+                GlRenderer3d.categorizeStaticModelSurfaceBundle (rsmsb.StaticModelSurfaceBundle.BundleId, rsmsb.StaticModelSurfaceBundle.StaticModelSurfaces, rsmsb.StaticModelSurfaceBundle.Material, rsmsb.StaticModelSurfaceBundle.StaticModel, rsmsb.StaticModelSurfaceBundle.SurfaceIndex, rsmsb.StaticModelSurfaceBundle.DepthTest, rsmsb.StaticModelSurfaceBundle.RenderType, rsmsb.RenderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderer)
