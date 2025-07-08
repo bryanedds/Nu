@@ -516,8 +516,7 @@ module Freezer3dFacetModule =
             let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
             if intersects false false presenceConferred bounds then
-                let bundles = entity.GetFrozenBundles world
-                for (presence, bundle) in bundles do
+                for (presence, bundle) in entity.GetFrozenBundles world do
                     if intersects false false presence bounds then
                         World.enqueueRenderMessage3d (RenderStaticModelSurfaceBundle { StaticModelSurfaceBundle = bundle; RenderPass = renderPass }) world
 
