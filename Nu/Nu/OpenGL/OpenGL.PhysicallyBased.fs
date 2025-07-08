@@ -234,8 +234,7 @@ module PhysicallyBased =
                 (hash material.FinenessTexture <<< 16) ^^^
                 (hash material.ScatterTexture <<< 18) ^^^
                 (hash material.TwoSided <<< 20) ^^^
-                (int geometry.PrimitiveType <<< 22) ^^^
-                (int geometry.VertexBuffer <<< 24)
+                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 22
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
