@@ -3094,9 +3094,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     then FsiSession.EvalInteractionNonThrowing "let selectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
                     else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
                 if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
-                File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
-                File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
-                File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
+                if File.Exists Constants.Gaia.InteractiveInputFilePath then
+                    File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
+                    File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
+                    File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
                 match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;", Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream
