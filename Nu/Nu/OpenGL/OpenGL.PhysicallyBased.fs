@@ -270,6 +270,7 @@ module PhysicallyBased =
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
         let comparer = PhysicallyBasedSurface.comparer
+        let make = PhysicallyBasedSurface.make
 
     /// A light probe inside a physically-based static model.
     type PhysicallyBasedLightProbe =
@@ -1739,7 +1740,7 @@ module PhysicallyBased =
         | None -> Right propertiesAndMaterials
 
     /// Create physically-based static geometries from an assimp scene.
-    /// OPTIMIZATION: duplicate geometry is detected and de-duplicated here, which does have some run-time cost.
+    /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
     let CreatePhysicallyBasedStaticGeometries (renderable, scene : Assimp.Scene) =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()

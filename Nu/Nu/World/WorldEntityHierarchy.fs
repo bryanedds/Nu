@@ -156,7 +156,7 @@ module WorldEntityHierarchy =
         static member freezeEntityHierarchy surfaceMaterialsPopulated (parent : Entity) world =
             let mutable boundsOpt = Option<Box3>.None // using mutation because I was in a big hurry when I wrote this
             let frozenEntities = List ()
-            let frozenBundles = Dictionary<Presence * Material * StaticModel AssetTag * int * DepthTest * RenderType, Guid * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List> ()
+            let frozenBundles = Dictionary<Presence * Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType, Guid * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
@@ -178,7 +178,9 @@ module WorldEntityHierarchy =
                             let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                             frozenEntities.Add entity
-                            let frozenKey = (presence, material, staticModel, surfaceIndex, depthTest, renderType)
+                            let metadata = Metadata.getStaticModelMetadata staticModel
+                            let surface = metadata.Surfaces.[surfaceIndex]
+                            let frozenKey = (presence, material, surface, depthTest, renderType)
                             let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties)
                             match frozenBundles.TryGetValue frozenKey with
                             | (true, (_, bundle)) -> bundle.Add frozenValue
@@ -230,7 +232,9 @@ module WorldEntityHierarchy =
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
-                                let frozenKey = (presence, material, staticModel, surfaceIndex, depthTest, renderType)
+                                let metadata = Metadata.getStaticModelMetadata staticModel
+                                let surface = metadata.Surfaces.[surfaceIndex]
+                                let frozenKey = (presence, material, surface, depthTest, renderType)
                                 let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties)
                                 match frozenBundles.TryGetValue frozenKey with
                                 | (true, (_, bundle)) -> bundle.Add frozenValue
@@ -263,14 +267,13 @@ module WorldEntityHierarchy =
             let frozenBundles =
                 frozenBundles
                 |> Seq.map (fun entry ->
-                    let (presence, material, staticModel, surfaceIndex, depthTest, renderType) = entry.Key
+                    let (presence, material, surface, depthTest, renderType) = entry.Key
                     let (bundleId, bundle) = entry.Value
                     let bundle =
                         { BundleId = bundleId
                           StaticModelSurfaces = bundle
                           Material = material
-                          StaticModel = staticModel
-                          SurfaceIndex = surfaceIndex
+                          Surface = surface
                           DepthTest = depthTest
                           RenderType = renderType }
                     (presence, bundle))
