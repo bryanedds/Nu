@@ -17,7 +17,6 @@ void main()
 
 const float PI = 3.141592654;
 const float PI_OVER_2 = PI / 2.0;
-const float REFLECTION_LOD_MAX = 7.0;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 9;
@@ -34,12 +33,10 @@ vec4[](
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
-uniform mat4 projection;
 uniform mat4 viewInverse;
+uniform mat4 projection;
 uniform mat4 projectionInverse;
 uniform float lightCutoffMargin;
-uniform float lightAmbientBoostCutoff;
-uniform float lightAmbientBoostScalar;
 uniform int lightShadowSamples;
 uniform float lightShadowBias;
 uniform float lightShadowSampleScalar;
@@ -50,34 +47,12 @@ uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
 uniform float ssvfIntensity;
-uniform int ssrEnabled;
-uniform float ssrDetail;
-uniform int ssrRefinementsMax;
-uniform float ssrRayThickness;
-uniform float ssrTowardEyeCutoff;
-uniform float ssrDepthCutoff;
-uniform float ssrDepthCutoffMargin;
-uniform float ssrDistanceCutoff;
-uniform float ssrDistanceCutoffMargin;
-uniform float ssrRoughnessCutoff;
-uniform float ssrRoughnessCutoffMargin;
-uniform float ssrSlopeCutoff;
-uniform float ssrSlopeCutoffMargin;
-uniform float ssrEdgeHorizontalMargin;
-uniform float ssrEdgeVerticalMargin;
-uniform vec3 ssrLightColor;
-uniform float ssrLightBrightness;
 uniform sampler2D depthTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
 uniform sampler2D subdermalPlusTexture;
 uniform sampler2D scatterPlusTexture;
-uniform sampler2D brdfTexture;
-uniform sampler2D ambientTexture;
-uniform sampler2D irradianceTexture;
-uniform sampler2D environmentFilterTexture;
-uniform sampler2D ssaoTexture;
 uniform sampler2D shadowTextures[SHADOW_TEXTURES_MAX];
 uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
@@ -98,9 +73,8 @@ uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX];
 
 in vec2 texCoordsOut;
 
-layout(location = 0) out vec4 color;
+layout(location = 0) out vec4 lightAccum;
 layout(location = 1) out vec4 fogAccum;
-layout(location = 2) out float depth;
 
 float saturate(float v)
 {
@@ -115,56 +89,6 @@ float linstep(float low, float high, float v)
 vec3 rotate(vec3 axis, float angle, vec3 v)
 {
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
-}
-
-float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
-{
-    vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
-    float fadeScalar =
-        max(
-            smoothstep(0.85, 1.0, normalized.x),
-            smoothstep(0.85, 1.0, normalized.y));
-    return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
-}
-
-float distributionGGX(vec3 normal, vec3 h, float roughness)
-{
-    float a = roughness * roughness;
-    float aPow2 = a * a;
-    float nDotH = max(dot(normal, h), 0.0);
-    float nDotHPow2 = nDotH * nDotH;
-    float nom = aPow2;
-    float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
-    denom = PI * denom * denom;
-    return nom / denom;
-}
-
-float geometrySchlickGGX(float nDotV, float roughness)
-{
-    float r = roughness + 1.0;
-    float k = r * r / 8.0;
-    float nom = nDotV;
-    float denom = nDotV * (1.0 - k) + k;
-    return nom / denom;
-}
-
-float geometrySchlick(vec3 n, vec3 v, vec3 l, float roughness)
-{
-    float nDotV = max(dot(n, v), 0.0);
-    float nDotL = max(dot(n, l), 0.0);
-    float ggx2 = geometrySchlickGGX(nDotV, roughness);
-    float ggx1 = geometrySchlickGGX(nDotL, roughness);
-    return ggx1 * ggx2;
-}
-
-vec3 fresnelSchlick(float cosTheta, vec3 f0)
-{
-    return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
-{
-    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 vec4 depthToPosition(float depth, vec2 texCoords)
@@ -210,6 +134,56 @@ float worldToDepthView(float near, float far, mat4 viewProjection, vec4 position
 
     // invert the projection depth mapping to recover light view-space depth.
     return b / (ndcZ + a);
+}
+
+float distributionGGX(vec3 normal, vec3 h, float roughness)
+{
+    float a = roughness * roughness;
+    float aPow2 = a * a;
+    float nDotH = max(dot(normal, h), 0.0);
+    float nDotHPow2 = nDotH * nDotH;
+    float nom = aPow2;
+    float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
+    denom = PI * denom * denom;
+    return nom / denom;
+}
+
+float geometrySchlickGGX(float nDotV, float roughness)
+{
+    float r = roughness + 1.0;
+    float k = r * r / 8.0;
+    float nom = nDotV;
+    float denom = nDotV * (1.0 - k) + k;
+    return nom / denom;
+}
+
+float geometrySchlick(vec3 n, vec3 v, vec3 l, float roughness)
+{
+    float nDotV = max(dot(n, v), 0.0);
+    float nDotL = max(dot(n, l), 0.0);
+    float ggx2 = geometrySchlickGGX(nDotV, roughness);
+    float ggx1 = geometrySchlickGGX(nDotL, roughness);
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 f0)
+{
+    return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
+{
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
+{
+    vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
+    float fadeScalar =
+        max(
+            smoothstep(0.85, 1.0, normalized.x),
+            smoothstep(0.85, 1.0, normalized.y));
+    return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
 
 float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapIndex)
@@ -627,128 +601,14 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularScreen, out float specularScreenWeight)
-{
-    // compute view values
-    vec4 positionView = view * position;
-    vec3 positionViewNormal = normalize(positionView.xyz);
-    vec3 normalView = mat3(view) * normal;
-    vec3 reflectionView = reflect(positionViewNormal, normalView);
-    vec4 startView = vec4(positionView.xyz, 1.0);
-    vec4 stopView = vec4(positionView.xyz + reflectionView * ssrDistanceCutoff, 1.0);
-    float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
-
-    // compute the fragment at which to start marching
-    vec2 texSize = textureSize(depthTexture, 0).xy;
-    vec4 startFrag4 = projection * startView;
-    vec2 startFrag = startFrag4.xy / startFrag4.w;
-    startFrag = startFrag * 0.5 + 0.5;
-    startFrag *= texSize;
-
-    // compute the fragment at which to end marching as well as total length
-    vec4 stopFrag4 = projection * stopView;
-    vec2 stopFrag = stopFrag4.xy / stopFrag4.w;
-    stopFrag = stopFrag * 0.5 + 0.5;
-    stopFrag *= texSize;
-    float lengthFrag = length(stopFrag - startFrag);
-
-    // initialize current fragment
-    vec2 currentFrag = startFrag;
-    vec2 currentTexCoords = currentFrag / texSize;
-    float currentDepth = depth;
-    vec4 currentPosition = position;
-    vec4 currentPositionView = positionView;
-
-    // compute fragment step amount
-    float marchHorizontal = stopFrag.x - startFrag.x;
-    float marchVertical = stopFrag.y - startFrag.y;
-    bool shouldMarchHorizontal = abs(marchHorizontal) >= abs(marchVertical);
-    float stepCount = abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrDetail;
-    vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepCount, 0.001);
-
-    // march fragment
-    float currentProgressA = 0.0;
-    float currentProgressB = 0.0;
-    float currentDepthView = 0.0;
-    for (int i = 0; i < stepCount && currentTexCoords.x >= 0.0 && currentTexCoords.x < 1.0 && currentTexCoords.y >= 0.0 && currentTexCoords.y < 1.0; ++i)
-    {
-        // advance frag values
-        currentFrag += stepAmount;
-        currentTexCoords = currentFrag / texSize;
-        currentDepth = texture(depthTexture, currentTexCoords).r;
-        currentPosition = depthToPosition(currentDepth, currentTexCoords);
-        currentPositionView = view * currentPosition;
-        currentProgressB = length(currentFrag - startFrag) / lengthFrag;
-        currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
-
-        // compute depth delta and thickness based on view state
-        float depthDelta = currentDepthView - -currentPositionView.z;
-        float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
-
-        // determine whether we hit geometry within acceptable thickness
-        if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
-        {
-            // perform refinements within walk
-            currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
-            for (int j = 0; j < ssrRefinementsMax; ++j)
-            {
-                // advance frag values
-                currentFrag = mix(startFrag, stopFrag, currentProgressB);
-                currentTexCoords = currentFrag / texSize;
-                currentDepth = texture(depthTexture, currentTexCoords).r;
-                currentPosition = depthToPosition(currentDepth, currentTexCoords);
-                currentPositionView = view * currentPosition;
-                currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
-
-                // compute depth delta and thickness based on view state
-                float depthDelta = currentDepthView - -currentPositionView.z;
-                float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
-
-                // determine whether we hit geometry within acceptable thickness
-                if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
-                {
-                    // compute screen-space specular color and weight
-                    vec3 f0 = mix(vec3(0.04), albedo, metallic);
-                    vec3 v = normalize(-positionView.xyz);
-                    vec3 h = normalize(v + normal);
-                    vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
-                    vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen = vec3(texture(albedoTexture, currentTexCoords).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
-                    specularScreenWeight =
-                        (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
-                        (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
-                        (1.0 - smoothstep(1.0 - ssrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
-                        (1.0 - smoothstep(1.0 - ssrSlopeCutoffMargin, 1.0, slope / ssrSlopeCutoff)) * // filter out as slope nears cutoff
-                        smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
-                        smoothstep(0.0, ssrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
-                    specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
-                    break;
-                }
-
-                // continue in the same direction
-                float temp = currentProgressB;
-                currentProgressB = currentProgressB + (currentProgressB - currentProgressA) * 0.5;
-                currentProgressA = temp;
-            }
-
-            // fin
-            break;
-        }
-    }
-
-    // otherwise loop
-    currentProgressA = currentProgressB;
-}
-
 void main()
 {
     // ensure fragment was written
-    float depthInput = texture(depthTexture, texCoordsOut).r;
-    if (depthInput != 0.0)
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth != 0.0)
     {
         // recover position from depth
-        vec4 position = depthToPosition(depthInput, texCoordsOut);
+        vec4 position = depthToPosition(depth, texCoordsOut);
 
         // retrieve remaining data from geometry buffers
         vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
@@ -762,24 +622,14 @@ void main()
             scatterPlus = texture(scatterPlusTexture, texCoordsOut);
         }
 
-        // retrieve data from intermediate buffers
-        vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
-        vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
-        vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
-        float ssao = texture(ssaoTexture, texCoordsOut).r;
-
         // compute materials
         float roughness = material.r;
         float metallic = material.g;
-        float ambientOcclusion = material.b * ssao;
-        vec3 emission = vec3(material.a);
 
         // compute light accumulation
         vec3 v = normalize(eyeCenter - position.xyz);
         float nDotV = max(dot(normal, v), 0.0);
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-        vec3 lightAccum = vec3(0.0);
-        vec3 scatterAccum = vec3(0.0);
         for (int i = 0; i < lightsCount; ++i)
         {
             // per-light radiance
@@ -846,14 +696,14 @@ void main()
             kD *= 1.0 - metallic;
 
             // accumulate light
-            lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+            lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
 
-            // accumulate subsurface scattering
+            // accumulate light from subsurface scattering
             float scatterType = scatterPlus.a;
             if (sssEnabled == 1 && scatterType != 0.0)
             {
                 vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
-                scatterAccum += kD * scatter * radiance;
+                lightAccum.rgb += kD * scatter * radiance;
             }
 
             // accumulate fog
@@ -867,57 +717,5 @@ void main()
                 }
             }
         }
-
-        // compute ambient light
-        vec3 ambientColor = ambientColorAndBrightness.rgb;
-        float ambientBrightness = ambientColorAndBrightness.a;
-        float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
-        float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
-        vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
-
-        // compute diffuse term
-        vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
-        vec3 kS = f;
-        vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metallic;
-        vec3 diffuse = kD * irradiance * albedo * ambientLight;
-
-        // compute specular term and weight from screen-space
-        vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
-        float towardEye = dot(forward, normal);
-        float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-        vec4 positionView = view * position;
-        vec3 specularScreen = vec3(0.0);
-        float specularScreenWeight = 0.0;
-        if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
-        {
-            vec2 texSize = textureSize(depthTexture, 0).xy;
-            float texelHeight = 1.0 / texSize.y;
-            vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
-            texCoordsBelow.y = max(0.0, texCoordsBelow.y);
-            float depthBelow = texture(depthTexture, texCoordsBelow).r;
-            vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
-            computeSsr(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
-
-            // if hit failed, try again on the proper tex coord
-            if (specularScreenWeight == 0.0)
-            {
-                vec2 texCoords = texCoordsOut;
-                texCoords.y = max(0.0, texCoords.y);
-                computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
-            }
-        }
-
-        // compute specular term
-        vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
-        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
-        vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
-
-        // write color
-        color = vec4(lightAccum + scatterAccum + diffuse + emission * albedo + specular, 1.0);
-
-        // write depth
-        depth = depthInput;
     }
 }
