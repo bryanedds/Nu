@@ -3894,7 +3894,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             try let brdfMetadata = OpenGL.Texture.TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
                 let brdfTextureId = OpenGL.Gl.GenTexture ()
                 OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, brdfTextureId)
-                OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rg32f, Constants.Render.BrdfResolution, Constants.Render.BrdfResolution, 0, OpenGL.PixelFormat.Rg, OpenGL.PixelType.Float, brdfBufferPtr.AddrOfPinnedObject ())
+                OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Hl.CheckFormat OpenGL.InternalFormat.Rg32f, Constants.Render.BrdfResolution, Constants.Render.BrdfResolution, 0, OpenGL.PixelFormat.Rg, OpenGL.PixelType.Float, brdfBufferPtr.AddrOfPinnedObject ())
                 OpenGL.Hl.Assert ()
                 OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
                 OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
@@ -3908,7 +3908,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create reflection renderbuffer
         let reflectionRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.Hl.CheckFormat OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
         OpenGL.Hl.Assert ()
 
         // create reflection framebuffer
@@ -3920,7 +3920,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create irradiance map renderbuffer
         let irradianceMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceMapRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.Hl.CheckFormat OpenGL.InternalFormat.DepthComponent16, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
         OpenGL.Hl.Assert ()
 
         // create irradiance map framebuffer
@@ -3931,7 +3931,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create environment filter renderbuffer
         let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.Hl.CheckFormat OpenGL.InternalFormat.DepthComponent16, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
         OpenGL.Hl.Assert ()
 
         // create environment filter framebuffer
