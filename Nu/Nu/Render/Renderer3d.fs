@@ -589,8 +589,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrSlopeCutoffMargin : single
       SsrEdgeHorizontalMargin : single
       SsrEdgeVerticalMargin : single
-      SsrLightColor : Color
-      SsrLightBrightness : single }
+      SsrLightAmbientColor : Color
+      SsrLightAmbientBrightness : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -629,8 +629,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrSlopeCutoffMargin = Constants.Render.SsrSlopeCutoffMarginDefault
           SsrEdgeHorizontalMargin = Constants.Render.SsrEdgeHorizontalMarginDefault
           SsrEdgeVerticalMargin = Constants.Render.SsrEdgeVerticalMarginDefault
-          SsrLightColor = Constants.Render.SsrLightColorDefault
-          SsrLightBrightness = Constants.Render.SsrLightBrightnessDefault
+          SsrLightAmbientColor = Constants.Render.SsrLightAmbientColorDefault
+          SsrLightAmbientBrightness = Constants.Render.SsrLightAmbientBrightnessDefault
           SssEnabled = Constants.Render.SssEnabledLocalDefault }
 
 /// Configures 3d renderer.
@@ -3216,7 +3216,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightAmbientBoostCutoff, renderer.LightingConfig.LightAmbientBoostScalar,
              ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
              renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
-             renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin, renderer.LightingConfig.SsrLightColor, renderer.LightingConfig.SsrLightBrightness,
+             renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin, renderer.LightingConfig.SsrLightAmbientColor, renderer.LightingConfig.SsrLightAmbientBrightness,
              depthTexture, albedoTexture, materialTexture, normalPlusTexture, lightAccumTexture, renderer.BrdfTexture, ambientTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredColoringShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()

@@ -535,8 +535,8 @@ module WorldImGui =
                 let mutable ssrSlopeCutoffMargin = lighting3dConfig.SsrSlopeCutoffMargin
                 let mutable ssrEdgeHorizontalMargin = lighting3dConfig.SsrEdgeHorizontalMargin
                 let mutable ssrEdgeVerticalMargin = lighting3dConfig.SsrEdgeVerticalMargin
-                let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.V4
-                let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
+                let mutable ssrLightAmbientColor = let color = lighting3dConfig.SsrLightAmbientColor in color.V4
+                let mutable ssrLightAmbientBrightness = lighting3dConfig.SsrLightAmbientBrightness
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -574,8 +574,8 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Slope Cutoff Margin", &ssrSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 1.0f) || lighting3dEdited
+                lighting3dEdited <- ImGui.ColorEdit4 ("Ssr Light Ambient Color", &ssrLightAmbientColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssr Light Ambient Brightness", &ssrLightAmbientBrightness, 0.0f, 1.0f) || lighting3dEdited
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -615,8 +615,8 @@ module WorldImGui =
                           SsrSlopeCutoffMargin = ssrSlopeCutoffMargin
                           SsrEdgeHorizontalMargin = ssrEdgeHorizontalMargin
                           SsrEdgeVerticalMargin = ssrEdgeVerticalMargin
-                          SsrLightColor = Color ssrLightColor
-                          SsrLightBrightness = ssrLightBrightness }
+                          SsrLightAmbientColor = Color ssrLightAmbientColor
+                          SsrLightAmbientBrightness = ssrLightAmbientBrightness }
                     (promoted, true, lighting3dConfig)
                 else (promoted, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->

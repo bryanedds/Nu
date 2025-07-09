@@ -535,8 +535,8 @@ module PhysicallyBased =
           SsrSlopeCutoffMarginUniform : int
           SsrEdgeHorizontalMarginUniform : int
           SsrEdgeVerticalMarginUniform : int
-          SsrLightColorUniform : int
-          SsrLightBrightnessUniform : int
+          SsrLightAmbientColorUniform : int
+          SsrLightAmbientBrightnessUniform : int
           DepthTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -2383,8 +2383,8 @@ module PhysicallyBased =
         let ssrSlopeCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrSlopeCutoffMargin")
         let ssrEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeHorizontalMargin")
         let ssrEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeVerticalMargin")
-        let ssrLightColorUniform = Gl.GetUniformLocation (shader, "ssrLightColor")
-        let ssrLightBrightnessUniform = Gl.GetUniformLocation (shader, "ssrLightBrightness")
+        let ssrLightAmbientColorUniform = Gl.GetUniformLocation (shader, "ssrLightAmbientColor")
+        let ssrLightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "ssrLightAmbientBrightness")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -2419,8 +2419,8 @@ module PhysicallyBased =
           SsrSlopeCutoffMarginUniform = ssrSlopeCutoffMarginUniform
           SsrEdgeHorizontalMarginUniform = ssrEdgeHorizontalMarginUniform
           SsrEdgeVerticalMarginUniform = ssrEdgeVerticalMarginUniform
-          SsrLightColorUniform = ssrLightColorUniform
-          SsrLightBrightnessUniform = ssrLightBrightnessUniform
+          SsrLightAmbientColorUniform = ssrLightAmbientColorUniform
+          SsrLightAmbientBrightnessUniform = ssrLightAmbientBrightnessUniform
           DepthTextureUniform = depthTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -3762,8 +3762,8 @@ module PhysicallyBased =
          ssrSlopeCutoffMargin : single,
          ssrEdgeHorizontalMargin : single,
          ssrEdgeVerticalMargin : single,
-         ssrLightColor : Color,
-         ssrLightBrightness : single,
+         ssrLightAmbientColor : Color,
+         ssrLightAmbientBrightness : single,
          depthTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -3806,8 +3806,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrSlopeCutoffMarginUniform, ssrSlopeCutoffMargin)
         Gl.Uniform1 (shader.SsrEdgeHorizontalMarginUniform, ssrEdgeHorizontalMargin)
         Gl.Uniform1 (shader.SsrEdgeVerticalMarginUniform, ssrEdgeVerticalMargin)
-        Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor.R, ssrLightColor.G, ssrLightColor.B)
-        Gl.Uniform1 (shader.SsrLightBrightnessUniform, ssrLightBrightness)
+        Gl.Uniform3 (shader.SsrLightAmbientColorUniform, ssrLightAmbientColor.R, ssrLightAmbientColor.G, ssrLightAmbientColor.B)
+        Gl.Uniform1 (shader.SsrLightAmbientBrightnessUniform, ssrLightAmbientBrightness)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
