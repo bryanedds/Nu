@@ -483,6 +483,10 @@ type StaticModelSurfaceBundle =
       DepthTest : DepthTest
       RenderType : RenderType }
 
+type RenderStaticModelSurfaceBundle =
+    { StaticModelSurfaceBundle : StaticModelSurfaceBundle
+      RenderPass : RenderPass }
+
 type RenderStaticModelSurfaceBundles =
     { StaticModelSurfaceBundles : StaticModelSurfaceBundle array
       RenderPass : RenderPass }
@@ -658,6 +662,7 @@ type RenderMessage3d =
     | RenderBillboards of RenderBillboards
     | RenderBillboardParticles of RenderBillboardParticles
     | RenderStaticModelSurface of RenderStaticModelSurface
+    | RenderStaticModelSurfaceBundle of RenderStaticModelSurfaceBundle
     | RenderStaticModelSurfaceBundles of RenderStaticModelSurfaceBundles
     | RenderStaticModel of RenderStaticModel
     | RenderStaticModels of RenderStaticModels
@@ -3431,10 +3436,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
-            | RenderStaticModelSurfaceBundles rsmsb ->
+            | RenderStaticModelSurfaceBundle rsmsb ->
                 let renderPass = rsmsb.RenderPass
                 let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
-                for bundle in rsmsb.StaticModelSurfaceBundles do
+                GlRenderer3d.categorizeStaticModelSurfaceBundle (rsmsb.StaticModelSurfaceBundle.BundleId, rsmsb.StaticModelSurfaceBundle.StaticModelSurfaces, rsmsb.StaticModelSurfaceBundle.Material, rsmsb.StaticModelSurfaceBundle.StaticModel, rsmsb.StaticModelSurfaceBundle.SurfaceIndex, rsmsb.StaticModelSurfaceBundle.DepthTest, rsmsb.StaticModelSurfaceBundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
+            | RenderStaticModelSurfaceBundles rsmsbs ->
+                let renderPass = rsmsbs.RenderPass
+                let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
+                for bundle in rsmsbs.StaticModelSurfaceBundles do
                     GlRenderer3d.categorizeStaticModelSurfaceBundle (bundle.BundleId, bundle.StaticModelSurfaces, bundle.Material, bundle.StaticModel, bundle.SurfaceIndex, bundle.DepthTest, bundle.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
