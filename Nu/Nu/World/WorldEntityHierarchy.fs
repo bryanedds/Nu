@@ -159,7 +159,7 @@ module WorldEntityHierarchy =
             let frozenBundles =
                 Dictionary<
                     Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
-                    Guid * StaticModel AssetTag * int * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
+                    Guid * StaticModel AssetTag * int * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
@@ -184,7 +184,7 @@ module WorldEntityHierarchy =
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces.[surfaceIndex]
                             let frozenKey = (material, surface, depthTest, renderType)
-                            let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, entityBounds)
+                            let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, entityBounds)
                             match frozenBundles.TryGetValue frozenKey with
                             | (true, (_, _, _, bundle)) -> bundle.Add frozenValue
                             | (false, _) -> frozenBundles.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
@@ -238,7 +238,7 @@ module WorldEntityHierarchy =
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces.[surfaceIndex]
                                 let frozenKey = (material, surface, depthTest, renderType)
-                                let frozenValue = struct (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, surfaceBounds)
+                                let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, surfaceBounds)
                                 match frozenBundles.TryGetValue frozenKey with
                                 | (true, (_, _, _, bundle)) -> bundle.Add frozenValue
                                 | (false, _) -> frozenBundles.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
@@ -273,7 +273,7 @@ module WorldEntityHierarchy =
                     let (material, _, depthTest, renderType) = entry.Key
                     let (bundleId, staticModel, surfaceIndex, bundle) = entry.Value
                     { BundleId = bundleId
-                      StaticModelSurfaces = bundle
+                      StaticModelSurfaces = Seq.toArray bundle
                       Material = material
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex

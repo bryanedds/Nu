@@ -476,7 +476,7 @@ type RenderStaticModelSurface =
 
 type StaticModelSurfaceBundle =
     { BundleId : Guid
-      StaticModelSurfaces : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List
+      StaticModelSurfaces : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array
       Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
@@ -867,7 +867,7 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
       DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticBundles : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List)>
+      DeferredStaticBundles : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
@@ -1901,7 +1901,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private categorizeStaticModelSurfaceBundle
         (bundleId : Guid,
-         staticModelSurfaces : _ List,
+         staticModelSurfaces : _ array,
          material : Material,
          staticModel : StaticModel AssetTag,
          surfaceIndex : int,
@@ -1930,7 +1930,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let bundle = struct (surface, staticModelSurfaces)
                         renderTasks.DeferredStaticBundles.Add (bundleId, bundle)
                     | ForwardRenderType (subsort, sort) ->
-                        for struct (model, _, presence, insetOpt, properties, bounds) in staticModelSurfaces do
+                        for (model, _, presence, insetOpt, properties, bounds) in staticModelSurfaces do
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
@@ -2222,18 +2222,18 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedDepthSurfaceBundle
         shadowLightType shadowFrustum
-        eyeCenter viewArray projectionArray viewProjectionArray bonesArray (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List)
+        eyeCenter viewArray projectionArray viewProjectionArray bonesArray (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
-        while parameters.Count * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
         if renderer.InstanceFields.Length < length then
             renderer.InstanceFields <- Array.zeroCreate<single> length
 
         let mutable i = 0
-        for j in 0 .. dec parameters.Count do
-            let struct (model, castShadow, presence, _, _, bounds) = parameters.[j]
+        for j in 0 .. dec parameters.Length do
+            let (model, castShadow, presence, _, _, bounds) = parameters.[j]
             let unculled =
                 castShadow &&
                 Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
@@ -2296,19 +2296,19 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedDeferredSurfaceBundle
         frustumInterior frustumExterior frustumImposter lightBox renderPass
-        viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List)
+        viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
-        while parameters.Count * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
         if renderer.InstanceFields.Length < length then
             renderer.InstanceFields <- Array.zeroCreate<single> length
 
         // blit parameters to instance fields
         let mutable i = 0
-        for j in 0 .. dec parameters.Count do
-            let struct (model, _, presence, texCoordsOffset, properties, bounds) = parameters.[j]
+        for j in 0 .. dec parameters.Length do
+            let (model, _, presence, texCoordsOffset, properties, bounds) = parameters.[j]
             let unculled =
                 match renderPass with
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
