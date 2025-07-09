@@ -492,7 +492,7 @@ module WorldModule3 =
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
-                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess Live true world
+                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon

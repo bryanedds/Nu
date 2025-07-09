@@ -1717,8 +1717,8 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
             world.WorldExtension.Plugin.CleanUp ()
 
-        /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
+        /// Run the game engine with the given handlers, but don't clean up at the end.
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame (world : World) =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
@@ -1729,7 +1729,7 @@ module WorldModule2 =
                 World.preProcess world
                 preProcess world
                 world.Timers.PreProcessTimer.Stop ()
-                match liveness with
+                match World.getLiveness world with
                 | Live ->
 
                     // update screen transitioning process
@@ -1919,7 +1919,7 @@ module WorldModule2 =
 
                                                                     // recur or return
                                                                     match World.getLiveness world with
-                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
+                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
                                                                     | Dead -> ()
                                                                 | Dead -> ()
                                                             | Dead -> ()
@@ -1936,8 +1936,8 @@ module WorldModule2 =
                 | Dead -> ()
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world =
-            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
+            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->

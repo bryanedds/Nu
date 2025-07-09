@@ -4131,7 +4131,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             World.setEye3dRotation DesiredEye3dRotation world
 
     let rec private runWithCleanUpAndErrorProtection firstFrame world =
-        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess Live firstFrame world
+        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrame world
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->
