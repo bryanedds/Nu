@@ -232,84 +232,83 @@ void main()
 {
     // ensure fragment was written
     float depthInput = texture(depthTexture, texCoordsOut).r;
-    if (depthInput != 0.0)
+    if (depthInput == 0.0) discard;
+
+    // recover position from depth
+    vec4 position = depthToPosition(depthInput, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
+    vec4 material = texture(materialTexture, texCoordsOut);
+    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
+
+    // retrieve data from intermediate buffers
+    vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
+    vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
+    vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
+    float ssao = texture(ssaoTexture, texCoordsOut).r;
+
+    // compute materials
+    float roughness = material.r;
+    float metallic = material.g;
+    float ambientOcclusion = material.b * ssao;
+    vec3 emission = vec3(material.a);
+
+    // compute lighting terms
+    vec3 v = normalize(eyeCenter - position.xyz);
+    float nDotV = max(dot(normal, v), 0.0);
+    vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
+
+    // compute ambient light
+    vec3 ambientColor = ambientColorAndBrightness.rgb;
+    float ambientBrightness = ambientColorAndBrightness.a;
+    float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
+    float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
+    vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
+
+    // compute diffuse term
+    vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
+    vec3 kS = f;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 diffuse = kD * irradiance * albedo * ambientLight;
+
+    // compute specular term and weight from screen-space
+    vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
+    float towardEye = dot(forward, normal);
+    float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
+    vec4 positionView = view * position;
+    vec3 specularScreen = vec3(0.0);
+    float specularScreenWeight = 0.0;
+    if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
     {
-        // recover position from depth
-        vec4 position = depthToPosition(depthInput, texCoordsOut);
+        vec2 texSize = textureSize(depthTexture, 0).xy;
+        float texelHeight = 1.0 / texSize.y;
+        vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
+        texCoordsBelow.y = max(0.0, texCoordsBelow.y);
+        float depthBelow = texture(depthTexture, texCoordsBelow).r;
+        vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
+        computeSsr(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
 
-        // retrieve remaining data from geometry buffers
-        vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
-        vec4 material = texture(materialTexture, texCoordsOut);
-        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-        vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
-
-        // retrieve data from intermediate buffers
-        vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
-        vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
-        vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
-        float ssao = texture(ssaoTexture, texCoordsOut).r;
-
-        // compute materials
-        float roughness = material.r;
-        float metallic = material.g;
-        float ambientOcclusion = material.b * ssao;
-        vec3 emission = vec3(material.a);
-
-        // compute lighting terms
-        vec3 v = normalize(eyeCenter - position.xyz);
-        float nDotV = max(dot(normal, v), 0.0);
-        vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-
-        // compute ambient light
-        vec3 ambientColor = ambientColorAndBrightness.rgb;
-        float ambientBrightness = ambientColorAndBrightness.a;
-        float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
-        float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
-        vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
-
-        // compute diffuse term
-        vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
-        vec3 kS = f;
-        vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metallic;
-        vec3 diffuse = kD * irradiance * albedo * ambientLight;
-
-        // compute specular term and weight from screen-space
-        vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
-        float towardEye = dot(forward, normal);
-        float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-        vec4 positionView = view * position;
-        vec3 specularScreen = vec3(0.0);
-        float specularScreenWeight = 0.0;
-        if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
+        // if hit failed, try again on the proper tex coord
+        if (specularScreenWeight == 0.0)
         {
-            vec2 texSize = textureSize(depthTexture, 0).xy;
-            float texelHeight = 1.0 / texSize.y;
-            vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
-            texCoordsBelow.y = max(0.0, texCoordsBelow.y);
-            float depthBelow = texture(depthTexture, texCoordsBelow).r;
-            vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
-            computeSsr(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
-
-            // if hit failed, try again on the proper tex coord
-            if (specularScreenWeight == 0.0)
-            {
-                vec2 texCoords = texCoordsOut;
-                texCoords.y = max(0.0, texCoords.y);
-                computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
-            }
+            vec2 texCoords = texCoordsOut;
+            texCoords.y = max(0.0, texCoords.y);
+            computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
-
-        // compute specular term
-        vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
-        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
-        vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
-
-        // write color
-        color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
-
-        // write depth
-        depth = depthInput;
     }
+
+    // compute specular term
+    vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
+    vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
+    vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
+    vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
+
+    // write color
+    color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+
+    // write depth
+    depth = depthInput;
 }

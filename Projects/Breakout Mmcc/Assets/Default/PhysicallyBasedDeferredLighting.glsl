@@ -605,116 +605,115 @@ void main()
 {
     // ensure fragment was written
     float depth = texture(depthTexture, texCoordsOut).r;
-    if (depth != 0.0)
-    {
-        // recover position from depth
-        vec4 position = depthToPosition(depth, texCoordsOut);
+    if (depth == 0.0) discard;
 
-        // retrieve remaining data from geometry buffers
-        vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
-        vec4 material = texture(materialTexture, texCoordsOut);
-        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-        vec4 subdermalPlus = vec4(0.0);
-        vec4 scatterPlus = vec4(0.0);
-        if (sssEnabled == 1)
+    // recover position from depth
+    vec4 position = depthToPosition(depth, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
+    vec4 material = texture(materialTexture, texCoordsOut);
+    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec4 subdermalPlus = vec4(0.0);
+    vec4 scatterPlus = vec4(0.0);
+    if (sssEnabled == 1)
+    {
+        subdermalPlus = texture(subdermalPlusTexture, texCoordsOut);
+        scatterPlus = texture(scatterPlusTexture, texCoordsOut);
+    }
+
+    // compute materials
+    float roughness = material.r;
+    float metallic = material.g;
+
+    // compute light accumulation
+    vec3 v = normalize(eyeCenter - position.xyz);
+    float nDotV = max(dot(normal, v), 0.0);
+    vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
+    for (int i = 0; i < lightsCount; ++i)
+    {
+        // per-light radiance
+        vec3 lightOrigin = lightOrigins[i];
+        int lightType = lightTypes[i];
+        bool lightDirectional = lightType == 2;
+        vec3 l, h, radiance;
+        float intensity = 0.0;
+        if (!lightDirectional)
         {
-            subdermalPlus = texture(subdermalPlusTexture, texCoordsOut);
-            scatterPlus = texture(scatterPlusTexture, texCoordsOut);
+            vec3 d = lightOrigin - position.xyz;
+            l = normalize(d);
+            h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float distance = sqrt(distanceSquared);
+            float cutoff = lightCutoffs[i];
+            float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
+            float angle = acos(dot(l, -lightDirections[i]));
+            float halfConeInner = lightConeInners[i] * 0.5;
+            float halfConeOuter = lightConeOuters[i] * 0.5;
+            float halfConeDelta = halfConeOuter - halfConeInner;
+            float halfConeBetween = angle - halfConeInner;
+            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+            intensity = attenuation * halfConeScalar * cutoffScalar;
+            radiance = lightColors[i] * lightBrightnesses[i] * intensity;
+        }
+        else
+        {
+            l = -lightDirections[i];
+            h = normalize(v + l);
+            intensity = 1.0;
+            radiance = lightColors[i] * lightBrightnesses[i];
         }
 
-        // compute materials
-        float roughness = material.r;
-        float metallic = material.g;
-
-        // compute light accumulation
-        vec3 v = normalize(eyeCenter - position.xyz);
-        float nDotV = max(dot(normal, v), 0.0);
-        vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-        for (int i = 0; i < lightsCount; ++i)
+        // shadow scalar
+        int shadowIndex = lightShadowIndices[i];
+        float shadowScalar = 1.0f;
+        if (shadowIndex >= 0)
         {
-            // per-light radiance
-            vec3 lightOrigin = lightOrigins[i];
-            int lightType = lightTypes[i];
-            bool lightDirectional = lightType == 2;
-            vec3 l, h, radiance;
-            float intensity = 0.0;
-            if (!lightDirectional)
+            switch (lightType)
             {
-                vec3 d = lightOrigin - position.xyz;
-                l = normalize(d);
-                h = normalize(v + l);
-                float distanceSquared = dot(d, d);
-                float distance = sqrt(distanceSquared);
-                float cutoff = lightCutoffs[i];
-                float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
-                float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
-                float angle = acos(dot(l, -lightDirections[i]));
-                float halfConeInner = lightConeInners[i] * 0.5;
-                float halfConeOuter = lightConeOuters[i] * 0.5;
-                float halfConeDelta = halfConeOuter - halfConeInner;
-                float halfConeBetween = angle - halfConeInner;
-                float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-                intensity = attenuation * halfConeScalar * cutoffScalar;
-                radiance = lightColors[i] * lightBrightnesses[i] * intensity;
+                case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex - SHADOW_TEXTURES_MAX); break; } // point
+                case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
+                default: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
             }
-            else
+        }
+
+        // cook-torrance brdf
+        float hDotV = max(dot(h, v), 0.0);
+        float ndf = distributionGGX(normal, h, roughness);
+        float g = geometrySchlick(normal, v, l, roughness);
+        vec3 f = fresnelSchlick(hDotV, f0);
+
+        // compute specularity
+        vec3 numerator = ndf * g * f;
+        float nDotL = max(dot(normal, l), 0.0);
+        float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
+        vec3 specular = numerator / denominator;
+
+        // compute diffusion
+        vec3 kS = f;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
+
+        // accumulate light
+        lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+
+        // accumulate light from subsurface scattering
+        float scatterType = scatterPlus.a;
+        if (sssEnabled == 1 && scatterType != 0.0)
+        {
+            vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
+            lightAccum.rgb += kD * scatter * radiance;
+        }
+
+        // accumulate fog
+        if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
+        {
+            switch (lightType)
             {
-                l = -lightDirections[i];
-                h = normalize(v + l);
-                intensity = 1.0;
-                radiance = lightColors[i] * lightBrightnesses[i];
-            }
-
-            // shadow scalar
-            int shadowIndex = lightShadowIndices[i];
-            float shadowScalar = 1.0f;
-            if (shadowIndex >= 0)
-            {
-                switch (lightType)
-                {
-                    case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex - SHADOW_TEXTURES_MAX); break; } // point
-                    case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
-                    default: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
-                }
-            }
-
-            // cook-torrance brdf
-            float hDotV = max(dot(h, v), 0.0);
-            float ndf = distributionGGX(normal, h, roughness);
-            float g = geometrySchlick(normal, v, l, roughness);
-            vec3 f = fresnelSchlick(hDotV, f0);
-
-            // compute specularity
-            vec3 numerator = ndf * g * f;
-            float nDotL = max(dot(normal, l), 0.0);
-            float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-            vec3 specular = numerator / denominator;
-
-            // compute diffusion
-            vec3 kS = f;
-            vec3 kD = vec3(1.0) - kS;
-            kD *= 1.0 - metallic;
-
-            // accumulate light
-            lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
-
-            // accumulate light from subsurface scattering
-            float scatterType = scatterPlus.a;
-            if (sssEnabled == 1 && scatterType != 0.0)
-            {
-                vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
-                lightAccum.rgb += kD * scatter * radiance;
-            }
-
-            // accumulate fog
-            if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
-            {
-                switch (lightType)
-                {
-                    case 0: { fogAccum.rgb += computeFogAccumPoint(position, i); break; } // point
-                    case 1: { fogAccum.rgb += computeFogAccumSpot(position, i); break; } // spot
-                    default: { fogAccum.rgb += computeFogAccumDirectional(position, i); break; } // directional
-                }
+                case 0: { fogAccum.rgb += computeFogAccumPoint(position, i); break; } // point
+                case 1: { fogAccum.rgb += computeFogAccumSpot(position, i); break; } // spot
+                default: { fogAccum.rgb += computeFogAccumDirectional(position, i); break; } // directional
             }
         }
     }

@@ -47,40 +47,38 @@ void main()
 {
     // ensure fragment was written
     float depth = texture(depthTexture, texCoordsOut).r;
-    if (depth != 0.0)
+    if (depth == 0.0) discard;
+
+    // recover position from depth
+    vec4 position = depthToPosition(depth, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+
+    // retrieve light mapping data
+    vec4 lmData = texture(lightMappingTexture, texCoordsOut);
+    int lm1 = int(lmData.r) - 1;
+    int lm2 = int(lmData.g) - 1;
+    float lmRatio = lmData.b;
+
+    // compute irradiance
+    vec3 irradiance = vec3(0.0);
+    if (lm1 == -1 && lm2 == -1)
     {
-        // recover position from depth
-        vec4 position = depthToPosition(depth, texCoordsOut);
-
-        // retrieve remaining data from geometry buffers
-        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-
-        // retrieve light mapping data
-        vec4 lmData = texture(lightMappingTexture, texCoordsOut);
-        int lm1 = int(lmData.r) - 1;
-        int lm2 = int(lmData.g) - 1;
-        float lmRatio = lmData.b;
-
-        // compute irradiance
-        vec3 irradiance = vec3(0.0);
-        if (lm1 == -1 && lm2 == -1)
-        {
-            irradiance = texture(irradianceMap, normal).rgb;
-        }
-        else if (lm2 == -1)
-        {
-            irradiance = texture(irradianceMaps[lm1], normal).rgb;
-        }
-        else
-        {
-            // compute blended irradiance
-            vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
-            vec3 irradiance2 = texture(irradianceMaps[lm2], normal).rgb;
-            irradiance = mix(irradiance1, irradiance2, lmRatio);
-        }
-
-        // write
-        frag = vec4(irradiance, 1.0);
+        irradiance = texture(irradianceMap, normal).rgb;
     }
-    else frag = vec4(1.0); // white irradiance
+    else if (lm2 == -1)
+    {
+        irradiance = texture(irradianceMaps[lm1], normal).rgb;
+    }
+    else
+    {
+        // compute blended irradiance
+        vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
+        vec3 irradiance2 = texture(irradianceMaps[lm2], normal).rgb;
+        irradiance = mix(irradiance1, irradiance2, lmRatio);
+    }
+
+    // write
+    frag = vec4(irradiance, 1.0);
 }

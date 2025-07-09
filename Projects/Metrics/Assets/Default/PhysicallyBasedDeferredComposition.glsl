@@ -45,26 +45,25 @@ void main()
 {
     // ensure fragment written
     float depth = texture(depthTexture, texCoordsOut, 0).r;
-    if (depth != 0.0)
+    if (depth == 0.0) discard;
+
+    // apply volumetric fog
+    vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
+    vec3 color = texture(colorTexture, texCoordsOut, 0).xyz + fogAccum;
+
+    // compute and apply global fog when enabled
+    if (fogEnabled == 1)
     {
-        // apply volumetric fog
-        vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
-        vec3 color = texture(colorTexture, texCoordsOut, 0).xyz + fogAccum;
-
-        // compute and apply global fog when enabled
-        if (fogEnabled == 1)
-        {
-            vec4 position = depthToPosition(depth, texCoordsOut);
-            float distance = length(position.xyz - eyeCenter);
-            float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
-            color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
-        }
-
-        // apply tone mapping and gamma correction
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0 / GAMMA));
-
-        // write fragment
-        frag = vec4(color, 1.0);
+        vec4 position = depthToPosition(depth, texCoordsOut);
+        float distance = length(position.xyz - eyeCenter);
+        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
+        color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
+
+    // apply tone mapping and gamma correction
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0 / GAMMA));
+
+    // write fragment
+    frag = vec4(color, 1.0);
 }

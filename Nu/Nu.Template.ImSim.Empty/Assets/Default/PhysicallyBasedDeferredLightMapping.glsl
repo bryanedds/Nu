@@ -86,69 +86,68 @@ void main()
 {
     // ensure fragment was written
     float depth = texture(depthTexture, texCoordsOut).r;
-    if (depth != 0.0)
+    if (depth == 0.0) discard;
+
+    // recover position from depth
+    vec4 position = depthToPosition(depth, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
+    vec3 normal = normalPlus.xyz;
+    bool ignoreLightMaps = normalPlus.w == 1.0;
+
+    // compute nearest light map indices
+    int lm1 = -1;
+    int lm2 = -1;
+    float lm1DistanceSquared = FLOAT_MAX;
+    float lm2DistanceSquared = FLOAT_MAX;
+    if (!ignoreLightMaps)
     {
-        // recover position from depth
-        vec4 position = depthToPosition(depth, texCoordsOut);
-
-        // retrieve remaining data from geometry buffers
-        vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
-        vec3 normal = normalPlus.xyz;
-        bool ignoreLightMaps = normalPlus.w == 1.0;
-
-        // compute nearest light map indices
-        int lm1 = -1;
-        int lm2 = -1;
-        float lm1DistanceSquared = FLOAT_MAX;
-        float lm2DistanceSquared = FLOAT_MAX;
-        if (!ignoreLightMaps)
+        for (int i = 0; i < lightMapsCount; ++i)
         {
-            for (int i = 0; i < lightMapsCount; ++i)
+            if (inBounds(position.xyz, lightMapMins[i], lightMapSizes[i]))
             {
-                if (inBounds(position.xyz, lightMapMins[i], lightMapSizes[i]))
+                vec3 delta = lightMapOrigins[i] - position.xyz;
+                float distanceSquared = dot(delta, delta);
+                if (distanceSquared < lm1DistanceSquared)
                 {
-                    vec3 delta = lightMapOrigins[i] - position.xyz;
-                    float distanceSquared = dot(delta, delta);
-                    if (distanceSquared < lm1DistanceSquared)
-                    {
-                        lm2 = lm1;
-                        lm1 = i;
-                        lm2DistanceSquared = lm1DistanceSquared;
-                        lm1DistanceSquared = distanceSquared;
-                    }
-                    else if (distanceSquared < lm2DistanceSquared)
-                    {
-                        lm2 = i;
-                        lm2DistanceSquared = distanceSquared;
-                    }
+                    lm2 = lm1;
+                    lm1 = i;
+                    lm2DistanceSquared = lm1DistanceSquared;
+                    lm1DistanceSquared = distanceSquared;
+                }
+                else if (distanceSquared < lm2DistanceSquared)
+                {
+                    lm2 = i;
+                    lm2DistanceSquared = distanceSquared;
                 }
             }
         }
-
-        // subsume any contained light map or compute light map blending ratio
-        float ratio = 0.0;
-        if (lm1 != -1 && lm2 != -1)
-        {
-            vec3 min1 = lightMapMins[lm1];
-            vec3 size1 = lightMapSizes[lm1];
-            vec3 min2 = lightMapMins[lm2];
-            vec3 size2 = lightMapSizes[lm2];
-            if (contains(min1, size1, min2, size2))
-            {
-                lm2 = -1;
-            }
-            else if (contains(min2, size2, min1, size1))
-            {
-                lm1 = lm2;
-                lm2 = -1;
-            }
-            else
-            {
-                ratio = computeDepthRatio(min1, size1, min2, size2, position.xyz, normal);
-            }
-        }
-
-        // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
-        frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0);
     }
+
+    // subsume any contained light map or compute light map blending ratio
+    float ratio = 0.0;
+    if (lm1 != -1 && lm2 != -1)
+    {
+        vec3 min1 = lightMapMins[lm1];
+        vec3 size1 = lightMapSizes[lm1];
+        vec3 min2 = lightMapMins[lm2];
+        vec3 size2 = lightMapSizes[lm2];
+        if (contains(min1, size1, min2, size2))
+        {
+            lm2 = -1;
+        }
+        else if (contains(min2, size2, min1, size1))
+        {
+            lm1 = lm2;
+            lm2 = -1;
+        }
+        else
+        {
+            ratio = computeDepthRatio(min1, size1, min2, size2, position.xyz, normal);
+        }
+    }
+
+    // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
+    frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0);
 }

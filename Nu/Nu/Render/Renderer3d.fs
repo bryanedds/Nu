@@ -3092,7 +3092,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let (ambientTexture, ambientRenderbuffer, ambientFramebuffer) = renderer.PhysicallyBasedBuffers.AmbientBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ambientRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ambientFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.ClearColor (1.0f, 1.0f, 1.0f, 1.0f) // NOTE: white ambient value.
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
@@ -3109,7 +3109,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let (irradianceTexture, irradianceRenderbuffer, irradianceFramebuffer) = renderer.PhysicallyBasedBuffers.IrradianceBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.ClearColor (1.0f, 1.0f, 1.0f, 1.0f) // NOTE: white irradiance value.
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
@@ -3126,7 +3126,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let (environmentFilterTexture, environmentFilterRenderbuffer, environmentFilterFramebuffer) = renderer.PhysicallyBasedBuffers.EnvironmentFilterBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.ClearColor (1.0f, 1.0f, 1.0f, 1.0f) // NOTE: white environment filter value.
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
@@ -3150,7 +3150,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (ssaoTextureUnfiltered, ssaoRenderbuffer, ssaoFramebuffer) = renderer.PhysicallyBasedBuffers.SsaoBuffersUnfiltered
                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ssaoRenderbuffer)
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ssaoFramebuffer)
-                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.ClearColor (1.0f, 1.0f, 1.0f, 1.0f) // NOTE: white ssao value.
                 OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
                 OpenGL.Gl.Viewport (0, 0, ssaoResolution.X, ssaoResolution.Y)
                 OpenGL.Hl.Assert ()
