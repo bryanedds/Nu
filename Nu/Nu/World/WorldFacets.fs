@@ -1422,9 +1422,9 @@ type RigidBodyFacet () =
             let settings = new JoltPhysicsSharp.WheelSettingsWV ()
             settings.Position <- position
             settings.WheelForward <- v3Forward
-            if not front then
-                settings.MaxSteerAngle <- 0.0f
-                settings.MaxHandBrakeTorque <- 0.0f
+            if front
+            then settings.MaxHandBrakeTorque <- 0.0f
+            else settings.MaxSteerAngle <- 0.0f
             settings
 
         // vehicle controller config
