@@ -197,14 +197,28 @@ type RendererInline () =
         member ri.Terminate () =
             match dependenciesOpt with
             | Some (glContext, renderer3d, renderer2d, rendererImGui) ->
+            
+                // clean up 3d
                 renderer3d.CleanUp ()
+                OpenGL.Hl.Assert ()
+
+                // clean up 2d
                 renderer2d.CleanUp ()
+                OpenGL.Hl.Assert ()
+
+                // clean up imgui
                 rendererImGui.CleanUp ()
+                OpenGL.Hl.Assert ()
+
+                // clean up gl
                 dependenciesOpt <- None
                 match windowOpt with
                 | Some (SglWindow window) -> OpenGL.Hl.DestroySglContext (glContext, window.SglWindow)
                 | None -> ()
+
+                // fin
                 terminated <- true
+
             | None -> ()
 
 /// A threaded render process.
@@ -420,10 +434,19 @@ type RendererThread () =
                         if glFinishRequired then OpenGL.Gl.Finish ()
                         match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
 
-        // clean up
+        // clean up 3d
         renderer3d.CleanUp ()
+        OpenGL.Hl.Assert ()
+
+        // clean up 2d
         renderer2d.CleanUp ()
+        OpenGL.Hl.Assert ()
+
+        // clean up imgui
         rendererImGui.CleanUp ()
+        OpenGL.Hl.Assert ()
+
+        // clean up gl
         OpenGL.Hl.DestroySglContext (glContext, match window with SglWindow window -> window.SglWindow)
 
     interface RendererProcess with

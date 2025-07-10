@@ -4123,6 +4123,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapVao|]
+            OpenGL.Hl.Assert ()
+
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.IrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.EnvironmentFilterShader.EnvironmentFilterShader
@@ -4132,23 +4134,39 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
             OpenGL.Gl.DeleteProgram renderer.FilterFxaaShader.FilterFxaaShader
             OpenGL.Gl.DeleteProgram renderer.FilterGaussian4dShader.FilterGaussianShader
+            OpenGL.Hl.Assert ()
+
             OpenGL.Gl.DeleteVertexArrays [|renderer.PhysicallyBasedStaticVao|]
             OpenGL.Gl.DeleteVertexArrays [|renderer.PhysicallyBasedAnimatedVao|]
             OpenGL.Gl.DeleteVertexArrays [|renderer.PhysicallyBasedTerrainVao|]
+            OpenGL.Hl.Assert ()
+            
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedShaders renderer.PhysicallyBasedShaders
+            OpenGL.Hl.Assert ()
+            
             OpenGL.CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry
+            OpenGL.Hl.Assert ()
+            
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.BillboardGeometry
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.PhysicallyBasedQuad
+            OpenGL.Hl.Assert ()
+            
             renderer.CubeMap.Destroy ()
             renderer.BrdfTexture.Destroy ()
+            OpenGL.Hl.Assert ()
+            
             OpenGL.Gl.DeleteRenderbuffers [|renderer.ReflectionRenderbuffer|]
             OpenGL.Gl.DeleteFramebuffers [|renderer.ReflectionFramebuffer|]
             OpenGL.Gl.DeleteRenderbuffers [|renderer.IrradianceMapRenderbuffer|]
             OpenGL.Gl.DeleteFramebuffers [|renderer.IrradianceMapFramebuffer|]
             OpenGL.Gl.DeleteRenderbuffers [|renderer.EnvironmentFilterRenderbuffer|]
             OpenGL.Gl.DeleteFramebuffers [|renderer.EnvironmentFilterFramebuffer|]
+            OpenGL.Hl.Assert ()
+            
             renderer.IrradianceMap.Destroy ()
             renderer.EnvironmentFilterMap.Destroy ()
+            OpenGL.Hl.Assert ()
+            
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy ()
             renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy ()
             renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy ()
@@ -4156,11 +4174,19 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.PhysicallyBasedMaterial.EmissionTexture.Destroy ()
             renderer.PhysicallyBasedMaterial.NormalTexture.Destroy ()
             renderer.PhysicallyBasedMaterial.HeightTexture.Destroy ()
+            OpenGL.Hl.Assert ()
+            
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
+            OpenGL.Hl.Assert ()
+            
             for lightMap in renderer.LightMaps.Values do OpenGL.LightMap.DestroyLightMap lightMap
             renderer.LightMaps.Clear ()
+            OpenGL.Hl.Assert ()
+            
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, asset) in renderAssets do GlRenderer3d.freeRenderAsset asset renderer
             renderer.RenderPackages.Clear ()
+            OpenGL.Hl.Assert ()
+            
             renderer.TextureServer.Terminate ()

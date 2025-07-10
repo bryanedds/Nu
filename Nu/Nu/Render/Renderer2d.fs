@@ -907,8 +907,12 @@ type [<ReferenceEquality>] GlRenderer2d =
                 GlRenderer2d.render eyeCenter eyeSize viewport renderMessages renderer
 
         member renderer.CleanUp () =
+
+            // destroy sprite batch env
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv
             OpenGL.Hl.Assert ()
+
+            // free resources
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
