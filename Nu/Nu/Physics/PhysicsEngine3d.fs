@@ -1479,8 +1479,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyConstraintUserData.Clear ()
             physicsEngine.BodyConstraints.Clear ()
 
-            // clear wheeled vehicle controllers and vehicle constraints
+            // clear vehicle step listeners and constraints
             for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
+                physicsEngine.PhysicsContext.RemoveStepListener vehicleConstraint
                 physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
             physicsEngine.VehicleConstraints.Clear ()
 
