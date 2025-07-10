@@ -199,8 +199,10 @@ void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float 
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
                     specularScreen =
-                        texture(lightAccumTexture, currentTexCoords).rgb * specularIntensity +
-                        texture(albedoTexture, currentTexCoords).rgb * ssrLightAmbientColor * ssrLightAmbientBrightness * specularIntensity;
+                        texture(lightAccumTexture, currentTexCoords).rgb *
+                        ssrLightAmbientColor *
+                        ssrLightAmbientBrightness *
+                        specularIntensity;
                     specularScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
