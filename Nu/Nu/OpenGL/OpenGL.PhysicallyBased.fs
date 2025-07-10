@@ -521,6 +521,7 @@ module PhysicallyBased =
           LightAmbientBoostCutoffUniform : int
           LightAmbientBoostScalarUniform : int
           SsrEnabledUniform : int
+          SsrIntensityUniform : int
           SsrDetailUniform : int
           SsrRefinementsMaxUniform : int
           SsrRayThicknessUniform : int
@@ -535,8 +536,6 @@ module PhysicallyBased =
           SsrSlopeCutoffMarginUniform : int
           SsrEdgeHorizontalMarginUniform : int
           SsrEdgeVerticalMarginUniform : int
-          SsrLightAmbientColorUniform : int
-          SsrLightAmbientBrightnessUniform : int
           DepthTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -2369,6 +2368,7 @@ module PhysicallyBased =
         let lightAmbientBoostCutoffUniform = Gl.GetUniformLocation (shader, "lightAmbientBoostCutoff")
         let lightAmbientBoostScalarUniform = Gl.GetUniformLocation (shader, "lightAmbientBoostScalar")
         let ssrEnabledUniform = Gl.GetUniformLocation (shader, "ssrEnabled")
+        let ssrIntensityUniform = Gl.GetUniformLocation (shader, "ssrIntensity")
         let ssrDetailUniform = Gl.GetUniformLocation (shader, "ssrDetail")
         let ssrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrRefinementsMax")
         let ssrRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrRayThickness")
@@ -2383,8 +2383,6 @@ module PhysicallyBased =
         let ssrSlopeCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrSlopeCutoffMargin")
         let ssrEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeHorizontalMargin")
         let ssrEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeVerticalMargin")
-        let ssrLightAmbientColorUniform = Gl.GetUniformLocation (shader, "ssrLightAmbientColor")
-        let ssrLightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "ssrLightAmbientBrightness")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -2405,6 +2403,7 @@ module PhysicallyBased =
           LightAmbientBoostCutoffUniform = lightAmbientBoostCutoffUniform
           LightAmbientBoostScalarUniform = lightAmbientBoostScalarUniform
           SsrEnabledUniform = ssrEnabledUniform
+          SsrIntensityUniform = ssrIntensityUniform
           SsrDetailUniform = ssrDetailUniform
           SsrRefinementsMaxUniform = ssrRefinementsMaxUniform
           SsrRayThicknessUniform = ssrRayThicknessUniform
@@ -2419,8 +2418,6 @@ module PhysicallyBased =
           SsrSlopeCutoffMarginUniform = ssrSlopeCutoffMarginUniform
           SsrEdgeHorizontalMarginUniform = ssrEdgeHorizontalMarginUniform
           SsrEdgeVerticalMarginUniform = ssrEdgeVerticalMarginUniform
-          SsrLightAmbientColorUniform = ssrLightAmbientColorUniform
-          SsrLightAmbientBrightnessUniform = ssrLightAmbientBrightnessUniform
           DepthTextureUniform = depthTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -3748,6 +3745,7 @@ module PhysicallyBased =
          lightAmbientBoostCutoff : single,
          lightAmbientBoostScalar : single,
          ssrEnabled : int,
+         ssrIntensity : single,
          ssrDetail : single,
          ssrRefinementsMax : int,
          ssrRayThickness : single,
@@ -3762,8 +3760,6 @@ module PhysicallyBased =
          ssrSlopeCutoffMargin : single,
          ssrEdgeHorizontalMargin : single,
          ssrEdgeVerticalMargin : single,
-         ssrLightAmbientColor : Color,
-         ssrLightAmbientBrightness : single,
          depthTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -3792,6 +3788,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightAmbientBoostCutoffUniform, lightAmbientBoostCutoff)
         Gl.Uniform1 (shader.LightAmbientBoostScalarUniform, lightAmbientBoostScalar)
         Gl.Uniform1 (shader.SsrEnabledUniform, ssrEnabled)
+        Gl.Uniform1 (shader.SsrIntensityUniform, ssrIntensity)
         Gl.Uniform1 (shader.SsrDetailUniform, ssrDetail)
         Gl.Uniform1 (shader.SsrRefinementsMaxUniform, ssrRefinementsMax)
         Gl.Uniform1 (shader.SsrRayThicknessUniform, ssrRayThickness)
@@ -3806,8 +3803,6 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrSlopeCutoffMarginUniform, ssrSlopeCutoffMargin)
         Gl.Uniform1 (shader.SsrEdgeHorizontalMarginUniform, ssrEdgeHorizontalMargin)
         Gl.Uniform1 (shader.SsrEdgeVerticalMarginUniform, ssrEdgeVerticalMargin)
-        Gl.Uniform3 (shader.SsrLightAmbientColorUniform, ssrLightAmbientColor.R, ssrLightAmbientColor.G, ssrLightAmbientColor.B)
-        Gl.Uniform1 (shader.SsrLightAmbientBrightnessUniform, ssrLightAmbientBrightness)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)

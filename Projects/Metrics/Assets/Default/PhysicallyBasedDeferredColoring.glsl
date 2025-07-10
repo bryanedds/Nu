@@ -26,6 +26,7 @@ uniform mat4 projectionInverse;
 uniform float lightAmbientBoostCutoff;
 uniform float lightAmbientBoostScalar;
 uniform int ssrEnabled;
+uniform float ssrIntensity;
 uniform float ssrDetail;
 uniform int ssrRefinementsMax;
 uniform float ssrRayThickness;
@@ -40,8 +41,6 @@ uniform float ssrSlopeCutoff;
 uniform float ssrSlopeCutoffMargin;
 uniform float ssrEdgeHorizontalMargin;
 uniform float ssrEdgeVerticalMargin;
-uniform vec3 ssrLightAmbientColor;
-uniform float ssrLightAmbientBrightness;
 uniform sampler2D depthTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
@@ -198,11 +197,7 @@ void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float 
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen =
-                        texture(lightAccumTexture, currentTexCoords).rgb *
-                        ssrLightAmbientColor *
-                        ssrLightAmbientBrightness *
-                        specularIntensity;
+                    specularScreen = texture(lightAccumTexture, currentTexCoords).rgb * specularIntensity * ssrIntensity;
                     specularScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
