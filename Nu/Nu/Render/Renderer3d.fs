@@ -1928,11 +1928,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let bundle = struct (surface, staticModelSurfaces)
                         renderTasks.DeferredStaticBundles.Add (bundleId, bundle)
                     | ForwardRenderType (subsort, sort) ->
-                        for (model, _, presence, insetOpt, properties, bounds) in staticModelSurfaces do
+                        for (model, castShadow, presence, insetOpt, properties, bounds) in staticModelSurfaces do
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
+                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                                    if castShadow then // TODO: see if we should check for CastShadow when constructing the bundle.
+                                        let shadowFrustumInteriorOpt = if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone
+                                        Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
+                                    else false
                                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
                                 | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
                             if unculled then
