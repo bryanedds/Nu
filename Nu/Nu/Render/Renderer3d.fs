@@ -928,6 +928,7 @@ type [<ReferenceEquality>] private RenderTasks =
                 (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic)
                 ||> Seq.forall2 (fun static_ staticCached ->
                     OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
+                    static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
             let deferredStaticBundlesCached =
@@ -939,6 +940,7 @@ type [<ReferenceEquality>] private RenderTasks =
                 (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated)
                 ||> Seq.forall2 (fun animated animatedCached ->
                     AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
+                    animated.Value.Count = animatedCached.Value.Count &&
                     (animated.Value, animatedCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
             let deferredTerrainsCached =
