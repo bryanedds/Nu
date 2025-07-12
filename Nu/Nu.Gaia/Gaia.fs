@@ -1978,7 +1978,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | nameof Entity.Overflow -> "!12"
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
-                    if containsProperty propertyDescriptor.PropertyName simulant world then
+                    if containsProperty propertyDescriptor.PropertyName simulant world then // NOTE: this check is necessary because interaction with a property rollout can cause properties to be removed.
                         if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
                             match simulant with
                             | :? Screen as screen ->
