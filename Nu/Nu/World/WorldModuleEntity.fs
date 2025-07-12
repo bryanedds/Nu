@@ -2319,11 +2319,18 @@ module WorldModuleEntity =
                 WorldModule.tryProcessEntity true entity world
 
             // propagate properties
-            if World.getEntityMounted entity world then
+            match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
+            | Some mount ->
+                World.propagateEntityAffineMatrix mount world
+                World.propagateEntityElevation mount world
+                World.propagateEntityEnabled mount world
+                World.propagateEntityVisible mount world
+            | None when World.getEntityMounted entity world ->
                 World.propagateEntityAffineMatrix entity world
                 World.propagateEntityElevation entity world
                 World.propagateEntityEnabled entity world
                 World.propagateEntityVisible entity world
+            | None -> ()
 
             // insert a propagated descriptor if needed
             match World.getEntityPropagatedDescriptorOpt entity world with
