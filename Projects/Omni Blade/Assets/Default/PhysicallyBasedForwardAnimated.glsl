@@ -25,6 +25,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewProjection;
 uniform mat4 bones[BONES_MAX];
 
 layout(location = 0) in vec3 position;
@@ -70,7 +71,7 @@ void main()
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
     heightPlusOut = heightPlus;
-    gl_Position = projection * view * positionOut;
+    gl_Position = viewProjection * positionOut;
 }
 
 #shader fragment
@@ -163,16 +164,6 @@ float linstep(float low, float high, float v)
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
-float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
-{
-    vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
-    float fadeScalar =
-        max(
-            smoothstep(0.85, 1.0, normalized.x),
-            smoothstep(0.85, 1.0, normalized.y));
-    return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
-}
-
 bool inBounds(vec3 point, vec3 min, vec3 size)
 {
     return
@@ -191,29 +182,6 @@ vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, ve
     float tEnter = max(max(tMin.x / boxSize.x, tMin.y / boxSize.y), tMin.z / boxSize.z);
     float tExit = min(min(tMax.x / boxSize.x, tMax.y / boxSize.y), tMax.z / boxSize.z);
     return tEnter < tExit ? vec2(tEnter, tExit) : vec2(0.0);
-}
-
-float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 position, vec3 normal)
-{
-    vec3 centerA = minA + sizeA * 0.5;
-    vec3 centerB = minB + sizeB * 0.5;
-    vec3 direction = normalize(cross(cross(centerB - centerA, normal), normal));
-    vec3 intersectionMin = max(minA, minB);
-    vec3 intersectionSize = min(minA + sizeA, minB + sizeB) - intersectionMin;
-    vec2 intersectionRatios = rayBoxIntersectionRatios(position, direction, intersectionMin, intersectionSize);
-    return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
-}
-
-vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
-{
-    vec3 directionWorld = positionWorld - eyeCenter;
-    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
-    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
-    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
-    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
-    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-    return intersectPositionWorld - lightMapOrigin;
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
@@ -256,6 +224,39 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 position, vec3 normal)
+{
+    vec3 centerA = minA + sizeA * 0.5;
+    vec3 centerB = minB + sizeB * 0.5;
+    vec3 direction = normalize(cross(cross(centerB - centerA, normal), normal));
+    vec3 intersectionMin = max(minA, minB);
+    vec3 intersectionSize = min(minA + sizeA, minB + sizeB) - intersectionMin;
+    vec2 intersectionRatios = rayBoxIntersectionRatios(position, direction, intersectionMin, intersectionSize);
+    return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
+}
+
+vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
+{
+    vec3 directionWorld = positionWorld - eyeCenter;
+    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
+    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
+    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
+    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
+    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
+    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
+    return intersectPositionWorld - lightMapOrigin;
+}
+
+float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
+{
+    vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
+    float fadeScalar =
+        max(
+            smoothstep(0.85, 1.0, normalized.x),
+            smoothstep(0.85, 1.0, normalized.y));
+    return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
+}
+
 float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapIndex)
 {
     vec3 positionShadow = position.xyz - lightOrigin;
@@ -280,17 +281,17 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-    if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-        shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-        shadowTexCoords.z > 0.0 && shadowTexCoords.z < 1.0)
+    if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y > -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z > -1.0 && shadowTexCoordsProj.z < 1.0)
     {
-        float shadowZ = shadowTexCoords.z;
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
-        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
         return shadowScalar;
     }
     return 1.0;
@@ -435,10 +436,10 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
             vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
-            float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x : 1.0;
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter - currentPosition);
@@ -745,8 +746,8 @@ void main()
     // compute and apply global fog when enabled
     if (fogEnabled == 1)
     {
-        float depth = length(position.xyz - eyeCenter);
-        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish)) * fogColor.a;
+        float distance = length(position.xyz - eyeCenter);
+        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
         color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
 
