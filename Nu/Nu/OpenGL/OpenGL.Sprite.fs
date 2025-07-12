@@ -167,6 +167,7 @@ module Sprite =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader
@@ -191,16 +192,13 @@ module Sprite =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown texture
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
 
         // teardown vao
         Gl.BindVertexArray 0u
+        Hl.Assert ()
 
         // teardown state
         Gl.BlendEquation BlendEquationMode.FuncAdd

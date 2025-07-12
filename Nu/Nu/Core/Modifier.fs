@@ -72,7 +72,7 @@ type Modifier<'a, 'b> =
     /// Left-to-right behavior composition of a function with a modifier.
     static member ( <<<^ ) (left : Func<'c, 'a>, right : Modifier<'a, 'b>) = right.ComposeRight left.Invoke
 
-[<RequireQualifiedAccess>]
+/// Modifier operators.
 module Modifier =
 
     /// Run a behavior modifier.

@@ -1472,12 +1472,12 @@ module WorldModuleEntity =
                         entityState
                 World.publishEntityChange (nameof entityState.VisibleLocal) previous value entityState.PublishChangeEvents entity world
                 let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
-                let enabledMount =
+                let visibleMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
                     | _ -> true
-                let enabled = enabledMount && value
-                World.setEntityVisible enabled entity world |> ignore<bool>
+                let visible = visibleMount && value
+                World.setEntityVisible visible entity world |> ignore<bool>
                 true
             else false
 

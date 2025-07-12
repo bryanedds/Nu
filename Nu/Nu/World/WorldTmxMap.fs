@@ -312,6 +312,7 @@ module TmxMap =
               Substance = Mass 0.0f
               GravityOverride = Some v3Zero
               CharacterProperties = CharacterProperties.defaultProperties
+              VehicleProperties = VehiclePropertiesAbsent
               CollisionDetection = Discontinuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask

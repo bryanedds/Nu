@@ -486,8 +486,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
 
-    let private containsProperty propertyDescriptor simulant world =
-        SimulantPropertyDescriptor.containsPropertyDescriptor propertyDescriptor simulant world
+    let private containsProperty propertyName simulant world =
+        SimulantPropertyDescriptor.containsPropertyDescriptor propertyName simulant world
 
     let private getPropertyValue propertyDescriptor simulant world =
         SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
@@ -1341,62 +1341,58 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
-    let private tryMakeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport (plugin : NuPlugin) =
+    let private makeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport (plugin : NuPlugin) =
 
-        // attempt to make the world
-        match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin with
-        | Right world ->
+        // make the world
+        let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
 
-            // initialize event filter as not to flood the log
-            World.setEventFilter Constants.Gaia.EventFilter world
+        // initialize event filter as not to flood the log
+        World.setEventFilter Constants.Gaia.EventFilter world
 
-            // attempt to process ImSim once to make sure initial simulants are created
-            World.tryProcessSimulants true world
+        // attempt to process ImSim once to make sure initial simulants are created
+        World.tryProcessSimulants true world
 
-            // apply any selected mode
-            match worldConfig.ModeOpt with
-            | Some mode ->
-                match plugin.EditModes.TryGetValue mode with
-                | (true, modeFn) -> modeFn world
-                | (false, _) -> ()
-            | None -> ()
+        // apply any selected mode
+        match worldConfig.ModeOpt with
+        | Some mode ->
+            match plugin.EditModes.TryGetValue mode with
+            | (true, modeFn) -> modeFn world
+            | (false, _) -> ()
+        | None -> ()
 
-            // attempt to process ImSim again to ensure simulants in new mode are created
-            World.tryProcessSimulants true world
+        // attempt to process ImSim again to ensure simulants in new mode are created
+        World.tryProcessSimulants true world
 
-            // figure out which screen to use
-            let screen =
-                match Game.GetDesiredScreen world with
-                | Desire screen -> screen
-                | DesireNone ->
-                    match Game.GetSelectedScreenOpt world with
-                    | None ->
-                        let screen = Game / "Screen"
-                        if not (screen.GetExists world) then
-                            let screen = World.createScreen (Some "Screen") world
-                            Game.SetDesiredScreen (Desire screen) world
-                            screen
-                        else screen
-                    | Some screen -> screen
-                | DesireIgnore ->
-                    match Game.GetSelectedScreenOpt world with
-                    | None ->
-                        let screen = Game / "Screen"
-                        if not (screen.GetExists world) then
-                            let screen = World.createScreen (Some "Screen") world
-                            World.setSelectedScreen screen world
-                            let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                            World.publishPlus () screen.SelectEvent eventTrace screen false false world
-                            screen
-                        else screen
-                    | Some screen -> screen
+        // figure out which screen to use
+        let screen =
+            match Game.GetDesiredScreen world with
+            | Desire screen -> screen
+            | DesireNone ->
+                match Game.GetSelectedScreenOpt world with
+                | None ->
+                    let screen = Game / "Screen"
+                    if not (screen.GetExists world) then
+                        let screen = World.createScreen (Some "Screen") world
+                        Game.SetDesiredScreen (Desire screen) world
+                        screen
+                    else screen
+                | Some screen -> screen
+            | DesireIgnore ->
+                match Game.GetSelectedScreenOpt world with
+                | None ->
+                    let screen = Game / "Screen"
+                    if not (screen.GetExists world) then
+                        let screen = World.createScreen (Some "Screen") world
+                        World.setSelectedScreen screen world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                        World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        screen
+                    else screen
+                | Some screen -> screen
 
-            // proceed directly to idle state
-            World.selectScreen (IdlingState world.GameTime) screen world
-            Right (screen, world)
-
-        // error
-        | Left error -> Left error
+        // proceed directly to idle state
+        World.selectScreen (IdlingState world.GameTime) screen world
+        (screen, world)
 
     let private tryMakeSdlDeps accompanied windowSize =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Gaia" }
@@ -1860,6 +1856,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 |> Array.sortBy fst
                 |> Array.map snd
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)
+                if visible then ImGui.TreePop ()
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
@@ -1981,7 +1978,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | nameof Entity.Overflow -> "!12"
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
-                    if containsProperty propertyDescriptor.PropertyName simulant world then
+                    if containsProperty propertyDescriptor.PropertyName simulant world then // NOTE: this check is necessary because interaction with a property rollout can cause properties to be removed.
                         if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
                             match simulant with
                             | :? Screen as screen ->
@@ -2344,7 +2341,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 // game menu
                 if ImGui.BeginMenu "Game" then
                     if ImGui.MenuItem "New Project" then ShowNewProjectDialog <- true
-                    if ImGui.MenuItem ("Open Project", "Ctrl+Shit+O") then ShowOpenProjectDialog <- true
+                    if ImGui.MenuItem ("Open Project", "Ctrl+Shift+O") then ShowOpenProjectDialog <- true
                     if ImGui.MenuItem "Close Project" then ShowCloseProjectDialog <- true
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo world |> ignore<bool>
@@ -2445,7 +2442,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             ImGui.SameLine ()
-            ImGui.Text "w/ Overlay"
+            ImGui.Text "w/"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
             let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
@@ -2842,12 +2839,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.SameLine ()
             if ImGui.Button "Load" then
                 let overlayerFilePath = TargetDir + "/" + Assets.Global.OverlayerFilePath
-                match Overlayer.tryMakeFromFile [] overlayerFilePath with
-                | Right overlayer ->
-                    let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                    OverlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-                | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                let overlayer = Overlayer.makeFromFileOpt [] overlayerFilePath
+                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                OverlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             ImGui.InputTextMultiline ("##overlayerStr", &OverlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
         ImGui.End ()
 
@@ -2864,12 +2859,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 with exn -> MessageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
             ImGui.SameLine ()
             if ImGui.Button "Load" then
-                match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
-                | Right assetGraph ->
-                    let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                    AssetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                | Left error -> MessageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                let assetGraph = AssetGraph.makeFromFileOpt (TargetDir + "/" + Assets.Global.AssetGraphFilePath)
+                let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                AssetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
             ImGui.InputTextMultiline ("##assetGraphStr", &AssetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
         ImGui.End ()
 
@@ -2883,6 +2876,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             match PropertyFocusedOpt with
             | Some (propertyDescriptor, simulant) when
                 World.getExists simulant world &&
+                containsProperty propertyDescriptor.PropertyName simulant world &&
                 propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
                 ToSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                 OfSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
@@ -3100,9 +3094,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     then FsiSession.EvalInteractionNonThrowing "let selectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
                     else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
                 if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
-                File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
-                File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
-                File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
+                if File.Exists Constants.Gaia.InteractiveInputFilePath then
+                    File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
+                    File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
+                    File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
                 match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;", Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream
@@ -3138,7 +3133,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Text "Clear evaluation output (Alt+C)"
                 ImGui.EndTooltip ()
             if InteractiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); InteractiveInputFocusRequested <- false
-            ImGui.InputTextMultiline ("##interactiveInputStr", &InteractiveInputStr, 131072u, v2 -1.0f 100.0f, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
+            ImGui.InputTextMultiline ("##interactiveInputStr", &InteractiveInputStr, 131072u, v2 -1.0f 130.0f, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
             if enter then InteractiveInputStr <- ""
             if eval || enter then InteractiveInputFocusRequested <- true
             ImGui.Separator ()
@@ -4136,7 +4131,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             World.setEye3dRotation DesiredEye3dRotation world
 
     let rec private runWithCleanUpAndErrorProtection firstFrame world =
-        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess Live firstFrame world
+        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrame world
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->
@@ -4196,20 +4191,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         selectScreen false screen
         selectGroupInitial screen world
         AssetGraphStr <-
-            match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
-            | Right assetGraph ->
-                let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            | Left error -> MessageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'."); ""
+            let assetGraph = AssetGraph.makeFromFileOpt (TargetDir + "/" + Assets.Global.AssetGraphFilePath)
+            let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+            PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
         OverlayerStr <-
             let overlayerFilePath = TargetDir + "/" + Assets.Global.OverlayerFilePath
-            match Overlayer.tryMakeFromFile [] overlayerFilePath with
-            | Right overlayer ->
-                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'."); ""
+            let overlayer = Overlayer.makeFromFileOpt [] overlayerFilePath
+            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+            PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
         let result = runWithCleanUpAndErrorProtection true world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
@@ -4237,7 +4228,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->
 
-            // attempt to create the world
+            // create the world
             let worldConfig =
                 { Imperative = gaiaState.ProjectImperativeExecution
                   Accompanied = true
@@ -4245,21 +4236,22 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
-            match tryMakeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin with
-            | Right (screen, world) ->
+            let (screen, world) =
+                makeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
 
-                // subscribe to events related to editing
-                World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
-                World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
-                World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
-                World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
+            // subscribe to events related to editing
+            World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
+            World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
+            World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
+            World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
+            World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
 
-                // run the world
-                runWithCleanUp gaiaState targetDir screen world
-            | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
+            // run the world
+            runWithCleanUp gaiaState targetDir screen world
+
+        // handle error
         | Left error -> Log.error error; Constants.Engine.ExitCodeFailure

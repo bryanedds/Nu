@@ -5,6 +5,7 @@ open Prime
 open Nu
 open TerraFirma
 
+// this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
     | Quit
@@ -71,7 +72,7 @@ type GameplayDispatcher () =
                 match dead.GetCharacterType world with
                 | Enemy ->
                     World.destroyEntity dead world
-                    screen.Score.Map (fun score -> score + 100) world
+                    screen.Score.Map ((+) 100) world
                 | Player ->
                     screen.SetGameplayState Quit world
 

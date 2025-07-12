@@ -822,6 +822,8 @@ module WorldModule2 =
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
+            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbe3dFacet> world && entity.GetProbeStale world) entities3d then
+                World.requestLightMapRender world
                 
         static member internal evictScreenElements screen world =
             let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SArray.ofSeq
@@ -876,18 +878,16 @@ module WorldModule2 =
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
-                | Right overlayer ->
+                let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays outputOverlayerFilePath
 
-                    // update and apply overlays to all entities
-                    World.setOverlayer overlayer world
-                    let entities = World.getEntities1 world
-                    for entity in entities do
-                        World.applyEntityOverlay overlayerOld overlayer entity world
-                    Right overlayer
+                // update and apply overlays to all entities
+                World.setOverlayer overlayer world
+                let entities = World.getEntities1 world
+                for entity in entities do
+                    World.applyEntityOverlay overlayerOld overlayer entity world
+                Right overlayer
 
-                // propagate errors
-                | Left error -> Left error
+            // propagate errors
             with exn -> Left (scstring exn)
 
         /// Send a message to the subsystems to reload their existing assets.
@@ -913,18 +913,16 @@ module WorldModule2 =
                 //File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile outputAssetGraphFilePath with
-                | Right assetGraph ->
+                let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
-                    // rebuild and reload assets
-                    AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    Metadata.reloadMetadata ()
-                    World.reloadExistingAssets world
-                    World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
-                    Right assetGraph
+                // rebuild and reload assets
+                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                Metadata.reloadMetadata ()
+                World.reloadExistingAssets world
+                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
+                Right assetGraph
 
-                // propagate errors
-                | Left error -> Left error
+            // propagate error
             with exn -> Left (scstring exn)
 
         /// Attempt to reload asset graph, build assets, then reload built assets.
@@ -1523,7 +1521,6 @@ module WorldModule2 =
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
-                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 | LightMapPass (_, lightMapBounds) ->
                     let hashSet = HashSet ()
                     World.getElements3dInViewBox lightMapBounds hashSet world
@@ -1532,11 +1529,12 @@ module WorldModule2 =
                             HashSet3dNormalCached.Add element |> ignore<bool>
                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
+                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 match renderPass with
-                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
+                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 world.Timers.RenderGatherTimer.Stop ()
 
                 // render game
@@ -1724,8 +1722,8 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
             world.WorldExtension.Plugin.CleanUp ()
 
-        /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
+        /// Run the game engine with the given handlers, but don't clean up at the end.
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame (world : World) =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
@@ -1736,7 +1734,7 @@ module WorldModule2 =
                 World.preProcess world
                 preProcess world
                 world.Timers.PreProcessTimer.Stop ()
-                match liveness with
+                match World.getLiveness world with
                 | Live ->
 
                     // update screen transitioning process
@@ -1843,7 +1841,7 @@ module WorldModule2 =
 
                                                                     // process rendering (1/2)
                                                                     let rendererProcess = World.getRendererProcess world
-                                                                    if not firstFrame then rendererProcess.Swap ()
+                                                                    if not firstFrame then rendererProcess.RequestSwap ()
 
                                                                     // process frame pacing mechanics
                                                                     if world.Timers.MainThreadTimer.IsRunning then
@@ -1926,7 +1924,7 @@ module WorldModule2 =
 
                                                                     // recur or return
                                                                     match World.getLiveness world with
-                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
+                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
                                                                     | Dead -> ()
                                                                 | Dead -> ()
                                                             | Dead -> ()
@@ -1943,8 +1941,8 @@ module WorldModule2 =
                 | Dead -> ()
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world =
-            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
+            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->
@@ -2004,6 +2002,8 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2988,12 +2988,12 @@ module GamePropertyDescriptor =
 [<RequireQualifiedAccess>]
 module SimulantPropertyDescriptor =
 
-    let containsPropertyDescriptor propertyDescriptor (simulant : Simulant) world =
+    let containsPropertyDescriptor propertyName (simulant : Simulant) world =
         match simulant with
-        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyDescriptor entity world
-        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyDescriptor group world
-        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyDescriptor screen world
-        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyDescriptor game world
+        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyName entity world
+        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyName group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyName screen world
+        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyName game world
         | _ -> failwithumf ()
 
     let getPropertyDescriptors (simulant : Simulant) world =

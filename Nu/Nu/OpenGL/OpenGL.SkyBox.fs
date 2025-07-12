@@ -13,6 +13,7 @@ module SkyBox =
     type SkyBoxShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ViewProjectionUniform : int
           ColorUniform : int
           BrightnessUniform : int
           CubeMapUniform : int
@@ -28,6 +29,7 @@ module SkyBox =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let colorUniform = Gl.GetUniformLocation (shader, "color")
         let brightnessUniform = Gl.GetUniformLocation (shader, "brightness")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
@@ -35,6 +37,7 @@ module SkyBox =
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ViewProjectionUniform = viewProjectionUniform
           ColorUniform = colorUniform
           BrightnessUniform = brightnessUniform
           CubeMapUniform = cubeMapUniform
@@ -44,6 +47,7 @@ module SkyBox =
     let DrawSkyBox
         (view : single array,
          projection : single array,
+         viewProjection : single array,
          color : Color,
          brightness : single,
          cubeMap : Texture.Texture,
@@ -58,11 +62,13 @@ module SkyBox =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
         
         // setup shader
         Gl.UseProgram shader.SkyBoxShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform3 (shader.ColorUniform, color.R, color.G, color.B)
         Gl.Uniform1 (shader.BrightnessUniform, brightness)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
@@ -81,8 +87,6 @@ module SkyBox =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 

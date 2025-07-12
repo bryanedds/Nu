@@ -70,7 +70,7 @@ type 'a Behavior =
     /// Map logical xor over two behaviors.
     static member (^^^) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a ^^^ b) right
 
-[<RequireQualifiedAccess>]
+/// Behavior operators.
 module Behavior =
 
     /// Run a behavior monad.

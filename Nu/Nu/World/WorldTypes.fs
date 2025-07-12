@@ -367,7 +367,6 @@ and SnapshotType =
     | FreezeEntities
     | ThawEntities
     | Permafreeze
-    | Permasplit
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
@@ -410,7 +409,6 @@ and SnapshotType =
         | FreezeEntities -> (scstringMemo this).Spaced
         | ThawEntities -> (scstringMemo this).Spaced
         | Permafreeze -> (scstringMemo this).Spaced
-        | Permasplit -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
         | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
@@ -619,7 +617,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
          Define? Presence Exterior
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-         Define? MountOpt Option<Entity Relation>.None
+         Define? MountOpt (Some (Relation.makeParent<Entity> ()))
          Define? PropagationSourceOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
@@ -1876,6 +1874,7 @@ and [<ReferenceEquality>] WorldState =
           WorldExtension : WorldExtension }
 
     override this.ToString () =
+        // NOTE: Too big to print in the debugger, so printing nothing.
         ""
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
@@ -2158,6 +2157,7 @@ and [<NoEquality; NoComparison>] World =
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
     override this.ToString () =
+        // NOTE: Too big to print in the debugger, so printing nothing.
         ""
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-

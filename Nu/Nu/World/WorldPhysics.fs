@@ -176,6 +176,33 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        static member getBodyWheelSpeedAtClutch bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetWheelSpeedAtClutch bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetWheelSpeedAtClutch bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
+        static member getBodyWheelModelMatrix wheelModelRight wheelModelUp wheelIndex bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                m4Identity
+
+        static member getBodyWheelAngularVelocity wheelIndex bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetWheelAngularVelocity (wheelIndex, bodyId)
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetWheelAngularVelocity (wheelIndex, bodyId)
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
         /// Ray cast against 3d physics bodies.
         static member rayCast3dBodies ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
@@ -255,6 +282,30 @@ module WorldPhysics =
             let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { BodyId = bodyId; AngularVelocity = angularVelocity }
             World.handlePhysicsMessage3d setBodyAngularVelocityMessage world
             World.handlePhysicsMessage2d setBodyAngularVelocityMessage world
+
+        /// Send a physics message to set the forward input of a vehicle body with the given body id.
+        static member setBodyVehicleForwardInput forwardInput bodyId world =
+            let setBodyVehicleForwardInputMessage = SetBodyVehicleForwardInputMessage { BodyId = bodyId; ForwardInput = forwardInput }
+            World.handlePhysicsMessage3d setBodyVehicleForwardInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleForwardInputMessage world
+
+        /// Send a physics message to set the right input of a vehicle body with the given body id.
+        static member setBodyVehicleRightInput rightInput bodyId world =
+            let setBodyVehicleRightInputMessage = SetBodyVehicleRightInputMessage { BodyId = bodyId; RightInput = rightInput }
+            World.handlePhysicsMessage3d setBodyVehicleRightInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleRightInputMessage world
+
+        /// Send a physics message to set the brake input of a vehicle body with the given body id.
+        static member setBodyVehicleBrakeInput brakeInput bodyId world =
+            let setBodyVehicleBrakeInputMessage = SetBodyVehicleBrakeInputMessage { BodyId = bodyId; BrakeInput = brakeInput }
+            World.handlePhysicsMessage3d setBodyVehicleBrakeInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleBrakeInputMessage world
+
+        /// Send a physics message to set the hand brake input of a vehicle body with the given body id.
+        static member setBodyVehicleHandBrakeInput handBrakeInput bodyId world =
+            let setBodyVehicleHandBrakeInputMessage = SetBodyVehicleHandBrakeInputMessage { BodyId = bodyId; HandBrakeInput = handBrakeInput }
+            World.handlePhysicsMessage3d setBodyVehicleHandBrakeInputMessage world
+            World.handlePhysicsMessage2d setBodyVehicleHandBrakeInputMessage world
 
         /// Send a physics message to apply linear impulse to a body with the given body id.
         static member applyBodyLinearImpulse linearImpulse originWorldOpt bodyId world =

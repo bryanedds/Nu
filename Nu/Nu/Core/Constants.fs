@@ -198,10 +198,10 @@ module Render =
     let [<Literal>] TerrainLayersMax = 6
     let [<Literal>] BrdfResolution = 256 // NOTE: half typical resolution because we use 32-bit floats instead of 16-bit.
     let [<Literal>] BrdfSamples = 1024
-    let [<Literal>] LightMapsMaxDeferred = 27
-    let [<Literal>] LightMapsMaxForward = 2
-    let [<Literal>] LightsMaxDeferred = 64
-    let [<Literal>] LightsMaxForward = 9
+    let [<Literal>] LightMapsMaxDeferred = 27 // NOTE: remember to update LIGHT_MAPS_MAX in deferred shaders when changing this!
+    let [<Literal>] LightMapsMaxForward = 2 // NOTE: remember to update LIGHT_MAPS_MAX in forward shaders when changing this!
+    let [<Literal>] LightsMaxDeferred = 64 // NOTE: remember to update LIGHTS_MAX in deferred shaders when changing this!
+    let [<Literal>] LightsMaxForward = 9 // NOTE: remember to update LIGHTS_MAX in forward shaders when changing this!
     let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings.["ShadowVirtualResolution"] with null -> 256 | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 9 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 9 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
@@ -240,6 +240,7 @@ module Render =
     let [<Literal>] SsvfIntensityDefault = 1.0f
     let [<Literal>] SsrEnabledGlobalDefault = false
     let [<Literal>] SsrEnabledLocalDefault = true
+    let [<Literal>] SsrIntensityDefault = 4.0f
     let [<Literal>] SsrDetailDefault = 0.21f
     let [<Literal>] SsrRefinementsMaxDefault = 24
     let [<Literal>] SsrRayThicknessDefault = 0.025f
@@ -254,8 +255,6 @@ module Render =
     let [<Literal>] SsrSlopeCutoffMarginDefault = 0.2f
     let [<Literal>] SsrEdgeHorizontalMarginDefault = 0.05f
     let [<Literal>] SsrEdgeVerticalMarginDefault = 0.2f
-    let [<Uniform>] SsrLightColorDefault = Color.White
-    let [<Literal>] SsrLightBrightnessDefault = 1.0f
     let [<Literal>] FxaaEnabledDefault = true
     let [<Literal>] LightProbeSizeDefault = 3.0f
     let [<Literal>] BrightnessDefault = 3.0f
@@ -321,6 +320,7 @@ module Physics =
               "Size"
               "BodyEnabled"
               "BodyType"
+              "BodyShape"
               "SleepingAllowed"
               "Friction"
               "Restitution"
@@ -330,10 +330,10 @@ module Physics =
               "Substance"
               "GravityOverride"
               "CharacterProperties"
+              "VehicleProperties"
               "CollisionDetection"
               "CollisionCategories"
               "CollisionMask"
-              "BodyShape"
               "Sensor"],
              StringComparer.Ordinal)
 
@@ -416,6 +416,7 @@ module Paths =
     let [<Literal>] PhysicallyBasedDeferredEnvironmentFilterShaderFilePath = "Assets/Default/PhysicallyBasedDeferredEnvironmentFilter.glsl"
     let [<Literal>] PhysicallyBasedDeferredSsaoShaderFilePath = "Assets/Default/PhysicallyBasedDeferredSsao.glsl"
     let [<Literal>] PhysicallyBasedDeferredLightingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredLighting.glsl"
+    let [<Literal>] PhysicallyBasedDeferredColoringShaderFilePath = "Assets/Default/PhysicallyBasedDeferredColoring.glsl"
     let [<Literal>] PhysicallyBasedDeferredCompositionShaderFilePath = "Assets/Default/PhysicallyBasedDeferredComposition.glsl"
     let [<Literal>] PhysicallyBasedForwardStaticShaderFilePath = "Assets/Default/PhysicallyBasedForwardStatic.glsl"
     let [<Literal>] PhysicallyBasedForwardAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedForwardAnimated.glsl"

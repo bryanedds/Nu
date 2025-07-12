@@ -117,6 +117,7 @@ module SpriteBatch =
 
             // setup vao
             Gl.BindVertexArray env.Vao
+            Hl.Assert ()
 
             // setup shader
             Gl.UseProgram env.Shader
@@ -137,7 +138,6 @@ module SpriteBatch =
             Hl.Assert ()
 
             // teardown shader
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Gl.UseProgram 0u
             Hl.Assert ()
         
