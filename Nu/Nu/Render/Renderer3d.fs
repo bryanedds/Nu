@@ -3366,26 +3366,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
-        // destroy cached geometries that weren't rendered this frame
-        if topLevelRender then
-            for geometry in renderer.PhysicallyBasedTerrainGeometries do
-                if not (renderer.PhysicallyBasedTerrainGeometriesUtilized.Contains geometry.Key) then
-                    OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry geometry.Value
-                    renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
-
-    /// Render 3d surfaces.
-    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessages renderer =
-
-        // updates viewports, recreating buffers as needed
-        if renderer.GeometryViewport <> geometryViewport then
-            GlRenderer3d.invalidateCaches renderer
-            GlRenderer3d.clearRenderPasses renderer // force shadows to rerender
-            OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
-            renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
-            renderer.GeometryViewport <- geometryViewport
-        renderer.RasterViewport <- rasterViewport
-
-        // categorize messages
+    /// Categorize messages.
+    static member private categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessages renderer =
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
@@ -3510,6 +3492,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
+        userDefinedStaticModelsToDestroy
+
+    /// Render 3d surfaces.
+    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer (renderMessages : _ List) renderer =
+
+        // updates viewports, recreating buffers as needed
+        if renderer.GeometryViewport <> geometryViewport then
+            GlRenderer3d.invalidateCaches renderer
+            GlRenderer3d.clearRenderPasses renderer // force shadows to rerender
+            OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
+            renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
+            renderer.GeometryViewport <- geometryViewport
+        renderer.RasterViewport <- rasterViewport
+
+        // categorize messages
+        let userDefinedStaticModelsToDestroy =
+            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer renderMessages renderer
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
@@ -3525,21 +3524,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let irradianceMap =
                         OpenGL.LightMap.CreateIrradianceMap
                             (Constants.Render.IrradianceMapResolution,
-                             OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
-                             renderer.IrradianceShader,
-                             renderer.CubeMapVao,
-                             renderer.IrradianceMapRenderbuffer,
-                             renderer.IrradianceMapFramebuffer)
+                                OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                                renderer.IrradianceShader,
+                                renderer.CubeMapVao,
+                                renderer.IrradianceMapRenderbuffer,
+                                renderer.IrradianceMapFramebuffer)
 
                     // render fallback env filter map
                     let environmentFilterMap =
                         OpenGL.LightMap.CreateEnvironmentFilterMap
                             (Constants.Render.EnvironmentFilterResolution,
-                             OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
-                             renderer.EnvironmentFilterShader,
-                             renderer.CubeMapVao,
-                             renderer.EnvironmentFilterRenderbuffer,
-                             renderer.EnvironmentFilterFramebuffer)
+                                OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                                renderer.EnvironmentFilterShader,
+                                renderer.CubeMapVao,
+                                renderer.EnvironmentFilterRenderbuffer,
+                                renderer.EnvironmentFilterFramebuffer)
 
                     // add to cache and create light map
                     irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
@@ -3567,32 +3566,32 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let reflectionMap =
                             OpenGL.LightMap.CreateReflectionMap
                                 (GlRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter lightBox renderPass (GlRenderer3d.getRenderTasks renderPass renderer) renderer,
-                                 Constants.Render.ReflectionMapResolution,
-                                 lightProbeOrigin,
-                                 lightProbeAmbientColor,
-                                 lightProbeAmbientBrightness,
-                                 renderer.ReflectionRenderbuffer,
-                                 renderer.ReflectionFramebuffer)
+                                    Constants.Render.ReflectionMapResolution,
+                                    lightProbeOrigin,
+                                    lightProbeAmbientColor,
+                                    lightProbeAmbientBrightness,
+                                    renderer.ReflectionRenderbuffer,
+                                    renderer.ReflectionFramebuffer)
 
                         // create irradiance map
                         let irradianceMap =
                             OpenGL.LightMap.CreateIrradianceMap
                                 (Constants.Render.IrradianceMapResolution,
-                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
-                                 renderer.IrradianceShader,
-                                 renderer.CubeMapVao,
-                                 renderer.IrradianceMapRenderbuffer,
-                                 renderer.IrradianceMapFramebuffer)
+                                    OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                    renderer.IrradianceShader,
+                                    renderer.CubeMapVao,
+                                    renderer.IrradianceMapRenderbuffer,
+                                    renderer.IrradianceMapFramebuffer)
 
                         // create env filter map
                         let environmentFilterMap =
                             OpenGL.LightMap.CreateEnvironmentFilterMap
                                 (Constants.Render.EnvironmentFilterResolution,
-                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
-                                 renderer.EnvironmentFilterShader,
-                                 renderer.CubeMapVao,
-                                 renderer.EnvironmentFilterRenderbuffer,
-                                 renderer.EnvironmentFilterFramebuffer)
+                                    OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                    renderer.EnvironmentFilterShader,
+                                    renderer.CubeMapVao,
+                                    renderer.EnvironmentFilterRenderbuffer,
+                                    renderer.EnvironmentFilterFramebuffer)
 
                         // destroy reflection map
                         reflectionMap.Destroy ()
@@ -3746,27 +3745,19 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | SpotLight (_, _) | DirectionalLight -> failwithumf ()
                     | _ -> ()
 
-        // top-level geometry pass
-        let view = Viewport.getView3d eyeCenter eyeRotation
-        let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
-        let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
-        let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
-        let geometryViewProjection = view * geometryProjection
-        let rasterProjection = Viewport.getProjection3d eyeFieldOfView rasterViewport
-        GlRenderer3d.renderGeometry
-            frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
-            true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
-            renderbuffer framebuffer
-
-        // reset terrain geometry book-keeping
-        renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
-
-        // swap render passes
-        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
-        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
-        let renderPasses = renderer.RenderPasses
-        renderer.RenderPasses <- renderer.RenderPasses2
-        renderer.RenderPasses2 <- renderPasses
+        // process top-level geometry pass
+        // OPTIMIZATION: we don't process rendering tasks if there are no render messages.
+        if renderMessages.Count > 0 then
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
+            let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
+            let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
+            let geometryViewProjection = view * geometryProjection
+            let rasterProjection = Viewport.getProjection3d eyeFieldOfView rasterViewport
+            GlRenderer3d.renderGeometry
+                frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
+                renderbuffer framebuffer
 
         // clear light shadow indices
         renderer.LightShadowIndices.Clear ()
@@ -3778,14 +3769,30 @@ type [<ReferenceEquality>] GlRenderer3d =
         for staticModel in userDefinedStaticModelsToDestroy do
             GlRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
 
+        // destroy cached terrain geometries that weren't rendered this frame
+        for geometry in renderer.PhysicallyBasedTerrainGeometries do
+            if not (renderer.PhysicallyBasedTerrainGeometriesUtilized.Contains geometry.Key) then
+                OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry geometry.Value
+                renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
+
+        // reset terrain geometry book-keeping
+        renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
+
+        // clear lighting config dirty flag
+        renderer.LightingConfigChanged <- false
+
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
             GlRenderer3d.handleReloadRenderAssets renderer
             OpenGL.Hl.Assert ()
             renderer.ReloadAssetsRequested <- false
 
-        // clear lighting config dirty flag
-        renderer.LightingConfigChanged <- false
+        // swap render passes
+        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
+        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
+        let renderPasses = renderer.RenderPasses
+        renderer.RenderPasses <- renderer.RenderPasses2
+        renderer.RenderPasses2 <- renderPasses
 
     /// Make a GlRenderer3d.
     static member make glContext window geometryViewport rasterViewport =
@@ -4124,8 +4131,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.RendererConfig
 
         member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
-            if renderMessages.Count > 0 then
-                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
+            GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapVao|]
