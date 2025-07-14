@@ -82,6 +82,9 @@ type Nu () =
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
 
+            // init entity module
+            WorldModuleEntity.LayoutFacetType <- typeof<LayoutFacet>
+
             // init user-defined initialization process
             let result = userInit ()
 

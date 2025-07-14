@@ -47,6 +47,9 @@ module WorldModuleEntity =
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
 
+    /// OPTIMIZATION: cache layout facet type for quick containment check.
+    let mutable internal LayoutFacetType = Unchecked.defaultof<Type>
+
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
@@ -1299,6 +1302,15 @@ module WorldModuleEntity =
             World.setEntityAnglesLocal (Math.DegreesToRadians3d value) entity world
 
         static member internal propagateEntityElevation3 mount mounter world =
+
+            // HACK: for layout-based entities like guis, elevate them to make sure they're enough above their parent.
+            // This is worth the hack because it's an important UX improvement.
+            if  World.getEntityElevationLocal mounter world < 1.0f &&
+                Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mount world) &&
+                Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mounter world) then
+                World.setEntityElevationLocal 1.0f mounter world |> ignore<bool>
+
+            // propagate elevation
             let elevationMount = World.getEntityElevation mount world
             let elevationLocal = World.getEntityElevationLocal mounter world
             let elevation = elevationMount + elevationLocal
