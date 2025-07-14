@@ -36,20 +36,20 @@ type GameplayDispatcher () =
         // only process when selected
         if screen.GetSelected world then
 
-            // process scene initialization
-            let initializing = FQueue.contains Select selectionResults
-            if initializing then
+            // process screen selection
+            let selecting = FQueue.contains Select selectionResults
+            if selecting then
                 Simulants.Gameplay.SetGameplayState Playing world
                 Simulants.Gameplay.SetScore 0 world
 
             // begin scene declaration, processing nav sync at end of frame since optimized representations like
             // frozen entities won't have their nav info registered until then
             World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
-            if initializing then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
+            if selecting then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                [if initializing then Entity.Position @= v3 0.0f 1.65f 0.0f
+                [if selecting then Entity.Position @= v3 0.0f 1.65f 0.0f
                  Entity.Elevation .= 1.0f]
                 world
 
