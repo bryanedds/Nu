@@ -3404,9 +3404,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         Directory.SetCurrentDirectory newProjectDir
                         Process.Start("dotnet", "new " + shortName + " --force").WaitForExit()
 
-                        // TODO: consider also changing the profile name in the launchSettings.json file to match the
-                        // user-defined project name.
-
                         // rename project file
                         File.Copy (templateFileName, newFileName, true)
                         File.Delete templateFileName
