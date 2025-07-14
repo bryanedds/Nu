@@ -3359,9 +3359,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "MMCC Empty" -> "Create an empty MMCC project. This contains the minimum code needed to experiment with the MMCC API."
+                | "MMCC Empty" -> "Create an empty MMCC project. This contains the minimum code needed to initially learn or experiment with the MMCC API."
                 | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of MMCC usage."
-                | "ImSim Empty" -> "Create an empty ImSim project. This contains the minimum code needed to experiment with ImSim in a sandbox environment."
+                | "ImSim Empty" -> "Create an empty ImSim project. This contains the minimum code needed to initially learn or experiment with the ImSim API."
                 | "ImSim Game" -> "Create a full ImSim game project. This contains the structures and pieces that embody the best practices of ImSim usage."
                 | _ -> failwithumf ()
             ImGui.Separator ()
