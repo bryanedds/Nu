@@ -12,12 +12,6 @@ module WorldSimulantModule =
 
     type World with
 
-        static member internal addSimulantScriptUnsubscription =
-            WorldModule.addSimulantScriptUnsubscription
-
-        static member internal unsubscribeSimulantScripts =
-            WorldModule.unsubscribeSimulantScripts
-
         static member internal tryGetState (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState |> Some

@@ -33,20 +33,8 @@ module WorldModule =
     /// TODO: P1: consider making this an AmbientState flag.
     let mutable internal TaskletProcessingStarted = false
 
-    /// F# reach-around for adding script unsubscriptions to simulants.
-    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> unit =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for unsubscribing script subscriptions of simulants.
-    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> unit =
-        Unchecked.defaultof<_>
-
     /// F# reach-around for checking that a simulant is selected.
     let mutable internal getSelected : Simulant -> World -> bool =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for checking that a simulant is ignoring bindings.
-    let mutable internal ignorePropertyBindings : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
     /// F# reach-around for sorting subscriptions by elevation.
