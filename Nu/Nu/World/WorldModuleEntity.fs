@@ -356,6 +356,7 @@ module WorldModuleEntity =
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
         static member internal getEntityVisibleLocal entity world = (World.getEntityState entity world).VisibleLocal
         static member internal getEntityCastShadow entity world = (World.getEntityState entity world).CastShadow
+        static member internal getEntityClipped entity world = (World.getEntityState entity world).Clipped
         static member internal getEntityPickable entity world = (World.getEntityState entity world).Pickable
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal getEntityAlwaysRender entity world = (World.getEntityState entity world).AlwaysRender
@@ -1500,6 +1501,20 @@ module WorldModuleEntity =
                 else
                     let entityState = EntityState.copy entityState
                     entityState.CastShadow <- value
+                    World.setEntityState entityState entity world
+                    true
+            else false
+
+        static member internal setEntityClipped value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.Clipped
+            if value <> previous then
+                if world.Imperative then
+                    entityState.Clipped <- value
+                    true
+                else
+                    let entityState = EntityState.copy entityState
+                    entityState.Clipped <- value
                     World.setEntityState entityState entity world
                     true
             else false
@@ -2722,6 +2737,7 @@ module WorldModuleEntity =
                  ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
                  ("VisibleLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisibleLocal entity world })
                  ("CastShadow", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCastShadow entity world })
+                 ("Clipped", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityClipped entity world })
                  ("Pickable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPickable entity world })
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
@@ -2788,6 +2804,7 @@ module WorldModuleEntity =
                  ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
                  ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
                  ("CastShadow", fun property entity world -> World.setEntityCastShadow (property.PropertyValue :?> bool) entity world)
+                 ("Clipped", fun property entity world -> World.setEntityClipped (property.PropertyValue :?> bool) entity world)
                  ("Pickable", fun property entity world -> World.setEntityPickable (property.PropertyValue :?> bool) entity world)
                  ("Static", fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world)
                  ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
