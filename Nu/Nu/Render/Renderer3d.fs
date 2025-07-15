@@ -2551,6 +2551,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // end shader
         OpenGL.PhysicallyBased.EndPhysicallyBasedForwardShader (shader, vao)
 
+    // TODO: apply intention blocks to this function.
     static member private renderPhysicallyBasedTerrain
         viewArray projectionArray viewProjectionArray eyeCenter
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity terrainDescriptor geometry shader vao renderer =
@@ -2652,13 +2653,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | None -> box2 v2Zero v2Zero
-        let instanceFields =
-            Array.append
-                (m4Identity.ToArray ())
-                ([|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-                   materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A
-                   materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission
-                   texelHeight * materialProperties.Height|])
+        let instanceFields = Array.zeroCreate Constants.Render.InstanceFieldCount
+        m4Identity.ToArray (instanceFields, 0)
+        instanceFields.[16] <- texCoordsOffset.Min.X
+        instanceFields.[17] <- texCoordsOffset.Min.Y
+        instanceFields.[18] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+        instanceFields.[19] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+        instanceFields.[20] <- materialProperties.Albedo.R
+        instanceFields.[21] <- materialProperties.Albedo.G
+        instanceFields.[22] <- materialProperties.Albedo.B
+        instanceFields.[23] <- materialProperties.Albedo.A
+        instanceFields.[24] <- materialProperties.Roughness
+        instanceFields.[25] <- materialProperties.Metallic
+        instanceFields.[26] <- materialProperties.AmbientOcclusion
+        instanceFields.[27] <- materialProperties.Emission
+        instanceFields.[28] <- texelHeight * materialProperties.Height
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, projectionArray, viewProjectionArray, eyeCenter,
              instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader, vao)
