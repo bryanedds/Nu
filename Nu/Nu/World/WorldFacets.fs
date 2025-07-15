@@ -2928,7 +2928,8 @@ type BasicStaticBillboardEmitterFacet () =
                               SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
                               FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
                               ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
-                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt }
+                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
+                              ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt }
                         Some
                             (RenderBillboardParticles
                                 { CastShadow = castShadow
@@ -2951,6 +2952,9 @@ type BasicStaticBillboardEmitterFacet () =
 [<AutoOpen>]
 module StaticModelFacetExtensions =
     type Entity with
+        member this.GetClipped world : bool = this.Get (nameof this.Clipped) world
+        member this.SetClipped (value : bool) world = this.Set (nameof this.Clipped) value world
+        member this.Clipped = lens (nameof this.Clipped) this this.GetClipped this.SetClipped
         member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof this.StaticModel) world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
         member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
@@ -2962,6 +2966,7 @@ type StaticModelFacet () =
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
+         define Entity.Clipped false
          define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
@@ -2975,12 +2980,13 @@ type StaticModelFacet () =
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
+            let clipped = entity.GetClipped world
             let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, depthTest, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, clipped, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world

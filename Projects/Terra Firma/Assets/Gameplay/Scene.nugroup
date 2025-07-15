@@ -77,6 +77,7 @@
         [SsvfAsymmetry 0.1]
         [SsvfIntensity 0.04]
         [SsrEnabled True]
+        [SsrIntensity 0]
         [SsrDetail 0.21]
         [SsrRefinementsMax 24]
         [SsrRayThickness 0.025]
@@ -90,9 +91,7 @@
         [SsrSlopeCutoff 0.1]
         [SsrSlopeCutoffMargin 0.2]
         [SsrEdgeHorizontalMargin 0.05]
-        [SsrEdgeVerticalMargin 0.2]
-        [SsrLightColor [1 1 1 1]]
-        [SsrLightBrightness 1]]]
+        [SsrEdgeVerticalMargin 0.2]]]
       [Name Lighting3dConfig]]
      []]
     [Nav3dConfigDispatcher
@@ -105,7 +104,7 @@
      [Some
       [Entity3dDispatcher
        [[Name Villa]
-        [Order 8176919960704]
+        [Order 3559661021037]
         [Position [0 1.64 0]]
         [Static True]]
        [[RigidModelSurfaceDispatcher
@@ -124,7 +123,8 @@
             [SubdermalImageOpt None]
             [FinenessImageOpt None]
             [ScatterImageOpt None]
-            [TwoSidedOpt None]]]
+            [TwoSidedOpt None]
+            [ClippedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 1.25]]
@@ -136,10 +136,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Ground]
           [NavShape StaticModelNavShape]
-          [Order 8176920012558]
+          [Order 3559661103553]
           [Position [-2 1.59 -4.5]]
           [PositionLocal [-2 -0.05 -4.5]]
           [Scale [26.9 0.1 30.4]]
@@ -162,7 +161,8 @@
             [SubdermalImageOpt None]
             [FinenessImageOpt None]
             [ScatterImageOpt None]
-            [TwoSidedOpt None]]]
+            [TwoSidedOpt None]
+            [ClippedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 1.25]]
@@ -174,10 +174,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Ground2]
           [NavShape EmptyNavShape]
-          [Order 8176920819829]
+          [Order 3559661999389]
           [Position [-2 -0.45999992 -4.5]]
           [PositionLocal [-2 -2.1 -4.5]]
           [Scale [26.9 4 30.4]]
@@ -188,10 +187,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay House] Concave None None]]]
-          [MountOpt [Some ^]]
           [Name House]
           [Offset [0 0.3668699 0]]
-          [Order 8176920848254]
+          [Order 3559662038370]
           [Position [-0.5 1.64 -4.7]]
           [PositionLocal [-0.5 0 -4.7]]
           [PropagatedDescriptorOpt
@@ -224,10 +222,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay House] Concave None None]]]
-          [MountOpt [Some ^]]
           [Name House-0034]
           [Offset [0 0.3668699 0]]
-          [Order 8176923139728]
+          [Order 3559664461152]
           [Position [7.6 1.64 -14.7]]
           [PositionLocal [7.6 0 -14.7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/House]]
@@ -255,10 +252,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name House2]
           [Offset [0 0.6676477 0]]
-          [Order 8176923185402]
+          [Order 3559664529604]
           [Position [-6.7 1.64 2.6]]
           [PositionLocal [-6.7 0 2.6]]
           [PropagatedDescriptorOpt
@@ -313,10 +309,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name House2-0035]
           [Offset [0 0.6676477 0]]
-          [Order 8176923241127]
+          [Order 3559664604702]
           [Position [-11.8 1.64 -7]]
           [PositionLocal [-11.8 0 -7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/House2]]
@@ -344,10 +339,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Well]
           [Offset [0 0.55383134 5.9604645E-08]]
-          [Order 8176923279043]
+          [Order 3559664660235]
           [Position [3.8 1.6 0.7]]
           [PositionLocal [3.8 -0.03999996 0.7]]
           [PropagatedDescriptorOpt
@@ -396,10 +390,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Well-0033]
           [Offset [0 0.55383134 5.9604645E-08]]
-          [Order 8176923351747]
+          [Order 3559664758942]
           [Position [-9.5 1.6 -14.3]]
           [PositionLocal [-9.5 -0.03999996 -14.3]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Well]]
@@ -423,11 +416,10 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Barrel]
           [NavShape BoundsNavShape]
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
-          [Order 8176923376440]
+          [Order 3559664793338]
           [Position [-7.6 1.64 5.7]]
           [PositionLocal [-7.6 0 5.7]]
           [PropagatedDescriptorOpt
@@ -479,11 +471,10 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Barrel-0003]
           [NavShape BoundsNavShape]
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
-          [Order 8176923404141]
+          [Order 3559664820337]
           [Position [4.5 1.64 -7.2]]
           [PositionLocal [4.5 0 -7.2]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
@@ -507,11 +498,10 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Barrel-0004]
           [NavShape BoundsNavShape]
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
-          [Order 8176923414485]
+          [Order 3559664834676]
           [Position [-1.6 1.64 2.1]]
           [PositionLocal [-1.6 0 2.1]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
@@ -535,11 +525,10 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Barrel-0005]
           [NavShape BoundsNavShape]
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
-          [Order 8176923424942]
+          [Order 3559664849365]
           [Position [-1.4 1.64 -2.2]]
           [PositionLocal [-1.4 0 -2.2]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
@@ -563,11 +552,10 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Barrel-0020]
           [NavShape BoundsNavShape]
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
-          [Order 8176923434456]
+          [Order 3559664863360]
           [Position [3.67 1.64 -4.24]]
           [PositionLocal [3.67 0 -4.24]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
@@ -579,10 +567,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923444671]
+          [Order 3559664876541]
           [Position [-8.2 1.6 7]]
           [PositionLocal [-8.2 -0.03999996 7]]
           [PropagatedDescriptorOpt
@@ -611,10 +598,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0012]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923464902]
+          [Order 3559664901790]
           [Position [-2.6 1.64 7]]
           [PositionLocal [-2.6 0 7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -626,10 +612,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0013]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923475162]
+          [Order 3559664913157]
           [Position [1.5 1.64 7]]
           [PositionLocal [1.5 0 7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -641,10 +626,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0014]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923488131]
+          [Order 3559664924707]
           [Position [10.2 1.64 -7.4]]
           [PositionLocal [10.2 0 -7.4]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -658,10 +642,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0015]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923501562]
+          [Order 3559664936072]
           [Position [10 1.64 -3.3]]
           [PositionLocal [10 0 -3.3]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -677,10 +660,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0016]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923514879]
+          [Order 3559664948343]
           [Position [9.9 1.6 2.2]]
           [PositionLocal [9.9 -0.03999996 2.2]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -696,10 +678,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0029]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923528267]
+          [Order 3559664960237]
           [Position [-11.6 1.64 -15.9]]
           [PositionLocal [-11.6 0 -15.9]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -714,10 +695,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0031]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923540690]
+          [Order 3559664972008]
           [Position [-5 1.64 -19.7]]
           [PositionLocal [-5 0 -19.7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -729,10 +709,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Barrier-0032]
           [Offset [0.110984206 0.46470478 0.8669058]]
-          [Order 8176923553476]
+          [Order 3559664983261]
           [Position [-0.7 1.64 -19.5]]
           [PositionLocal [-0.7 0 -19.5]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
@@ -757,10 +736,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Generator]
           [Offset [0.004197847 0.052107863 -0.0011418983]]
-          [Order 8176923565802]
+          [Order 3559664994293]
           [Position [0.7 4.64 -6.7]]
           [PositionLocal [0.7 3 -6.7]]
           [PropagatedDescriptorOpt
@@ -811,10 +789,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Generator-0001]
           [Offset [0.004197847 0.052107863 -0.0011418983]]
-          [Order 8176923733980]
+          [Order 3559665160943]
           [Position [9.4 4.64 -12.5]]
           [PositionLocal [9.4 3 -12.5]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Generator]]
@@ -841,10 +818,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Generator-0021]
           [Offset [0.004197847 0.052107863 -0.0011418983]]
-          [Order 8176923763096]
+          [Order 3559665197275]
           [Position [-3.6 4.64 1.1]]
           [PositionLocal [-3.6 3 1.1]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Generator]]
@@ -869,10 +845,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate]
           [Offset [0 0.5 0]]
-          [Order 8176923791274]
+          [Order 3559665229322]
           [Position [5.1 1.6 -2]]
           [PositionLocal [5.1 -0.03999996 -2]]
           [PropagatedDescriptorOpt
@@ -921,10 +896,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate-0022]
           [Offset [0 0.5 0]]
-          [Order 8176923803152]
+          [Order 3559665244678]
           [Position [7.5 1.64 3.3]]
           [PositionLocal [7.5 0 3.3]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
@@ -950,10 +924,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate-0023]
           [Offset [0 0.5 0]]
-          [Order 8176923811638]
+          [Order 3559665256248]
           [Position [-3.3 1.64 7.3]]
           [PositionLocal [-3.3 0 7.3]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
@@ -977,10 +950,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate-0036]
           [Offset [0 0.5 0]]
-          [Order 8176923820163]
+          [Order 3559665268446]
           [Position [-5.7 1.64 -3.5]]
           [PositionLocal [-5.7 0 -3.5]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
@@ -1003,10 +975,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate-0037]
           [Offset [0 0.5 0]]
-          [Order 8176923828268]
+          [Order 3559665279984]
           [Position [-7.98 1.64 -5.49]]
           [PositionLocal [-7.98 0 -5.49]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
@@ -1029,10 +1000,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate-0038]
           [Offset [0 0.5 0]]
-          [Order 8176923836144]
+          [Order 3559665290883]
           [Position [3.3 1.64 -18.2]]
           [PositionLocal [3.3 0 -18.2]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
@@ -1058,10 +1028,9 @@
             [OpaqueDistanceOpt None]
             [FinenessOffsetOpt None]
             [ScatterTypeOpt None]]]
-          [MountOpt [Some ^]]
           [Name Crate-0002]
           [Offset [0 0.5 0]]
-          [Order 8176923844509]
+          [Order 3559665302097]
           [Position [4.8 1.64 -14.7]]
           [PositionLocal [4.8 0 -14.7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
@@ -1074,10 +1043,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923852603]
+          [Order 3559665314534]
           [Position [12.2 -0.9999999 -0.9]]
           [PositionLocal [12.2 -2.6399999 -0.9]]
           [PropagatedDescriptorOpt
@@ -1086,10 +1055,10 @@
              [[BodyShape
                [StaticModelSurfaceShape
                 [[Gameplay PalmTree] 0 Concave None None]]]
-              [MountOpt [Some ^]]
+              [Clipped True]
               [Name Palm]
               [Offset [0.020943403 1.4849783 0.15160239]]
-              [Order 1645316948274]
+              [Order 3559665314534]
               [Position [12.2 -0.9999999 -0.9]]
               [PositionLocal [12.2 -2.6399999 -0.9]]
               [Size [2.7969847 3.0197053 2.8228621]]
@@ -1104,10 +1073,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0009]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923868287]
+          [Order 3559665351657]
           [Position [12.7 -0.9 -5.9]]
           [PositionLocal [12.7 -2.54 -5.9]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1121,10 +1090,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0010]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923878336]
+          [Order 3559665365810]
           [Position [12.2 -1.1 2.1]]
           [PositionLocal [12.2 -2.74 2.1]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1140,10 +1109,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0011]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923888758]
+          [Order 3559665379513]
           [Position [-1.4 -1.7000002 -21]]
           [PositionLocal [-1.4 -3.3400002 -21]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1159,10 +1128,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0012]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923898753]
+          [Order 3559665392596]
           [Position [-5.9 -1.4 -20.7]]
           [PositionLocal [-5.9 -3.04 -20.7]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1178,10 +1147,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0013]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923908818]
+          [Order 3559665405809]
           [Position [0.1 -1.2000002 11.3]]
           [PositionLocal [0.1 -2.8400002 11.3]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1197,10 +1166,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0014]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923919172]
+          [Order 3559665420801]
           [Position [-9.65 -0.84000003 11.4]]
           [PositionLocal [-9.65 -2.48 11.4]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1216,10 +1185,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm-0016]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 8176923929754]
+          [Order 3559665439448]
           [Position [2.1 -1.4999999 -20.8]]
           [PositionLocal [2.1 -3.1399999 -20.8]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
@@ -1248,12 +1217,12 @@
             [SubdermalImageOpt None]
             [FinenessImageOpt None]
             [ScatterImageOpt None]
-            [TwoSidedOpt None]]]
-          [MountOpt [Some ^]]
+            [TwoSidedOpt None]
+            [ClippedOpt None]]]
           [Name Container]
           [NavShape StaticModelNavShape]
           [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
-          [Order 8176923939819]
+          [Order 3559665458680]
           [Position [0 3 -14.8]]
           [PositionLocal [0 1.36 -14.8]]
           [Rotation [0 -0.57357645 0 0.81915206]]
@@ -1266,10 +1235,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay TireWall] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Tires]
           [Offset [0 0.5155037 -1.1920929E-07]]
-          [Order 8176923972772]
+          [Order 3559665499528]
           [Position [-11.6 1.6 3.1]]
           [PositionLocal [-11.6 -0.03999996 3.1]]
           [PropagatedDescriptorOpt
@@ -1296,10 +1264,9 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay TireWall] Convex None None]]]
-          [MountOpt [Some ^]]
           [Name Tires-0004]
           [Offset [0 0.5155037 -1.1920929E-07]]
-          [Order 8176924093527]
+          [Order 3559665651478]
           [Position [-1.1 1.6 -8.1]]
           [PositionLocal [-1.1 -0.03999996 -8.1]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Tires]]
@@ -1326,7 +1293,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -1362,7 +1330,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -2212,6 +2181,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.2 -0.9999999 -0.9]]
@@ -2222,10 +2192,10 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [MountOpt [Some ^]]
+          [Clipped True]
           [Name Palm]
           [Offset [0.020943403 1.4849783 0.15160239]]
-          [Order 1645316948274]
+          [Order 3559665314534]
           [Position [12.2 -0.9999999 -0.9]]
           [PositionLocal [12.2 -2.6399999 -0.9]]
           [Size [2.7969847 3.0197053 2.8228621]]
@@ -2240,6 +2210,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.7 -0.9 -5.9]]
@@ -2255,6 +2226,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.2 -1.1 2.1]]
@@ -2272,6 +2244,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-1.4 -1.7000002 -21]]
@@ -2289,6 +2262,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-5.9 -1.4 -20.7]]
@@ -2306,6 +2280,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [0.1 -1.2000002 11.3]]
@@ -2323,6 +2298,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-9.65 -0.84000003 11.4]]
@@ -2340,6 +2316,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [2.1 -1.4999999 -20.8]]
@@ -2370,7 +2347,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [Name Container]
       [NavShape StaticModelNavShape]
       [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
@@ -2447,7 +2425,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -2484,7 +2463,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -3182,6 +3162,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-6.5999994 -0.19999993 40.499996]]
@@ -3196,6 +3177,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-2.2999997 -0.099999905 40.299995]]
@@ -3211,6 +3193,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-10.3 -0.19999993 40.599995]]
@@ -3228,6 +3211,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.5999975 -0.5999999 26.799995]]
@@ -3245,6 +3229,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.499999 -0.6999998 21.599998]]
@@ -3262,6 +3247,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-19.3 0.10000014 27.599997]]
@@ -3279,6 +3265,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [-19.899998 0.20000017 24.099998]]
@@ -3296,6 +3283,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.5999975 -0.5999999 29.599997]]
@@ -3326,7 +3314,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [Name Container]
       [NavShape StaticModelNavShape]
       [Offset [1.1920929E-07 -0.0909127 -2.3841858E-07]]
@@ -3389,7 +3378,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -3426,7 +3416,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -4124,6 +4115,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.1 -0.9000001 24.299997]]
@@ -4138,6 +4130,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.1 -0.5999999 32.7]]
@@ -4153,6 +4146,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [11.9 -0.79999995 18.399998]]
@@ -4170,6 +4164,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [26.1 0.70000005 43.699997]]
@@ -4187,6 +4182,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [30.6 0.79999995 43.4]]
@@ -4204,6 +4200,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [24.600002 0.100000024 11.4]]
@@ -4221,6 +4218,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [28.2 0.6 11.299999]]
@@ -4238,6 +4236,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [22.6 0.6 43.5]]
@@ -4268,7 +4267,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [Name Container]
       [NavShape StaticModelNavShape]
       [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
@@ -4331,7 +4331,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -4368,7 +4369,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
@@ -5066,6 +5068,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.200001 -0.9000001 -8.2]]
@@ -5080,6 +5083,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.300001 -1 -3.0999994]]
@@ -5095,6 +5099,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [12.300001 -0.79999995 -11.1]]
@@ -5112,6 +5117,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [34.9 1.4 11.300001]]
@@ -5129,6 +5135,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [30.7 0.9 11.700001]]
@@ -5146,6 +5153,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [24.7 0.100000024 -20.1]]
@@ -5163,6 +5171,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [28.3 0.5 -20.7]]
@@ -5180,6 +5189,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
+      [Clipped True]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
       [Position [22.4 -0.099999905 11.299999]]
@@ -5210,7 +5220,8 @@
         [SubdermalImageOpt None]
         [FinenessImageOpt None]
         [ScatterImageOpt None]
-        [TwoSidedOpt None]]]
+        [TwoSidedOpt None]
+        [ClippedOpt None]]]
       [Name Container]
       [NavShape StaticModelNavShape]
       [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]

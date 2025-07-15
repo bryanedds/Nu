@@ -38,8 +38,8 @@ module WorldRender =
             for message in messages do rendererProcess.EnqueueMessage3d message
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, depthTest, renderType, renderPass, world) =
-            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, staticModel, depthTest, renderType, renderPass)
+        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, clipped, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, staticModel, clipped, depthTest, renderType, renderPass)
 
         /// Send a message to the render system to render a static model surface using a fast path.
         static member renderStaticModelSurfaceFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, material : Material inref, staticModel, surfaceIndex, depthTest, renderType, renderPass, world) =

@@ -23,6 +23,7 @@ module Assimp =
     let [<Literal>] FinenessOffsetPropertyName = RawPropertyPrefix + "FinenessOffset"
     let [<Literal>] ScatterTypePropertyName = RawPropertyPrefix + "ScatterType"
     let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
+    let [<Literal>] ClippedPropertyName = RawPropertyPrefix + "Clipped"
     let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
 
 // NOTE: no qualification specifier here as module exists as an extension.
@@ -163,6 +164,7 @@ module Render =
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
     let [<Literal>] ScatterTypeName = "ScatterType"
     let [<Literal>] TwoSidedName = "TwoSided"
+    let [<Literal>] ClippedName = "Clipped"
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceInterior"] with null -> 0.125f | value -> scvalue value
@@ -406,6 +408,7 @@ module Paths =
     let [<Literal>] PhysicallyBasedShadowTerrainSpotShaderFilePath = "Assets/Default/PhysicallyBasedShadowTerrainSpot.glsl"
     let [<Literal>] PhysicallyBasedShadowTerrainDirectionalShaderFilePath = "Assets/Default/PhysicallyBasedShadowTerrainDirectional.glsl"
     let [<Literal>] PhysicallyBasedDeferredStaticShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStatic.glsl"
+    let [<Literal>] PhysicallyBasedDeferredStaticClippedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStaticClipped.glsl"
     let [<Literal>] PhysicallyBasedDeferredAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredAnimated.glsl"
     let [<Literal>] PhysicallyBasedDeferredTerrainShaderFilePath = "Assets/Default/PhysicallyBasedDeferredTerrain.glsl"
     let [<Literal>] PhysicallyBasedDeferredLightMappingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredLightMapping.glsl"

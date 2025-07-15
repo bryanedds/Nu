@@ -4034,6 +4034,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     (RenderStaticModels
                         { StaticModels = lightProbeModels
                           StaticModel = Assets.Default.LightProbeModel
+                          Clipped = false
                           DepthTest = LessThanOrEqualTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
@@ -4051,6 +4052,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     (RenderStaticModels
                         { StaticModels = lightModels
                           StaticModel = Assets.Default.LightbulbModel
+                          Clipped = false
                           DepthTest = LessThanOrEqualTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
@@ -4108,6 +4110,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   InsetOpt = None
                                   MaterialProperties = MaterialProperties.defaultProperties
                                   StaticModel = Assets.Default.HighlightModel
+                                  Clipped = false // not needed when forward-rendered
                                   DepthTest = LessThanOrEqualTest
                                   RenderType = ForwardRenderType (0.0f, sort)
                                   RenderPass = NormalPass })
