@@ -101,6 +101,13 @@ vec3 saturate(vec3 rgb, float adjustment)
 
 void main()
 {
+    // discard when depth out of range
+    float depthCutoff = heightPlusOut.z;
+    depth = gl_FragCoord.z;
+    float depthView = depth / gl_FragCoord.w;
+    if (depthCutoff >= 0.0) { if (depthView > depthCutoff) discard; }
+    else if (depthView <= -depthCutoff) discard;
+
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
     vec3 q2 = dFdy(positionOut.xyz);
@@ -119,9 +126,6 @@ void main()
     float height = texture(heightTexture, texCoordsOut).x * heightPlusOut.x;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
-
-    // compute depth (just grab from frag z)
-    depth = gl_FragCoord.z;
 
     // compute albedo, discading if even partly transparent
     vec4 albedoSample = texture(albedoTexture, texCoords);
