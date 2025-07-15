@@ -55,10 +55,10 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
-![image](https://github.com/user-attachments/assets/d6de81be-c34a-4cad-bc43-483389360c63)
+![image](https://github.com/user-attachments/assets/048e8933-41cc-4a39-b3b6-4ad87b616779)
 Screenshot from our current game in early development.
 
-![image](https://github.com/user-attachments/assets/048e8933-41cc-4a39-b3b6-4ad87b616779)
+![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Another screenshot from same.
 
 ![image](https://github.com/user-attachments/assets/f45aa11d-4131-4011-9755-2c6599eabd36)
