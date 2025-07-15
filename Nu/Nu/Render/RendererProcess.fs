@@ -29,6 +29,8 @@ type RendererProcess =
         abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Material inref * StaticModel AssetTag * int * DepthTest * RenderType * RenderPass -> unit
         /// Potential fast-path for rendering animated models.
         abstract RenderAnimatedModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * Map<int, single> * int Set * DepthTest * RenderType * RenderPass -> unit
+        /// Potential fast-path for rendering static billboards.
+        abstract RenderStaticBillboardFast : Matrix4x4 inref * bool * Presence * Box2 voption * bool * bool * MaterialProperties inref * Material inref * Color inref * Color inref * Blend * Flip * single * DepthTest * RenderType * RenderPass -> unit
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
@@ -136,6 +138,13 @@ type RendererInline () =
         member ri.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
             match dependenciesOpt with
             | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualRenderedSurfaceIndices = drsIndices; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
+        member ri.RenderStaticBillboardFast (modelMatrix, castShadow, presence, insetOpt, orientUp, planar, materialProperties, material, color, emission, blend, flip, shadowOffset, depthTest, renderType, renderPass) =
+            match dependenciesOpt with
+            | Some _ -> 
+                let billboards = SList.singleton (modelMatrix, castShadow, presence, Option.ofValueOption insetOpt, orientUp, planar, color, emission, blend, flip)
+                messages3d.Add (RenderStaticBillboards { Billboards = billboards; MaterialProperties = materialProperties; Material = material; ShadowOffset = shadowOffset; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.EnqueueMessage2d message =
@@ -600,6 +609,12 @@ type RendererThread () =
                 cachedMessage.CachedAnimatedModelRenderPass <- renderPass
                 messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
             | _ -> failwithumf ()
+
+        member rt.RenderStaticBillboardFast (modelMatrix, castShadow, presence, insetOpt, orientUp, planar, materialProperties, material, color, emission, blend, flip, shadowOffset, depthTest, renderType, renderPass) =
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            let billboards = SList.singleton (modelMatrix, castShadow, presence, Option.ofValueOption insetOpt, orientUp, planar, color, emission, blend, flip)
+            let message = RenderStaticBillboards { Billboards = billboards; MaterialProperties = materialProperties; Material = material; ShadowOffset = shadowOffset; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass }
+            messageBuffers3d.[messageBufferIndex].Add message
 
         member rt.EnqueueMessage2d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

@@ -450,6 +450,15 @@ type RenderBillboards =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+type RenderStaticBillboards =
+    { Billboards : (Matrix4x4 * bool * Presence * Box2 option * bool * bool * Color * Color * Blend * Flip) SList
+      MaterialProperties : MaterialProperties
+      Material : Material
+      ShadowOffset : single
+      DepthTest : DepthTest
+      RenderType : RenderType
+      RenderPass : RenderPass }
+
 type RenderBillboardParticles =
     { CastShadow : bool
       Presence : Presence
@@ -658,6 +667,7 @@ type RenderMessage3d =
     | RenderLight3d of RenderLight3d
     | RenderBillboard of RenderBillboard
     | RenderBillboards of RenderBillboards
+    | RenderStaticBillboards of RenderStaticBillboards
     | RenderBillboardParticles of RenderBillboardParticles
     | RenderStaticModelSurface of RenderStaticModelSurface
     | RenderStaticModelSurfaceBundle of RenderStaticModelSurfaceBundle
@@ -2260,6 +2270,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let renderTasks = GlRenderer3d.getRenderTasks rbs.RenderPass renderer
                 for (model, castShadow, presence, insetOpt, orientUp, planar) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, planar, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderTasks, renderer)
+            | RenderStaticBillboards rsbs ->
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rsbs.MaterialProperties, &rsbs.Material, renderer)
+                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
+                let renderTasks = GlRenderer3d.getRenderTasks rsbs.RenderPass renderer
+                for (model, castShadow, presence, insetOpt, orientUp, planar, color, emission, blend, flip) in rsbs.Billboards do
+                    let billboardPropertiesWithColor = { billboardProperties with Albedo = billboardProperties.Albedo * color; Emission = emission.R }
+                    let billboardSurfaceWithColor = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardPropertiesWithColor, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
+                    GlRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rsbs.MaterialProperties, orientUp, planar, rsbs.ShadowOffset, billboardSurfaceWithColor, rsbs.DepthTest, rsbs.RenderType, rsbs.RenderPass, renderTasks, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 let renderTasks = GlRenderer3d.getRenderTasks rbps.RenderPass renderer

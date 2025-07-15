@@ -49,6 +49,10 @@ module WorldRender =
         static member renderAnimatedModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world) =
             (World.getRendererProcess world).RenderAnimatedModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, animations, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass)
 
+        /// Send a message to the render system to render a static billboard using a fast path.
+        static member renderStaticBillboardFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, orientUp, planar, materialProperties : MaterialProperties inref, material : Material inref, color : Color inref, emission : Color inref, blend, flip, shadowOffset, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticBillboardFast (&modelMatrix, castShadow, presence, insetOpt, orientUp, planar, &materialProperties, &material, &color, &emission, blend, flip, shadowOffset, depthTest, renderType, renderPass)
+
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         static member loadRenderPackage3d packageName world =
