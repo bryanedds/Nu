@@ -202,7 +202,11 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
-            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath) with
+            let textureEir =
+                if asset.AssetTag.AssetName.EndsWith "_f" || asset.AssetTag.AssetName.EndsWith "Filtered"
+                then assetClient.TextureClient.TryCreateTextureFiltered (false, false, asset.FilePath)
+                else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath)
+            match textureEir with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->
