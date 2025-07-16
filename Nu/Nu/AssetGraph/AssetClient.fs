@@ -64,7 +64,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
                 let texture =
                     if is2d then
                         let (metadata, textureId) =
-                            if (PathF.GetFileName filePath).EndsWith "_f" || (PathF.GetFileName filePath).EndsWith "Filtered"
+                            if OpenGL.Texture.Filtered2d filePath
                             then OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, false, textureData)
                             else OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, false, textureData)
                         OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
