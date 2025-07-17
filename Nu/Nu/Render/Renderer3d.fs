@@ -2571,8 +2571,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | (true, terrainGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, terrainGeometry)
                 | (false, _) -> ()
 
-            // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
-            renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
+        // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
+        let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
+        renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
 
     static member private categorize
         frustumInterior
