@@ -9,6 +9,7 @@ open Prime
 
 /// Describes a means for looking up an asset.
 type AssetTag =
+    inherit IComparable
     abstract PackageName : string
     abstract AssetName : string
 
