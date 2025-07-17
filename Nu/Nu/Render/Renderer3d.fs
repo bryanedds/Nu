@@ -294,6 +294,13 @@ type BillboardParticlesDescriptor =
       Particles : Particle SArray
       RenderType : RenderType }
 
+/// Describes a terrain patch for improved GPU performance.
+type TerrainPatch =
+    { PatchBounds : Box3
+      PatchIndices : Vector2i // X and Y indices of the patch in the overall terrain
+      VertexOffset : Vector2i // Starting vertex offset for this patch in the heightmap
+      VertexSize : Vector2i } // Size of the patch in vertices
+
 /// Describes a static 3d terrain geometry.
 type TerrainGeometryDescriptor =
     { Bounds : Box3
@@ -302,7 +309,8 @@ type TerrainGeometryDescriptor =
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
-      Segments : Vector2i }
+      Segments : Vector2i
+      PatchOpt : TerrainPatch option } // None for single-mesh terrain, Some for patch-based terrain
 
 /// Describes a static 3d terrain.
 type TerrainDescriptor =
@@ -315,7 +323,8 @@ type TerrainDescriptor =
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
-      Segments : Vector2i }
+      Segments : Vector2i
+      PatchOpt : TerrainPatch option } // None for legacy single-mesh terrain, Some for patch-based terrain
 
     member this.TerrainGeometryDescriptor =
         { Bounds = this.Bounds
@@ -324,7 +333,39 @@ type TerrainDescriptor =
           NormalImageOpt = this.NormalImageOpt
           Tiles = this.Tiles
           HeightMap = this.HeightMap
-          Segments = this.Segments }
+          Segments = this.Segments
+          PatchOpt = this.PatchOpt }
+
+/// Helper functions for terrain patches.
+[<RequireQualifiedAccess>]
+module TerrainPatch =
+    
+    /// Calculate terrain patches for a given height map resolution and terrain bounds.
+    /// Returns list of terrain patches that subdivide the terrain for improved GPU performance.
+    let calculateTerrainPatches (bounds : Box3) (resolution : Vector2i) =
+        let patchSize = Constants.Render.TerrainPatchSize
+        let patchCountX = (resolution.X + patchSize - 1) / patchSize // Ceiling division
+        let patchCountY = (resolution.Y + patchSize - 1) / patchSize
+        
+        let patchSizeX = bounds.Size.X / single patchCountX
+        let patchSizeY = bounds.Size.Z / single patchCountY
+        
+        [| for py in 0 .. patchCountY - 1 do
+            for px in 0 .. patchCountX - 1 do
+                let vertexOffsetX = px * patchSize
+                let vertexOffsetY = py * patchSize
+                let vertexSizeX = min patchSize (resolution.X - vertexOffsetX)
+                let vertexSizeY = min patchSize (resolution.Y - vertexOffsetY)
+                
+                let patchMinX = bounds.Min.X + single px * patchSizeX
+                let patchMinZ = bounds.Min.Z + single py * patchSizeY
+                let patchMaxX = bounds.Min.X + single (px + 1) * patchSizeX
+                let patchMaxZ = bounds.Min.Z + single (py + 1) * patchSizeY
+                
+                { PatchBounds = box3 (v3 patchMinX bounds.Min.Y patchMinZ) (v3 patchMaxX bounds.Max.Y patchMaxZ)
+                  PatchIndices = v2i px py
+                  VertexOffset = v2i vertexOffsetX vertexOffsetY
+                  VertexSize = v2i vertexSizeX vertexSizeY } |]
 
 /// An internally cached static model used to reduce GC promotion or pressure.
 type CachedStaticModelMessage =
@@ -1733,34 +1774,71 @@ type [<ReferenceEquality>] GlRenderer3d =
             match (normalsOpt, tintOpt) with
             | (Some normals, Some tint) ->
 
-                // compute vertices
-                let vertices =
-                    [|for i in 0 .. dec positionsAndTexCoordses.Length do
-                        let struct (p, tc) = positionsAndTexCoordses.[i]
-                        let n = normals.[i]
-                        let s = blendses
-                        let t = tint.[i]
-                        yield!
-                            [|p.X; p.Y; p.Z
-                              tc.X; tc.Y
-                              n.X; n.Y; n.Z
-                              t.X; t.Y; t.Z
-                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
+                // check if we're creating a patch or full terrain
+                match geometryDescriptor.PatchOpt with
+                | Some patch ->
+                    // create patch-specific geometry
+                    let patchVertices =
+                        [|for y in patch.VertexOffset.Y .. patch.VertexOffset.Y + patch.VertexSize.Y - 1 do
+                            for x in patch.VertexOffset.X .. patch.VertexOffset.X + patch.VertexSize.X - 1 do
+                                if y < resolution.Y && x < resolution.X then
+                                    let i = y * resolution.X + x
+                                    let struct (p, tc) = positionsAndTexCoordses.[i]
+                                    let n = normals.[i]
+                                    let s = blendses
+                                    let t = tint.[i]
+                                    yield!
+                                        [|p.X; p.Y; p.Z
+                                          tc.X; tc.Y
+                                          n.X; n.Y; n.Z
+                                          t.X; t.Y; t.Z
+                                          s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
 
-                // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
-                let indices = 
-                    [|for y in 0 .. dec resolution.Y - 1 do
-                        for x in 0 .. dec resolution.X - 1 do
-                            yield resolution.X * y + x
-                            yield resolution.X * inc y + x
-                            yield resolution.X * y + inc x
-                            yield resolution.X * inc y + x
-                            yield resolution.X * inc y + inc x
-                            yield resolution.X * y + inc x|]
+                    // compute patch indices with adjusted coordinates
+                    let patchIndices = 
+                        [|for y in 0 .. patch.VertexSize.Y - 2 do
+                            for x in 0 .. patch.VertexSize.X - 2 do
+                                let baseIndex = y * patch.VertexSize.X + x
+                                yield baseIndex
+                                yield baseIndex + patch.VertexSize.X
+                                yield baseIndex + 1
+                                yield baseIndex + patch.VertexSize.X
+                                yield baseIndex + patch.VertexSize.X + 1
+                                yield baseIndex + 1|]
 
-                // create the actual geometry
-                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
-                Some geometry
+                    // create the patch geometry
+                    let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, patchVertices.AsMemory (), patchIndices.AsMemory (), patch.PatchBounds)
+                    Some geometry
+
+                | None ->
+                    // compute vertices for full terrain (legacy behavior)
+                    let vertices =
+                        [|for i in 0 .. dec positionsAndTexCoordses.Length do
+                            let struct (p, tc) = positionsAndTexCoordses.[i]
+                            let n = normals.[i]
+                            let s = blendses
+                            let t = tint.[i]
+                            yield!
+                                [|p.X; p.Y; p.Z
+                                  tc.X; tc.Y
+                                  n.X; n.Y; n.Z
+                                  t.X; t.Y; t.Z
+                                  s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
+
+                    // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
+                    let indices = 
+                        [|for y in 0 .. dec resolution.Y - 1 do
+                            for x in 0 .. dec resolution.X - 1 do
+                                yield resolution.X * y + x
+                                yield resolution.X * inc y + x
+                                yield resolution.X * y + inc x
+                                yield resolution.X * inc y + x
+                                yield resolution.X * inc y + inc x
+                                yield resolution.X * y + inc x|]
+
+                    // create the actual geometry
+                    let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
+                    Some geometry
 
             // error
             | (_, _) -> None
@@ -2415,24 +2493,69 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderTasks : RenderTasks,
          renderer) =
 
-        // attempt to create terrain geometry
-        let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
-        match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-        | (true, _) -> ()
-        | (false, _) ->
-            match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
-            | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
-            | None -> ()
+        // determine if we should use patches based on terrain size
+        let shouldUsePatchesOpt =
+            match terrainDescriptor.HeightMap with
+            | ImageHeightMap _ | RawHeightMap _ ->
+                let heightMapMetadataOpt = 
+                    HeightMap.tryGetMetadata
+                        (fun assetTag -> GlRenderer3d.tryGetFilePath assetTag renderer)
+                        terrainDescriptor.Bounds
+                        terrainDescriptor.Tiles
+                        terrainDescriptor.HeightMap
+                match heightMapMetadataOpt with
+                | ValueSome heightMapMetadata ->
+                    let resolution = heightMapMetadata.Resolution
+                    // Use patches if terrain is larger than patch size in either dimension
+                    if resolution.X > Constants.Render.TerrainPatchSize || resolution.Y > Constants.Render.TerrainPatchSize
+                    then Some (TerrainPatch.calculateTerrainPatches terrainDescriptor.Bounds resolution)
+                    else None
+                | ValueNone -> None
 
-        // attempt to add terrain to appropriate render list when visible
-        // TODO: also add found geometry to render list so it doesn't have to be looked up redundantly?
-        if visible then
+        match shouldUsePatchesOpt with
+        | Some patches ->
+            // render terrain as patches for better GPU performance
+            for patch in patches do
+                let patchGeometryDescriptor = 
+                    { terrainDescriptor.TerrainGeometryDescriptor with PatchOpt = Some patch }
+                
+                // attempt to create patch geometry
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue patchGeometryDescriptor with
+                | (true, _) -> ()
+                | (false, _) ->
+                    match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry patchGeometryDescriptor renderer with
+                    | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (patchGeometryDescriptor, geometry)
+                    | None -> ()
+
+                // attempt to add patch to render list when visible
+                if visible then
+                    match renderer.PhysicallyBasedTerrainGeometries.TryGetValue patchGeometryDescriptor with
+                    | (true, patchGeometry) -> 
+                        let patchTerrainDescriptor = { terrainDescriptor with PatchOpt = Some patch }
+                        renderTasks.DeferredTerrains.Add struct (patchTerrainDescriptor, patchGeometry)
+                    | (false, _) -> ()
+
+                // mark patch geometry as utilized
+                renderer.PhysicallyBasedTerrainGeometriesUtilized.Add patchGeometryDescriptor |> ignore<bool>
+
+        | None ->
+            // render as single terrain (legacy behavior)
+            let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
             match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-            | (true, terrainGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, terrainGeometry)
-            | (false, _) -> ()
+            | (true, _) -> ()
+            | (false, _) ->
+                match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
+                | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
+                | None -> ()
 
-        // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
-        renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
+            // attempt to add terrain to appropriate render list when visible
+            if visible then
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
+                | (true, terrainGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, terrainGeometry)
+                | (false, _) -> ()
+
+            // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
+            renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
 
     static member private categorize
         frustumInterior
