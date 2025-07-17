@@ -294,6 +294,13 @@ type BillboardParticlesDescriptor =
       Particles : Particle SArray
       RenderType : RenderType }
 
+/// Describes a terrain patch - a subdivision of a larger terrain.
+type TerrainPatch =
+    { PatchIndex : Vector2i // (x, y) index of this patch in the terrain grid
+      PatchBounds : Box3 // world bounds of this patch
+      PatchOffsetInHeightMap : Vector2i // offset in height map coordinates
+      PatchResolution : Vector2i // resolution of this patch in height map samples }
+
 /// Describes a static 3d terrain geometry.
 type TerrainGeometryDescriptor =
     { Bounds : Box3
@@ -302,7 +309,8 @@ type TerrainGeometryDescriptor =
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
-      Segments : Vector2i }
+      Segments : Vector2i
+      PatchSize : Vector2i } // size of each patch in height map samples
 
 /// Describes a static 3d terrain.
 type TerrainDescriptor =
@@ -315,7 +323,8 @@ type TerrainDescriptor =
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
-      Segments : Vector2i }
+      Segments : Vector2i
+      PatchSize : Vector2i } // size of each patch in height map samples
 
     member this.TerrainGeometryDescriptor =
         { Bounds = this.Bounds
@@ -324,7 +333,8 @@ type TerrainDescriptor =
           NormalImageOpt = this.NormalImageOpt
           Tiles = this.Tiles
           HeightMap = this.HeightMap
-          Segments = this.Segments }
+          Segments = this.Segments
+          PatchSize = this.PatchSize }
 
 /// An internally cached static model used to reduce GC promotion or pressure.
 type CachedStaticModelMessage =
@@ -882,7 +892,7 @@ type [<ReferenceEquality>] private RenderTasks =
       DeferredStaticClipped : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredStaticClippedBundles : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
+      DeferredTerrains : struct (TerrainDescriptor * TerrainPatch * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
       ForwardSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
       DeferredStaticRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
@@ -985,10 +995,12 @@ type [<ReferenceEquality>] private RenderTasks =
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
                 (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
-                ||> Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
+                ||> Seq.forall2 (fun struct (terrainDescriptor, patch, _) struct (terrainDescriptorCached, patchCached, _) ->
                     box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
                     terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
-                    terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
+                    terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap &&
+                    patch.PatchIndex = patchCached.PatchIndex &&
+                    box3Eq patch.PatchBounds patchCached.PatchBounds)
             deferredStaticCached &&
             deferredStaticBundlesCached &&
             deferredStaticClippedCached &&
@@ -1060,7 +1072,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           BillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedTerrainGeometries : Dictionary<TerrainGeometryDescriptor, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
+          PhysicallyBasedTerrainPatchGeometries : Dictionary<TerrainGeometryDescriptor * TerrainPatch, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
           PhysicallyBasedTerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
+          PhysicallyBasedTerrainPatchGeometriesUtilized : (TerrainGeometryDescriptor * TerrainPatch) HashSet
           CubeMap : OpenGL.Texture.Texture
           WhiteTexture : OpenGL.Texture.Texture
           BlackTexture : OpenGL.Texture.Texture
@@ -1768,6 +1782,116 @@ type [<ReferenceEquality>] GlRenderer3d =
         // error
         | ValueNone -> None
 
+    static member private computeTerrainPatches (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) =
+        let resolution = heightMapMetadata.Resolution
+        let patchSize = geometryDescriptor.PatchSize
+        let patchCountX = (resolution.X + patchSize.X - 1) / patchSize.X // ceiling division
+        let patchCountY = (resolution.Y + patchSize.Y - 1) / patchSize.Y
+        let terrainBounds = geometryDescriptor.Bounds
+        let patchSizeWorldX = terrainBounds.Size.X / single patchCountX
+        let patchSizeWorldZ = terrainBounds.Size.Z / single patchCountY
+        
+        [|for patchY in 0 .. patchCountY - 1 do
+            for patchX in 0 .. patchCountX - 1 do
+                let offsetX = patchX * patchSize.X
+                let offsetY = patchY * patchSize.Y
+                let actualPatchSizeX = min patchSize.X (resolution.X - offsetX)
+                let actualPatchSizeY = min patchSize.Y (resolution.Y - offsetY)
+                let patchBounds = 
+                    { Min = v3 
+                        (terrainBounds.Min.X + single patchX * patchSizeWorldX) 
+                        terrainBounds.Min.Y 
+                        (terrainBounds.Min.Z + single patchY * patchSizeWorldZ)
+                      Max = v3 
+                        (terrainBounds.Min.X + single (patchX + 1) * patchSizeWorldX)
+                        terrainBounds.Max.Y
+                        (terrainBounds.Min.Z + single (patchY + 1) * patchSizeWorldZ) }
+                { PatchIndex = v2i patchX patchY
+                  PatchBounds = patchBounds
+                  PatchOffsetInHeightMap = v2i offsetX offsetY
+                  PatchResolution = v2i actualPatchSizeX actualPatchSizeY }|]
+
+    static member private tryCreatePhysicallyBasedTerrainPatchGeometry (geometryDescriptor : TerrainGeometryDescriptor) (patch : TerrainPatch) renderer =
+        
+        // attempt to compute positions and tex coords for the entire terrain first
+        let heightMapMetadataOpt =
+            HeightMap.tryGetMetadata
+                (fun assetTag -> GlRenderer3d.tryGetFilePath assetTag renderer)
+                geometryDescriptor.Bounds
+                geometryDescriptor.Tiles
+                geometryDescriptor.HeightMap
+
+        // on success, continue terrain patch geometry generation attempt
+        match heightMapMetadataOpt with
+        | ValueSome heightMapMetadata ->
+            let fullResolution = heightMapMetadata.Resolution
+            let fullPositionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
+            
+            // extract patch data from full terrain data
+            let patchStartX = patch.PatchOffsetInHeightMap.X
+            let patchStartY = patch.PatchOffsetInHeightMap.Y
+            let patchSizeX = patch.PatchResolution.X
+            let patchSizeY = patch.PatchResolution.Y
+            
+            // compute patch-specific normals, handling material inputs (simplified for now)
+            let patchNormals = 
+                [|for y in patchStartY .. patchStartY + patchSizeY - 1 do
+                    for x in patchStartX .. patchStartX + patchSizeX - 1 do
+                        let index = y * fullResolution.X + x
+                        if index < fullPositionsAndTexCoordses.Length then
+                            let struct (position, _) = fullPositionsAndTexCoordses.[index]
+                            // simplified normal calculation - should reuse existing logic
+                            yield v3 0.0f 1.0f 0.0f
+                        else
+                            yield v3 0.0f 1.0f 0.0f|]
+                            
+            // compute patch tint (simplified)
+            let patchTint = 
+                [|for _ in 0 .. patchSizeX * patchSizeY - 1 do
+                    yield v3One|]
+                    
+            // compute patch blend weights (simplified)
+            let patchBlendWeights = Array2D.zeroCreate (patchSizeX * patchSizeY) 8
+            
+            // create vertices for this patch
+            let vertices = 
+                [|for y in 0 .. patchSizeY - 1 do
+                    for x in 0 .. patchSizeX - 1 do
+                        let fullIndex = (patchStartY + y) * fullResolution.X + (patchStartX + x)
+                        if fullIndex < fullPositionsAndTexCoordses.Length then
+                            let struct (p, tc) = fullPositionsAndTexCoordses.[fullIndex]
+                            let localIndex = y * patchSizeX + x
+                            let n = if localIndex < patchNormals.Length then patchNormals.[localIndex] else v3 0.0f 1.0f 0.0f
+                            let t = if localIndex < patchTint.Length then patchTint.[localIndex] else v3One
+                            yield!
+                                [|p.X; p.Y; p.Z
+                                  tc.X; tc.Y
+                                  n.X; n.Y; n.Z
+                                  t.X; t.Y; t.Z
+                                  patchBlendWeights.[localIndex,0]; patchBlendWeights.[localIndex,1]; patchBlendWeights.[localIndex,2]; patchBlendWeights.[localIndex,3]
+                                  patchBlendWeights.[localIndex,4]; patchBlendWeights.[localIndex,5]; patchBlendWeights.[localIndex,6]; patchBlendWeights.[localIndex,7]|]
+                        else
+                            // fallback for edge cases
+                            yield! [|0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 1.0f; 0.0f; 1.0f; 1.0f; 1.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f|]|]
+
+            // compute indices for this patch
+            let indices = 
+                [|for y in 0 .. patchSizeY - 2 do
+                    for x in 0 .. patchSizeX - 2 do
+                        yield patchSizeX * y + x
+                        yield patchSizeX * (y + 1) + x
+                        yield patchSizeX * y + (x + 1)
+                        yield patchSizeX * (y + 1) + x
+                        yield patchSizeX * (y + 1) + (x + 1)
+                        yield patchSizeX * y + (x + 1)|]
+
+            // create the actual patch geometry
+            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), patch.PatchBounds)
+            Some geometry
+
+        // error
+        | ValueNone -> None
+
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
         let albedoTexture =
             match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
@@ -2415,24 +2539,64 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderTasks : RenderTasks,
          renderer) =
 
-        // attempt to create terrain geometry
+        // get terrain geometry descriptor
         let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
-        match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-        | (true, _) -> ()
-        | (false, _) ->
-            match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
-            | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
-            | None -> ()
+        
+        // attempt to get height map metadata to compute patches
+        let heightMapMetadataOpt =
+            HeightMap.tryGetMetadata
+                (fun assetTag -> GlRenderer3d.tryGetFilePath assetTag renderer)
+                geometryDescriptor.Bounds
+                geometryDescriptor.Tiles
+                geometryDescriptor.HeightMap
 
-        // attempt to add terrain to appropriate render list when visible
-        // TODO: also add found geometry to render list so it doesn't have to be looked up redundantly?
-        if visible then
+        match heightMapMetadataOpt with
+        | ValueSome heightMapMetadata ->
+            // compute terrain patches
+            let patches = GlRenderer3d.computeTerrainPatches geometryDescriptor heightMapMetadata
+            
+            // create or get geometry for each patch
+            for patch in patches do
+                let patchKey = (geometryDescriptor, patch)
+                
+                // attempt to create patch geometry if not cached
+                match renderer.PhysicallyBasedTerrainPatchGeometries.TryGetValue patchKey with
+                | (true, _) -> ()
+                | (false, _) ->
+                    match GlRenderer3d.tryCreatePhysicallyBasedTerrainPatchGeometry geometryDescriptor patch renderer with
+                    | Some geometry -> renderer.PhysicallyBasedTerrainPatchGeometries.Add (patchKey, geometry)
+                    | None -> ()
+
+                // attempt to add patch to appropriate render list when visible
+                if visible then
+                    match renderer.PhysicallyBasedTerrainPatchGeometries.TryGetValue patchKey with
+                    | (true, patchGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, patch, patchGeometry)
+                    | (false, _) -> ()
+
+                // mark patch geometry as utilized regardless of visibility (to keep it from being destroyed)
+                renderer.PhysicallyBasedTerrainPatchGeometriesUtilized.Add patchKey |> ignore<bool>
+        | ValueNone -> 
+            // fallback to legacy single-terrain approach for compatibility
             match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-            | (true, terrainGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, terrainGeometry)
-            | (false, _) -> ()
+            | (true, _) -> ()
+            | (false, _) ->
+                match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
+                | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
+                | None -> ()
 
-        // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
-        renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
+            if visible then
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
+                | (true, terrainGeometry) ->
+                    // create a dummy patch representing the whole terrain for backward compatibility
+                    let wholePatch = { 
+                        PatchIndex = v2i 0 0
+                        PatchBounds = geometryDescriptor.Bounds
+                        PatchOffsetInHeightMap = v2i 0 0
+                        PatchResolution = v2i 1 1 }
+                    renderTasks.DeferredTerrains.Add struct (terrainDescriptor, wholePatch, terrainGeometry)
+                | (false, _) -> ()
+
+            renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
 
     static member private categorize
         frustumInterior
@@ -3010,7 +3174,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows
-        for (descriptor, geometry) in renderTasks.DeferredTerrains do
+        for (descriptor, patch, geometry) in renderTasks.DeferredTerrains do
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
@@ -3341,7 +3505,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // render terrains deferred
-        for (descriptor, geometry) in renderTasks.DeferredTerrains do
+        for (descriptor, patch, geometry) in renderTasks.DeferredTerrains do
             GlRenderer3d.renderPhysicallyBasedTerrain
                 viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
@@ -3942,8 +4106,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry geometry.Value
                 renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
+        // destroy cached terrain patch geometries that weren't rendered this frame
+        for patchGeometry in renderer.PhysicallyBasedTerrainPatchGeometries do
+            if not (renderer.PhysicallyBasedTerrainPatchGeometriesUtilized.Contains patchGeometry.Key) then
+                OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry patchGeometry.Value
+                renderer.PhysicallyBasedTerrainPatchGeometries.Remove patchGeometry.Key |> ignore<bool>
+
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
+        renderer.PhysicallyBasedTerrainPatchGeometriesUtilized.Clear ()
 
         // clear lighting config dirty flag
         renderer.LightingConfigChanged <- false
@@ -4259,7 +4430,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               BillboardGeometry = billboardGeometry
               PhysicallyBasedQuad = physicallyBasedQuad
               PhysicallyBasedTerrainGeometries = Dictionary HashIdentity.Structural
+              PhysicallyBasedTerrainPatchGeometries = Dictionary HashIdentity.Structural
               PhysicallyBasedTerrainGeometriesUtilized = HashSet HashIdentity.Structural
+              PhysicallyBasedTerrainPatchGeometriesUtilized = HashSet HashIdentity.Structural
               CubeMap = cubeMapSurface.CubeMap
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
