@@ -2494,7 +2494,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
     static member private categorizeTerrain
-        (visible : bool,
+        (frustumInterior : Frustum,
+         frustumExterior : Frustum,
+         frustumImposter : Frustum,
+         lightBox : Box3,
+         visible : bool,
          terrainDescriptor : TerrainDescriptor,
          renderTasks : RenderTasks,
          renderer) =
@@ -2535,14 +2539,18 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // attempt to add patch to render list when visible and within frustum
                 if visible then
-                    // TODO: Add frustum culling for individual patches here
-                    // For now, render all patches when the overall terrain is visible
-                    // In the future, we can check if patch.PatchBounds intersects with the view frustum
-                    match renderer.PhysicallyBasedTerrainGeometries.TryGetValue patchGeometryDescriptor with
-                    | (true, patchGeometry) -> 
-                        let patchTerrainDescriptor = { terrainDescriptor with PatchOpt = Some patch }
-                        renderTasks.DeferredTerrains.Add struct (patchTerrainDescriptor, patchGeometry)
-                    | (false, _) -> ()
+                    // Check if the individual patch bounds intersect with the view frustum
+                    // Using the same presence and bounds intersection pattern as static models
+                    let patchPresence = Presence.Omnipresent // Terrain patches use omnipresent as they don't have explicit transform
+                    let patchBounds = patch.PatchBounds
+                    let patchUnculled = Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false patchPresence patchBounds
+                    
+                    if patchUnculled then
+                        match renderer.PhysicallyBasedTerrainGeometries.TryGetValue patchGeometryDescriptor with
+                        | (true, patchGeometry) -> 
+                            let patchTerrainDescriptor = { terrainDescriptor with PatchOpt = Some patch }
+                            renderTasks.DeferredTerrains.Add struct (patchTerrainDescriptor, patchGeometry)
+                        | (false, _) -> ()
 
                 // mark patch geometry as utilized
                 renderer.PhysicallyBasedTerrainGeometriesUtilized.Add patchGeometryDescriptor |> ignore<bool>
@@ -2687,7 +2695,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
                 let renderTasks = GlRenderer3d.getRenderTasks rt.RenderPass renderer
-                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
+                GlRenderer3d.categorizeTerrain (frustumInterior, frustumExterior, frustumImposter, lightBox, rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
             | ConfigureLighting3d l3c ->
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
