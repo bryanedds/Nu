@@ -248,6 +248,7 @@ module Render =
     let [<Literal>] SsrDepthCutoffDefault = 24.0f
     let [<Literal>] SsrDepthCutoffMarginDefault = 0.2f
     let [<Literal>] SsrDistanceCutoffDefault = 24.0f
+    let [<Literal>] TerrainPatchSizeDefault = 64 // Default size for terrain patches in height map samples
     let [<Literal>] SsrDistanceCutoffMarginDefault = 0.2f
     let [<Literal>] SsrRoughnessCutoffDefault = 0.3f
     let [<Literal>] SsrRoughnessCutoffMarginDefault = 0.3f
