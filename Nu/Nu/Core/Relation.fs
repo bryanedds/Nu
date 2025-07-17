@@ -153,10 +153,6 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
             let links = Array.map Name names3
             { Links = Array.append parents links }
 
-    interface 'a Relation IEquatable with
-        member this.Equals that =
-            Relation<'a>.equals<'a> this that
-
     override this.Equals that =
         match that with
         | :? ('a Relation) as that -> Relation<'a>.equals this that
@@ -174,6 +170,10 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
                 | Name name -> name)
                 this.Links
         String.concat Constants.Address.SeparatorName names
+
+    interface 'a Relation IEquatable with
+        member this.Equals that =
+            Relation<'a>.equals<'a> this that
 
 [<RequireQualifiedAccess>]
 module Relation =

@@ -9,7 +9,9 @@ open Prime
 
 /// Describes a means for looking up an asset.
 type AssetTag =
+    inherit IEquatable<AssetTag>
     inherit IComparable
+    inherit IComparable<AssetTag>
     abstract PackageName : string
     abstract AssetName : string
 
@@ -48,7 +50,6 @@ type AssetTagConverter (pointType : Type) =
         | _ -> failconv "Invalid AssetTagConverter conversion from source." None
 
 /// Describes a strongly-typed means for looking up an asset.
-/// TODO: P1: implement ('a AssetTag) IComparable as well as it might make it more efficient.
 and [<CustomEquality; CustomComparison; TypeConverter (typeof<AssetTagConverter>)>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
@@ -62,17 +63,34 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AssetTagConverter>
     override this.Equals that =
         refEq (this :> obj) that ||
         match that with
-        | :? AssetTag as thatTag -> this.PackageName = thatTag.PackageName && this.AssetName = thatTag.AssetName
+        | :? AssetTag as thatTag -> ((this :> IEquatable<AssetTag>).Equals : AssetTag -> bool) thatTag
         | _ -> false
+
+    interface IEquatable<AssetTag> with
+        member this.Equals that =
+            this.PackageName = that.PackageName && this.AssetName = that.AssetName
+
+    interface IEquatable<'a AssetTag> with
+        member this.Equals that =
+            this.PackageName = that.PackageName && this.AssetName = that.AssetName
 
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? AssetTag as thatTag ->
-                let packageComparison = String.CompareOrdinal (this.PackageName, thatTag.PackageName)
-                if packageComparison <> 0 then packageComparison
-                else String.CompareOrdinal (this.AssetName, thatTag.AssetName)
+            | :? AssetTag as thatTag -> ((this :> IComparable<AssetTag>).CompareTo : AssetTag -> int) thatTag
             | _ -> failwith "Cannot compare Address (comparee not of type AssetTag)."
+
+    interface IComparable<AssetTag> with
+        member this.CompareTo that =
+            let packageComparison = String.CompareOrdinal (this.PackageName, that.PackageName)
+            if packageComparison <> 0 then packageComparison
+            else String.CompareOrdinal (this.AssetName, that.AssetName)
+
+    interface IComparable<'a AssetTag> with
+        member this.CompareTo that =
+            let packageComparison = String.CompareOrdinal (this.PackageName, that.PackageName)
+            if packageComparison <> 0 then packageComparison
+            else String.CompareOrdinal (this.AssetName, that.AssetName)
 
     interface AssetTag with
         member this.PackageName = this.PackageName
