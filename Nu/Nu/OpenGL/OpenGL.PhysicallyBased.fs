@@ -3261,7 +3261,7 @@ module PhysicallyBased =
         Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
         Hl.Assert ()
-        
+
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()

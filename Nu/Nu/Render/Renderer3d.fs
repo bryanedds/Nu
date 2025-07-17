@@ -1768,6 +1768,169 @@ type [<ReferenceEquality>] GlRenderer3d =
         // error
         | ValueNone -> None
 
+    static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
+        let albedoTexture =
+            match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.AlbedoTexture
+        let roughnessTexture =
+            match GlRenderer3d.tryGetRenderAsset material.RoughnessImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
+        let metallicTexture =
+            match GlRenderer3d.tryGetRenderAsset material.MetallicImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
+        let ambientOcclusionTexture =
+            match GlRenderer3d.tryGetRenderAsset material.AmbientOcclusionImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+        let emissionTexture =
+            match GlRenderer3d.tryGetRenderAsset material.EmissionImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
+        let normalTexture =
+            match GlRenderer3d.tryGetRenderAsset material.NormalImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
+        let heightTexture =
+            match GlRenderer3d.tryGetRenderAsset material.HeightImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
+        let subdermalTexture =
+            match GlRenderer3d.tryGetRenderAsset material.SubdermalImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
+        let finenessTexture =
+            match GlRenderer3d.tryGetRenderAsset material.FinenessImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
+        let scatterTexture =
+            match GlRenderer3d.tryGetRenderAsset material.ScatterImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
+        let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
+            { Albedo = properties.Albedo
+              Roughness = properties.Roughness
+              Metallic = properties.Metallic
+              AmbientOcclusion = properties.AmbientOcclusion
+              Emission = properties.Emission
+              Height = properties.Height
+              IgnoreLightMaps = properties.IgnoreLightMaps
+              OpaqueDistance = properties.OpaqueDistance
+              FinenessOffset = properties.FinenessOffset
+              ScatterType = properties.ScatterType }
+        let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              TwoSided = true
+              Clipped = true
+              Names = "" }
+        struct (properties, material)
+
+    static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial inref, renderer) =
+        let albedoTexture =
+            match material.AlbedoImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.AlbedoTexture
+            | ValueNone -> surfaceMaterial.AlbedoTexture
+        let roughnessTexture =
+            match material.RoughnessImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.RoughnessTexture
+            | ValueNone -> surfaceMaterial.RoughnessTexture
+        let metallicTexture =
+            match material.MetallicImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.MetallicTexture
+            | ValueNone -> surfaceMaterial.MetallicTexture
+        let ambientOcclusionTexture =
+            match material.AmbientOcclusionImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.AmbientOcclusionTexture
+            | ValueNone -> surfaceMaterial.AmbientOcclusionTexture
+        let emissionTexture =
+            match material.EmissionImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.EmissionTexture
+            | ValueNone -> surfaceMaterial.EmissionTexture
+        let normalTexture =
+            match material.NormalImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.NormalTexture
+            | ValueNone -> surfaceMaterial.NormalTexture
+        let heightTexture =
+            match material.HeightImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.HeightTexture
+            | ValueNone -> surfaceMaterial.HeightTexture
+        let finenessTexture =
+            match material.FinenessImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.FinenessTexture
+            | ValueNone -> surfaceMaterial.FinenessTexture
+        let subdermalTexture =
+            match material.SubdermalImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.SubdermalTexture
+            | ValueNone -> surfaceMaterial.SubdermalTexture
+        let scatterTexture =
+            match material.ScatterImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ScatterTexture
+            | ValueNone -> surfaceMaterial.ScatterTexture
+        let twoSided =
+            match material.TwoSidedOpt with
+            | ValueSome twoSided -> twoSided
+            | ValueNone -> surfaceMaterial.TwoSided
+        let clipped =
+            match material.ClippedOpt with
+            | ValueSome clipped -> clipped
+            | ValueNone -> surfaceMaterial.Clipped
+        let surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              TwoSided = twoSided
+              Clipped = clipped
+              Names = "" }
+        surfaceMaterial
+
     static member private handleLoadRenderPackage hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
@@ -2271,7 +2434,15 @@ type [<ReferenceEquality>] GlRenderer3d =
         // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
 
-    static member private categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer =
+    static member private categorize
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        lightBox
+        eyeCenter
+        eyeRotation
+        renderMessages
+        renderer =
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
@@ -2621,7 +2792,8 @@ type [<ReferenceEquality>] GlRenderer3d =
     // TODO: apply intention blocks to this function.
     static member private renderPhysicallyBasedTerrain
         viewArray projectionArray viewProjectionArray eyeCenter
-        lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity terrainDescriptor geometry shader vao renderer =
+        lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
+        terrainDescriptor geometry shader vao renderer =
         let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)                
         let elementsCount = dec resolutionX * dec resolutionY * 6
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
@@ -2737,172 +2909,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         instanceFields.[28] <- texelHeight * materialProperties.Height
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, projectionArray, viewProjectionArray, eyeCenter,
-             instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader, vao)
+             instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
+             elementsCount, materials, geometry, shader, vao)
 
-    static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
-        let albedoTexture =
-            match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.AlbedoTexture
-        let roughnessTexture =
-            match GlRenderer3d.tryGetRenderAsset material.RoughnessImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
-        let metallicTexture =
-            match GlRenderer3d.tryGetRenderAsset material.MetallicImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
-        let ambientOcclusionTexture =
-            match GlRenderer3d.tryGetRenderAsset material.AmbientOcclusionImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
-        let emissionTexture =
-            match GlRenderer3d.tryGetRenderAsset material.EmissionImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
-        let normalTexture =
-            match GlRenderer3d.tryGetRenderAsset material.NormalImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
-        let heightTexture =
-            match GlRenderer3d.tryGetRenderAsset material.HeightImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
-        let subdermalTexture =
-            match GlRenderer3d.tryGetRenderAsset material.SubdermalImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
-        let finenessTexture =
-            match GlRenderer3d.tryGetRenderAsset material.FinenessImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
-        let scatterTexture =
-            match GlRenderer3d.tryGetRenderAsset material.ScatterImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
-        let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
-            { Albedo = properties.Albedo
-              Roughness = properties.Roughness
-              Metallic = properties.Metallic
-              AmbientOcclusion = properties.AmbientOcclusion
-              Emission = properties.Emission
-              Height = properties.Height
-              IgnoreLightMaps = properties.IgnoreLightMaps
-              OpaqueDistance = properties.OpaqueDistance
-              FinenessOffset = properties.FinenessOffset
-              ScatterType = properties.ScatterType }
-        let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoTexture = albedoTexture
-              RoughnessTexture = roughnessTexture
-              MetallicTexture = metallicTexture
-              AmbientOcclusionTexture = ambientOcclusionTexture
-              EmissionTexture = emissionTexture
-              NormalTexture = normalTexture
-              HeightTexture = heightTexture
-              SubdermalTexture = subdermalTexture
-              FinenessTexture = finenessTexture
-              ScatterTexture = scatterTexture
-              TwoSided = true
-              Clipped = true
-              Names = "" }
-        struct (properties, material)
-
-    static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial inref, renderer) =
-        let albedoTexture =
-            match material.AlbedoImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.AlbedoTexture
-            | ValueNone -> surfaceMaterial.AlbedoTexture
-        let roughnessTexture =
-            match material.RoughnessImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.RoughnessTexture
-            | ValueNone -> surfaceMaterial.RoughnessTexture
-        let metallicTexture =
-            match material.MetallicImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.MetallicTexture
-            | ValueNone -> surfaceMaterial.MetallicTexture
-        let ambientOcclusionTexture =
-            match material.AmbientOcclusionImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.AmbientOcclusionTexture
-            | ValueNone -> surfaceMaterial.AmbientOcclusionTexture
-        let emissionTexture =
-            match material.EmissionImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.EmissionTexture
-            | ValueNone -> surfaceMaterial.EmissionTexture
-        let normalTexture =
-            match material.NormalImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.NormalTexture
-            | ValueNone -> surfaceMaterial.NormalTexture
-        let heightTexture =
-            match material.HeightImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.HeightTexture
-            | ValueNone -> surfaceMaterial.HeightTexture
-        let finenessTexture =
-            match material.FinenessImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.FinenessTexture
-            | ValueNone -> surfaceMaterial.FinenessTexture
-        let subdermalTexture =
-            match material.SubdermalImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.SubdermalTexture
-            | ValueNone -> surfaceMaterial.SubdermalTexture
-        let scatterTexture =
-            match material.ScatterImageOpt with
-            | ValueSome image ->
-                match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.ScatterTexture
-            | ValueNone -> surfaceMaterial.ScatterTexture
-        let twoSided =
-            match material.TwoSidedOpt with
-            | ValueSome twoSided -> twoSided
-            | ValueNone -> surfaceMaterial.TwoSided
-        let clipped =
-            match material.ClippedOpt with
-            | ValueSome clipped -> clipped
-            | ValueNone -> surfaceMaterial.Clipped
-        let surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoTexture = albedoTexture
-              RoughnessTexture = roughnessTexture
-              MetallicTexture = metallicTexture
-              AmbientOcclusionTexture = ambientOcclusionTexture
-              EmissionTexture = emissionTexture
-              NormalTexture = normalTexture
-              HeightTexture = heightTexture
-              SubdermalTexture = subdermalTexture
-              FinenessTexture = finenessTexture
-              ScatterTexture = scatterTexture
-              TwoSided = twoSided
-              Clipped = clipped
-              Names = "" }
-        surfaceMaterial
-
-    static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) (lightViewProjection : Matrix4x4) lightFrustum lightType renderTasks renderer =
+    static member private renderShadow
+        lightOrigin
+        (lightView : Matrix4x4)
+        (lightProjection : Matrix4x4)
+        (lightViewProjection : Matrix4x4)
+        lightFrustum
+        lightType
+        renderTasks
+        renderer =
 
         // compute matrix arrays
         let lightViewArray = lightView.ToArray ()
@@ -3631,7 +3649,20 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
     /// Render 3d surfaces.
-    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderbuffer framebuffer (renderMessages : _ List) renderer =
+    static member render
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        lightBox
+        eyeCenter
+        eyeRotation
+        eyeFieldOfView
+        geometryViewport
+        rasterViewport
+        renderbuffer
+        framebuffer
+        (renderMessages : _ List)
+        renderer =
 
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
