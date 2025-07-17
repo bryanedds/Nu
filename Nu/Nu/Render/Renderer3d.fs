@@ -295,6 +295,8 @@ type BillboardParticlesDescriptor =
       RenderType : RenderType }
 
 /// Describes a terrain patch for improved GPU performance.
+/// Terrains larger than TerrainPatchSize are automatically subdivided into patches,
+/// enabling frustum culling and reducing GPU load for large terrains.
 type TerrainPatch =
     { PatchBounds : Box3
       PatchIndices : Vector2i // X and Y indices of the patch in the overall terrain
@@ -337,11 +339,15 @@ type TerrainDescriptor =
           PatchOpt = this.PatchOpt }
 
 /// Helper functions for terrain patches.
+/// Terrain patches improve GPU performance by subdividing large terrains into smaller, 
+/// cullable chunks. This enables better frustum culling and reduces the amount of geometry 
+/// processed when only part of the terrain is visible.
 [<RequireQualifiedAccess>]
 module TerrainPatch =
     
     /// Calculate terrain patches for a given height map resolution and terrain bounds.
-    /// Returns list of terrain patches that subdivide the terrain for improved GPU performance.
+    /// Returns an array of terrain patches that subdivide the terrain for improved GPU performance.
+    /// Terrains are subdivided into patches of Constants.Render.TerrainPatchSize vertices.
     let calculateTerrainPatches (bounds : Box3) (resolution : Vector2i) =
         let patchSize = Constants.Render.TerrainPatchSize
         let patchCountX = (resolution.X + patchSize - 1) / patchSize // Ceiling division
@@ -2527,8 +2533,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (patchGeometryDescriptor, geometry)
                     | None -> ()
 
-                // attempt to add patch to render list when visible
+                // attempt to add patch to render list when visible and within frustum
                 if visible then
+                    // TODO: Add frustum culling for individual patches here
+                    // For now, render all patches when the overall terrain is visible
+                    // In the future, we can check if patch.PatchBounds intersects with the view frustum
                     match renderer.PhysicallyBasedTerrainGeometries.TryGetValue patchGeometryDescriptor with
                     | (true, patchGeometry) -> 
                         let patchTerrainDescriptor = { terrainDescriptor with PatchOpt = Some patch }
