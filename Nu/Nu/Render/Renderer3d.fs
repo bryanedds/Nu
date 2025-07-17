@@ -1785,33 +1785,47 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private computeTerrainPatches (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) =
         let resolution = heightMapMetadata.Resolution
         let patchSize = geometryDescriptor.PatchSize
-        let patchCountX = (resolution.X + patchSize.X - 1) / patchSize.X // ceiling division
-        let patchCountY = (resolution.Y + patchSize.Y - 1) / patchSize.Y
-        let terrainBounds = geometryDescriptor.Bounds
-        let patchSizeWorldX = terrainBounds.Size.X / single patchCountX
-        let patchSizeWorldZ = terrainBounds.Size.Z / single patchCountY
         
-        [|for patchY in 0 .. patchCountY - 1 do
-            for patchX in 0 .. patchCountX - 1 do
-                let offsetX = patchX * patchSize.X
-                let offsetY = patchY * patchSize.Y
-                let actualPatchSizeX = min patchSize.X (resolution.X - offsetX)
-                let actualPatchSizeY = min patchSize.Y (resolution.Y - offsetY)
-                let patchBounds = 
-                    { Min = v3 
-                        (terrainBounds.Min.X + single patchX * patchSizeWorldX) 
-                        terrainBounds.Min.Y 
-                        (terrainBounds.Min.Z + single patchY * patchSizeWorldZ)
-                      Max = v3 
-                        (terrainBounds.Min.X + single (patchX + 1) * patchSizeWorldX)
-                        terrainBounds.Max.Y
-                        (terrainBounds.Min.Z + single (patchY + 1) * patchSizeWorldZ) }
-                { PatchIndex = v2i patchX patchY
-                  PatchBounds = patchBounds
-                  PatchOffsetInHeightMap = v2i offsetX offsetY
-                  PatchResolution = v2i actualPatchSizeX actualPatchSizeY }|]
+        // if patch size is larger than or equal to resolution, return single patch covering entire terrain
+        if patchSize.X >= resolution.X || patchSize.Y >= resolution.Y then
+            [|{ PatchIndex = v2i 0 0
+                PatchBounds = geometryDescriptor.Bounds
+                PatchOffsetInHeightMap = v2i 0 0
+                PatchResolution = resolution }|]
+        else
+            let patchCountX = (resolution.X + patchSize.X - 1) / patchSize.X // ceiling division
+            let patchCountY = (resolution.Y + patchSize.Y - 1) / patchSize.Y
+            let terrainBounds = geometryDescriptor.Bounds
+            let patchSizeWorldX = terrainBounds.Size.X / single patchCountX
+            let patchSizeWorldZ = terrainBounds.Size.Z / single patchCountY
+            
+            [|for patchY in 0 .. patchCountY - 1 do
+                for patchX in 0 .. patchCountX - 1 do
+                    let offsetX = patchX * patchSize.X
+                    let offsetY = patchY * patchSize.Y
+                    let actualPatchSizeX = min patchSize.X (resolution.X - offsetX)
+                    let actualPatchSizeY = min patchSize.Y (resolution.Y - offsetY)
+                    let patchBounds = 
+                        { Min = v3 
+                            (terrainBounds.Min.X + single patchX * patchSizeWorldX) 
+                            terrainBounds.Min.Y 
+                            (terrainBounds.Min.Z + single patchY * patchSizeWorldZ)
+                          Max = v3 
+                            (terrainBounds.Min.X + single (patchX + 1) * patchSizeWorldX)
+                            terrainBounds.Max.Y
+                            (terrainBounds.Min.Z + single (patchY + 1) * patchSizeWorldZ) }
+                    { PatchIndex = v2i patchX patchY
+                      PatchBounds = patchBounds
+                      PatchOffsetInHeightMap = v2i offsetX offsetY
+                      PatchResolution = v2i actualPatchSizeX actualPatchSizeY }|]
 
     static member private tryCreatePhysicallyBasedTerrainPatchGeometry (geometryDescriptor : TerrainGeometryDescriptor) (patch : TerrainPatch) renderer =
+        
+        // create a modified geometry descriptor for just this patch
+        let patchGeometryDescriptor = 
+            { geometryDescriptor with 
+                Bounds = patch.PatchBounds
+                Segments = v2iOne } // patches are always single segments
         
         // attempt to compute positions and tex coords for the entire terrain first
         let heightMapMetadataOpt =
@@ -1827,54 +1841,92 @@ type [<ReferenceEquality>] GlRenderer3d =
             let fullResolution = heightMapMetadata.Resolution
             let fullPositionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
             
-            // extract patch data from full terrain data
+            // extract patch parameters
             let patchStartX = patch.PatchOffsetInHeightMap.X
             let patchStartY = patch.PatchOffsetInHeightMap.Y
             let patchSizeX = patch.PatchResolution.X
             let patchSizeY = patch.PatchResolution.Y
             
-            // compute patch-specific normals, handling material inputs (simplified for now)
-            let patchNormals = 
-                [|for y in patchStartY .. patchStartY + patchSizeY - 1 do
-                    for x in patchStartX .. patchStartX + patchSizeX - 1 do
-                        let index = y * fullResolution.X + x
-                        if index < fullPositionsAndTexCoordses.Length then
-                            let struct (position, _) = fullPositionsAndTexCoordses.[index]
-                            // simplified normal calculation - should reuse existing logic
-                            yield v3 0.0f 1.0f 0.0f
-                        else
-                            yield v3 0.0f 1.0f 0.0f|]
-                            
-            // compute patch tint (simplified)
-            let patchTint = 
-                [|for _ in 0 .. patchSizeX * patchSizeY - 1 do
-                    yield v3One|]
-                    
-            // compute patch blend weights (simplified)
-            let patchBlendWeights = Array2D.zeroCreate (patchSizeX * patchSizeY) 8
-            
-            // create vertices for this patch
-            let vertices = 
+            // extract positions and texture coordinates for this patch
+            let patchPositionsAndTexCoordses =
                 [|for y in 0 .. patchSizeY - 1 do
                     for x in 0 .. patchSizeX - 1 do
                         let fullIndex = (patchStartY + y) * fullResolution.X + (patchStartX + x)
                         if fullIndex < fullPositionsAndTexCoordses.Length then
-                            let struct (p, tc) = fullPositionsAndTexCoordses.[fullIndex]
-                            let localIndex = y * patchSizeX + x
-                            let n = if localIndex < patchNormals.Length then patchNormals.[localIndex] else v3 0.0f 1.0f 0.0f
-                            let t = if localIndex < patchTint.Length then patchTint.[localIndex] else v3One
-                            yield!
-                                [|p.X; p.Y; p.Z
-                                  tc.X; tc.Y
-                                  n.X; n.Y; n.Z
-                                  t.X; t.Y; t.Z
-                                  patchBlendWeights.[localIndex,0]; patchBlendWeights.[localIndex,1]; patchBlendWeights.[localIndex,2]; patchBlendWeights.[localIndex,3]
-                                  patchBlendWeights.[localIndex,4]; patchBlendWeights.[localIndex,5]; patchBlendWeights.[localIndex,6]; patchBlendWeights.[localIndex,7]|]
+                            fullPositionsAndTexCoordses.[fullIndex]
                         else
-                            // fallback for edge cases
-                            yield! [|0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 1.0f; 0.0f; 1.0f; 1.0f; 1.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f|]|]
+                            // default values for edge cases
+                            struct (v3Zero, v2Zero)|]
+            
+            // compute normals for the patch (reuse existing logic but only for patch vertices)
+            let patchNormals =
+                match geometryDescriptor.NormalImageOpt with
+                | Some normalImage ->
+                    match GlRenderer3d.tryGetTextureData false normalImage renderer with
+                    | Some (metadata, blockCompressed, bytes) ->
+                        if metadata.TextureWidth * metadata.TextureHeight = fullPositionsAndTexCoordses.Length then
+                            if not blockCompressed then
+                                let scalar = 1.0f / single Byte.MaxValue
+                                [|for y in 0 .. patchSizeY - 1 do
+                                    for x in 0 .. patchSizeX - 1 do
+                                        let fullIndex = (patchStartY + y) * fullResolution.X + (patchStartX + x)
+                                        if fullIndex * 4 + 2 < bytes.Length then
+                                            let b = bytes.[fullIndex * 4 .. fullIndex * 4 + 3]
+                                            let tangent = (v3 (single b.[2] * scalar) (single b.[1] * scalar) (single b.[0] * scalar) * 2.0f - v3One).Normalized
+                                            v3 tangent.X tangent.Z -tangent.Y
+                                        else
+                                            v3 0.0f 1.0f 0.0f|]
+                            else 
+                                GlRenderer3d.createPhysicallyBasedTerrainNormals (v2i patchSizeX patchSizeY) patchPositionsAndTexCoordses
+                        else 
+                            GlRenderer3d.createPhysicallyBasedTerrainNormals (v2i patchSizeX patchSizeY) patchPositionsAndTexCoordses
+                    | None -> 
+                        GlRenderer3d.createPhysicallyBasedTerrainNormals (v2i patchSizeX patchSizeY) patchPositionsAndTexCoordses
+                | None -> 
+                    GlRenderer3d.createPhysicallyBasedTerrainNormals (v2i patchSizeX patchSizeY) patchPositionsAndTexCoordses
+            
+            // compute tint for the patch
+            let patchTint =
+                match geometryDescriptor.TintImageOpt with
+                | Some tintImage ->
+                    match GlRenderer3d.tryGetTextureData false tintImage renderer with
+                    | Some (metadata, blockCompressed, bytes) ->
+                        if metadata.TextureWidth * metadata.TextureHeight = fullPositionsAndTexCoordses.Length then
+                            if not blockCompressed then
+                                let scalar = 1.0f / single Byte.MaxValue
+                                [|for y in 0 .. patchSizeY - 1 do
+                                    for x in 0 .. patchSizeX - 1 do
+                                        let fullIndex = (patchStartY + y) * fullResolution.X + (patchStartX + x)
+                                        if fullIndex * 4 + 2 < bytes.Length then
+                                            let b = bytes.[fullIndex * 4 .. fullIndex * 4 + 3]
+                                            v3 (single b.[0] * scalar) (single b.[1] * scalar) (single b.[2] * scalar)
+                                        else
+                                            v3One|]
+                            else
+                                Array.create (patchSizeX * patchSizeY) v3One
+                        else
+                            Array.create (patchSizeX * patchSizeY) v3One
+                    | None -> Array.create (patchSizeX * patchSizeY) v3One
+                | None -> Array.create (patchSizeX * patchSizeY) v3One
+            
+            // compute blend weights for the patch (simplified for now)
+            let patchBlendWeights = Array2D.zeroCreate (patchSizeX * patchSizeY) 8
+            
+            // create vertices for this patch (reuse exact format from main terrain generation)
+            let vertices = 
+                [|for i in 0 .. patchPositionsAndTexCoordses.Length - 1 do
+                    let struct (p, tc) = patchPositionsAndTexCoordses.[i]
+                    let n = if i < patchNormals.Length then patchNormals.[i] else v3 0.0f 1.0f 0.0f
+                    let t = if i < patchTint.Length then patchTint.[i] else v3One
+                    yield!
+                        [|p.X; p.Y; p.Z
+                          tc.X; tc.Y
+                          n.X; n.Y; n.Z
+                          t.X; t.Y; t.Z
+                          patchBlendWeights.[i,0]; patchBlendWeights.[i,1]; patchBlendWeights.[i,2]; patchBlendWeights.[i,3]
+                          patchBlendWeights.[i,4]; patchBlendWeights.[i,5]; patchBlendWeights.[i,6]; patchBlendWeights.[i,7]|]|]
 
-            // compute indices for this patch
+            // compute indices for this patch (same logic as main terrain, but for patch resolution)
             let indices = 
                 [|for y in 0 .. patchSizeY - 2 do
                     for x in 0 .. patchSizeX - 2 do
