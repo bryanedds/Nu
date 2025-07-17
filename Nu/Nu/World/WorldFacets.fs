@@ -3318,6 +3318,9 @@ module TerrainFacetExtensions =
         member this.GetSegments world : Vector2i = this.Get (nameof this.Segments) world
         member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
         member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
+        member this.GetPatchSize world : Vector2i = this.Get (nameof this.PatchSize) world
+        member this.SetPatchSize (value : Vector2i) world = this.Set (nameof this.PatchSize) value world
+        member this.PatchSize = lens (nameof this.PatchSize) this this.GetPatchSize this.SetPatchSize
 
         /// Attempt to get the resolution of the terrain.
         member this.TryGetTerrainResolution world =
@@ -3373,6 +3376,7 @@ type TerrainFacet () =
          define Entity.Tiles (v2 256.0f 256.0f)
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
          define Entity.Segments v2iOne
+         define Entity.PatchSize (v2i Constants.Render.TerrainPatchSizeDefault Constants.Render.TerrainPatchSizeDefault)
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
@@ -3443,7 +3447,8 @@ type TerrainFacet () =
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world
                   HeightMap = entity.GetHeightMap world
-                  Segments = entity.GetSegments world }
+                  Segments = entity.GetSegments world
+                  PatchSize = entity.GetPatchSize world }
             World.enqueueRenderMessage3d
                 (RenderTerrain
                     { Visible = transform.Visible
