@@ -59,5 +59,4 @@ type EnemyDispatcher () =
         // process death
         if entity.GetHealth world <= 0 then
             World.publish entity entity.DeathEvent entity world
-            World.destroyEntity entity world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
