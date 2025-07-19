@@ -190,6 +190,12 @@ module Hl =
         Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
         shaderModule
 
+    /// Get surface capabilities.
+    let private getSurfaceCapabilities vkPhysicalDevice surface =
+        let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
+        Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, surface, &capabilities) |> check
+        capabilities
+    
     /// Create an image view.
     let createImageView format mips image device =
         let mutable info = VkImageViewCreateInfo ()
@@ -306,7 +312,7 @@ module Hl =
         { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
           Extensions : VkExtensionProperties array
-          SurfaceCapabilities : VkSurfaceCapabilitiesKHR
+          SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
           Formats : VkSurfaceFormatKHR array
           GraphicsQueueFamily : uint
           PresentQueueFamily : uint }
@@ -325,12 +331,6 @@ module Hl =
             use extensionsPin = new ArrayPin<_> (extensions)
             Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> check
             extensions
-
-        /// Get surface capabilities.
-        static member private getSurfaceCapabilities vkPhysicalDevice surface =
-            let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-            Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, surface, &capabilities) |> check
-            capabilities
 
         /// Get available surface formats.
         static member private getSurfaceFormats vkPhysicalDevice surface =
@@ -383,7 +383,7 @@ module Hl =
         static member tryCreate vkPhysicalDevice surface =
             let properties = PhysicalDevice.getProperties vkPhysicalDevice
             let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
-            let surfaceCapabilities = PhysicalDevice.getSurfaceCapabilities vkPhysicalDevice surface
+            let surfaceCapabilities = getSurfaceCapabilities vkPhysicalDevice surface
             let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
             match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice surface with
             | (Some graphicsQueueFamily, Some presentQueueFamily) ->
@@ -410,7 +410,7 @@ module Hl =
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
             // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-            let capabilities = physicalDevice.SurfaceCapabilities
+            let capabilities = getSurfaceCapabilities physicalDevice.VkPhysicalDevice surface
             let minImageCount =
                 if capabilities.maxImageCount = 0u
                 then capabilities.minImageCount + 1u
@@ -831,11 +831,14 @@ module Hl =
             format
 
         /// Get swap extent.
-        static member private getSwapExtent (surfaceCapabilities : VkSurfaceCapabilitiesKHR) window =
+        static member private getSwapExtent vkPhysicalDevice surface window =
 
-            // swap extent
-            if surfaceCapabilities.currentExtent.width <> UInt32.MaxValue
-            then surfaceCapabilities.currentExtent
+            // get surface capabilities
+            let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
+            
+            // check if window size is fixed or variable
+            if capabilities.currentExtent.width <> UInt32.MaxValue
+            then capabilities.currentExtent
             else
 
                 // get pixel resolution from sdl
@@ -844,10 +847,10 @@ module Hl =
                 SDL.SDL_Vulkan_GetDrawableSize (window, &width, &height)
 
                 // clamp resolution to size limits
-                width <- max width (int surfaceCapabilities.minImageExtent.width)
-                width <- min width (int surfaceCapabilities.maxImageExtent.width)
-                height <- max height (int surfaceCapabilities.minImageExtent.height)
-                height <- min height (int surfaceCapabilities.maxImageExtent.height)
+                width <- max width (int capabilities.minImageExtent.width)
+                width <- min width (int capabilities.maxImageExtent.width)
+                height <- max height (int capabilities.minImageExtent.height)
+                height <- min height (int capabilities.maxImageExtent.height)
 
                 // fin
                 VkExtent2D (width, height)
@@ -928,7 +931,7 @@ module Hl =
 
         /// Update the swap extent.
         static member updateSwapExtent vkc =
-            vkc._SwapExtent <- VulkanContext.getSwapExtent vkc._PhysicalDevice.SurfaceCapabilities vkc._Window
+            vkc._SwapExtent <- VulkanContext.getSwapExtent vkc._PhysicalDevice.VkPhysicalDevice vkc._Surface vkc._Window
         
         /// Begin the frame.
         static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
@@ -1079,7 +1082,7 @@ module Hl =
 
                 // get surface format and swap extent
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
-                let swapExtent = VulkanContext.getSwapExtent physicalDevice.SurfaceCapabilities window
+                let swapExtent = VulkanContext.getSwapExtent physicalDevice.VkPhysicalDevice surface window
 
                 // setup command system
                 let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
