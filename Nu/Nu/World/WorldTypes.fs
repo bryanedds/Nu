@@ -1866,6 +1866,7 @@ and [<ReferenceEquality>] WorldState =
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
+          EntitiesIndexed : UMap<struct (Group * Type), Entity USet> // NOTE: could even add: UMap<string, EntitySubquery * Entities USet> to entry value where subqueries are populated via NuPlugin.
           WorldExtension : WorldExtension }
 
     override this.ToString () =
@@ -1915,6 +1916,9 @@ and [<NoEquality; NoComparison>] World =
 
     member internal this.Simulants =
         this.WorldState.Simulants
+
+    member internal this.EntitiesIndexed =
+        this.WorldState.EntitiesIndexed
 
     member internal this.WorldExtension =
         this.WorldState.WorldExtension

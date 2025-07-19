@@ -665,6 +665,18 @@ module WorldEntityModule =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
+        /// Get all the entities in a group with the given dispatcher type.
+        static member getEntitiesAs<'d when 'd :> EntityDispatcher> (group : Group) (world : World) : Entity USet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<'d>) with
+            | (true, entities) -> entities
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+
+        /// Get all the entities in a group that have a given facet type.
+        static member getEntitiesWith<'f when 'f :> Facet> (group : Group) (world : World) : Entity USet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<'f>) with
+            | (true, entities) -> entities
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+
         /// Get all the entities directly parented by the group.
         static member getSovereignEntities (group : Group) (world : World) =
             match world.Simulants.TryGetValue (group :> Simulant) with

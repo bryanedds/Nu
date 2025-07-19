@@ -298,6 +298,7 @@ module WorldModule3 =
                   RendererPhysics3d = rendererPhysics3d
                   AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
+            let entitiesIndexed = UMap.makeEmpty HashIdentity.Structural config
             let worldExtension =
                 { ContextImSim = Address.empty
                   DeclaredImSim = Address.empty
@@ -324,6 +325,7 @@ module WorldModule3 =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
+                  EntitiesIndexed = entitiesIndexed
                   WorldExtension = worldExtension }
             let worldState =
                 { worldState with

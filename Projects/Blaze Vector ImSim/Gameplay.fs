@@ -76,11 +76,12 @@ type GameplayDispatcher () =
 
             // process scoring
             for section in 0 .. dec Constants.Gameplay.SectionCount do
-                for _ in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world do
-                    screen.Score.Map ((+) 100) world
+                for enemy in World.getEntitiesAs<EnemyDispatcher> (Simulants.GameplaySection section) world do
+                    for _ in World.doSubscription "Death" enemy.DeathEvent world do
+                        screen.Score.Map ((+) 100) world
 
             // process player death
-            if FQueue.notEmpty (World.doSubscription "Deaths" player.DeathEvent world) then
+            if FQueue.notEmpty (World.doSubscription "Death" player.DeathEvent world) then
                 match screen.GetGameplayState world with
                 | Playing -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                 | Quit -> () // already in quit state, so no need to play sound again

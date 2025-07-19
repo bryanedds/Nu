@@ -53,28 +53,33 @@ type GameplayDispatcher () =
                  Entity.Elevation .= 1.0f]
                 world
 
-            // process attacks
-            for attacked in World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                attacked.HitPoints.Map (dec >> max 0) world
-                if attacked.GetHitPoints world > 0 then
-                    if not (attacked.GetActionState world).IsInjuryState then
-                        attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                else
-                    if not (attacked.GetActionState world).IsWoundState then
-                        attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+            // collect characters for processing
+            let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
 
-            // process deaths
-            for dead in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                match dead.GetCharacterType world with
-                | Enemy ->
-                    World.destroyEntity dead world
-                    screen.Score.Map ((+) 100) world
-                | Player ->
-                    screen.SetGameplayState Quit world
+            // process character attacks
+            for character in characters do
+                for attacked in World.doSubscription "Attack" character.AttackEvent world do
+                    attacked.HitPoints.Map (dec >> max 0) world
+                    if attacked.GetHitPoints world > 0 then
+                        if not (attacked.GetActionState world).IsInjuryState then
+                            attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                    else
+                        if not (attacked.GetActionState world).IsWoundState then
+                            attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+
+            // process character deaths
+            for character in characters do
+                for dead in World.doSubscription "Death" character.DeathEvent world do
+                    match dead.GetCharacterType world with
+                    | Enemy ->
+                        World.destroyEntity dead world
+                        screen.Score.Map ((+) 100) world
+                    | Player ->
+                        screen.SetGameplayState Quit world
 
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
