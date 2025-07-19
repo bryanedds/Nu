@@ -1792,7 +1792,7 @@ module WorldModule2 =
 
                                                     // process tasklets that have been scheduled and are ready to run
                                                     world.Timers.TaskletsTimer.Restart ()
-                                                    WorldModule.TaskletProcessingStarted <- true
+                                                    WorldModule.EndFrameProcessingStarted <- true
                                                     World.processTasklets world
                                                     world.Timers.TaskletsTimer.Stop ()
                                                     match World.getLiveness world with
@@ -1905,7 +1905,7 @@ module WorldModule2 =
 
                                                                     // update time and recur
                                                                     world.Timers.FrameTimer.Stop ()
-                                                                    WorldModule.TaskletProcessingStarted <- false
+                                                                    WorldModule.EndFrameProcessingStarted <- false
                                                                     World.updateTime world
                                                                     if world.Advancing then
                                                                         World.publish () (Events.TimeUpdateEvent --> Game) Game world
