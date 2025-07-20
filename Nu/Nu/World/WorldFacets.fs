@@ -3095,8 +3095,6 @@ module StaticModelSurfaceFacetExtensions2 =
     type Entity with
 
         /// Attempt to get the currently assigned albedo image, looking it up from metadata when unassigned.
-        /// Useful in editor because oftentimes the only useful identifying information about a static model surface is
-        /// its material assets, particularly its albedo image.
         member this.TryGetAlbedoImage world =
             if this.Has<StaticModelSurfaceFacet> world then
                 let material = this.GetMaterial world
@@ -3116,7 +3114,14 @@ module StaticModelSurfaceFacetExtensions2 =
 
         /// Attempt to get the currently assigned albedo image asset name, looking it up from metadata when unassigned.
         /// Useful in editor because oftentimes the only useful identifying information about a static model surface is
-        /// its material assets, particularly its albedo image.
+        /// its material assets, particularly its albedo image like so -
+        /// <code>
+        /// for entity in World.getEntities SelectedGroup world do
+        ///     match entity.TryGetAlbedoImageAssetName world with
+        ///     | ValueSome name when name.Contains "Glass" ->
+        ///         entity.SetRenderStyle (Forward (0.0f, 0.0f)) world
+        ///     | _ -> ()
+        /// </code>
         member this.TryGetAlbedoImageAssetName world =
             match this.TryGetAlbedoImage world with
             | ValueSome albedoImage -> ValueSome albedoImage.AssetName
