@@ -3090,6 +3090,39 @@ type StaticModelSurfaceFacet () =
         | ValueNone -> [|Miss|]
 
 [<AutoOpen>]
+module StaticModelSurfaceFacetExtensions2 =
+
+    type Entity with
+
+        /// Attempt to get the currently assigned albedo image, looking it up from metadata when unassigned.
+        /// Useful in editor because oftentimes the only useful identifying information about a static model surface is
+        /// its material assets, particularly its albedo image.
+        member this.TryGetAlbedoImage world =
+            if this.Has<StaticModelSurfaceFacet> world then
+                let material = this.GetMaterial world
+                match material.AlbedoImageOpt with
+                | ValueSome _ as albedoImageOpt -> albedoImageOpt
+                | ValueNone ->
+                    let staticModel = this.GetStaticModel world
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | ValueSome metadata ->
+                        let surfaceIndex = this.GetSurfaceIndex world
+                        let surface = metadata.Surfaces.[surfaceIndex]
+                        match Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel with
+                        | ValueSome _ as albedoImageOpt -> albedoImageOpt
+                        | ValueNone -> ValueNone
+                    | ValueNone -> ValueNone
+            else ValueNone
+
+        /// Attempt to get the currently assigned albedo image asset name, looking it up from metadata when unassigned.
+        /// Useful in editor because oftentimes the only useful identifying information about a static model surface is
+        /// its material assets, particularly its albedo image.
+        member this.TryGetAlbedoImageAssetName world =
+            match this.TryGetAlbedoImage world with
+            | ValueSome albedoImage -> ValueSome albedoImage.AssetName
+            | ValueNone -> ValueNone
+
+[<AutoOpen>]
 module AnimatedModelFacetExtensions =
     type Entity with
 
