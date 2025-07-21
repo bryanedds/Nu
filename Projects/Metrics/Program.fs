@@ -100,7 +100,7 @@ type MyGameDispatcher () =
 #else
     inherit GameDispatcher ()
 
-    static let Positions = // 40,000 entities (goal: 60FPS, current 55FPS)
+    static let Positions = // 40,000 entities (goal: 60FPS, current 45FPS)
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 16 do
