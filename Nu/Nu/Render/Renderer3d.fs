@@ -3733,32 +3733,32 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let reflectionMap =
                             OpenGL.LightMap.CreateReflectionMap
                                 (GlRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter lightBox renderPass (GlRenderer3d.getRenderTasks renderPass renderer) renderer,
-                                    Constants.Render.ReflectionMapResolution,
-                                    lightProbeOrigin,
-                                    lightProbeAmbientColor,
-                                    lightProbeAmbientBrightness,
-                                    renderer.ReflectionRenderbuffer,
-                                    renderer.ReflectionFramebuffer)
+                                 Constants.Render.ReflectionMapResolution,
+                                 lightProbeOrigin,
+                                 lightProbeAmbientColor,
+                                 lightProbeAmbientBrightness,
+                                 renderer.ReflectionRenderbuffer,
+                                 renderer.ReflectionFramebuffer)
 
                         // create irradiance map
                         let irradianceMap =
                             OpenGL.LightMap.CreateIrradianceMap
                                 (Constants.Render.IrradianceMapResolution,
-                                    OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
-                                    renderer.IrradianceShader,
-                                    renderer.CubeMapVao,
-                                    renderer.IrradianceMapRenderbuffer,
-                                    renderer.IrradianceMapFramebuffer)
+                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                 renderer.IrradianceShader,
+                                 renderer.CubeMapVao,
+                                 renderer.IrradianceMapRenderbuffer,
+                                 renderer.IrradianceMapFramebuffer)
 
                         // create env filter map
                         let environmentFilterMap =
                             OpenGL.LightMap.CreateEnvironmentFilterMap
                                 (Constants.Render.EnvironmentFilterResolution,
-                                    OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
-                                    renderer.EnvironmentFilterShader,
-                                    renderer.CubeMapVao,
-                                    renderer.EnvironmentFilterRenderbuffer,
-                                    renderer.EnvironmentFilterFramebuffer)
+                                 OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                 renderer.EnvironmentFilterShader,
+                                 renderer.CubeMapVao,
+                                 renderer.EnvironmentFilterRenderbuffer,
+                                 renderer.EnvironmentFilterFramebuffer)
 
                         // destroy reflection map
                         reflectionMap.Destroy ()
