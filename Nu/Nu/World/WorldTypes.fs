@@ -2312,7 +2312,7 @@ module LensOperators =
                 typeof<'a>
                 (fun (target : obj) (world : obj) -> get (target :?> 't) (world :?> World) :> obj)
                 (match setOpt with
-                 | Some set -> Some (fun value (target : obj) (world : obj) -> set (value :?> 'a) (target :?> 't) (world :?> World) :> obj)
+                 | Some set -> Some (fun value (target : obj) (world : obj) -> set (value :?> 'a) (target :?> 't) (world :?> World))
                  | None -> None)
         PropertyDefinition.makeValidated lens.Name typeof<ComputedProperty> (ComputedExpr computedProperty)
 

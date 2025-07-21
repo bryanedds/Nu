@@ -40,10 +40,3 @@ module CoreOperators =
     /// Test for object inequality.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
-
-    /// Force a value to be in between zero and one.
-    /// TODO: remove this after updating Prime.
-    let inline saturate (a : 'a) =
-        a
-        |> max (zero ())
-        |> min (one ())
