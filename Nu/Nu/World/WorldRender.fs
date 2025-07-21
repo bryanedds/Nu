@@ -14,9 +14,6 @@ module WorldRender =
         static member internal getRendererProcess world =
             world.Subsystems.RendererProcess
 
-        static member internal withRendererProcess fn world =
-            fn (World.getRendererProcess world)
-
         /// Get the current configuration of the 3d renderer.
         static member getRenderer3dConfig world =
             world.Subsystems.RendererProcess.Renderer3dConfig
@@ -24,7 +21,6 @@ module WorldRender =
         /// Set the current configuration of the 3d renderer.
         static member setRenderer3dConfig config world =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
-            world
 
         /// Map the configuration of the 3d renderer.
         static member mapRenderer3dConfig mapper world =
@@ -42,8 +38,8 @@ module WorldRender =
             for message in messages do rendererProcess.EnqueueMessage3d message
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, depthTest, renderType, renderPass, world) =
-            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, staticModel, depthTest, renderType, renderPass)
+        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, clipped, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, &materialProperties, staticModel, clipped, depthTest, renderType, renderPass)
 
         /// Send a message to the render system to render a static model surface using a fast path.
         static member renderStaticModelSurfaceFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, material : Material inref, staticModel, surfaceIndex, depthTest, renderType, renderPass, world) =

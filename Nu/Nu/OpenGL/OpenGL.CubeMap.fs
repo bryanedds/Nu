@@ -239,6 +239,7 @@ module CubeMap =
     type CubeMapShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ViewProjectionUniform : int
           CubeMapUniform : int
           CubeMapShader : uint }
 
@@ -252,11 +253,13 @@ module CubeMap =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ViewProjectionUniform = viewProjectionUniform
           CubeMapUniform = cubeMapUniform
           CubeMapShader = shader }
 
@@ -264,6 +267,7 @@ module CubeMap =
     let DrawCubeMap
         (view : single array,
          projection : single array,
+         viewProjection : single array,
          cubeMap : Texture.Texture,
          geometry : CubeMapGeometry,
          shader : CubeMapShader,
@@ -276,11 +280,13 @@ module CubeMap =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // setup shader
         Gl.UseProgram shader.CubeMapShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap.TextureId)
@@ -297,8 +303,6 @@ module CubeMap =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 

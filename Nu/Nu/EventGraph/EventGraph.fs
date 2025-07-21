@@ -240,10 +240,10 @@ module EventGraph =
 
     /// Sort subscriptions using categorization via the 'by' procedure.
     let sortSubscriptionsBy by (subscriptions : KeyValuePair<uint64, SubscriptionEntry> array) (world : 'w) : KeyValuePair<uint64, SubscriptionEntry> array =
-        getSortableSubscriptions by subscriptions world |>
-        Array.ofSeq |>
-        Array.sortWith (fun (struct (p : IComparable, _)) (struct (p2 : IComparable, _)) -> p.CompareTo p2) |>
-        Array.map snd'
+        getSortableSubscriptions by subscriptions world
+        |> Array.ofSeq
+        |> Array.sortWith (fun (struct (p : IComparable, _)) (struct (p2 : IComparable, _)) -> p.CompareTo p2)
+        |> Array.map snd'
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry array) (_ : 'w) =

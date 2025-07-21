@@ -5,6 +5,7 @@ open Prime
 open Nu
 open BlazeVector
 
+// this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
     | Quit
@@ -32,9 +33,9 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Process (selectionResults, screen, world) =
 
-        // process initialization
-        let initializing = FQueue.contains Select selectionResults
-        if initializing then
+        // process screen selection
+        let selecting = FQueue.contains Select selectionResults
+        if selecting then
 
             // reset score
             Simulants.Gameplay.SetScore 0 world
@@ -68,18 +69,20 @@ type GameplayDispatcher () =
 
             // declare player
             World.doEntity<PlayerDispatcher> "Player"
-                [if initializing then Entity.Position @= v3 -390.0f -50.0f 0.0f
+                [if selecting then Entity.Position @= v3 -390.0f -50.0f 0.0f
                  Entity.Elevation .= 1.0f]
                 world
             let player = world.DeclaredEntity
 
             // process scoring
             for section in 0 .. dec Constants.Gameplay.SectionCount do
-                for _ in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplaySection section --> Address.Wildcard) world do
-                    screen.Score.Map ((+) 100) world
+                for enemy in World.getEntitiesAs<EnemyDispatcher> (Simulants.GameplaySection section) world do
+                    for _ in World.doSubscription "Death" enemy.DeathEvent world do
+                        World.destroyEntity enemy world
+                        screen.Score.Map ((+) 100) world
 
             // process player death
-            if FQueue.notEmpty (World.doSubscription "Deaths" player.DeathEvent world) then
+            if FQueue.notEmpty (World.doSubscription "Death" player.DeathEvent world) then
                 match screen.GetGameplayState world with
                 | Playing -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                 | Quit -> () // already in quit state, so no need to play sound again

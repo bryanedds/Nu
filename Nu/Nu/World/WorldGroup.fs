@@ -254,12 +254,12 @@ module WorldGroupModule =
 
         /// Write multiple groups to a screen descriptor.
         static member writeGroups groups world =
-            groups |>
-            Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
-            Seq.filter (fun (group : Group) -> group.GetPersistent world && not (group.GetProtected world)) |>
-            Seq.fold (fun groupDescriptors group -> World.writeGroup GroupDescriptor.empty group world :: groupDescriptors) [] |>
-            Seq.rev |>
-            Seq.toList
+            groups
+            |> Seq.sortBy (fun (group : Group) -> group.GetOrder world)
+            |> Seq.filter (fun (group : Group) -> group.GetPersistent world && not (group.GetProtected world))
+            |> Seq.fold (fun groupDescriptors group -> World.writeGroup GroupDescriptor.empty group world :: groupDescriptors) []
+            |> Seq.rev
+            |> Seq.toList
 
         /// Write a group to a file.
         static member writeGroupToFile (filePath : string) group world =

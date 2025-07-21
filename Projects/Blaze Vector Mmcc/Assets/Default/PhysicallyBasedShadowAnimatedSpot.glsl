@@ -6,6 +6,7 @@ const int BONES_INFLUENCE_MAX = 4;
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewProjection;
 uniform mat4 bones[BONES_MAX];
 
 layout(location = 0) in vec3 position;
@@ -27,7 +28,7 @@ void main()
     vec4 positionBlended = boneBlended * vec4(position, 1.0);
     vec4 positionOut = model * positionBlended;
     positionOut /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
-    gl_Position = projection * view * positionOut;
+    gl_Position = viewProjection * positionOut;
 }
 
 #shader fragment

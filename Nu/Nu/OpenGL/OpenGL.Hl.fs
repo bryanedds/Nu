@@ -66,6 +66,14 @@ module Hl =
         Gl.DebugMessageControl (DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, [||], true)
         Gl.DebugMessageCallback (DebugMessageProc, nativeint 0)
 
+    /// Check if an OpenGL internal format is supported.
+    let CheckFormat (format : InternalFormat) =
+        let result = [|0|]
+        Gl.GetInternalformat (TextureTarget.Renderbuffer, format, InternalFormatPName.InternalformatSupported, result)
+        if result.[0] = 0
+        then Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required.")
+        else format
+
     /// Create an SDL OpenGL context with the given window.
     let CreateSglContextInitial window =
         Gl.Initialize ()
@@ -81,8 +89,8 @@ module Hl =
             Log.fail "Failed to create OpenGL version 4.6 or higher. Install your system's latest graphics drivers and try again."
         let vendorName = Gl.GetString StringName.Vendor
         let glFinishRequired =
-            Constants.Render.VendorNamesExceptedFromSwapGlFinishRequirement |>
-            List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))
+            Constants.Render.VendorNamesExceptedFromSwapGlFinishRequirement
+            |> List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))
         if glFinishRequired then Log.warn "Requirement to call 'glFinish' before swapping is detected on current hardware. This will likely reduce rendering performance."
         (glFinishRequired, glContext)
 

@@ -22,6 +22,7 @@ type EnemyDispatcher () =
 
     static member Properties =
         [define Entity.Size (v3 24.0f 48.0f 0.0f)
+         define Entity.MountOpt None
          define Entity.BodyType Dynamic
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Friction 0.0f
@@ -38,10 +39,9 @@ type EnemyDispatcher () =
     override this.Process (entity, world) =
 
         // process walking
-        let eyeBounds = world.Eye2dBounds
+        let bodyId = entity.GetBodyId world
         let entityBounds = entity.GetBounds world
-        if world.Advancing && entityBounds.Box2.Intersects eyeBounds then
-            let bodyId = entity.GetBodyId world
+        if world.Advancing && entityBounds.Box2.Intersects world.Eye2dBounds then
             World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
 
         // process hits
@@ -59,5 +59,4 @@ type EnemyDispatcher () =
         // process death
         if entity.GetHealth world <= 0 then
             World.publish entity entity.DeathEvent entity world
-            World.destroyEntity entity world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world

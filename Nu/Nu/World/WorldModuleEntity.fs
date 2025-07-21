@@ -23,6 +23,9 @@ module WorldModuleEntity =
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
 
+    /// OPTIMIZATION: cache layout facet type for quick containment check.
+    let mutable internal LayoutFacetType = Unchecked.defaultof<Type>
+
     type World with
 
         static member private entityStateFinder (entity : Entity) world =
@@ -551,13 +554,13 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
 
         static member getPropagationSources world =
-            world.WorldExtension.PropagationTargets |>
-            Seq.map _.Value |>
-            Seq.concat |>
-            Seq.choose (fun entity -> World.getEntityPropagationSourceOpt entity world) |>
-            hashSetPlus HashIdentity.Structural |>
-            Seq.filter (fun entity -> World.getEntityExists entity world) |>
-            Seq.toArray
+            world.WorldExtension.PropagationTargets
+            |> Seq.map _.Value
+            |> Seq.concat
+            |> Seq.choose (fun entity -> World.getEntityPropagationSourceOpt entity world)
+            |> hashSetPlus HashIdentity.Structural
+            |> Seq.filter (fun entity -> World.getEntityExists entity world)
+            |> Seq.toArray
 
         /// Check that entity has entities to propagate its structure to.
         static member hasPropagationTargets entity world =
@@ -1107,6 +1110,15 @@ module WorldModuleEntity =
             World.setEntityAnglesLocal (Math.DegreesToRadians3d value) entity world
 
         static member internal propagateEntityElevation3 mount mounter world =
+
+            // HACK: for layout-based entities like guis, elevate them to make sure they're enough above their parent.
+            // This is worth the hack because it's an important UX improvement.
+            if  World.getEntityElevationLocal mounter world < 1.0f &&
+                Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mount world) &&
+                Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mounter world) then
+                World.setEntityElevationLocal 1.0f mounter world |> ignore<bool>
+
+            // propagate elevation
             let elevationMount = World.getEntityElevation mount world
             let elevationLocal = World.getEntityElevationLocal mounter world
             let elevation = elevationMount + elevationLocal
@@ -1238,12 +1250,12 @@ module WorldModuleEntity =
                 entityState.VisibleLocal <- value
                 World.publishEntityChange (nameof entityState.VisibleLocal) previous value entityState.PublishChangeEvents entity world
                 let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
-                let enabledMount =
+                let visibleMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
                     | _ -> true
-                let enabled = enabledMount && value
-                World.setEntityVisible enabled entity world |> ignore<bool>
+                let visible = visibleMount && value
+                World.setEntityVisible visible entity world |> ignore<bool>
                 true
             else false
 
@@ -1797,13 +1809,30 @@ module WorldModuleEntity =
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa (Events.UpdateEvent --> entity)) world
 
+        static member internal registerEntityIndex (ty : Type) (entity : Entity) (world : World) =
+            for ty in ty :: Reflection.getBaseTypesExceptObject ty do
+                match world.EntitiesIndexed.TryGetValue struct (entity.Group, ty) with
+                | (true, entities) ->
+                    entities.Add entity |> ignore<bool>
+                | (false, _) ->
+                    world.EntitiesIndexed.[struct (entity.Group, ty)] <- HashSet.singleton HashIdentity.Structural entity
+
+        static member internal unregisterEntityIndex (ty : Type) (entity : Entity) (world : World) =
+            for ty in ty :: Reflection.getBaseTypesExceptObject ty do
+                match world.EntitiesIndexed.TryGetValue struct (entity.Group, ty) with
+                | (true, entities) ->
+                    entities.Remove entity |> ignore<bool>
+                    if entities.Count = 0 then world.EntitiesIndexed.Remove struct (entity.Group, ty) |> ignore<bool>
+                | (false, _) -> ()
+
         static member internal registerEntity entity world =
             let facets = World.getEntityFacets entity world
             for facet in facets do
+                World.registerEntityIndex (getType facet) entity world
                 facet.Register (entity, world)
-                if WorldModule.getSelected entity world then
-                    facet.RegisterPhysics (entity, world)
+                if WorldModule.getSelected entity world then facet.RegisterPhysics (entity, world)
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            World.registerEntityIndex (getType dispatcher) entity world
             dispatcher.Register (entity, world)
             World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
             let eventTrace = EventTrace.debug "World" "registerEntity" "Register" EventTrace.empty
@@ -1825,8 +1854,10 @@ module WorldModuleEntity =
                 facet.Unregister (entity, world)
                 if WorldModule.getSelected entity world then
                     facet.UnregisterPhysics (entity, world)
+                World.unregisterEntityIndex (getType facet) entity world
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             dispatcher.Unregister (entity, world)
+            World.unregisterEntityIndex (getType dispatcher) entity world
 
         static member internal registerEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
@@ -2019,11 +2050,20 @@ module WorldModuleEntity =
                 WorldModule.tryProcessEntity true entity world
 
             // propagate properties
-            if World.getEntityMounted entity world then
+            match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
+            | Some mount ->
+                // NOTE: this results in an n^2 application of propagation, which might need to be optimized by
+                // creating a new function that only propagates from the mount to this individual entity.
+                World.propagateEntityAffineMatrix mount world
+                World.propagateEntityElevation mount world
+                World.propagateEntityEnabled mount world
+                World.propagateEntityVisible mount world
+            | None when World.getEntityMounted entity world ->
                 World.propagateEntityAffineMatrix entity world
                 World.propagateEntityElevation entity world
                 World.propagateEntityEnabled entity world
                 World.propagateEntityVisible entity world
+            | None -> ()
 
             // insert a propagated descriptor if needed
             match World.getEntityPropagatedDescriptorOpt entity world with
@@ -2093,12 +2133,12 @@ module WorldModuleEntity =
 
         /// Write multiple entities to a group descriptor.
         static member writeEntities writeOrder writePropagationHistory entities world =
-            entities |>
-            Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world) |>
-            Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world)) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) [] |>
-            Seq.rev |>
-            Seq.toList
+            entities
+            |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
+            |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world))
+            |> Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) []
+            |> Seq.rev
+            |> Seq.toList
 
         /// Write an entity to a file.
         static member writeEntityToFile writeOrder writePropagationHistory (filePath : string) enity world =

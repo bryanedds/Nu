@@ -12,12 +12,6 @@ module WorldSimulantModule =
 
     type World with
 
-        static member internal addSimulantScriptUnsubscription =
-            WorldModule.addSimulantScriptUnsubscription
-
-        static member internal unsubscribeSimulantScripts =
-            WorldModule.unsubscribeSimulantScripts
-
         static member internal tryGetState (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState |> Some
@@ -299,9 +293,9 @@ module PropertyDescriptor =
         else
             let state = World.getState simulant world
             let xtensionOpt =
-                properties |>
-                Array.tryFind (fun p -> p.Name = Constants.Engine.XtensionPropertyName && p.PropertyType = typeof<Xtension>) |>
-                Option.map (fun p -> p.GetValue state :?> Xtension)
+                properties
+                |> Array.tryFind (fun p -> p.Name = Constants.Engine.XtensionPropertyName && p.PropertyType = typeof<Xtension>)
+                |> Option.map (fun p -> p.GetValue state :?> Xtension)
             match xtensionOpt with
             | Some xtension ->
                 let mutable p = Unchecked.defaultof<Property>

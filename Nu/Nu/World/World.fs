@@ -82,6 +82,9 @@ type Nu () =
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
 
+            // init entity module
+            WorldModuleEntity.LayoutFacetType <- typeof<LayoutFacet>
+
             // init user-defined initialization process
             let result = userInit ()
 
@@ -227,13 +230,13 @@ module WorldModule3 =
 
             // update late-bound types
             let pluginType =
-                assemblies |>
-                Array.map (fun assembly -> assembly.GetTypes ()) |>
-                Array.concat |>
-                Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>) |>
-                Array.filter (fun ty -> not ty.IsAbstract) |>
-                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0)) |>
-                Array.head
+                assemblies
+                |> Array.map (fun assembly -> assembly.GetTypes ())
+                |> Array.concat
+                |> Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>)
+                |> Array.filter (fun ty -> not ty.IsAbstract)
+                |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+                |> Array.head
             let plugin = Activator.CreateInstance pluginType :?> NuPlugin
             let pluginFacets = plugin.Birth<Facet> assemblies
             let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> assemblies
@@ -263,8 +266,8 @@ module WorldModule3 =
                   Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
                   Array.map (snd >> cast<LateBindings>) pluginGroupDispatchers
                   Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
-                Array.concat
+                  Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|]
+                |> Array.concat
             for simulant in (World.getSimulants world).Keys do
                 for lateBindings in lateBindingses do
                     World.updateLateBindings3 lateBindings simulant world
@@ -272,7 +275,7 @@ module WorldModule3 =
                 World.trySynchronize true simulant world
 
         /// Make the world.
-        static member make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let entityStates = SDictionary.make HashIdentity.Structural
             let groupStates = Dictionary HashIdentity.Structural
@@ -287,6 +290,7 @@ module WorldModule3 =
                   RendererPhysics3d = rendererPhysics3d
                   AudioPlayer = audioPlayer }
             let simulants = Dictionary.singleton HashIdentity.Structural (Game :> Simulant) None
+            let entitiesIndexed = Dictionary HashIdentity.Structural
             let worldExtension =
                 { ContextImSim = Address.empty
                   DeclaredImSim = Address.empty
@@ -312,12 +316,13 @@ module WorldModule3 =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
+                  EntitiesIndexed = entitiesIndexed
                   WorldExtension = worldExtension }
             Reflection.attachProperties gameState.Dispatcher gameState world
             World.choose world
 
-        /// Make an empty world.
-        static member makeEmpty config (plugin : NuPlugin) =
+        /// Make a world with stub dependencies.
+        static member makeStub config (plugin : NuPlugin) =
 
             // make the world's event delegate
             let eventGraph =
@@ -364,7 +369,7 @@ module WorldModule3 =
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // register the game
             World.registerGame Game world
@@ -372,110 +377,103 @@ module WorldModule3 =
             // fin
             world
 
-        /// Attempt to make the world, returning either a Right World on success, or a Left string
-        /// (with an error message) on failure.
-        static member tryMake sdlDeps config geometryViewport rasterViewport (outerViewport : Viewport) (plugin : NuPlugin) =
+        /// Make the world with the given dependencies.
+        static member make sdlDeps config geometryViewport rasterViewport (outerViewport : Viewport) (plugin : NuPlugin) =
 
-            // attempt to create asset graph
-            match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
-            | Right assetGraph ->
+            // create asset graph
+            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
 
-                // compute initial pacakges
-                let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
+            // compute initial pacakges
+            let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
 
-                // initialize metadata and load initial package
-                Metadata.init assetGraph
-                for package in initialPackages do
-                    Metadata.loadMetadataPackage package
+            // initialize metadata and load initial package
+            Metadata.init assetGraph
+            for package in initialPackages do
+                Metadata.loadMetadataPackage package
 
-                // make the world's event graph
-                let eventGraph =
-                    let eventTracing = Constants.Engine.EventTracing
-                    let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None
-                    let eventFilter = Constants.Engine.EventFilter
-                    let globalSimulant = Game
-                    let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
-                    EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized 
+            // make the world's event graph
+            let eventGraph =
+                let eventTracing = Constants.Engine.EventTracing
+                let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None
+                let eventFilter = Constants.Engine.EventFilter
+                let globalSimulant = Game
+                let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
+                EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized 
                     
-                // make plug-in facets and dispatchers
-                let pluginAssemblies = [|plugin.GetType().Assembly|]
-                let pluginFacets = plugin.Birth<Facet> pluginAssemblies
-                let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
-                let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
-                let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> pluginAssemblies
-                let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
+            // make plug-in facets and dispatchers
+            let pluginAssemblies = [|plugin.GetType().Assembly|]
+            let pluginFacets = plugin.Birth<Facet> pluginAssemblies
+            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
+            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
+            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> pluginAssemblies
+            let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
 
-                // make the default game dispatcher
-                let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
+            // make the default game dispatcher
+            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
-                // make the job graph
-                let jobGraph =
-                    if Constants.Engine.RunSynchronously
-                    then JobGraphInline () :> JobGraph
-                    else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
+            // make the job graph
+            let jobGraph =
+                if Constants.Engine.RunSynchronously
+                then JobGraphInline () :> JobGraph
+                else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
 
-                // make the world's dispatchers
-                let dispatchers =
-                    { Facets = World.makeDefaultFacets () |> Map.addMany pluginFacets |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.addMany pluginEntityDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.addMany pluginGroupDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.addMany pluginScreenDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
-                      GameDispatchers = Map.ofList [defaultGameDispatcher] |> Map.addMany pluginGameDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal }
+            // make the world's dispatchers
+            let dispatchers =
+                { Facets = World.makeDefaultFacets () |> Map.addMany pluginFacets |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.addMany pluginEntityDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.addMany pluginGroupDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  ScreenDispatchers = World.makeDefaultScreenDispatchers () |> Map.addMany pluginScreenDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
+                  GameDispatchers = Map.ofList [defaultGameDispatcher] |> Map.addMany pluginGameDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal }
 
-                // get the first game dispatcher
-                let activeGameDispatcher =
-                    match Array.tryHead pluginGameDispatchers with
-                    | Some (_, dispatcher) -> dispatcher
-                    | None -> GameDispatcher ()
+            // get the first game dispatcher
+            let activeGameDispatcher =
+                match Array.tryHead pluginGameDispatchers with
+                | Some (_, dispatcher) -> dispatcher
+                | None -> GameDispatcher ()
 
-                // make the world's subsystems, loading initial packages where applicable
-                let imGui = ImGui (false, outerViewport.Bounds.Size)
-                let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
-                let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
-                let rendererProcess =
-                    if Constants.Engine.RunSynchronously
-                    then RendererInline () :> RendererProcess
-                    else RendererThread () :> RendererProcess
-                rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport rasterViewport outerViewport
-                for package in initialPackages do
-                    rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
-                for package in initialPackages do
-                    rendererProcess.EnqueueMessage3d (LoadRenderPackage3d package)
-                let audioPlayer =
-                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
-                    then SdlAudioPlayer.make () :> AudioPlayer
-                    else StubAudioPlayer.make () :> AudioPlayer
-                for package in initialPackages do
-                    audioPlayer.EnqueueMessage (LoadAudioPackageMessage package)
-                let symbolics = Symbolics.makeEmpty ()
+            // make the world's subsystems, loading initial packages where applicable
+            let imGui = ImGui (false, outerViewport.Bounds.Size)
+            let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
+            let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
+            let rendererProcess =
+                if Constants.Engine.RunSynchronously
+                then RendererInline () :> RendererProcess
+                else RendererThread () :> RendererProcess
+            rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport rasterViewport outerViewport
+            for package in initialPackages do
+                rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
+            for package in initialPackages do
+                rendererProcess.EnqueueMessage3d (LoadRenderPackage3d package)
+            let audioPlayer =
+                if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
+                then SdlAudioPlayer.make () :> AudioPlayer
+                else StubAudioPlayer.make () :> AudioPlayer
+            for package in initialPackages do
+                audioPlayer.EnqueueMessage (LoadAudioPackageMessage package)
+            let symbolics = Symbolics.makeEmpty ()
 
-                // attempt to make the overlayer
-                let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays Assets.Global.OverlayerFilePath with
-                | Right overlayer ->
+            // attempt to make the overlayer
+            let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+            let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
 
-                    // make the world's ambient state
-                    let timers = Timers.make ()
-                    let ambientState = AmbientState.make config.Accompanied config.Advancing config.FramePacing symbolics overlayer timers (Some sdlDeps)
+            // make the world's ambient state
+            let timers = Timers.make ()
+            let ambientState = AmbientState.make config.Accompanied config.Advancing config.FramePacing symbolics overlayer timers (Some sdlDeps)
 
-                    // make the world's spatial trees
-                    let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
-                    let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
+            // make the world's spatial trees
+            let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
+            let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
-                    // make the world
-                    let world = World.make plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+            // make the world
+            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
-                    // add the keyed values
-                    for (key, value) in plugin.MakeKeyedValues world do
-                        World.addKeyedValue key value world
+            // add the keyed values
+            for (key, value) in plugin.MakeKeyedValues world do
+                World.addKeyedValue key value world
 
-                    // register the game
-                    World.registerGame Game world
-                    Right world
-
-                // forward error messages
-                | Left error -> Left error
-            | Left error -> Left error
+            // register the game
+            World.registerGame Game world
+            world
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
@@ -483,9 +481,8 @@ module WorldModule3 =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin with
-                | Right world -> World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess Live true world
-                | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
+                let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
+                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon

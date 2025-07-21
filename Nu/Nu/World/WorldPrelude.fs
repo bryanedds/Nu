@@ -261,9 +261,9 @@ type FlowDirection =
 
 /// A gui layout.
 type Layout =
-    | Flow of FlowDirection * FlowLimit
-    | Dock of Vector4 * bool * bool
-    | Grid of Vector2i * FlowDirection option * bool
+    | Flow of FlowDirection : FlowDirection * FlowLimit : FlowLimit
+    | Dock of Bounds : Vector4 * PercentageBased : bool * ResizeChildren : bool
+    | Grid of Dims : Vector2i * FlowDirectionOpt : FlowDirection option * ResizeChildren : bool
     | Manual
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
@@ -368,6 +368,7 @@ type Timers =
       PostUpdateGameTimer : Stopwatch
       PostUpdateScreensTimer : Stopwatch
       PostUpdateGroupsTimer : Stopwatch
+      CoroutinesTimer : Stopwatch
       TaskletsTimer : Stopwatch
       DestructionTimer : Stopwatch
       PerProcessTimer : Stopwatch
@@ -385,6 +386,7 @@ type Timers =
       mutable GcTotalTime : TimeSpan
       mutable GcFrameTime : TimeSpan }
 
+    /// Make timers.
     static member make () =
         let gcTime = GC.GetTotalPauseDuration ()
         { InputTimer = Stopwatch ()
@@ -405,6 +407,7 @@ type Timers =
           PostUpdateGameTimer = Stopwatch ()
           PostUpdateScreensTimer = Stopwatch ()
           PostUpdateGroupsTimer = Stopwatch ()
+          CoroutinesTimer = Stopwatch ()
           TaskletsTimer = Stopwatch ()
           DestructionTimer = Stopwatch ()
           PerProcessTimer = Stopwatch ()
@@ -449,6 +452,7 @@ module AmbientState =
               // cache line 3
               mutable TickDeltaPrevious : int64
               mutable DateTime : DateTimeOffset
+              mutable Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
               mutable Tasklets : OMap<Simulant, 'w Tasklet UList>
               mutable SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -574,6 +578,19 @@ module AmbientState =
     /// Get the key-value store.
     let getKeyValueStore state =
         state.KeyValueStore
+
+    /// Get the active coroutines.
+    let getCoroutines state =
+        state.Coroutines
+
+    /// Set the active coroutines.
+    let setCoroutines coroutines state =
+        state.Coroutines <- coroutines
+
+    /// Add a coroutine to the active coroutines.
+    let addCoroutine coroutine state =
+        let id = Gen.id64
+        state.Coroutines <- OMap.add id coroutine state.Coroutines
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -712,6 +729,7 @@ module AmbientState =
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
+          Coroutines = OMap.makeEmpty HashIdentity.Structural Imperative
           Tasklets = OMap.makeEmpty HashIdentity.Structural Imperative
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

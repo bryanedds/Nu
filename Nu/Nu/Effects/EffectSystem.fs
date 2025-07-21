@@ -58,9 +58,9 @@ module EffectSystem =
             else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
 
     let private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
-        keyFrames |>
-        selectKeyFrames2 localTime playback |>
-        fun (fst, snd, thd) -> (fst, snd, thd)
+        keyFrames
+        |> selectKeyFrames2 localTime playback
+        |> fun (fst, snd, thd) -> (fst, snd, thd)
 
     let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm =
         match algorithm with
@@ -495,7 +495,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal height twoSided aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal height twoSided clipped aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource albedo effectSystem
@@ -536,7 +536,8 @@ module EffectSystem =
                       SubdermalImageOpt = ValueNone
                       FinenessImageOpt = ValueNone
                       ScatterImageOpt = ValueNone
-                      TwoSidedOpt = ValueSome twoSided }
+                      TwoSidedOpt = ValueSome twoSided
+                      ClippedOpt = ValueSome clipped }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
@@ -554,7 +555,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalStaticModel resource aspects content (slice : Slice) history effectSystem =
+    and private evalStaticModel resource clipped aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let staticModel = evalResource resource effectSystem
@@ -587,6 +588,7 @@ module EffectSystem =
                           InsetOpt = insetOpt
                           MaterialProperties = properties
                           StaticModel = staticModel
+                          Clipped = clipped
                           DepthTest = LessThanOrEqualTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem
@@ -608,13 +610,13 @@ module EffectSystem =
 
         // eval iterative repeat
         | Iterate count ->
-            Array.fold
+            [|0 .. count - 1|]
+            |> Array.fold
                 (fun (slice, effectSystem) _ ->
                     let (slice, effectSystem) = iterateDataTokens incrementAspects content slice history effectSystem
                     (slice, effectSystem))
                 (slice, effectSystem)
-                [|0 .. count - 1|] |>
-            snd
+            |> snd
 
         // eval cycling repeat
         | Cycle count ->
@@ -688,10 +690,10 @@ module EffectSystem =
             evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, twoSided, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight twoSided aspects content slice history effectSystem
-        | StaticModel (resource, aspects, content) ->
-            evalStaticModel resource aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, twoSided, clipped, aspects, content) ->
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight twoSided clipped aspects content slice history effectSystem
+        | StaticModel (resource, clipped, aspects, content) ->
+            evalStaticModel resource clipped aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
             evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->

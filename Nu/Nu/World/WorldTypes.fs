@@ -367,7 +367,6 @@ and SnapshotType =
     | FreezeEntities
     | ThawEntities
     | Permafreeze
-    | Permasplit
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
@@ -410,7 +409,6 @@ and SnapshotType =
         | FreezeEntities -> (scstringMemo this).Spaced
         | ThawEntities -> (scstringMemo this).Spaced
         | Permafreeze -> (scstringMemo this).Spaced
-        | Permasplit -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
         | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
@@ -619,7 +617,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? Presence Exterior
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-         Define? MountOpt Option<Entity Relation>.None
+         Define? MountOpt (Some (Relation.makeParent<Entity> ()))
          Define? PropagationSourceOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
@@ -662,8 +660,8 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     default this.Render (_, _, _) = ()
 
     /// Apply physics changes from a physics engine to an entity.
-    abstract ApplyPhysics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
-    default this.ApplyPhysics (_, _, _, _, _, _) = ()
+    abstract Physics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * entity : Entity * world : World -> unit
+    default this.Physics (_, _, _, _, _, _) = ()
 
     /// Send a signal to an entity.
     abstract Signal : signalObj : obj * entity : Entity * world : World -> unit
@@ -1705,9 +1703,9 @@ and EntityDescriptor =
 
     /// Derive a name from the descriptor.
     static member getNameOpt descriptor =
-        descriptor.EntityProperties |>
-        Map.tryFind Constants.Engine.NamePropertyName |>
-        Option.map symbolToValue<string>
+        descriptor.EntityProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// Set a name for the descriptor.
     static member setNameOpt nameOpt descriptor =
@@ -1730,9 +1728,9 @@ and GroupDescriptor =
 
     /// Derive a name from the dispatcher.
     static member getNameOpt dispatcher =
-        dispatcher.GroupProperties |>
-        Map.tryFind Constants.Engine.NamePropertyName |>
-        Option.map symbolToValue<string>
+        dispatcher.GroupProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// The empty group descriptor.
     static member empty =
@@ -1749,9 +1747,9 @@ and ScreenDescriptor =
 
     /// Derive a name from the dispatcher.
     static member getNameOpt dispatcher =
-        dispatcher.ScreenProperties |>
-        Map.tryFind Constants.Engine.NamePropertyName |>
-        Option.map symbolToValue<string>
+        dispatcher.ScreenProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// The empty screen descriptor.
     static member empty =
@@ -1844,6 +1842,7 @@ and [<ReferenceEquality>] World =
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : Dictionary<Simulant, Simulant HashSet option> // OPTIMIZATION: using None instead of empty HashSet to descrease number of HashSet instances.
+          EntitiesIndexed : Dictionary<struct (Group * Type), Entity HashSet> // NOTE: could even add: Dictionary<string, EntitySubquery * Entities HashSet> to entry value where subqueries are populated via NuPlugin.
           WorldExtension : WorldExtension }
 
     /// Check that the world is accompanied (such as by an editor program that controls it).
@@ -2071,6 +2070,7 @@ and [<ReferenceEquality>] World =
         this
 
     override this.ToString () =
+        // NOTE: Too big to print in the debugger, so printing nothing.
         ""
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
@@ -2132,15 +2132,14 @@ and [<AbstractClass>] NuPlugin () =
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =
-        Array.map (fun (assembly : Assembly) ->
-            let types =
-                assembly.GetTypes () |>
-                Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |>
-                Array.filter (fun ty -> not ty.IsAbstract) |>
-                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
-            Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)) types)
-            assemblies |>
-        Array.concat
+        assemblies
+        |> Array.map (fun (assembly : Assembly) ->
+            assembly.GetTypes ()
+            |> Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>)
+            |> Array.filter (fun ty -> not ty.IsAbstract)
+            |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+            |> Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)))
+        |> Array.concat
 
     interface LateBindings
 
@@ -2227,7 +2226,7 @@ module LensOperators =
                 typeof<'a>
                 (fun (target : obj) (world : obj) -> get (target :?> 't) (world :?> World) :> obj)
                 (match setOpt with
-                 | Some set -> Some (fun value (target : obj) (world : obj) -> set (value :?> 'a) (target :?> 't) (world :?> World) :> obj)
+                 | Some set -> Some (fun value (target : obj) (world : obj) -> set (value :?> 'a) (target :?> 't) (world :?> World))
                  | None -> None)
         PropertyDefinition.makeValidated lens.Name typeof<ComputedProperty> (ComputedExpr computedProperty)
 

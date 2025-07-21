@@ -510,7 +510,7 @@ module WorldEntityModule =
         member this.GetPropagationTargets world = World.getPropagationTargets this world
 
         /// Apply physics changes to an entity.
-        member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
+        member this.Physics (center : Vector3) rotation linearVelocity angularVelocity world =
             let mutable transformOld = this.GetTransform world
             let mutable transformNew = transformOld
             if this.GetIs2d world then
@@ -528,7 +528,7 @@ module WorldEntityModule =
             this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world
             let dispatcher = this.GetDispatcher world
-            dispatcher.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, this, world)
+            dispatcher.Physics (center, rotation, linearVelocity, angularVelocity, this, world)
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
@@ -563,25 +563,45 @@ module WorldEntityModule =
             match entityStateOpt :> obj with
             | null -> ()
             | _ ->
+
+                // transfer entity state to destination
                 let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
                 let children = World.getEntityChildren source world
                 let order = World.getEntityOrder source world
                 World.destroyEntityImmediateInternal false source world
                 World.addEntity entityState destination world
+
+                // update order
                 World.setEntityOrder order destination world |> ignore<bool>
+
+                // rename children
                 for child in children do
                     let destination = destination / child.Name
                     World.renameEntityImmediate child destination world
+
+                // update publish update flag
+                World.updateEntityPublishUpdateFlag destination world |> ignore<bool>
+
+                // update presence property from override
+                World.updateEntityPresenceOverride destination world
+
+                // process if needed
                 if WorldModule.UpdatingSimulants && World.getEntitySelected destination world then
                     WorldModule.tryProcessEntity true destination world
+
+                // update propagation sources
                 for target in World.getPropagationTargets source world do
                     if World.getEntityExists target world then
                         World.setEntityPropagationSourceOpt (Some destination) target world |> ignore<bool>
+
+                // insert a propagated descriptor if needed
                 match World.getEntityPropagatedDescriptorOpt destination world with
                 | None when World.hasPropagationTargets destination world ->
                     let propagatedDescriptor = World.writeEntity false false EntityDescriptor.empty destination world
                     World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> ignore<bool>
                 | Some _ | None -> ()
+
+                // mount
                 let mountOpt = World.getEntityMountOpt destination world
                 if  source.Parent <> destination.Parent &&
                     Option.isSome mountOpt &&
@@ -631,8 +651,26 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             dispatcher.TryUntruncateModel<'model> (model, entity, world)
 
+        /// Get all the entities in a group with the given dispatcher type.
+        static member getEntitiesAs<'d when 'd :> EntityDispatcher> (group : Group) (world : World) : Entity ReadOnlySet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<'d>) with
+            | (true, entities) -> ReadOnlySet entities
+            | (false, _) -> ReadOnlySet ()
+
+        /// Get all the entities in a group that have a given facet type.
+        static member getEntitiesWith<'f when 'f :> Facet> (group : Group) (world : World) : Entity ReadOnlySet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<'f>) with
+            | (true, entities) -> ReadOnlySet entities
+            | (false, _) -> ReadOnlySet ()
+
         /// Get all the entities in a group.
-        static member getEntities (group : Group) world =
+        static member getEntities (group : Group) (world : World) : Entity ReadOnlySet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<EntityDispatcher>) with
+            | (true, entities) -> ReadOnlySet entities
+            | (false, _) -> ReadOnlySet ()
+
+        /// Get all the entities in a group in depth-first order.
+        static member getEntitiesDepthFirst (group : Group) (world : World) =
             match world.Simulants.TryGetValue group with
             | (true, childrenOpt) ->
                 match childrenOpt with
@@ -672,12 +710,12 @@ module WorldEntityModule =
         /// Sort the given entities by 2d sorting priority.
         /// If there are a lot of entities, this may allocate in the LOH.
         static member sortEntities2d entities world =
-            entities |>
-            Array.ofSeq |>
-            Array.rev |>
-            Array.map (fun (entity : Entity) -> entity.GetSortingPriority2d world) |>
-            Array.sortStableWith SortPriority.compare |>
-            Array.map (fun p -> p.SortTarget :?> Entity)
+            entities
+            |> Array.ofSeq
+            |> Array.rev
+            |> Array.map (fun (entity : Entity) -> entity.GetSortingPriority2d world)
+            |> Array.sortStableWith SortPriority.compare
+            |> Array.map (fun p -> p.SortTarget :?> Entity)
 
         /// Attempt to pick an entity at the given position.
         static member tryPickEntity2d position entities world =
@@ -700,10 +738,10 @@ module WorldEntityModule =
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
-                            entity.RayCast rayWorld world |>
-                            Seq.filter _.IsHit |>
-                            Seq.map (function Hit intersection -> (intersection, entity) | _ -> failwithumf ()) |>
-                            Seq.toArray
+                            entity.RayCast rayWorld world
+                            |> Seq.filter _.IsHit
+                            |> Seq.map (function Hit intersection -> (intersection, entity) | _ -> failwithumf ())
+                            |> Seq.toArray
                         else [||]
                     else [||])
                     entities
@@ -716,22 +754,22 @@ module WorldEntityModule =
             match entity.Parent with
             | :? Entity as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntityChildren parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.rev |>
-                Array.tryFind (fun (order', _) -> order' < order) |>
-                Option.map snd
+                World.getEntityChildren parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.rev
+                |> Array.tryFind (fun (order', _) -> order' < order)
+                |> Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getSovereignEntities parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.rev |>
-                Array.tryFind (fun (order', _) -> order' < order) |>
-                Option.map snd
+                World.getSovereignEntities parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.rev
+                |> Array.tryFind (fun (order', _) -> order' < order)
+                |> Option.map snd
             | _ -> failwithumf ()
 
         /// Try to find the entity among the given entity's peers with the closest next order.
@@ -739,20 +777,20 @@ module WorldEntityModule =
             match entity.Parent with
             | :? Entity as parent ->
                 let order = World.getEntityOrder entity world
-                World.getEntityChildren parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.tryFind (fun (order', _) -> order' > order) |>
-                Option.map snd
+                World.getEntityChildren parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.tryFind (fun (order', _) -> order' > order)
+                |> Option.map snd
             | :? Group as parent ->
                 let order = World.getEntityOrder entity world
-                World.getSovereignEntities parent world |>
-                Seq.map (fun child -> (child.GetOrder world, child)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.tryFind (fun (order', _) -> order' > order) |>
-                Option.map snd
+                World.getSovereignEntities parent world
+                |> Seq.map (fun child -> (child.GetOrder world, child))
+                |> Array.ofSeq
+                |> Array.sortBy fst
+                |> Array.tryFind (fun (order', _) -> order' > order)
+                |> Option.map snd
             | _ -> None
 
         /// Swap the orders of two entities.
@@ -778,10 +816,9 @@ module WorldEntityModule =
         /// Generate a sequential, editor-friendly entity name.
         static member generateEntitySequentialName dispatcherName group world =
             let entityNames =
-                world.EntityStates |> // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
-                Seq.filter (fun entry -> entry.Key.Group = group) |>
-                Seq.map (fun entry -> entry.Key.Name) |>
-                hashSetPlus StringComparer.Ordinal
+                World.getEntities group world
+                |> Seq.map _.Name
+                |> hashSetPlus StringComparer.Ordinal
             World.generateEntitySequentialName2 dispatcherName entityNames
 
         /// Clear any entity on the world's clipboard.

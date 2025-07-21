@@ -242,7 +242,9 @@ module internal Quadnode =
                     getElementsInPlay bounds set node
         | ElementChildren elements ->
             for element in elements do
-                if bounds.Intersects element.Bounds && not element.StaticInPlay then
+                let presence = element.Presence
+                let ubiquitous = presence.IsImposter || presence.IsOmnipresent
+                if not element.StaticInPlay && not ubiquitous && bounds.Intersects element.Bounds then
                     set.Add element |> ignore
 
     let rec internal getElements (set : 'e Quadelement HashSet) (node : 'e Quadnode) =

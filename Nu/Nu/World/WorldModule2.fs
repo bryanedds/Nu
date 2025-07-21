@@ -493,12 +493,12 @@ module WorldModule2 =
             World.createSlideScreen6 typeof<'d>.Name nameOpt slideDescriptor destination world
 
         static member private mapEntityDescriptors entityDescriptors =
-            entityDescriptors |>
-            List.map (fun descriptor ->
+            entityDescriptors
+            |> List.map (fun descriptor ->
                 match descriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                 | Atom (entityName, _) | Text (entityName, _) -> (entityName, descriptor)
-                | _ -> failwithumf ()) |>
-            Map.ofList
+                | _ -> failwithumf ())
+            |> Map.ofList
 
         static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (currentEntityOpt : Entity option) world =
 
@@ -528,9 +528,9 @@ module WorldModule2 =
 
             // propagate properties at this level
             let propagatedDescriptor =
-                Set.ofSeq currentDescriptor.EntityProperties.Keys |>
-                Set.addMany propagatedDescriptor.EntityProperties.Keys |>
-                Seq.fold (fun targetDescriptor propertyName ->
+                Set.ofSeq currentDescriptor.EntityProperties.Keys
+                |> Set.addMany propagatedDescriptor.EntityProperties.Keys
+                |> Seq.fold (fun targetDescriptor propertyName ->
                     if  propertyName <> nameof Entity.Name &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
@@ -653,17 +653,17 @@ module WorldModule2 =
 
             // compose fully propagated descriptor in the order they are found in the current descriptor
             let currentDescriptorsOrder =
-                currentDescriptor.EntityDescriptors |>
-                Seq.mapi (fun i currentDescriptor ->
+                currentDescriptor.EntityDescriptors
+                |> Seq.mapi (fun i currentDescriptor ->
                     match currentDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                     | Atom (entityName, _) | Text (entityName, _) -> (entityName, i)
-                    | _ -> ("", Int32.MaxValue)) |>
-                Map.ofSeq
+                    | _ -> ("", Int32.MaxValue))
+                |> Map.ofSeq
             let propagatedDescriptors =
-                propagatedDescriptorOpts |>
-                List.definitize |>
-                List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName) |>
-                List.sortBy (fun propagatedDescriptor ->
+                propagatedDescriptorOpts
+                |> List.definitize
+                |> List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName)
+                |> List.sortBy (fun propagatedDescriptor ->
                     match propagatedDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                     | (Atom (entityName, _) | Text (entityName, _)) ->
                         match currentDescriptorsOrder.TryGetValue entityName with
@@ -679,7 +679,8 @@ module WorldModule2 =
             // propagate entity
             let targets = entity.GetPropagationTargets world
             let targetsValid =
-                Seq.filter (fun (target : Entity) ->
+                targets
+                |> Seq.filter (fun (target : Entity) ->
                     let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
                     let linkHeadOpt = Array.tryHead targetToEntity.Links
                     let linkLastOpt = Array.tryLast targetToEntity.Links
@@ -690,8 +691,7 @@ module WorldModule2 =
                     // NOTE: dummying this out because it causes false negatives.
                     //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
-                    targets |>
-                Array.ofSeq // copy references to avoid enumerator invalidation
+                |> Array.ofSeq // copy references to avoid enumerator invalidation
             let currentDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             for target in targetsValid do
@@ -724,9 +724,9 @@ module WorldModule2 =
                     if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
                             if ancestor.GetExists world && ancestor.HasPropagationTargets world then
-                                ancestor } |>
-            Set.ofSeq |> // also copies references to avoid enumerator invalidation
-            fun ancestors ->
+                                ancestor }
+            |> Set.ofSeq // also copies references to avoid enumerator invalidation
+            |> fun ancestors ->
                 for ancestor in ancestors do
                     if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                         World.propagateEntityStructure ancestor world
@@ -822,11 +822,12 @@ module WorldModule2 =
                 let element = Quadelement.make entityState.VisibleInView entityState.StaticInPlay entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 entity
                 Quadtree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
-                let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
-                    Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element octree
+                    Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
+            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbe3dFacet> world && entity.GetProbeStale world) entities3d then
+                World.requestLightMapRender world
                 
         static member internal evictScreenElements screen world =
             let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SArray.ofSeq
@@ -845,19 +846,19 @@ module WorldModule2 =
 
         static member internal registerScreenPhysics screen world =
             let entities =
-                World.getGroups screen world |>
-                Seq.map (flip World.getEntities world) |>
-                Seq.concat |>
-                SList.ofSeq
+                World.getGroups screen world
+                |> Seq.map (flip World.getEntities world)
+                |> Seq.concat
+                |> SList.ofSeq
             for entity in entities do
                 World.registerEntityPhysics entity world
 
         static member internal unregisterScreenPhysics screen world =
             let entities =
-                World.getGroups screen world |>
-                Seq.map (flip World.getEntities world) |>
-                Seq.concat |>
-                SList.ofSeq
+                World.getGroups screen world
+                |> Seq.map (flip World.getEntities world)
+                |> Seq.concat
+                |> SList.ofSeq
             for entity in entities do
                 World.unregisterEntityPhysics entity world
 
@@ -883,18 +884,16 @@ module WorldModule2 =
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
-                | Right overlayer ->
+                let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays outputOverlayerFilePath
 
-                    // update and apply overlays to all entities
-                    World.setOverlayer overlayer world
-                    let entities = World.getEntities1 world
-                    for entity in entities do
-                        World.applyEntityOverlay overlayerOld overlayer entity world
-                    Right overlayer
+                // update and apply overlays to all entities
+                World.setOverlayer overlayer world
+                let entities = World.getEntities1 world
+                for entity in entities do
+                    World.applyEntityOverlay overlayerOld overlayer entity world
+                Right overlayer
 
-                // propagate errors
-                | Left error -> Left error
+            // propagate errors
             with exn -> Left (scstring exn)
 
         /// Send a message to the subsystems to reload their existing assets.
@@ -920,18 +919,16 @@ module WorldModule2 =
                 //File.SetAttributes (outputAssetGraphFilePath, FileAttributes.ReadOnly)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile outputAssetGraphFilePath with
-                | Right assetGraph ->
+                let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
-                    // rebuild and reload assets
-                    AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    Metadata.reloadMetadata ()
-                    World.reloadExistingAssets world
-                    World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
-                    Right assetGraph
+                // rebuild and reload assets
+                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                Metadata.reloadMetadata ()
+                World.reloadExistingAssets world
+                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
+                Right assetGraph
 
-                // propagate errors
-                | Left error -> Left error
+            // propagate error
             with exn -> Left (scstring exn)
 
         /// Attempt to reload asset graph, build assets, then reload built assets.
@@ -943,6 +940,19 @@ module WorldModule2 =
             match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
             | Right _ -> true
             | Left _ -> false
+
+        static member private processCoroutines (world : World) =
+            if world.Advancing then
+                let coroutines = World.getCoroutines world
+                let coroutines' =
+                    OMap.fold (fun coroutines id (pred, coroutine) ->
+                        match Coroutine.step pred coroutine world.GameTime world with
+                        | CoroutineCancelled -> coroutines
+                        | CoroutineCompleted -> coroutines
+                        | CoroutineProgressing coroutine' -> OMap.add id (pred, coroutine') coroutines)
+                        (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
+                        coroutines
+                World.setCoroutines coroutines' world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
@@ -957,7 +967,7 @@ module WorldModule2 =
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) taskletsNotRun
                 | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig taskletsNotRun) tasklet) taskletsNotRun
 
-        static member private processTasklets world =
+        static member private processTasklets (world : World) =
             let tasklets = World.getTasklets world
             World.clearTasklets world
             let taskletsNotRun =
@@ -1198,7 +1208,7 @@ module WorldModule2 =
                                           BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
                                     let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                                     World.publishPlus transformData entity.BodyTransformEvent eventTrace entity false false world
-                                else entity.ApplyPhysics center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity world
+                                else entity.Physics center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity world
                     | _ -> ()
                 | BodyJointBreakMessage bodyJointBreakMessage ->
                     let bodyJointId = bodyJointBreakMessage.BodyJointId
@@ -1483,7 +1493,6 @@ module WorldModule2 =
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
-                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 | LightMapPass (_, lightMapBounds) ->
                     let hashSet = HashSet ()
                     World.getElements3dInViewBox lightMapBounds hashSet world
@@ -1492,11 +1501,12 @@ module WorldModule2 =
                             HashSet3dNormalCached.Add element |> ignore<bool>
                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
+                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 match renderPass with
-                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
+                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 world.Timers.RenderGatherTimer.Stop ()
 
                 // render game
@@ -1584,9 +1594,9 @@ module WorldModule2 =
 
                 // sort shadow pass descriptors
                 let shadowPassDescriptors =
-                    shadowPassDescriptorsSortable |>
-                    Array.sortBy fst' |>
-                    Array.map snd'
+                    shadowPassDescriptorsSortable
+                    |> Array.sortBy fst'
+                    |> Array.map snd'
 
                 // render simulant shadows
                 let mutable shadowTexturesCount = 0
@@ -1684,8 +1694,8 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
             world.WorldExtension.Plugin.CleanUp ()
 
-        /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
+        /// Run the game engine with the given handlers, but don't clean up at the end.
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame (world : World) =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
@@ -1696,7 +1706,7 @@ module WorldModule2 =
                 World.preProcess world
                 preProcess world
                 world.Timers.PreProcessTimer.Stop ()
-                match liveness with
+                match World.getLiveness world with
                 | Live ->
 
                     // update screen transitioning process
@@ -1750,136 +1760,144 @@ module WorldModule2 =
                                             match World.getLiveness world with
                                             | Live ->
 
-                                                // process tasklets that have been scheduled and are ready to run
-                                                world.Timers.TaskletsTimer.Restart ()
-                                                WorldModule.TaskletProcessingStarted <- true
-                                                World.processTasklets world
-                                                world.Timers.TaskletsTimer.Stop ()
+                                                // process coroutines
+                                                world.Timers.CoroutinesTimer.Restart ()
+                                                World.processCoroutines world
+                                                world.Timers.CoroutinesTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
 
-                                                    // destroy simulants that have been marked for destruction at the end of frame
-                                                    world.Timers.DestructionTimer.Restart ()
-                                                    World.processImSim world
-                                                    World.destroySimulants world
-                                                    world.Timers.DestructionTimer.Stop ()
+                                                    // process tasklets that have been scheduled and are ready to run
+                                                    world.Timers.TaskletsTimer.Restart ()
+                                                    WorldModule.EndFrameProcessingStarted <- true
+                                                    World.processTasklets world
+                                                    world.Timers.TaskletsTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
-                                                    
-                                                        // run engine and user-defined post-process callbacks
-                                                        world.Timers.PostProcessTimer.Restart ()
-                                                        World.postProcess world
-                                                        postProcess world
-                                                        world.Timers.PostProcessTimer.Stop ()
+
+                                                        // destroy simulants that have been marked for destruction at the end of frame
+                                                        world.Timers.DestructionTimer.Restart ()
+                                                        World.processImSim world
+                                                        World.destroySimulants world
+                                                        world.Timers.DestructionTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
-
-                                                            // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
-                                                            world.Timers.RenderMessagesTimer.Restart ()
-                                                            let lightMapRenderRequested = World.getLightMapRenderRequested world
-                                                            World.acknowledgeLightMapRenderRequest world
-                                                            World.renderSimulants lightMapRenderRequested world
-                                                            world.Timers.RenderMessagesTimer.Stop ()
+                                                    
+                                                            // run engine and user-defined post-process callbacks
+                                                            world.Timers.PostProcessTimer.Restart ()
+                                                            World.postProcess world
+                                                            postProcess world
+                                                            world.Timers.PostProcessTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
 
-                                                                // process audio
-                                                                world.Timers.AudioTimer.Restart ()
-                                                                if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                                    let audioPlayer = World.getAudioPlayer world
-                                                                    let audioMessages = audioPlayer.PopMessages ()
-                                                                    audioPlayer.Play audioMessages
-                                                                world.Timers.AudioTimer.Stop ()
-
-                                                                // process main thread time recording
-                                                                world.Timers.MainThreadTime <- world.Timers.MainThreadTimer.Elapsed
-
-                                                                // process rendering (1/2)
-                                                                let rendererProcess = World.getRendererProcess world
-                                                                if not firstFrame then rendererProcess.Swap ()
-
-                                                                // process frame pacing mechanics
-                                                                if world.Timers.MainThreadTimer.IsRunning then
-
-                                                                    // automatically enable frame pacing when need is detected
-                                                                    let world =
-                                                                        if not world.FramePacing then
-                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
-                                                                            if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
-                                                                            FramePaceChecks <- inc FramePaceChecks
-                                                                            if FramePaceIssues = 15 then World.setFramePacing true world
-                                                                            if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
-                                                                            world
-                                                                        else world
-
-                                                                    // pace frame when enabled
-                                                                    if world.FramePacing then
-                                                                        let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
-                                                                        while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum do
-                                                                            let timeToSleep = frameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
-                                                                            if timeToSleep > 0.008 then Thread.Sleep 7
-                                                                            elif timeToSleep > 0.004 then Thread.Sleep 3
-                                                                            elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                            else Thread.Yield () |> ignore<bool>
-
-                                                                // process main thread timer
-                                                                world.Timers.MainThreadTimer.Restart ()
-
-                                                                // process additional frame time recording
-                                                                let gcTotalTime = GC.GetTotalPauseDuration ()
-                                                                let gcFrameTime = gcTotalTime - world.Timers.GcTotalTime
-                                                                world.Timers.GcTotalTime <- gcTotalTime
-                                                                world.Timers.GcFrameTime <- gcFrameTime
-                                                                world.Timers.ImGuiTime <- world.Timers.ImGuiTimer.Elapsed
-
-                                                                // process imgui frame
-                                                                world.Timers.ImGuiTimer.Restart ()
-                                                                let imGui = World.getImGui world
-                                                                imGui.BeginFrame (single world.DateDelta.TotalSeconds)
-                                                                World.imGuiProcess world
-                                                                imGuiProcess world
-                                                                imGui.InputFrame ()
-                                                                let drawData = imGui.RenderFrame ()
-                                                                world.Timers.ImGuiTimer.Stop ()
-
-                                                                // process rendering (2/2)
-                                                                rendererProcess.SubmitMessages
-                                                                    world.Eye3dFrustumInterior
-                                                                    world.Eye3dFrustumExterior
-                                                                    world.Eye3dFrustumImposter
-                                                                    (World.getLight3dViewBox world)
-                                                                    world.Eye3dCenter
-                                                                    world.Eye3dRotation
-                                                                    world.Eye3dFieldOfView
-                                                                    world.Eye2dCenter
-                                                                    world.Eye2dSize
-                                                                    (World.getWindowSize world)
-                                                                    world.GeometryViewport
-                                                                    world.RasterViewport
-                                                                    world.OuterViewport
-                                                                    drawData
-
-                                                                // post-process imgui frame
-                                                                World.imGuiPostProcess world
-                                                                imGuiPostProcess world
-
-                                                                // update time and recur
-                                                                world.Timers.FrameTimer.Stop ()
-                                                                WorldModule.TaskletProcessingStarted <- false
-                                                                World.updateTime world
-                                                                if world.Advancing then
-                                                                    World.publish () (Events.TimeUpdateEvent --> Game) Game world
-                                                                    match World.getSelectedScreenOpt world with
-                                                                    | Some selectedScreen ->
-                                                                        World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
-                                                                        for group in World.getGroups selectedScreen world do
-                                                                            if group.GetExists world then
-                                                                                World.publish () (Events.TimeUpdateEvent --> group) group world
-                                                                    | None -> ()
-
-                                                                // recur or return
+                                                                // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
+                                                                world.Timers.RenderMessagesTimer.Restart ()
+                                                                let lightMapRenderRequested = World.getLightMapRenderRequested world
+                                                                World.acknowledgeLightMapRenderRequest world
+                                                                World.renderSimulants lightMapRenderRequested world
+                                                                world.Timers.RenderMessagesTimer.Stop ()
                                                                 match World.getLiveness world with
-                                                                | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
+                                                                | Live ->
+
+                                                                    // process audio
+                                                                    world.Timers.AudioTimer.Restart ()
+                                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                                        let audioPlayer = World.getAudioPlayer world
+                                                                        let audioMessages = audioPlayer.PopMessages ()
+                                                                        audioPlayer.Play audioMessages
+                                                                    world.Timers.AudioTimer.Stop ()
+
+                                                                    // process main thread time recording
+                                                                    world.Timers.MainThreadTime <- world.Timers.MainThreadTimer.Elapsed
+
+                                                                    // process rendering (1/2)
+                                                                    let rendererProcess = World.getRendererProcess world
+                                                                    if not firstFrame then rendererProcess.RequestSwap ()
+
+                                                                    // process frame pacing mechanics
+                                                                    if world.Timers.MainThreadTimer.IsRunning then
+
+                                                                        // automatically enable frame pacing when need is detected
+                                                                        let world =
+                                                                            if not world.FramePacing then
+                                                                                let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                FramePaceChecks <- inc FramePaceChecks
+                                                                                if FramePaceIssues = 15 then World.setFramePacing true world
+                                                                                if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
+                                                                                world
+                                                                            else world
+
+                                                                        // pace frame when enabled
+                                                                        if world.FramePacing then
+                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum do
+                                                                                let timeToSleep = frameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
+                                                                                if timeToSleep > 0.008 then Thread.Sleep 7
+                                                                                elif timeToSleep > 0.004 then Thread.Sleep 3
+                                                                                elif timeToSleep > 0.002 then Thread.Sleep 1
+                                                                                else Thread.Yield () |> ignore<bool>
+
+                                                                    // process main thread timer
+                                                                    world.Timers.MainThreadTimer.Restart ()
+
+                                                                    // process additional frame time recording
+                                                                    let gcTotalTime = GC.GetTotalPauseDuration ()
+                                                                    let gcFrameTime = gcTotalTime - world.Timers.GcTotalTime
+                                                                    world.Timers.GcTotalTime <- gcTotalTime
+                                                                    world.Timers.GcFrameTime <- gcFrameTime
+                                                                    world.Timers.ImGuiTime <- world.Timers.ImGuiTimer.Elapsed
+
+                                                                    // process imgui frame
+                                                                    world.Timers.ImGuiTimer.Restart ()
+                                                                    let imGui = World.getImGui world
+                                                                    imGui.BeginFrame (single world.DateDelta.TotalSeconds)
+                                                                    World.imGuiProcess world
+                                                                    imGuiProcess world
+                                                                    imGui.InputFrame ()
+                                                                    let drawData = imGui.RenderFrame ()
+                                                                    world.Timers.ImGuiTimer.Stop ()
+
+                                                                    // process rendering (2/2)
+                                                                    rendererProcess.SubmitMessages
+                                                                        world.Eye3dFrustumInterior
+                                                                        world.Eye3dFrustumExterior
+                                                                        world.Eye3dFrustumImposter
+                                                                        (World.getLight3dViewBox world)
+                                                                        world.Eye3dCenter
+                                                                        world.Eye3dRotation
+                                                                        world.Eye3dFieldOfView
+                                                                        world.Eye2dCenter
+                                                                        world.Eye2dSize
+                                                                        (World.getWindowSize world)
+                                                                        world.GeometryViewport
+                                                                        world.RasterViewport
+                                                                        world.OuterViewport
+                                                                        drawData
+
+                                                                    // post-process imgui frame
+                                                                    World.imGuiPostProcess world
+                                                                    imGuiPostProcess world
+
+                                                                    // update time and recur
+                                                                    world.Timers.FrameTimer.Stop ()
+                                                                    WorldModule.EndFrameProcessingStarted <- false
+                                                                    World.updateTime world
+                                                                    if world.Advancing then
+                                                                        World.publish () (Events.TimeUpdateEvent --> Game) Game world
+                                                                        match World.getSelectedScreenOpt world with
+                                                                        | Some selectedScreen ->
+                                                                            World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
+                                                                            for group in World.getGroups selectedScreen world do
+                                                                                if group.GetExists world then
+                                                                                    World.publish () (Events.TimeUpdateEvent --> group) group world
+                                                                        | None -> ()
+
+                                                                    // recur or return
+                                                                    match World.getLiveness world with
+                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
+                                                                    | Dead -> ()
                                                                 | Dead -> ()
                                                             | Dead -> ()
                                                         | Dead -> ()
@@ -1895,8 +1913,8 @@ module WorldModule2 =
                 | Dead -> ()
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world =
-            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
+            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->
@@ -1956,6 +1974,8 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2029,7 +2049,7 @@ module EntityDispatcherModule2 =
                         makeInitial world
             World.setEntityModelGeneric<'model> true model entity world |> ignore<bool>
 
-        override this.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, entity, world) =
+        override this.Physics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
             let (signals, model) = this.Physics (center, rotation, linearVelocity, angularVelocity, model, entity, world)
             this.SetModel model entity world
@@ -2098,7 +2118,7 @@ module EntityDispatcherModule2 =
         abstract Message : model : 'model * message : 'message * entity : Entity * world : World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
-        /// The physics synchronization handler for the MMCC programming model.
+        /// The physics application handler for the MMCC programming model.
         abstract Physics : center : Vector3 * rotation : Quaternion * linearVelocity : Vector3 * angularVelocity : Vector3 * model : 'model * entity : Entity * world : World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
@@ -2148,6 +2168,8 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Absolute true
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Presence Omnipresent
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2209,7 +2231,7 @@ module EntityPropertyDescriptor =
              "Transition Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
         elif propertyName = "MaterialProperties" then "Material Properties"
-        elif propertyName = "Material" then "Material Properties 2"
+        elif propertyName = "Material" || propertyName = "Clipped" then "Material Properties 2"
         elif propertyName = "NavShape" || propertyName = "Nav3dConfig" then "Navigation Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "~ More Properties"
@@ -2261,9 +2283,9 @@ module EntityPropertyDescriptor =
             let name = value :?> string
             if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                 let targetNames =
-                    entity.Group.GroupAddress.Names |>
-                    flip Array.append (Array.allButLast entity.Surnames) |>
-                    Array.add name
+                    entity.Group.GroupAddress.Names
+                    |> flip Array.append (Array.allButLast entity.Surnames)
+                    |> Array.add name
                 let target = Nu.Entity targetNames
                 World.renameEntityImmediate entity target world
                 Right ()
@@ -2930,12 +2952,12 @@ module GamePropertyDescriptor =
 [<RequireQualifiedAccess>]
 module SimulantPropertyDescriptor =
 
-    let containsPropertyDescriptor propertyDescriptor (simulant : Simulant) world =
+    let containsPropertyDescriptor propertyName (simulant : Simulant) world =
         match simulant with
-        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyDescriptor entity world
-        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyDescriptor group world
-        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyDescriptor screen world
-        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyDescriptor game world
+        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyName entity world
+        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyName group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyName screen world
+        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyName game world
         | _ -> failwithumf ()
 
     let getPropertyDescriptors (simulant : Simulant) world =

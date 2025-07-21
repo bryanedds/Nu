@@ -18,11 +18,13 @@ void main()
 const float GAMMA = 2.2;
 
 uniform vec3 eyeCenter;
+uniform mat4 viewInverse;
+uniform mat4 projectionInverse;
 uniform int fogEnabled;
 uniform float fogStart;
 uniform float fogFinish;
 uniform vec4 fogColor;
-uniform sampler2D positionTexture;
+uniform sampler2D depthTexture;
 uniform sampler2D colorTexture;
 uniform sampler2D fogAccumTexture;
 
@@ -30,29 +32,38 @@ in vec2 texCoordsOut;
 
 layout(location = 0) out vec4 frag;
 
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    float z = depth * 2.0 - 1.0;
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionView = projectionInverse * positionClip;
+    positionView /= positionView.w;
+    return viewInverse * positionView;
+}
+
 void main()
 {
-    vec4 color = texture(colorTexture, texCoordsOut, 0);
-    if (color.w == 1.0) // ensure fragment written
+    // ensure fragment written
+    float depth = texture(depthTexture, texCoordsOut, 0).r;
+    if (depth == 0.0) discard;
+
+    // apply volumetric fog
+    vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
+    vec3 color = texture(colorTexture, texCoordsOut, 0).xyz + fogAccum;
+
+    // compute and apply global fog when enabled
+    if (fogEnabled == 1)
     {
-        // apply volumetric fog
-        vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
-        vec3 color = color.xyz + fogAccum;
-
-        // compute and apply global fog when enabled
-        if (fogEnabled == 1)
-        {
-            vec4 position = texture(positionTexture, texCoordsOut, 0);
-            float depth = length(position.xyz - eyeCenter);
-            float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, depth / fogFinish)) * fogColor.a;
-            color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
-        }
-
-        // apply tone mapping and gamma correction
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0 / GAMMA));
-
-        // write fragment
-        frag = vec4(color, 1.0);
+        vec4 position = depthToPosition(depth, texCoordsOut);
+        float distance = length(position.xyz - eyeCenter);
+        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
+        color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
+
+    // apply tone mapping and gamma correction
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0 / GAMMA));
+
+    // write fragment
+    frag = vec4(color, 1.0);
 }

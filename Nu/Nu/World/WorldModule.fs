@@ -30,24 +30,12 @@ module WorldModule =
     /// TODO: P1: consider making this an AmbientState flag.
     let mutable internal UpdatingSimulants = false
 
-    /// Track if we're in the portion of the frame before tasklet processing has started or after.
+    /// Track if we're in the portion of the frame when end-frame processing has started.
     /// TODO: P1: consider making this an AmbientState flag.
-    let mutable internal TaskletProcessingStarted = false
-
-    /// F# reach-around for adding script unsubscriptions to simulants.
-    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> unit =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for unsubscribing script subscriptions of simulants.
-    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> unit =
-        Unchecked.defaultof<_>
+    let mutable internal EndFrameProcessingStarted = false
 
     /// F# reach-around for checking that a simulant is selected.
     let mutable internal getSelected : Simulant -> World -> bool =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for checking that a simulant is ignoring bindings.
-    let mutable internal ignorePropertyBindings : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
     /// F# reach-around for sorting subscriptions by elevation.
@@ -312,8 +300,19 @@ module WorldModule =
         static member exit world =
             AmbientState.exit world.AmbientState
 
-        static member internal getTasklets world =
-            World.getAmbientStateBy AmbientState.getTasklets world
+        static member internal getCoroutines (world : World) =
+            AmbientState.getCoroutines world.AmbientState
+
+        static member internal setCoroutines coroutines world =
+            AmbientState.setCoroutines coroutines world.AmbientState
+
+        /// Launch a coroutine to be processed by the engine.
+        static member launchCoroutine pred coroutine (world : World) =
+            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
+            AmbientState.addCoroutine (pred, coroutine) world.AmbientState
+
+        static member internal getTasklets (world : World) =
+            AmbientState.getTasklets world.AmbientState
 
         static member internal removeTasklets simulant world =
             AmbientState.removeTasklets simulant world.AmbientState
@@ -338,8 +337,13 @@ module WorldModule =
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
-        static member defer (operation : World -> unit) (simulant : Simulant) (world : World) =
-            let time = if TaskletProcessingStarted && world.Advancing then UpdateTime 1L else UpdateTime 0L
+        static member defer operation (simulant : Simulant) (world : World) =
+            let time =
+                if EndFrameProcessingStarted && world.Advancing then
+                    match Constants.GameTime.DesiredFrameRate with
+                    | StaticFrameRate _ -> UpdateTime 1L
+                    | DynamicFrameRate _ -> TickTime 1L
+                else GameTime.zero
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.
@@ -481,6 +485,14 @@ module WorldModule =
 
         static member internal getOctree world =
             world.Octree
+
+        /// A coroutine launcher.
+        member this.Launcher =
+            flip (World.launchCoroutine tautology) this
+
+        /// A cancellable coroutine launcher.
+        member this.LauncherWhile pred =
+            flip (World.launchCoroutine pred) this
 
     type World with // Subsystems
 
@@ -819,19 +831,18 @@ module WorldModule =
 
         /// View the member properties of some SimulantState.
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
-            state |>
-            getType |>
-            (fun ty -> ty.GetProperties true) |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
-            Array.toList
+            getType state
+            |> (fun ty -> ty.GetProperties true)
+            |> Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state))
+            |> Array.toList
 
         /// View the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
-            state.GetXtension () |>
-            Xtension.toSeq |>
-            List.ofSeq |>
-            List.sortBy fst |>
-            List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
+            state.GetXtension ()
+            |> Xtension.toSeq
+            |> List.ofSeq
+            |> List.sortBy fst
+            |> List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
 
         /// Provides a full view of all the properties of some SimulantState.
         static member internal getSimulantStateProperties state =

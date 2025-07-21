@@ -18,6 +18,9 @@ module Reflection =
     let private AssembliesLoaded =
         Dictionary<string, Assembly> StringComparer.Ordinal
 
+    let private BaseTypesExceptObjectCache =
+        Dictionary<Type, Type list> HashIdentity.Structural
+
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
@@ -32,9 +35,9 @@ module Reflection =
 
     /// A dictionary of properties and their cached persistence state.
     let private PropertyPersistence =
-        Constants.Engine.NonPersistentPropertyNames |>
-        Seq.map (flip pair true) |>
-        dictPlus StringComparer.Ordinal
+        Constants.Engine.NonPersistentPropertyNames
+        |> Seq.map (flip pair true)
+        |> dictPlus StringComparer.Ordinal
 
     let rec private memoizable2 level (ty : Type) =
         match MemoizableMemo.TryGetValue ty with
@@ -103,12 +106,18 @@ module Reflection =
 
     /// Get the concrete base types of a type excepting the object type.
     let rec getBaseTypesExceptObject (targetType : Type) =
-        match targetType.BaseType with
-        | null -> []
-        | baseType ->
-            if baseType <> typeof<obj>
-            then baseType :: getBaseTypesExceptObject baseType
-            else []
+        match BaseTypesExceptObjectCache.TryGetValue targetType with
+        | (true, baseTypes) -> baseTypes
+        | (false, _) ->
+            let baseTypes =
+                match targetType.BaseType with
+                | null -> []
+                | baseType ->
+                    if baseType <> typeof<obj>
+                    then baseType :: getBaseTypesExceptObject baseType
+                    else []
+            BaseTypesExceptObjectCache.Add (targetType, baseTypes)
+            baseTypes
 
     /// Get the property definitions of a target type not considering inheritance.
     /// OPTIMIZATION: Memoized for efficiency since Properties will likely return a newly constructed list.
@@ -187,11 +196,11 @@ module Reflection =
     /// Get all the unique reflective property definitions of a type, including those of its
     /// dispatcher and / or facets.
     let getReflectivePropertyDefinitions (target : 'a) =
-        target |>
-        getReflectivePropertyContainerTypes |>
-        List.map getPropertyDefinitions |>
-        List.concat |>
-        Map.ofListBy (fun definition -> (definition.PropertyName, definition))
+        target
+        |> getReflectivePropertyContainerTypes
+        |> List.map getPropertyDefinitions
+        |> List.concat
+        |> Map.ofListBy (fun definition -> (definition.PropertyName, definition))
 
     /// A hack to retreive a simplified generic type name
     let getSimplifiedTypeNameHack (ty : Type) =
@@ -375,9 +384,9 @@ module Reflection =
 
     /// Get the intrinsic facet names of a target type not considering inheritance.
     let getIntrinsicFacetNamesNoInherit targetType =
-        targetType |>
-        getIntrinsicFacetsNoInherit |>
-        List.map (fun (ty : Type) -> ty.Name)
+        targetType
+        |> getIntrinsicFacetsNoInherit
+        |> List.map (fun (ty : Type) -> ty.Name)
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
@@ -470,8 +479,8 @@ module Reflection =
                     match facets.TryGetValue facetName with
                     | (true, facet) -> facet
                     | (false, _) -> failwith ("Could not find facet '" + facetName + "' in facet map."))
-                    facetNames |>
-                List.toArray
+                    facetNames
+                |> List.toArray
             let targetType = target.GetType ()
             match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
             | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")

@@ -8,9 +8,6 @@ open Prime
 
 /// The Chain monad. Allows the user to define a chain of operations over the world that
 /// optionally spans across a bounded number of events.
-///
-/// The following is a potentially tail-recursible representation as speculated by @tpetricek -
-/// World -> (Either<'e -> Chain<'e, 'a>, 'a> -> 'a) -> 'a
 type [<ReferenceEquality>] Chain<'e, 'a> =
     Chain of (World -> Either<'e -> Chain<'e, 'a>, 'a>)
 
@@ -57,7 +54,7 @@ module ChainBuilder =
     /// Builds chains.
     let [<DebuggerHidden>] chain = ChainBuilder ()
 
-[<RequireQualifiedAccess>]
+/// Chain operators.
 module Chain =
 
     /// Functor map for the chain monad.

@@ -27,7 +27,7 @@ module LightMap =
         // setup reflection cube map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+            Gl.TexImage2D (target, 0, Hl.CheckFormat InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
@@ -63,6 +63,7 @@ module LightMap =
             Hl.Assert ()
 
             // render to reflection cube map face
+            let lightAmbientOverride = Some (ambientColor, ambientBrightness)
             let (eyeForward, eyeUp) = eyeRotations.[i]
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
@@ -78,14 +79,11 @@ module LightMap =
                     let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
-            render
-                false (Some (ambientColor, ambientBrightness)) origin
-                view viewSkyBox
-                (Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport)
-                (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
-                (box2i v2iZero (v2iDup resolution))
-                (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
-                renderbuffer framebuffer
+            let frustum = Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport
+            let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
+            let viewProjection = view * projection
+            let bounds = box2i v2iZero (v2iDup resolution)
+            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection bounds projection renderbuffer framebuffer
             Hl.Assert ()
 
             // take a snapshot for testing
@@ -120,7 +118,7 @@ module LightMap =
         // setup irradiance cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+            Gl.TexImage2D (target, 0, Hl.CheckFormat InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
@@ -137,13 +135,13 @@ module LightMap =
 
         // compute views and projection
         let views =
-            [|(Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
-        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)).ToArray ()
+            [|Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)
+              Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
+              Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
+        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // mutate viewport
         Gl.Viewport (0, 0, resolution, resolution)
@@ -153,9 +151,11 @@ module LightMap =
         for i in 0 .. dec 6 do
 
             // render face
+            let view = views.[i]
+            let viewProjection = view * projection
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
-            CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader, cubeMapVao)
+            CubeMap.DrawCubeMap (view.ToArray (), projection.ToArray (), viewProjection.ToArray (), cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader, cubeMapVao)
             Hl.Assert ()
 
             // take a snapshot for testing
@@ -178,6 +178,7 @@ module LightMap =
     type EnvironmentFilterShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ViewProjectionUniform : int
           RoughnessUniform : int
           ResolutionUniform : int
           CubeMapUniform : int
@@ -193,6 +194,7 @@ module LightMap =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let roughnessUniform = Gl.GetUniformLocation (shader, "roughness")
         let resolutionUniform = Gl.GetUniformLocation (shader, "resolution")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
@@ -201,6 +203,7 @@ module LightMap =
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ViewProjectionUniform = viewProjectionUniform
           RoughnessUniform = roughnessUniform
           ResolutionUniform = resolutionUniform
           CubeMapUniform = cubeMapUniform
@@ -210,6 +213,7 @@ module LightMap =
     let DrawEnvironmentFilter
         (view : single array,
          projection : single array,
+         viewProjection : single array,
          roughness : single,
          resolution : single,
          cubeMap : Texture.Texture,
@@ -219,11 +223,13 @@ module LightMap =
 
         // setup vao
         Gl.BindVertexArray vao
+        Hl.Assert ()
         
         // setup shader
         Gl.UseProgram shader.EnvironmentFilterShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform1 (shader.RoughnessUniform, roughness)
         Gl.Uniform1 (shader.ResolutionUniform, resolution)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
@@ -242,8 +248,6 @@ module LightMap =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -267,7 +271,7 @@ module LightMap =
         // setup environment filter cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+            Gl.TexImage2D (target, 0, Hl.CheckFormat InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
@@ -285,26 +289,28 @@ module LightMap =
 
         // compute views and projection
         let views =
-            [|(Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
-        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)).ToArray ()
+            [|Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)
+              Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
+              Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
+        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
             let mipRoughness = single mip / single (dec Constants.Render.EnvironmentFilterMips)
             let mipResolution = single resolution * pown 0.5f mip
-            Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent16, int resolution, int resolution)
+            Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckFormat InternalFormat.DepthComponent16, int resolution, int resolution)
             Gl.Viewport (0, 0, int mipResolution, int mipResolution)
             for i in 0 .. dec 6 do
 
                 // draw mip face
+                let view = views.[i]
+                let viewProjection = view * projection
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
                 Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, mip)
-                DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader, cubeMapVao)
+                DrawEnvironmentFilter (view.ToArray (), projection.ToArray (), viewProjection.ToArray (), mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader, cubeMapVao)
                 Hl.Assert ()
 
                 // take a snapshot for testing

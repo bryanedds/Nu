@@ -23,6 +23,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewProjection;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -54,14 +55,13 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
-    gl_Position = projection * view * positionOut;
+    gl_Position = viewProjection * positionOut;
 }
 
 #shader fragment
 #version 460 core
 
 const float GAMMA = 2.2;
-const float ALBEDO_ALPHA_MIN = 0.3;
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
@@ -83,7 +83,7 @@ flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 flat in vec4 subsurfacePlusOut;
 
-layout(location = 0) out vec4 position;
+layout(location = 0) out float depth;
 layout(location = 1) out vec3 albedo;
 layout(location = 2) out vec4 material;
 layout(location = 3) out vec4 normalPlus;
@@ -100,15 +100,9 @@ vec3 saturate(vec3 rgb, float adjustment)
 
 void main()
 {
-    // discard when depth out of range
+    // write depth
     float depthCutoff = heightPlusOut.z;
-    float depth = gl_FragCoord.z / gl_FragCoord.w;
-    if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
-    else if (depth <= -depthCutoff) discard;
-
-    // forward position, marking w for written
-    position.xyz = positionOut.xyz;
-    position.w = 1.0;
+    depth = gl_FragCoord.z;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -129,9 +123,8 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo, discading if even partly transparent
+    // compute albedo
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.w < ALBEDO_ALPHA_MIN) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties

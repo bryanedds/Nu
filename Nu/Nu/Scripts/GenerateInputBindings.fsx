@@ -38,33 +38,33 @@ let upperCaseToPascalCase (original : string) =
     let upperCaseInside = Regex "(?<=[A-Z])[A-Z]+?((?=[A-Z][a-z])|(?=[0-9]))"
     let pascalCase =
         // replace white spaces with undescore, then replace all invalid chars with empty string
-        invalidCharsRgx.Replace(whiteSpace.Replace(original, "_"), "") |>
+        invalidCharsRgx.Replace(whiteSpace.Replace(original, "_"), "")
         // split by underscores
-        (fun (str : string) -> str.Split ([|'_'|], StringSplitOptions.RemoveEmptyEntries)) |>
+        |> (fun (str : string) -> str.Split ([|'_'|], StringSplitOptions.RemoveEmptyEntries))
         // set first letter to uppercase
-        (fun (strs : string array) -> strs.Select(fun w -> startsWithLowerCaseChar.Replace (w, fun m -> m.Value.ToUpperInvariant ()))) |>
+        |> (fun (strs : string array) -> strs.Select(fun w -> startsWithLowerCaseChar.Replace (w, fun m -> m.Value.ToUpperInvariant ())))
         // replace second and all following upper case letters to lower if there is no next lower (ABC -> Abc)
-        (fun (strs : string seq) -> strs.Select (fun w -> firstCharFollowedByUpperCasesOnly.Replace (w, fun m -> m.Value.ToLowerInvariant ()))) |>
+        |> (fun (strs : string seq) -> strs.Select (fun w -> firstCharFollowedByUpperCasesOnly.Replace (w, fun m -> m.Value.ToLowerInvariant ())))
         // set upper case the first lower case following a number (Ab9cd -> Ab9Cd)
-        (fun (strs : string seq) -> strs.Select(fun w -> lowerCaseNextToNumber.Replace (w, fun m -> m.Value.ToUpperInvariant ()))) |>
+        |> (fun (strs : string seq) -> strs.Select(fun w -> lowerCaseNextToNumber.Replace (w, fun m -> m.Value.ToUpperInvariant ())))
         // lower second and next upper case letters except the last if it follows by any lower (ABcDEf -> AbcDef)
-        (fun (strs : string seq) -> strs.Select(fun w -> upperCaseInside.Replace (w, fun m -> m.Value.ToLowerInvariant ())))
+        |> (fun (strs : string seq) -> strs.Select(fun w -> upperCaseInside.Replace (w, fun m -> m.Value.ToLowerInvariant ())))
     String.Concat pascalCase
 
 let enumEntries (ty : Type) =
-    ty.GetEnumNames () |>
-    enumerable<string> |>
-    Seq.map (fun (name : string) ->
+    ty.GetEnumNames ()
+    |> enumerable<string>
+    |> Seq.map (fun (name : string) ->
         let name = name.Replace ("SDL_SCANCODE_", "")
         let firstChar = name.[0] // NOTE: elided bounds check because I presume no case where this is possible
         if firstChar >= '0' && firstChar <= '9'
         then "Num" + name
-        else name) |>
-    flip Seq.zip (ty.GetEnumValues () |> enumerable<int>) |>
-    Seq.filter (fun (name, _) -> name <> "SDL_NUM_SCANCODES") |>
-    Seq.map (mapFst (fun (name : string) -> name.Replace ("RETURN", "ENTER"))) |> // NOTE: ImGui calls this the 'enter' key, so I choose that.
-    Seq.map (mapFst upperCaseToPascalCase) |>
-    List.ofSeq
+        else name)
+    |> flip Seq.zip (ty.GetEnumValues () |> enumerable<int>)
+    |> Seq.filter (fun (name, _) -> name <> "SDL_NUM_SCANCODES")
+    |> Seq.map (mapFst (fun (name : string) -> name.Replace ("RETURN", "ENTER"))) // NOTE: ImGui calls this the 'enter' key, so I choose that.
+    |> Seq.map (mapFst upperCaseToPascalCase)
+    |> List.ofSeq
 
 let enumEntryToCode (entryName : string, entryValue : int) =
     "    | " + entryName + " = " + scstring entryValue

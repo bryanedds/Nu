@@ -21,6 +21,7 @@ type BulletDispatcher () =
 
     static member Properties =
         [define Entity.Size (v3 16.0f 16.0f 0.0f)
+         define Entity.MountOpt None
          define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Restitution 0.5f
