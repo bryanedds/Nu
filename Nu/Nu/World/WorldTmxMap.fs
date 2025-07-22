@@ -354,7 +354,7 @@ module TmxMap =
                     // accumulate descriptors
                     let descriptors = SList.make ()
                     for tileY in 0 .. dec tileMap.Height do
-                        let offsetY = single (tileMap.Height - tileY) * tileSize.Y - tileSize.Y
+                        let offsetY = single (tileMap.Height - tileY - 1) * tileSize.Y
                         let tileStripBounds = box2 (parallaxPosition + v2Up * offsetY) (v2 layerBounds.Size.X tileSize.Y)
                         if viewBounds.Intersects tileStripBounds then
                             let tileStrip = SList.make ()
