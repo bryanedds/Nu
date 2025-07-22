@@ -47,6 +47,9 @@ module WorldModuleEntity =
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
 
+    /// OPTIMIZATION: cache layout facet type for quick containment check.
+    let mutable internal LayoutFacetType = Unchecked.defaultof<Type>
+
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
@@ -1302,6 +1305,15 @@ module WorldModuleEntity =
             World.setEntityAnglesLocal (Math.DegreesToRadians3d value) entity world
 
         static member internal propagateEntityElevation3 mount mounter world =
+
+            // HACK: for layout-based entities like guis, elevate them to make sure they're enough above their parent.
+            // This is worth the hack because it's an important UX improvement.
+            if  World.getEntityElevationLocal mounter world < 1.0f &&
+                Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mount world) &&
+                Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mounter world) then
+                World.setEntityElevationLocal 1.0f mounter world |> ignore<bool>
+
+            // propagate elevation
             let elevationMount = World.getEntityElevation mount world
             let elevationLocal = World.getEntityElevationLocal mounter world
             let elevation = elevationMount + elevationLocal
@@ -2106,13 +2118,41 @@ module WorldModuleEntity =
             let entityState = EntityState.copy entityState
             World.setEntityState entityState entity world
 
+        static member internal registerEntityIndex (ty : Type) (entity : Entity) (world : World) =
+            let config = World.getCollectionConfig world
+            let mutable entitiesIndexed = world.EntitiesIndexed
+            for ty in ty :: Reflection.getBaseTypesExceptObject ty do
+                entitiesIndexed <-
+                    match entitiesIndexed.TryGetValue struct (entity.Group, ty) with
+                    | (true, entities) ->
+                        let entities = USet.add entity entities
+                        UMap.add struct (entity.Group, ty) entities entitiesIndexed
+                    | (false, _) ->
+                        UMap.add struct (entity.Group, ty) (USet.singleton HashIdentity.Structural config entity) entitiesIndexed
+            world.WorldState <- { world.WorldState with EntitiesIndexed = entitiesIndexed }
+
+        static member internal unregisterEntityIndex (ty : Type) (entity : Entity) (world : World) =
+            let mutable entitiesIndexed = world.EntitiesIndexed
+            for ty in ty :: Reflection.getBaseTypesExceptObject ty do
+                entitiesIndexed <-
+                    match entitiesIndexed.TryGetValue struct (entity.Group, ty) with
+                    | (true, entities) ->
+                        let entities = USet.remove entity entities
+                        if USet.isEmpty entities
+                        then UMap.remove struct (entity.Group, ty) entitiesIndexed
+                        else UMap.add struct (entity.Group, ty) entities entitiesIndexed
+                    | (false, _) ->
+                        entitiesIndexed
+            world.WorldState <- { world.WorldState with EntitiesIndexed = entitiesIndexed }
+
         static member internal registerEntity entity world =
             let facets = World.getEntityFacets entity world
             for facet in facets do
+                World.registerEntityIndex (getType facet) entity world
                 facet.Register (entity, world)
-                if WorldModule.getSelected entity world then
-                    facet.RegisterPhysics (entity, world)
+                if WorldModule.getSelected entity world then facet.RegisterPhysics (entity, world)
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            World.registerEntityIndex (getType dispatcher) entity world
             dispatcher.Register (entity, world)
             World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
             let eventTrace = EventTrace.debug "World" "registerEntity" "Register" EventTrace.empty
@@ -2134,8 +2174,10 @@ module WorldModuleEntity =
                 facet.Unregister (entity, world)
                 if WorldModule.getSelected entity world then
                     facet.UnregisterPhysics (entity, world)
+                World.unregisterEntityIndex (getType facet) entity world
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             dispatcher.Unregister (entity, world)
+            World.unregisterEntityIndex (getType dispatcher) entity world
 
         static member internal registerEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
@@ -2337,6 +2379,8 @@ module WorldModuleEntity =
             // propagate properties
             match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
             | Some mount ->
+                // NOTE: this results in an n^2 application of propagation, which might need to be optimized by
+                // creating a new function that only propagates from the mount to this individual entity.
                 World.propagateEntityAffineMatrix mount world
                 World.propagateEntityElevation mount world
                 World.propagateEntityEnabled mount world

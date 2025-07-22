@@ -36,45 +36,50 @@ type GameplayDispatcher () =
         // only process when selected
         if screen.GetSelected world then
 
-            // process scene initialization
-            let initializing = FQueue.contains Select selectionResults
-            if initializing then
+            // process screen selection
+            let selecting = FQueue.contains Select selectionResults
+            if selecting then
                 Simulants.Gameplay.SetGameplayState Playing world
                 Simulants.Gameplay.SetScore 0 world
 
             // begin scene declaration, processing nav sync at end of frame since optimized representations like
             // frozen entities won't have their nav info registered until then
             World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
-            if initializing then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
+            if selecting then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                [if initializing then Entity.Position @= v3 0.0f 1.65f 0.0f
+                [if selecting then Entity.Position @= v3 0.0f 1.65f 0.0f
                  Entity.Elevation .= 1.0f]
                 world
 
-            // process attacks
-            for attacked in World.doSubscription "Attacks" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                attacked.HitPoints.Map (dec >> max 0) world
-                if attacked.GetHitPoints world > 0 then
-                    if not (attacked.GetActionState world).IsInjuryState then
-                        attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                else
-                    if not (attacked.GetActionState world).IsWoundState then
-                        attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                        attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+            // collect characters for processing
+            let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
 
-            // process deaths
-            for dead in World.doSubscription "Deaths" (Events.DeathEvent --> Simulants.GameplayScene --> Address.Wildcard) world do
-                match dead.GetCharacterType world with
-                | Enemy ->
-                    World.destroyEntity dead world
-                    screen.Score.Map ((+) 100) world
-                | Player ->
-                    screen.SetGameplayState Quit world
+            // process character attacks
+            for character in characters do
+                for attacked in World.doSubscription "Attack" character.AttackEvent world do
+                    attacked.HitPoints.Map (dec >> max 0) world
+                    if attacked.GetHitPoints world > 0 then
+                        if not (attacked.GetActionState world).IsInjuryState then
+                            attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                    else
+                        if not (attacked.GetActionState world).IsWoundState then
+                            attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+
+            // process character deaths
+            for character in characters do
+                for dead in World.doSubscription "Death" character.DeathEvent world do
+                    match dead.GetCharacterType world with
+                    | Enemy ->
+                        World.destroyEntity dead world
+                        screen.Score.Map ((+) 100) world
+                    | Player ->
+                        screen.SetGameplayState Quit world
 
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments

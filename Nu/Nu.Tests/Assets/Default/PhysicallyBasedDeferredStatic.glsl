@@ -62,7 +62,6 @@ void main()
 #version 460 core
 
 const float GAMMA = 2.2;
-const float ALBEDO_ALPHA_MIN = 0.3;
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
@@ -101,12 +100,9 @@ vec3 saturate(vec3 rgb, float adjustment)
 
 void main()
 {
-    // discard when depth out of range
+    // write depth
     float depthCutoff = heightPlusOut.z;
     depth = gl_FragCoord.z;
-    float depthView = depth / gl_FragCoord.w;
-    if (depthCutoff >= 0.0) { if (depthView > depthCutoff) discard; }
-    else if (depthView <= -depthCutoff) discard;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -127,9 +123,8 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo, discading if even partly transparent
+    // compute albedo
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.w < ALBEDO_ALPHA_MIN) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties

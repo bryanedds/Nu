@@ -2969,7 +2969,8 @@ type BasicStaticBillboardEmitterFacet () =
                               SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
                               FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
                               ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
-                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt }
+                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
+                              ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt }
                         Some
                             (RenderBillboardParticles
                                 { CastShadow = castShadow
@@ -2992,6 +2993,9 @@ type BasicStaticBillboardEmitterFacet () =
 [<AutoOpen>]
 module StaticModelFacetExtensions =
     type Entity with
+        member this.GetClipped world : bool = this.Get (nameof this.Clipped) world
+        member this.SetClipped (value : bool) world = this.Set (nameof this.Clipped) value world
+        member this.Clipped = lens (nameof this.Clipped) this this.GetClipped this.SetClipped
         member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof this.StaticModel) world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
         member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
@@ -3003,6 +3007,7 @@ type StaticModelFacet () =
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
+         define Entity.Clipped false
          define Entity.DepthTest LessThanOrEqualTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
@@ -3016,12 +3021,13 @@ type StaticModelFacet () =
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
+            let clipped = entity.GetClipped world
             let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, depthTest, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, clipped, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -3123,6 +3129,44 @@ type StaticModelSurfaceFacet () =
                 else [|Miss|]
             else [|Miss|]
         | ValueNone -> [|Miss|]
+
+[<AutoOpen>]
+module StaticModelSurfaceFacetExtensions2 =
+
+    type Entity with
+
+        /// Attempt to get the currently assigned albedo image, looking it up from metadata when unassigned.
+        member this.TryGetAlbedoImage world =
+            if this.Has<StaticModelSurfaceFacet> world then
+                let material = this.GetMaterial world
+                match material.AlbedoImageOpt with
+                | ValueSome _ as albedoImageOpt -> albedoImageOpt
+                | ValueNone ->
+                    let staticModel = this.GetStaticModel world
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | ValueSome metadata ->
+                        let surfaceIndex = this.GetSurfaceIndex world
+                        let surface = metadata.Surfaces.[surfaceIndex]
+                        match Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel with
+                        | ValueSome _ as albedoImageOpt -> albedoImageOpt
+                        | ValueNone -> ValueNone
+                    | ValueNone -> ValueNone
+            else ValueNone
+
+        /// Attempt to get the currently assigned albedo image asset name, looking it up from metadata when unassigned.
+        /// Useful in editor because oftentimes the only useful identifying information about a static model surface is
+        /// its material assets, particularly its albedo image like so -
+        /// <code>
+        /// for entity in World.getEntities SelectedGroup world do
+        ///     match entity.TryGetAlbedoImageAssetName world with
+        ///     | ValueSome name when name.Contains "Glass" ->
+        ///         entity.SetRenderStyle (Forward (0.0f, 0.0f)) world
+        ///     | _ -> ()
+        /// </code>
+        member this.TryGetAlbedoImageAssetName world =
+            match this.TryGetAlbedoImage world with
+            | ValueSome albedoImage -> ValueSome albedoImage.AssetName
+            | ValueNone -> ValueNone
 
 [<AutoOpen>]
 module AnimatedModelFacetExtensions =

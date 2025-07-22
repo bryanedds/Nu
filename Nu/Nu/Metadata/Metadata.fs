@@ -706,8 +706,21 @@ module Metadata =
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
-                match material.IgnoreLightMapsOpt with
-                | ValueSome ignoreLightMaps -> ValueSome ignoreLightMaps
+                match material.TwoSidedOpt with
+                | ValueSome twoSided -> ValueSome twoSided
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelClipped materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[materialIndex]
+                match material.ClippedOpt with
+                | ValueSome clipped -> ValueSome clipped
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
         | ValueNone -> ValueNone
@@ -792,6 +805,11 @@ module Metadata =
     /// Thread-safe.
     let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelTwoSided materialIndex staticModel
+
+    /// Attempt to get the clipped property for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelClipped materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelClipped materialIndex staticModel
 
     /// Attempt to get the 3d navigation shape for the given material index and static model.
     /// Thread-safe.

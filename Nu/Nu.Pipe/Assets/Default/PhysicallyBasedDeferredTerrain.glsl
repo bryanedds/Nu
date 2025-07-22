@@ -68,7 +68,6 @@ void main()
 #version 460 core
 
 const float GAMMA = 2.2;
-const float ALBEDO_ALPHA_MIN = 0.3;
 const int TERRAIN_LAYERS_MAX = 6;
 
 uniform vec3 eyeCenter;
@@ -138,10 +137,7 @@ void main()
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
-    // discard fragment if even partly transparent
-    if (albedoBlend.w < ALBEDO_ALPHA_MIN) discard;
-
-    // populate albedo, material, and normalPlus
+    // populate depth, albedo, material, and normalPlus
     depth = gl_FragCoord.z;
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);

@@ -76,6 +76,7 @@ module PhysicallyBased =
           FinenessTexture : Texture.Texture
           ScatterTexture : Texture.Texture
           TwoSided : bool
+          Clipped : bool
           Names : string }
 
         /// The empty material.
@@ -91,6 +92,7 @@ module PhysicallyBased =
               FinenessTexture = Texture.EmptyTexture
               ScatterTexture = Texture.EmptyTexture
               TwoSided = false
+              Clipped = false
               Names = "" }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
@@ -219,6 +221,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.FinenessTexture = right.SurfaceMaterial.FinenessTexture &&
             left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
+            left.SurfaceMaterial.Clipped = right.SurfaceMaterial.Clipped &&
             left.SurfaceMaterial.Names = right.SurfaceMaterial.Names &&
             refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
 
@@ -238,7 +241,8 @@ module PhysicallyBased =
                 (hash material.FinenessTexture <<< 16) ^^^
                 (hash material.ScatterTexture <<< 18) ^^^
                 (hash material.TwoSided <<< 20) ^^^
-                (hash material.Names <<< 22) ^^^
+                (hash material.Clipped <<< 22) ^^^
+                (hash material.Names <<< 24) ^^^
                 Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 24
             { HashCode = hashCode
               SurfaceNames = names
@@ -1034,6 +1038,12 @@ module PhysicallyBased =
             | ValueSome twoSided -> twoSided
             | ValueNone -> material.IsTwoSided
 
+        // compute clippedness
+        let clipped =
+            match material.ClippedOpt with
+            | ValueSome clipped -> clipped
+            | ValueNone -> false
+
         // compose names when not rendering so that surfaces can be correlated without textures
         let names =
             if not renderable then
@@ -1073,6 +1083,7 @@ module PhysicallyBased =
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
               TwoSided = twoSided
+              Clipped = clipped
               Names = names }
 
         // fin
@@ -3250,7 +3261,7 @@ module PhysicallyBased =
         Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
         Hl.Assert ()
-        
+
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -4070,6 +4081,7 @@ module PhysicallyBased =
           ShadowTerrainSpotShader : PhysicallyBasedDeferredTerrainShader
           ShadowTerrainDirectionalShader : PhysicallyBasedDeferredTerrainShader
           DeferredStaticShader : PhysicallyBasedShader
+          DeferredStaticClippedShader : PhysicallyBasedShader
           DeferredAnimatedShader : PhysicallyBasedShader
           DeferredTerrainShader : PhysicallyBasedDeferredTerrainShader
           DeferredLightMappingShader : PhysicallyBasedDeferredLightMappingShader
@@ -4098,6 +4110,7 @@ module PhysicallyBased =
 
         // create deferred shaders
         let deferredStaticShader = CreatePhysicallyBasedShader lightMapsMax lightsMax Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath in Hl.Assert ()
+        let deferredStaticClippedShader = CreatePhysicallyBasedShader lightMapsMax lightsMax Constants.Paths.PhysicallyBasedDeferredStaticClippedShaderFilePath in Hl.Assert ()
         let deferredAnimatedShader = CreatePhysicallyBasedShader lightMapsMax lightsMax Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath in Hl.Assert ()
         let deferredTerrainShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath in Hl.Assert ()
         let deferredLightMappingShader = CreatePhysicallyBasedDeferredLightMappingShader lightMapsMax Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath in Hl.Assert ()
@@ -4124,6 +4137,7 @@ module PhysicallyBased =
           ShadowTerrainSpotShader = shadowTerrainSpotShader
           ShadowTerrainDirectionalShader = shadowTerrainDirectionalShader
           DeferredStaticShader = deferredStaticShader
+          DeferredStaticClippedShader = deferredStaticClippedShader
           DeferredAnimatedShader = deferredAnimatedShader
           DeferredTerrainShader = deferredTerrainShader
           DeferredLightMappingShader = deferredLightMappingShader
@@ -4148,6 +4162,7 @@ module PhysicallyBased =
         Gl.DeleteProgram shaders.ShadowTerrainSpotShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.ShadowTerrainDirectionalShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.DeferredStaticShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.DeferredStaticClippedShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.DeferredAnimatedShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.DeferredTerrainShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.DeferredLightMappingShader.PhysicallyBasedDeferredLightMappingShader

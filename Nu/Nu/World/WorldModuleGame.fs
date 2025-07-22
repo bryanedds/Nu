@@ -295,6 +295,12 @@ module WorldModuleGame =
             let viewBounds = World.getViewBounds2dAbsolute world
             bounds.Intersects viewBounds
 
+        /// Check that the given bounds is within view.
+        static member boundsInView2d absolute (bounds : Box2) world =
+            if absolute
+            then World.boundsInView2dAbsolute bounds world
+            else World.boundsInView2dRelative bounds world
+
         /// Check that the given bounds is within the 2d eye's sight relative to eye center.
         static member boundsInView2dRelative (bounds : Box2) world =
             let viewBounds = World.getViewBounds2dRelative world

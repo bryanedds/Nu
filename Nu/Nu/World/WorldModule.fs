@@ -29,24 +29,12 @@ module WorldModule =
     /// TODO: P1: consider making this an AmbientState flag.
     let mutable internal UpdatingSimulants = false
 
-    /// Track if we're in the portion of the frame before tasklet processing has started or after.
+    /// Track if we're in the portion of the frame when end-frame processing has started.
     /// TODO: P1: consider making this an AmbientState flag.
-    let mutable internal TaskletProcessingStarted = false
-
-    /// F# reach-around for adding script unsubscriptions to simulants.
-    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> unit =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for unsubscribing script subscriptions of simulants.
-    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> unit =
-        Unchecked.defaultof<_>
+    let mutable internal EndFrameProcessingStarted = false
 
     /// F# reach-around for checking that a simulant is selected.
     let mutable internal getSelected : Simulant -> World -> bool =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for checking that a simulant is ignoring bindings.
-    let mutable internal ignorePropertyBindings : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
     /// F# reach-around for sorting subscriptions by elevation.
@@ -408,7 +396,12 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
         static member defer operation (simulant : Simulant) (world : World) =
-            let time = if TaskletProcessingStarted && world.Advancing then UpdateTime 1L else UpdateTime 0L
+            let time =
+                if EndFrameProcessingStarted && world.Advancing then
+                    match Constants.GameTime.DesiredFrameRate with
+                    | StaticFrameRate _ -> UpdateTime 1L
+                    | DynamicFrameRate _ -> TickTime 1L
+                else GameTime.zero
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.

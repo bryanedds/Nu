@@ -18,6 +18,9 @@ module Reflection =
     let private AssembliesLoaded =
         Dictionary<string, Assembly> StringComparer.Ordinal
 
+    let private BaseTypesExceptObjectCache =
+        Dictionary<Type, Type list> HashIdentity.Structural
+
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
@@ -103,12 +106,18 @@ module Reflection =
 
     /// Get the concrete base types of a type excepting the object type.
     let rec getBaseTypesExceptObject (targetType : Type) =
-        match targetType.BaseType with
-        | null -> []
-        | baseType ->
-            if baseType <> typeof<obj>
-            then baseType :: getBaseTypesExceptObject baseType
-            else []
+        match BaseTypesExceptObjectCache.TryGetValue targetType with
+        | (true, baseTypes) -> baseTypes
+        | (false, _) ->
+            let baseTypes =
+                match targetType.BaseType with
+                | null -> []
+                | baseType ->
+                    if baseType <> typeof<obj>
+                    then baseType :: getBaseTypesExceptObject baseType
+                    else []
+            BaseTypesExceptObjectCache.Add (targetType, baseTypes)
+            baseTypes
 
     /// Get the property definitions of a target type not considering inheritance.
     /// OPTIMIZATION: Memoized for efficiency since Properties will likely return a newly constructed list.

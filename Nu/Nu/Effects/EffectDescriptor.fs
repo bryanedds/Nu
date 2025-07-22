@@ -193,9 +193,9 @@ and Content =
     | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
     | AnimatedSprite of Image : Resource * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
     | TextSprite of Font : Resource * Text : string * FontSizing : int option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
-    | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * TwoSided : bool * Aspects : Aspect array * Content : Content
-    | StaticModel of Resource * Aspects : Aspect array * Content : Content
-    | Light3d of LightType * Aspects : Aspect array * Content : Content
+    | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * TwoSided : bool * Clipped : bool * Aspects : Aspect array * Content : Content
+    | StaticModel of Resource : Resource * Clipped : bool * Aspects : Aspect array * Content : Content
+    | Light3d of LightType : LightType * Aspects : Aspect array * Content : Content
     | Mount of Shift : Shift * Aspects : Aspect array * Content : Content
     | Repeat of Shift : Shift * Repetition * Aspects : Aspect array * Content : Content
     | Emit of Shift : Shift * Rate : Rate * EmitterAspects : Aspect array * Aspects : Aspect array * Content : Content

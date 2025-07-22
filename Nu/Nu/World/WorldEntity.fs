@@ -656,8 +656,26 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             dispatcher.TryUntruncateModel<'model> (model, entity, world)
 
+        /// Get all the entities in a group with the given dispatcher type.
+        static member getEntitiesAs<'d when 'd :> EntityDispatcher> (group : Group) (world : World) : Entity USet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<'d>) with
+            | (true, entities) -> entities
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+
+        /// Get all the entities in a group that have a given facet type.
+        static member getEntitiesWith<'f when 'f :> Facet> (group : Group) (world : World) : Entity USet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<'f>) with
+            | (true, entities) -> entities
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+
         /// Get all the entities in a group.
-        static member getEntities (group : Group) (world : World) =
+        static member getEntities (group : Group) (world : World) : Entity USet =
+            match world.EntitiesIndexed.TryGetValue struct (group, typeof<EntityDispatcher>) with
+            | (true, entities) -> entities
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+
+        /// Get all the entities in a group in depth-first order.
+        static member getEntitiesDepthFirst (group : Group) (world : World) =
             match world.Simulants.TryGetValue group with
             | (true, childrenOpt) ->
                 match childrenOpt with
@@ -802,9 +820,8 @@ module WorldEntityModule =
         /// Generate a sequential, editor-friendly entity name.
         static member generateEntitySequentialName dispatcherName group (world : World) =
             let entityNames =
-                world.EntityStates // OPTIMIZATION: this approach is faster than World.getEntities in big scenes.
-                |> Seq.filter (fun entry -> (fst entry).Group = group)
-                |> Seq.map (fun entry -> (fst entry).Name)
+                World.getEntities group world
+                |> Seq.map _.Name
                 |> hashSetPlus StringComparer.Ordinal
             World.generateEntitySequentialName2 dispatcherName entityNames
 

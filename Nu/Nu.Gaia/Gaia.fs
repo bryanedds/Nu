@@ -70,7 +70,7 @@ module Gaia =
     let mutable private OpenProjectImperativeExecution = false
     let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
-    let mutable private NewProjectType = "MMCC Game"
+    let mutable private NewProjectType = "ImSim Game"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
     let mutable private NewEntityOverlayName = "(Default Overlay)"
@@ -960,7 +960,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     EntityFileDialogState.FileName <- ""
                     true
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC or ImSim API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim or MMCC API)."
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
@@ -985,7 +985,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     SelectedEntityOpt <- None
                     true
             else
-                MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC or ImSim API)."
+                MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the ImSim or MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1045,7 +1045,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     World.cutEntityToClipboard entity world
                     true
             else
-                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the MMCC or ImSim API)."
+                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim of MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1056,7 +1056,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 World.copyEntityToClipboard entity world
                 true
             else
-                MessageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the MMCC or ImSim API)."
+                MessageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the ImSim or MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1128,7 +1128,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     GroupFileDialogState.FileName <- ""
                     true
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC or ImSim API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim of MMCC API)."
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
@@ -1794,7 +1794,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     selectEntityOpt (Some sourceEntity') world
                                     ShowSelectedEntity <- true
                             else Log.warn "Cannot mount an entity circularly."
-                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC or ImSim API)."
+                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
                 | None -> ()
             ImGui.EndDragDropTarget ()
         if ImGui.BeginDragDropSource () then
@@ -1893,7 +1893,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if not (entity.GetProtected world) then
                         snapshot ChangeEntityDispatcher world
                         World.changeEntityDispatcher dispatcherName entity world
-                    else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC or ImSim API)."
+                    else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the ImSim or MMCC API)."
                 if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                 if dispatcherName = dispatcherNameCurrent then ImGui.SetItemDefaultFocus ()
             ImGui.EndCombo ()
@@ -2653,7 +2653,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                     else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
-                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC or ImSim API)."
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim of MMCC API)."
                         | None -> ()
                     ImGui.EndDragDropTarget ()
 
@@ -3353,16 +3353,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
-                for projectType in ["MMCC Empty"; "MMCC Game"; "ImSim Empty"; "ImSim Game"] do
+                for projectType in ["ImSim Game"; "ImSim Empty"; "MMCC Game"; "MMCC Empty"] do
                     if ImGui.Selectable projectType then
                         NewProjectType <- projectType
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "MMCC Empty" -> "Create an empty MMCC project. This contains the minimum code needed to experiment with the MMCC API."
-                | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of MMCC usage."
-                | "ImSim Empty" -> "Create an empty ImSim project. This contains the minimum code needed to experiment with ImSim in a sandbox environment."
                 | "ImSim Game" -> "Create a full ImSim game project. This contains the structures and pieces that embody the best practices of ImSim usage."
+                | "ImSim Empty" -> "Create an empty ImSim project. This contains the minimum code needed to initially learn or experiment with the ImSim API."
+                | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of MMCC usage."
+                | "MMCC Empty" -> "Create an empty MMCC project. This contains the minimum code needed to initially learn or experiment with the MMCC API."
                 | _ -> failwithumf ()
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
@@ -3403,9 +3403,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         Directory.CreateDirectory NewProjectName |> ignore<DirectoryInfo>
                         Directory.SetCurrentDirectory newProjectDir
                         Process.Start("dotnet", "new " + shortName + " --force").WaitForExit()
-
-                        // TODO: consider also changing the profile name in the launchSettings.json file to match the
-                        // user-defined project name.
 
                         // rename project file
                         File.Copy (templateFileName, newFileName, true)
@@ -4037,6 +4034,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     (RenderStaticModels
                         { StaticModels = lightProbeModels
                           StaticModel = Assets.Default.LightProbeModel
+                          Clipped = false
                           DepthTest = LessThanOrEqualTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
@@ -4054,6 +4052,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     (RenderStaticModels
                         { StaticModels = lightModels
                           StaticModel = Assets.Default.LightbulbModel
+                          Clipped = false
                           DepthTest = LessThanOrEqualTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
@@ -4111,6 +4110,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   InsetOpt = None
                                   MaterialProperties = MaterialProperties.defaultProperties
                                   StaticModel = Assets.Default.HighlightModel
+                                  Clipped = false // not needed when forward-rendered
                                   DepthTest = LessThanOrEqualTest
                                   RenderType = ForwardRenderType (0.0f, sort)
                                   RenderPass = NormalPass })

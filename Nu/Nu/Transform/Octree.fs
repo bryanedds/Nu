@@ -257,7 +257,8 @@ module internal Octnode =
                     getElementsInPlayBox box set node
         | ElementChildren elements ->
             for element in elements do
-                if not element.StaticInPlay then
+                let presence = element.Presence
+                if not element.StaticInPlay && not presence.IsImposter && not presence.IsOmnipresent then
                     let bounds = element.Bounds
                     if bounds.Intersects box then
                         set.Add element |> ignore
@@ -351,7 +352,8 @@ module internal Octnode =
                     getElementsInPlayFrustum frustum set node
         | ElementChildren elements ->
             for element in elements do
-                if not element.StaticInPlay then
+                let presence = element.Presence
+                if not element.StaticInPlay && not presence.IsImposter && not presence.IsOmnipresent then
                     let bounds = element.Bounds
                     if frustum.Intersects bounds then
                         set.Add element |> ignore

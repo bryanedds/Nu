@@ -21,9 +21,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
+    /// Check that an asset with the given file path should be filtered in a 2D rendering context.
+    let Filtered2d (filePath : string) =
+        let name = PathF.GetFileNameWithoutExtension filePath
+        name.EndsWith "_f" ||
+        name.EndsWith "Filtered"
+
     /// Check that an asset with the given file path can utilize block compression (IE, it's not a normal map,
     /// blend map, or specified as uncompressed).
-    /// TODO: move this somewhere more general?
     let BlockCompressable (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         not (name.EndsWith "_n") &&

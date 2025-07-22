@@ -1797,7 +1797,7 @@ module WorldModule2 =
 
                                                     // process tasklets that have been scheduled and are ready to run
                                                     world.Timers.TaskletsTimer.Restart ()
-                                                    WorldModule.TaskletProcessingStarted <- true
+                                                    WorldModule.EndFrameProcessingStarted <- true
                                                     World.processTasklets world
                                                     world.Timers.TaskletsTimer.Stop ()
                                                     match World.getLiveness world with
@@ -1910,7 +1910,7 @@ module WorldModule2 =
 
                                                                     // update time and recur
                                                                     world.Timers.FrameTimer.Stop ()
-                                                                    WorldModule.TaskletProcessingStarted <- false
+                                                                    WorldModule.EndFrameProcessingStarted <- false
                                                                     World.updateTime world
                                                                     if world.Advancing then
                                                                         World.publish () (Events.TimeUpdateEvent --> Game) Game world
@@ -2267,7 +2267,7 @@ module EntityPropertyDescriptor =
              "Transition Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
         elif propertyName = "MaterialProperties" then "Material Properties"
-        elif propertyName = "Material" then "Material Properties 2"
+        elif propertyName = "Material" || propertyName = "Clipped" then "Material Properties 2"
         elif propertyName = "NavShape" || propertyName = "Nav3dConfig" then "Navigation Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "~ More Properties"

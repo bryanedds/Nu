@@ -261,9 +261,9 @@ type FlowDirection =
 
 /// A gui layout.
 type Layout =
-    | Flow of FlowDirection * FlowLimit
-    | Dock of Vector4 * bool * bool
-    | Grid of Vector2i * FlowDirection option * bool
+    | Flow of FlowDirection : FlowDirection * FlowLimit : FlowLimit
+    | Dock of Bounds : Vector4 * PercentageBased : bool * ResizeChildren : bool
+    | Grid of Dims : Vector2i * FlowDirectionOpt : FlowDirection option * ResizeChildren : bool
     | Manual
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing

@@ -361,7 +361,16 @@ module AssimpExtensions =
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
                     with _ -> ValueNone
-                else ValueSome true
+                else ValueSome false
+            | ValueNone -> ValueNone
+
+        member this.ClippedOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ClippedPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome false
             | ValueNone -> ValueNone
 
         member this.NavShapeOpt =
