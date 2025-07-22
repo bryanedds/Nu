@@ -354,8 +354,8 @@ module TmxMap =
                     // accumulate descriptors
                     let descriptors = SList.make ()
                     for tileY in 0 .. dec tileMap.Height do
-                        let offsetY = single (tileMap.Height - tileY - 1) * tileSize.Y
-                        let tileStripBounds = box2 (parallaxPosition + v2Up * offsetY) (v2 layerBounds.Size.X tileSize.Y)
+                        let tileStripY = single (tileMap.Height - tileY - 1) * tileSize.Y
+                        let tileStripBounds = box2 (parallaxPosition + v2Up * tileStripY) (v2 layerBounds.Size.X tileSize.Y)
                         if viewBounds.Intersects tileStripBounds then
                             let tileStrip = SList.make ()
                             for tileX in 0 .. dec tileMap.Width do
@@ -383,7 +383,7 @@ module TmxMap =
                                         makeLayerTile tileGid tile.HorizontalFlip tile.VerticalFlip tile.DiagonalFlip
                                 tileStrip.Add tile
                             let mutable transform = Transform.makeDefault false
-                            transform.Position <- parallaxPosition.V3 + v3Up * offsetY
+                            transform.Position <- parallaxPosition.V3 + v3Up * tileStripY
                             transform.Size <- v3 (single tileMap.Width * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation
                             transform.Absolute <- absolute
