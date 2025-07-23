@@ -505,10 +505,12 @@ module Hl =
             for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
 
-    /// A swapchain and its assets that may be refreshed for a given extent.
+    /// A swapchain and its assets that may be refreshed for a different screen size.
     type private Swapchain =
         { _SwapchainInternalOpts : SwapchainInternal option array
+          _Window : nativeint
           _SurfaceFormat : VkSurfaceFormatKHR
+          mutable _SwapExtent : VkExtent2D
           mutable _SwapchainIndex : int }
 
         /// The Vulkan swapchain itself.
@@ -517,8 +519,40 @@ module Hl =
         /// The framebuffer for the current swapchain image.
         member this.Framebuffer = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
         
+        /// The swap extent.
+        member this.SwapExtent = this._SwapExtent
+        
+        /// Get swap extent.
+        static member private getSwapExtent vkPhysicalDevice surface window =
+
+            // get surface capabilities
+            let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
+            
+            // check if window size is fixed or variable
+            if capabilities.currentExtent.width <> UInt32.MaxValue
+            then capabilities.currentExtent
+            else
+
+                // get pixel resolution from sdl
+                let mutable width = Unchecked.defaultof<int>
+                let mutable height = Unchecked.defaultof<int>
+                SDL.SDL_Vulkan_GetDrawableSize (window, &width, &height)
+
+                // clamp resolution to size limits
+                width <- max width (int capabilities.minImageExtent.width)
+                width <- min width (int capabilities.maxImageExtent.width)
+                height <- max height (int capabilities.minImageExtent.height)
+                height <- min height (int capabilities.maxImageExtent.height)
+
+                // fin
+                VkExtent2D (width, height)
+        
+        /// Update the swap extent.
+        static member updateSwapExtent vkPhysicalDevice surface swapchain =
+            swapchain._SwapExtent <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain._Window
+        
         /// Refresh the swapchain for a new swap extent.
-        static member refresh swapExtent physicalDevice renderPass surface swapchain device =
+        static member refresh physicalDevice renderPass surface swapchain device =
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
             let oldVkSwapchain = if swapchain._SwapchainInternalOpts.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
@@ -531,18 +565,24 @@ module Hl =
             | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
             | None -> ()
             
+            // update swap extent
+            Swapchain.updateSwapExtent physicalDevice.VkPhysicalDevice surface swapchain
+            
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapExtent oldVkSwapchain physicalDevice renderPass surface device
+            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapchain.SwapExtent oldVkSwapchain physicalDevice renderPass surface device
             swapchain._SwapchainInternalOpts.[swapchain._SwapchainIndex] <- Some swapchainInternal
         
         /// Create a Swapchain.
-        static member create surfaceFormat swapExtent physicalDevice renderPass surface device =
+        static member create surfaceFormat physicalDevice renderPass surface window device =
             
             // init swapchain index
             let swapchainIndex = 0
             
             // create SwapchainInternal array
             let swapchainInternalOpts = Array.create Constants.Vulkan.MaxFramesInFlight None
+            
+            // get swap extent
+            let swapExtent = Swapchain.getSwapExtent physicalDevice.VkPhysicalDevice surface window
             
             // create first SwapchainInternal
             let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice renderPass surface device
@@ -551,7 +591,9 @@ module Hl =
             // make Swapchain
             let swapchain =
                 { _SwapchainInternalOpts = swapchainInternalOpts
+                  _Window = window
                   _SurfaceFormat = surfaceFormat
+                  _SwapExtent = swapExtent
                   _SwapchainIndex = swapchainIndex }
 
             // fin
@@ -567,8 +609,7 @@ module Hl =
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
         private
-            { _Window : nativeint
-              mutable _WindowSizeOpt : Vector2i option
+            { mutable _WindowSizeOpt : Vector2i option
               mutable _WindowResized : bool
               mutable _RenderDesired : bool
               _Instance : VkInstance
@@ -589,8 +630,7 @@ module Hl =
               _ResourceReadyFence : VkFence
               _RenderPass : VkRenderPass
               _ClearRenderPass : VkRenderPass
-              _PresentRenderPass : VkRenderPass
-              mutable _SwapExtent : VkExtent2D }
+              _PresentRenderPass : VkRenderPass }
 
         /// Render desired.
         member this.RenderDesired = this._RenderDesired
@@ -830,31 +870,6 @@ module Hl =
             // fin
             format
 
-        /// Get swap extent.
-        static member private getSwapExtent vkPhysicalDevice surface window =
-
-            // get surface capabilities
-            let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
-            
-            // check if window size is fixed or variable
-            if capabilities.currentExtent.width <> UInt32.MaxValue
-            then capabilities.currentExtent
-            else
-
-                // get pixel resolution from sdl
-                let mutable width = Unchecked.defaultof<int>
-                let mutable height = Unchecked.defaultof<int>
-                SDL.SDL_Vulkan_GetDrawableSize (window, &width, &height)
-
-                // clamp resolution to size limits
-                width <- max width (int capabilities.minImageExtent.width)
-                width <- min width (int capabilities.maxImageExtent.width)
-                height <- max height (int capabilities.minImageExtent.height)
-                height <- min height (int capabilities.maxImageExtent.height)
-
-                // fin
-                VkExtent2D (width, height)
-
         /// Create a command pool.
         static member private createCommandPool transient queueFamilyIndex device =
             
@@ -929,16 +944,13 @@ module Hl =
             Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
             renderPass
 
-        /// Update the swap extent.
-        static member updateSwapExtent vkc =
-            vkc._SwapExtent <- VulkanContext.getSwapExtent vkc._PhysicalDevice.VkPhysicalDevice vkc._Surface vkc._Window
-        
         /// Begin the frame.
         static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
 
             // TODO: DJL: handle minimization.
             
             // check for window resize
+            // NOTE: DJL: this should never be used directly, only use the swap extent.
             match vkc._WindowSizeOpt with
             | Some windowSize ->
                 vkc._WindowResized <- windowSize <> windowSize_
@@ -953,14 +965,12 @@ module Hl =
             // must refresh swapchain immediately upon screen resize, otherwise try to acquire image from swapchain to draw onto, refreshing if swapchain out of date
             if vkc._WindowResized then
                 vkc._RenderDesired <- false
-                VulkanContext.updateSwapExtent vkc
-                Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
             else
                 let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                 if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then
                     vkc._RenderDesired <- false
-                    VulkanContext.updateSwapExtent vkc
-                    Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                    Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
                 else
                     vkc._RenderDesired <- true
                     check result
@@ -974,7 +984,7 @@ module Hl =
                 let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
                 // clear screen
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain.SwapExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
                 beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
                 endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
@@ -995,7 +1005,7 @@ module Hl =
             
                 // transition image layout for presentation
                 let mutable renderFinished = vkc.RenderFinishedSemaphore
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._SwapExtent)
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain.SwapExtent)
                 beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
                 endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
                 
@@ -1011,8 +1021,7 @@ module Hl =
 
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR then
-                    VulkanContext.updateSwapExtent vkc
-                    Swapchain.refresh vkc._SwapExtent vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                    Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
                 else check result
 
                 // advance frame in flight
@@ -1073,10 +1082,6 @@ module Hl =
                 // create vma allocator
                 let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
 
-                // get surface format and swap extent
-                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
-                let swapExtent = VulkanContext.getSwapExtent physicalDevice.VkPhysicalDevice surface window
-
                 // setup command system
                 let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
                 let mainCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
@@ -1091,18 +1096,20 @@ module Hl =
                 let inFlightFences = VulkanContext.createFences device
                 let resourceReadyFence = createFence false device
 
+                // get surface format
+                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
+
                 // render actual content; clear render area; transition layout for presentation
                 let renderPass = VulkanContext.createRenderPass false false surfaceFormat.format device
                 let clearRenderPass = VulkanContext.createRenderPass true false surfaceFormat.format device
                 let presentRenderPass = VulkanContext.createRenderPass false true surfaceFormat.format device
 
                 // setup swapchain
-                let swapchain = Swapchain.create surfaceFormat swapExtent physicalDevice renderPass surface device
+                let swapchain = Swapchain.create surfaceFormat physicalDevice renderPass surface window device
 
                 // make VulkanContext
                 let vulkanContext =
-                    { _Window = window
-                      _WindowSizeOpt = None
+                    { _WindowSizeOpt = None
                       _WindowResized = false
                       _RenderDesired = false
                       _Instance = instance
@@ -1123,8 +1130,7 @@ module Hl =
                       _ResourceReadyFence = resourceReadyFence
                       _RenderPass = renderPass
                       _ClearRenderPass = clearRenderPass
-                      _PresentRenderPass = presentRenderPass
-                      _SwapExtent = swapExtent }
+                      _PresentRenderPass = presentRenderPass }
 
                 // fin
                 Some vulkanContext
