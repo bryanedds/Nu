@@ -3075,10 +3075,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | (Choice1Of2 _, _) -> ()
                     | (Choice2Of2 exn, _) -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
 
-                    // attempt to open namespace derived from project name
+                    // attempt to open template namespace "MyGame", as well as namespace derived from project name
                     if projectDllPathValid then
+                        let errorStr = string FsiErrorStream // preserve any existing error
                         let namespaceName = PathF.GetFileNameWithoutExtension (ProjectDllPath.Replace (" ", ""))
+                        FsiSession.EvalInteractionNonThrowing ("open " + "MyGame") |> ignore<Choice<_, _> * _>
                         FsiSession.EvalInteractionNonThrowing ("open " + namespaceName) |> ignore<Choice<_, _> * _>
+                        FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder> // ignore any open directive errors
+                        FsiErrorStream.Write errorStr // restore previous error string
 
                     // eval initialization finished
                     InteractiveNeedsInitialization <- false
@@ -3086,7 +3090,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 // attempt to run interactive input
                 if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
                 if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
-                if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
                 if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
                 if InteractiveInputStr.Contains (nameof SelectedGroup) then FsiSession.AddBoundValue (nameof SelectedGroup, SelectedGroup)
                 if InteractiveInputStr.Contains (nameof SelectedEntityOpt) then
@@ -4108,7 +4111,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   CastShadow = false
                                   Presence = Omnipresent
                                   InsetOpt = None
-                                  MaterialProperties = MaterialProperties.defaultProperties
+                                  MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
                                   Clipped = false // not needed when forward-rendered
                                   DepthTest = LessThanOrEqualTest

@@ -48,7 +48,8 @@ module PhysicallyBased =
           IgnoreLightMaps : bool
           OpaqueDistance : single
           FinenessOffset : single
-          ScatterType : ScatterType }
+          ScatterType : ScatterType
+          SpecularScalar : single }
 
         /// The empty material properties.
         static member empty =
@@ -61,7 +62,8 @@ module PhysicallyBased =
               IgnoreLightMaps = false
               OpaqueDistance = 0.0f
               FinenessOffset = 0.0f
-              ScatterType = NoScatter }
+              ScatterType = NoScatter
+              SpecularScalar = 0.0f }
 
     /// Describes a physically-based material.
     type PhysicallyBasedMaterial =
@@ -194,6 +196,16 @@ module PhysicallyBased =
                 | Some _ | None -> scatterTypeDefault
             | ValueSome scatterType -> scatterType
 
+        static member extractSpecularScalar specularScalarDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.SpecularScalarOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue specularScalarDefault material.SpecularScalarOpt
+                | Some _ | None -> specularScalarDefault
+            | ValueSome specularScalar -> specularScalar
+
         static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.NavShapeOpt with
             | ValueNone ->
@@ -273,6 +285,7 @@ module PhysicallyBased =
         let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
         let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
+        let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
@@ -1032,6 +1045,9 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.ScatterTexture
             else defaultMaterial.ScatterTexture
 
+        // attempt to load light accumulation specular scalar info
+        let specularScalar = Constants.Render.SpecularScalarDefault
+
         // compute two-sidedness
         let twoSided =
             match material.TwoSidedOpt with
@@ -1068,7 +1084,8 @@ module PhysicallyBased =
               IgnoreLightMaps = ignoreLightMaps
               OpaqueDistance = opaqueDistance
               FinenessOffset = finenessOffset
-              ScatterType = scatterType }
+              ScatterType = scatterType
+              SpecularScalar = specularScalar }
 
         // make material
         let material =

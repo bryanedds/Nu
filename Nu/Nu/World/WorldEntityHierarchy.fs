@@ -111,6 +111,7 @@ module WorldEntityHierarchy =
                             let opaqueDistance = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
                             let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
                             let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
+                            let specularScalar = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -129,7 +130,8 @@ module WorldEntityHierarchy =
                                   IgnoreLightMapsOpt = ValueSome ignoreLightMaps
                                   OpaqueDistanceOpt = ValueSome opaqueDistance
                                   FinenessOffsetOpt = ValueSome finenessOffset
-                                  ScatterTypeOpt = ValueSome scatterType }
+                                  ScatterTypeOpt = ValueSome scatterType
+                                  SpecularScalarOpt = ValueSome specularScalar }
                             child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then

@@ -38,6 +38,7 @@ layout(location = 9) in vec4 texCoordsOffset;
 layout(location = 10) in vec4 albedo;
 layout(location = 11) in vec4 material;
 layout(location = 12) in vec4 heightPlus;
+layout(location = 13) in vec4 subsurfacePlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -45,6 +46,7 @@ out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out vec4 heightPlusOut;
+flat out vec4 subsurfacePlusOut;
 
 void main()
 {
@@ -71,6 +73,7 @@ void main()
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
     heightPlusOut = heightPlus;
+    subsurfacePlusOut = subsurfacePlus;
     gl_Position = viewProjection * positionOut;
 }
 
@@ -156,6 +159,7 @@ in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
+flat in vec4 subsurfacePlusOut;
 
 layout(location = 0) out vec4 frag;
 
@@ -753,8 +757,10 @@ void main()
 
     // increase alpha when accumulated specular light or fog exceeds albedo alpha. Also tone map and gamma-correct
     // specular light color (doing so seems to look better). Finally, apply alpha from albedo uniform.
+    float specularScalar = subsurfacePlusOut.z;
     lightAccumSpecular = lightAccumSpecular / (lightAccumSpecular + vec3(1.0));
     lightAccumSpecular = pow(lightAccumSpecular, vec3(1.0 / GAMMA));
+    lightAccumSpecular = lightAccumSpecular * specularScalar;
     float lightAccumAlpha = (lightAccumSpecular.r + lightAccumSpecular.g + lightAccumSpecular.b) / 3.0;
     float fogAccumAlphaScalar = 6.0; // arbitrary scalar
     float fogAccumAlpha = (fogAccum.r + fogAccum.g + fogAccum.b) / 3.0 * fogAccumAlphaScalar;
