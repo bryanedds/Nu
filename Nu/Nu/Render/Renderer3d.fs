@@ -2649,6 +2649,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+            let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2663,6 +2664,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
@@ -2706,6 +2708,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
                 let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
                 let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+                let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2720,6 +2723,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
                 i <- inc i
 
         // draw deferred surfaces
