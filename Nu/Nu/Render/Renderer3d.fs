@@ -79,7 +79,8 @@ type [<SymbolicExpansion>] MaterialProperties =
       IgnoreLightMapsOpt : bool voption
       OpaqueDistanceOpt : single voption
       FinenessOffsetOpt : single voption
-      ScatterTypeOpt : ScatterType voption }
+      ScatterTypeOpt : ScatterType voption
+      SpecularScalarOpt : single voption }
 
     member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
     member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
@@ -91,6 +92,7 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
+    member this.SpecularScalar = ValueOption.defaultValue Constants.Render.SpecularScalarDefault this.SpecularScalarOpt
 
 [<RequireQualifiedAccess>]
 module MaterialProperties =
@@ -106,7 +108,8 @@ module MaterialProperties =
           IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
-          ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault }
+          ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
+          SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault }
 
     /// Empty material properties.
     let empty =
@@ -119,8 +122,9 @@ module MaterialProperties =
           IgnoreLightMapsOpt = ValueNone
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
-          ScatterTypeOpt = ValueNone }
-          
+          ScatterTypeOpt = ValueNone
+          SpecularScalarOpt = ValueNone }
+
 /// Material description for surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     { AlbedoImageOpt : Image AssetTag voption
@@ -1492,7 +1496,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                       IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
-                      ScatterType = surfaceDescriptor.MaterialProperties.ScatterType }
+                      ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
+                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar }
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1819,7 +1824,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               IgnoreLightMaps = properties.IgnoreLightMaps
               OpaqueDistance = properties.OpaqueDistance
               FinenessOffset = properties.FinenessOffset
-              ScatterType = properties.ScatterType }
+              ScatterType = properties.ScatterType
+              SpecularScalar = properties.SpecularScalar }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -2762,6 +2768,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+            let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2776,6 +2783,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
@@ -2807,7 +2815,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
               FinenessOffset = Constants.Render.FinenessOffsetDefault
-              ScatterType = Constants.Render.ScatterTypeDefault }
+              ScatterType = Constants.Render.ScatterTypeDefault
+              SpecularScalar = Constants.Render.SpecularScalarDefault }
         let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
