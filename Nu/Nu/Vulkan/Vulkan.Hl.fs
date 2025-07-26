@@ -554,13 +554,6 @@ module Hl =
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice renderPass surface swapchain device =
             
-            // wait if window is minimized
-            // TODO: DJL: review the appropriateness of this approach, especially for inline rendering!
-            let mutable width = Unchecked.defaultof<int>
-            let mutable height = Unchecked.defaultof<int>
-            SDL.SDL_Vulkan_GetDrawableSize (swapchain._Window, &width, &height)
-            while width = 0 || height = 0 do SDL.SDL_Vulkan_GetDrawableSize (swapchain._Window, &width, &height)
-            
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
             let oldVkSwapchain = if swapchain._SwapchainInternalOpts.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
 
