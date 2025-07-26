@@ -393,16 +393,20 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
                 let io = ImGui.GetIO ()
-                io.DisplaySize <- viewport_.Bounds.Size.V2
+                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend.
                 viewport <- viewport_
 
             // get total resolution from imgui
-            // TODO: DJL: review current imgui vulkan backend.
             let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
             let framebufferHeight = drawData.DisplaySize.Y * drawData.FramebufferScale.Y
 
-            // only proceed if window is not minimized and render is desired
-            if int framebufferWidth > 0 && int framebufferHeight > 0 && vkc.RenderDesired then
+            // only proceed if render is desired and if the framebuffer bounds given by drawData a) aren't minimized and
+            // b) don't exceed the current viewport, as they sometimes lag behind upon resize.
+            if int framebufferWidth > 0 &&
+               int framebufferHeight > 0 &&
+               int framebufferWidth <= viewport.Bounds.Width &&
+               int framebufferHeight <= viewport.Bounds.Height &&
+               vkc.RenderDesired then
 
                 // init render
                 let cb = vkc.RenderCommandBuffer
