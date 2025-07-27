@@ -534,6 +534,7 @@ module Hl =
             else
 
                 // get pixel resolution from sdl
+                // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
                 let mutable width = Unchecked.defaultof<int>
                 let mutable height = Unchecked.defaultof<int>
                 SDL.SDL_Vulkan_GetDrawableSize (window, &width, &height)
@@ -824,7 +825,7 @@ module Hl =
                 info.queueFamilyIndex <- uniqueQueueFamilies.[i]
                 info.queueCount <- 1u
                 info.pQueuePriorities <- asPointer &queuePriority
-                queueCreateInfos[i] <- info
+                queueCreateInfos.[i] <- info
 
             // get swapchain extension
             let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
