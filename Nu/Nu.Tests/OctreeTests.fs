@@ -8,7 +8,7 @@ open System.Numerics
 open NUnit.Framework
 open Prime
 open Nu
-
+open Nu.Tests
 module OctreeTests =
 
     type [<CustomEquality; NoComparison>] TestElement = 
