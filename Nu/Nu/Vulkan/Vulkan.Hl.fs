@@ -552,6 +552,11 @@ module Hl =
         static member updateSwapExtent vkPhysicalDevice surface swapchain =
             swapchain._SwapExtent <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain._Window
         
+        /// Check if window is minimized.
+        static member isWindowMinimized swapchain =
+            let flags = SDL.SDL_GetWindowFlags(swapchain._Window)
+            flags &&& 64u <> 0u // SDL_WINDOW_MINIMIZED TODO: DJL: try do this properly.
+        
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice renderPass surface swapchain device =
             
@@ -952,8 +957,9 @@ module Hl =
             // always disable rendering here, rendering only given permission by beginFrame
             vkc._RenderDesired <- false
 
-            // TODO: DJL: query minimization
+            // query minimization status
             // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
+            vkc._WindowMinimized <- Swapchain.isWindowMinimized vkc._Swapchain
 
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
@@ -967,9 +973,8 @@ module Hl =
             // NOTE: DJL: this should never be used directly, only use the swap extent.
             match vkc._WindowSizeOpt with
             | Some windowSize ->
-                vkc._WindowResized <- windowSize <> windowSize_ // TODO: DJL: also check if swapchain already refreshed by present.
-                if vkc._WindowResized then
-                    vkc._WindowSizeOpt <- Some windowSize_ // update window size
+                vkc._WindowResized <- windowSize <> windowSize_
+                vkc._WindowSizeOpt <- Some windowSize_ // update window size
             | None -> vkc._WindowSizeOpt <- Some windowSize_ // init window size
             
             // ensure current frame is ready
