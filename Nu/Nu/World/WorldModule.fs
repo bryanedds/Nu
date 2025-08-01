@@ -564,12 +564,13 @@ module WorldModule =
         static member internal cleanUpSubsystems world =
             World.mapSubsystems (fun subsystems ->
                 subsystems.AudioPlayer.CleanUp ()
-                subsystems.RendererPhysics3d.Dispose ()
+                match subsystems.RendererPhysics3dOpt with Some renderer -> renderer.Dispose () | None -> ()
                 subsystems.RendererProcess.Terminate ()
                 subsystems.PhysicsEngine3d.CleanUp ()
                 subsystems.PhysicsEngine2d.CleanUp ()
                 subsystems.ImGui.CleanUp ()
-                subsystems) world
+                subsystems)
+                world
 
     type World with // EventGraph
 
