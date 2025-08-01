@@ -12,7 +12,7 @@ open Nu
 module OctreeTests =
 
     // Test data types and helpers
-    type TestElement = 
+    type [<CustomEquality; NoComparison>] TestElement = 
         { Id: int; Name: string }
         override this.Equals(other) = 
             match other with 
