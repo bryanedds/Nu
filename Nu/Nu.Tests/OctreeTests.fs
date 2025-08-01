@@ -13,14 +13,19 @@ module OctreeTests =
 
     // Test data types and helpers
     type [<CustomEquality; NoComparison>] TestElement = 
-        { Id: int; Name: string }
+        { Id: int
+          Name: string }
+
         override this.Equals(other) = 
             match other with 
             | :? TestElement as e -> this.Id = e.Id 
             | _ -> false
-        override this.GetHashCode() = this.Id.GetHashCode()
 
-    let makeTestElement id name = { Id = id; Name = name }
+        override this.GetHashCode () =
+            this.Id.GetHashCode ()
+
+    let makeTestElement id name =
+        { Id = id; Name = name }
     
     let makeTestOctelement id name visibleInView staticInPlay lightProbe light presence presenceInPlay bounds =
         let element = makeTestElement id name
@@ -474,7 +479,7 @@ module OctreeTests =
         let elementCount = 100
         
         // Add many elements with various properties
-        for i in 1..elementCount do
+        for i in 1 .. elementCount do
             let x = (float32 i % 60.0f) - 30.0f
             let y = (float32 (i * 7) % 60.0f) - 30.0f
             let z = (float32 (i * 13) % 60.0f) - 30.0f
