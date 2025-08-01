@@ -1828,7 +1828,7 @@ and [<ReferenceEquality>] internal Subsystems =
       PhysicsEngine2d : PhysicsEngine
       PhysicsEngine3d : PhysicsEngine
       RendererProcess : RendererProcess
-      RendererPhysics3d : DebugRenderer
+      RendererPhysics3dOpt : DebugRenderer option
       AudioPlayer : AudioPlayer }
 
 /// Keeps the World from occupying more than two cache lines.

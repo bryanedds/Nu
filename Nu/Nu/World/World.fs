@@ -282,20 +282,19 @@ module WorldModule3 =
                 World.trySynchronize true simulant world
 
         /// Make the world.
-        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
-            let rendererPhysics3d = new RendererPhysics3d ()
             let subsystems =
                 { ImGui = imGui
                   PhysicsEngine2d = physicsEngine2d
                   PhysicsEngine3d = physicsEngine3d
                   RendererProcess = rendererProcess
-                  RendererPhysics3d = rendererPhysics3d
+                  RendererPhysics3dOpt = rendererPhysics3dOpt
                   AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let entitiesIndexed = UMap.makeEmpty HashIdentity.Structural config
@@ -383,7 +382,7 @@ module WorldModule3 =
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // register the game
             World.registerGame Game world
@@ -450,6 +449,7 @@ module WorldModule3 =
             let imGui = ImGui (false, outerViewport.Bounds.Size)
             let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
             let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
+            let rendererPhysics3dOpt = new RendererPhysics3d ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
                 then RendererInline () :> RendererProcess
@@ -480,7 +480,7 @@ module WorldModule3 =
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d (Some rendererPhysics3dOpt) rendererProcess audioPlayer activeGameDispatcher
 
             // add the keyed values
             for (key, value) in plugin.MakeKeyedValues world do
