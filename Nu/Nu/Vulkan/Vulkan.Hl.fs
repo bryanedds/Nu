@@ -612,6 +612,7 @@ module Hl =
         private
             { mutable _WindowSizeOpt : Vector2i option
               mutable _WindowResized : bool
+              mutable _WindowMinimized : bool
               mutable _RenderDesired : bool
               _Instance : VkInstance
               _Surface : VkSurfaceKHR
@@ -945,6 +946,20 @@ module Hl =
             Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
             renderPass
 
+        /// Handle changes in window size, and check for minimization.
+        static member private handleWindowSize vkc =
+            
+            // always disable rendering here, rendering only given permission by beginFrame
+            vkc._RenderDesired <- false
+
+            // TODO: DJL: query minimization
+            // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
+
+            // refresh the swapchain if window is not minimized
+            // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
+            // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
+            if not vkc._WindowMinimized then Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+        
         /// Begin the frame.
         static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
 
@@ -952,7 +967,7 @@ module Hl =
             // NOTE: DJL: this should never be used directly, only use the swap extent.
             match vkc._WindowSizeOpt with
             | Some windowSize ->
-                vkc._WindowResized <- windowSize <> windowSize_
+                vkc._WindowResized <- windowSize <> windowSize_ // TODO: DJL: also check if swapchain already refreshed by present.
                 if vkc._WindowResized then
                     vkc._WindowSizeOpt <- Some windowSize_ // update window size
             | None -> vkc._WindowSizeOpt <- Some windowSize_ // init window size
@@ -961,18 +976,17 @@ module Hl =
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
 
-            // must refresh swapchain immediately upon screen resize, otherwise try to acquire image from swapchain to draw onto, refreshing if swapchain out of date
-            if vkc._WindowResized then
-                vkc._RenderDesired <- false
-                Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+            // either deal with window bullshit or draw!
+            if vkc._WindowMinimized then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
-                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-                if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then
-                    vkc._RenderDesired <- false
-                    Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                if vkc._WindowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
-                    vkc._RenderDesired <- true
-                    check result
+                    // try to acquire image from swapchain to draw onto
+                    let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                    if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                    else
+                        vkc._RenderDesired <- true // permit rendering
+                        check result
 
             if vkc.RenderDesired then
             
@@ -1020,7 +1034,7 @@ module Hl =
 
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR then
-                    Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+                    VulkanContext.handleWindowSize vkc
                 else check result
 
                 // advance frame in flight
@@ -1110,6 +1124,7 @@ module Hl =
                 let vulkanContext =
                     { _WindowSizeOpt = None
                       _WindowResized = false
+                      _WindowMinimized = false
                       _RenderDesired = false
                       _Instance = instance
                       _Surface = surface
