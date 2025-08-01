@@ -151,7 +151,7 @@ module Sprite =
             scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,
-                     (((single renderArea.extent.height) - minScissor.Y) |> round |> int) + offset.Y,
+                     (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
                      uint sizeScissor.X,
                      uint sizeScissor.Y)
         | ValueNone -> ()
