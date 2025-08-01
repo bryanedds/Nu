@@ -20,14 +20,14 @@ module Content =
     // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
     let [<DebuggerHidden>] private signalHandler signalObj origin =
         fun (_ : Event) world ->
-            let world = WorldModule.signal signalObj origin world
-            (Cascade, world)
+            WorldModule.signal signalObj origin world
+            Cascade
 
     // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
     let [<DebuggerHidden>] private signalHandlerHandler handler origin =
         fun event world ->
-            let world = WorldModule.signal (handler event) origin world
-            (Cascade, world)
+            WorldModule.signal (handler event) origin world
+            Cascade
 
     let
 #if !DEBUG
@@ -50,34 +50,23 @@ module Content =
                         eventSignalsRemoved.Add eventSignalEntry.Value
 
                 // unsubscribe to removed events
-                let world =
-                    List.foldGeneric
-                        (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                        world eventSignalsRemoved
+                for subscriptionId in eventSignalsRemoved do
+                    World.unsubscribe subscriptionId world
 
                 // subscribe to added events
-                let world =
-                    List.foldGeneric (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
-                        let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
-                        let world =
-                            World.monitor
-                                (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
-                                simulant
-                                world
-                        world)
-                        world eventSignalsAdded
+                for ((eventAddress : obj Address, signalObj), subscriptionId) in eventSignalsAdded do
+                    let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
+                    let unsubscribe = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
+                    World.monitor
+                        (fun _ world -> unsubscribe world; Cascade)
+                        (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
+                        simulant
+                        world
 
                 // drag event signals with existing subscription ids forward in time
                 for eventSignalEntry in eventSignalContentsOld do
                     if eventSignalContents.ContainsKey eventSignalEntry.Key then
                         eventSignalContents.[eventSignalEntry.Key] <- eventSignalEntry.Value
-
-                // fin
-                world
-            else world
-        else world
 
     let
 #if !DEBUG
@@ -100,34 +89,23 @@ module Content =
                         eventHandlersRemoved.Add eventHandlerEntry.Value
 
                 // unsubscribe from removed handlers
-                let world =
-                    List.foldGeneric
-                        (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
-                        world eventHandlersRemoved
+                for (subscriptionId, _) in eventHandlersRemoved do
+                    World.unsubscribe subscriptionId world
 
                 // subscribe to added handlers
-                let world =
-                    List.foldGeneric (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
-                        let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
-                        let world =
-                            World.monitor
-                                (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
-                                simulant
-                                world
-                        world)
-                        world eventHandlersAdded
+                for ((_, eventAddress : obj Address), (subscriptionId, handler)) in eventHandlersAdded do
+                    let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
+                    let unsubscribe = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
+                    World.monitor
+                        (fun _ world -> unsubscribe world; Cascade)
+                        (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
+                        simulant
+                        world
 
                 // drag event signals with existing subscription ids forward in time
                 for eventHandlerEntry in eventHandlerContentsOld do
                     if eventHandlerContents.ContainsKey eventHandlerEntry.Key then
                         eventHandlerContents.[eventHandlerEntry.Key] <- eventHandlerEntry.Value
-
-                // fin
-                world
-            else world
-        else world
 
     let
 #if !DEBUG
@@ -137,15 +115,12 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
-            List.foldGeneric (fun world propertyContent ->
+            for propertyContent in content.PropertyContentsOpt do
                 if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
                     match lens.This :> obj with
-                    | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
-                    | _ -> lens.TrySet propertyContent.PropertyValue world |> snd'
-                else world)
-                world content.PropertyContentsOpt
-        else world
+                    | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> ignore<bool>
+                    | _ -> lens.TrySet propertyContent.PropertyValue world |> ignore<bool>
 
     let
 #if !DEBUG
@@ -155,7 +130,6 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
-            let mutable world = world // OPTIMIZATION: manual fold for speed.
             let propertyContents = content.PropertyContentsOpt
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents.[i]
@@ -163,11 +137,9 @@ module Content =
                     let lens = propertyContent.PropertyLens
                     if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
                     match lens.This :> obj with
-                    | null -> world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world |> snd'
+                    | null -> World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
+                    | _ -> lens.TrySet propertyContent.PropertyValue world |> ignore<bool>
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
-            world
-        else world
 
     let
 #if !DEBUG
@@ -214,150 +186,118 @@ module Content =
     let rec internal synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld =/= content then
             let mutable mountOptFound = false
-            let world = synchronizeEventSignals contentOld content origin entity world
-            let world = synchronizeEventHandlers contentOld content origin entity world
-            let world = synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &mountOptFound)
-            let world =
-                if initializing then
-                    if not mountOptFound && entity.Surnames.Length > 1
-                    then World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> snd'
-                    else world
-                else world
+            synchronizeEventSignals contentOld content origin entity world
+            synchronizeEventHandlers contentOld content origin entity world
+            synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &mountOptFound)
+            if initializing then
+                if not mountOptFound && entity.Surnames.Length > 1 then
+                    World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> ignore<bool>
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
-                let world =
-                    List.foldGeneric (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
-                let world =
-                    if notNull contentOld.EntityContentsOpt then
-                        OrderedDictionary.fold (fun world (entity : Entity) entityContent ->
-                            let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
-                            world entitiesPotentiallyAltered
-                    else world
-                let world =
-                    List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
-                        let world =
-                            if not (entity.GetExists world) || entity.GetDestroying world
-                            then World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
-                            else world
-                        let world = World.setEntityProtected true entity world |> snd'
-                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
-                        world entitiesAdded
-                world
-            | None -> world
-        else world
+                for entity in entitiesRemoved do
+                    World.destroyEntity entity world
+                if notNull contentOld.EntityContentsOpt then
+                    for entry in entitiesPotentiallyAltered do
+                        let entity = entry.Key
+                        let entityContent = entry.Value
+                        let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
+                        synchronizeEntity initializing entityContentOld entityContent origin entity world
+                for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
+                    if not (entity.GetExists world) || entity.GetDestroying world then
+                        World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                    World.setEntityProtected true entity world |> ignore<bool>
+                    synchronizeEntity true EntityContent.empty entityContent origin entity world
+            | None -> ()
 
     /// Synchronize a group and its contained simulants to the given content.
     let internal synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
         if contentOld =/= content then
-            let world = synchronizeEventSignals contentOld content origin group world
-            let world = synchronizeEventHandlers contentOld content origin group world
-            let world = synchronizeProperties initializing contentOld content group world
+            synchronizeEventSignals contentOld content origin group world
+            synchronizeEventHandlers contentOld content origin group world
+            synchronizeProperties initializing contentOld content group world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content group with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
-                let world =
-                    List.foldGeneric (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
-                let world =
-                    if notNull contentOld.EntityContentsOpt then
-                        OrderedDictionary.fold (fun world (entity : Entity) entityContent ->
-                            let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
-                            world entitiesPotentiallyAltered
-                    else world
-                let world =
-                    List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
-                        let world =
-                            if not (entity.GetExists world) || entity.GetDestroying world then
-                                match entityContent.EntityFilePathOpt with
-                                | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> snd
-                                | None -> World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
-                            else world
-                        let world = World.setEntityProtected true entity world |> snd'
-                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
-                        world entitiesAdded
-                world
-            | None -> world
-        else world
+                for entity in entitiesRemoved do
+                    World.destroyEntity entity world
+                if notNull contentOld.EntityContentsOpt then
+                    for entry in entitiesPotentiallyAltered do
+                        let entity = entry.Key
+                        let entityContent = entry.Value
+                        let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
+                        synchronizeEntity initializing entityContentOld entityContent origin entity world
+                for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
+                    if not (entity.GetExists world) || entity.GetDestroying world then
+                        match entityContent.EntityFilePathOpt with
+                        | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> ignore<Entity>
+                        | None -> World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                    World.setEntityProtected true entity world |> ignore<bool>
+                    synchronizeEntity true EntityContent.empty entityContent origin entity world
+            | None -> ()
 
     /// Synchronize a screen and its contained simulants to the given content.
     let internal synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
         if contentOld =/= content then
-            let world = synchronizeEventSignals contentOld content origin screen world
-            let world = synchronizeEventHandlers contentOld content origin screen world
-            let world = synchronizeProperties initializing contentOld content screen world
-            let world =
-                if contentOld.GroupFilePathOpt =/= content.GroupFilePathOpt then
-                    let world =
-                        match contentOld.GroupFilePathOpt with
-                        | Some groupFilePath ->
-                            // NOTE: have to load the group file just get the name of the group to destroy...
-                            let groupDescriptorStr = File.ReadAllText groupFilePath
-                            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                            let groupName =
-                                Constants.Engine.NamePropertyName |>
-                                groupDescriptor.GroupProperties.TryFind |>
-                                Option.mapOrDefaultValue symbolToValue "GroupFromFile" // TODO: make constant?
-                            let group = screen / groupName
-                            World.destroyGroup group world
-                        | None -> world
-                    let world =
-                        match content.GroupFilePathOpt with
-                        | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                        | None -> world
-                    world
-                else world
+            synchronizeEventSignals contentOld content origin screen world
+            synchronizeEventHandlers contentOld content origin screen world
+            synchronizeProperties initializing contentOld content screen world
+            if contentOld.GroupFilePathOpt =/= content.GroupFilePathOpt then
+                match contentOld.GroupFilePathOpt with
+                | Some groupFilePath ->
+                    // NOTE: have to load the group file just get the name of the group to destroy...
+                    let groupDescriptorStr = File.ReadAllText groupFilePath
+                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                    let groupName =
+                        Constants.Engine.NamePropertyName
+                        |> groupDescriptor.GroupProperties.TryFind
+                        |> Option.mapOrDefaultValue symbolToValue "GroupFromFile" // TODO: make constant?
+                    let group = screen / groupName
+                    World.destroyGroup group world
+                | None -> ()
+                match content.GroupFilePathOpt with
+                | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> ignore<Group>
+                | None -> ()
             match tryDifferentiateChildren<Group, GroupContent> contentOld content screen with
             | Some (groupsAdded, groupsRemoved, groupsPotentiallyAltered) ->
-                let world =
-                    List.foldGeneric (fun world group -> World.destroyGroup group world) world groupsRemoved
-                let world =
-                    OrderedDictionary.fold (fun world (group : Group) groupContent ->
-                        let groupContentOld = contentOld.GroupContents.[group.Name]
-                        synchronizeGroup initializing groupContentOld groupContent origin group world)
-                        world groupsPotentiallyAltered
-                let world =
-                    List.foldGeneric (fun world (group : Group, groupContent : GroupContent) ->
-                        let world =
-                            if not (group.GetExists world) || group.GetDestroying world then
-                                match groupContent.GroupFilePathOpt with
-                                | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> snd
-                                | None -> World.createGroup5 false groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
-                            else world
-                        let world = World.setGroupProtected true group world |> snd'
-                        synchronizeGroup true GroupContent.empty groupContent origin group world)
-                        world groupsAdded
-                world
-            | None -> world
-        else world
+                for group in groupsRemoved do
+                    World.destroyGroup group world
+                for entry in groupsPotentiallyAltered do
+                    let group = entry.Key
+                    let groupContent = entry.Value
+                    let groupContentOld = contentOld.GroupContents.[group.Name]
+                    synchronizeGroup initializing groupContentOld groupContent origin group world
+                for (group : Group, groupContent : GroupContent) in groupsAdded do
+                    if not (group.GetExists world) || group.GetDestroying world then
+                        match groupContent.GroupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> ignore<Group>
+                        | None -> World.createGroup5 false groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> ignore<Group>
+                    World.setGroupProtected true group world |> ignore<bool>
+                    synchronizeGroup true GroupContent.empty groupContent origin group world
+            | None -> ()
 
     /// Synchronize a screen and its contained simulants to the given content.
     let internal synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
         if contentOld =/= content then
-            let world = synchronizeEventSignals contentOld content origin game world
-            let world = synchronizeEventHandlers contentOld content origin game world
-            let world = synchronizeProperties initializing contentOld content game world
+            synchronizeEventSignals contentOld content origin game world
+            synchronizeEventHandlers contentOld content origin game world
+            synchronizeProperties initializing contentOld content game world
             match tryDifferentiateChildren<Screen, ScreenContent> contentOld content game with
             | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
-                let world =
-                    List.foldGeneric (fun world screen -> World.destroyScreen screen world) world screensRemoved
-                let world =
-                    OrderedDictionary.fold (fun world (screen : Screen) screenContent ->
-                        let screenContentOld = contentOld.ScreenContents.[screen.Name]
-                        synchronizeScreen initializing screenContentOld screenContent origin screen world)
-                        world screensPotentiallyAltered
-                let world =
-                    List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
-                        let world =
-                            if not (screen.GetExists world) || screen.GetDestroying world
-                            then World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
-                            else world
-                        let world = World.setScreenProtected true screen world |> snd'
-                        let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
-                        synchronizeScreen true ScreenContent.empty screenContent origin screen world)
-                        world screensAdded
-                (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
-            | None -> (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
-        else (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
+                for screen in screensRemoved do
+                    World.destroyScreen screen world
+                for entry in screensPotentiallyAltered do
+                    let screen = entry.Key
+                    let screenContent = entry.Value
+                    let screenContentOld = contentOld.ScreenContents.[screen.Name]
+                    synchronizeScreen initializing screenContentOld screenContent origin screen world
+                for (screen : Screen, screenContent : ScreenContent) in screensAdded do
+                    if not (screen.GetExists world) || screen.GetDestroying world then
+                        World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> ignore<Screen>
+                    World.setScreenProtected true screen world |> ignore<bool>
+                    World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
+                    synchronizeScreen true ScreenContent.empty screenContent origin screen world
+                content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
+            | None -> content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
+        else content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
 
     /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
     let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt (definitions : Entity DefinitionContent seq) entities =

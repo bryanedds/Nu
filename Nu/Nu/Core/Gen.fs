@@ -125,12 +125,12 @@ module Gen =
         /// If seq is large, this may allocate to the LOH and block other threads.
         /// Thread-safe.
         static member randomize (seq : 'a seq) =
-            seq |>
-            Array.ofSeq |>
-            Array.map (fun a -> (Random.Shared.Next (), a)) |>
-            Array.sortBy fst |>
-            Array.map snd |>
-            Array.toSeq
+            seq
+            |> Array.ofSeq
+            |> Array.map (fun a -> (Random.Shared.Next (), a))
+            |> Array.sortBy fst
+            |> Array.map snd
+            |> Array.toSeq
 
         /// Generate a unique name based on a 64-bit id.
         /// Thread-safe.

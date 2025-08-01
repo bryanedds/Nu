@@ -1,0 +1,585 @@
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds.
+
+namespace Nu
+open System
+open System.Collections
+open System.Collections.Concurrent
+open System.Collections.Generic
+open System.Reflection
+open FSharp.Reflection
+open Prime
+
+[<RequireQualifiedAccess>]
+module Reflection =
+
+    let mutable private Initialized = false
+
+    let private AssembliesLoaded =
+        Dictionary<string, Assembly> StringComparer.Ordinal
+
+    let private BaseTypesExceptObjectCache =
+        Dictionary<Type, Type list> HashIdentity.Structural
+
+    let private PropertyDefinitionsCache =
+        Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
+
+    let private ToSymbolMemo =
+        new Dictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
+
+    let private OfSymbolMemo =
+        new Dictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
+
+    let private MemoizableMemo =
+        new ConcurrentDictionary<Type, bool> (HashIdentity.Reference)
+
+    /// A dictionary of properties and their cached persistence state.
+    let private PropertyPersistence =
+        Constants.Engine.NonPersistentPropertyNames
+        |> Seq.map (flip pair true)
+        |> dictPlus StringComparer.Ordinal
+
+    let rec private memoizable2 level (ty : Type) =
+        match MemoizableMemo.TryGetValue ty with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                if level = 10 then
+                    false // unmemoizable when > N layers deep (this avoids infinite recursion).
+                elif ty.IsArray then
+                    false // empty arrays are safe, but unfortunately not non-empty arrays
+                elif ty = typeof<string> || ty.IsPrimitive then
+                    true // strings and primitives are safe
+                elif ty.IsValueType then
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> memoizable2 (inc level) fieldInfo.FieldType) fields
+                elif FSharpType.IsRecord ty || FSharpType.IsUnion ty then
+                    let setters = ty.GetFields (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.SetProperty)
+                    if setters.Length = 0 then
+                        let getters = ty.GetProperties (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.GetProperty)
+                        Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable2 (inc level) propertyInfo.PropertyType) getters
+                    else false
+                else
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable2 (inc level) fieldInfo.FieldType) fields
+            MemoizableMemo.TryAdd (ty, result) |> ignore<bool>
+            result
+
+    /// Configure a property to be non-persistent.
+    let internal initPropertyNonPersistent nonPersistent propertyName =
+        PropertyPersistence.[propertyName] <- nonPersistent
+
+    /// Is a property with the given name not persistent?
+    let isPropertyNonPersistentByName (propertyName : string) =
+        match PropertyPersistence.TryGetValue propertyName with
+        | (true, result) -> result
+        | (false, _) ->
+            let result = false
+            PropertyPersistence.[propertyName] <- result
+            result
+
+    /// Is the property of the given target not persistent?
+    let isPropertyNonPersistent (property : PropertyInfo) (target : 'a) =
+        isPropertyNonPersistentByName property.Name ||
+        (property.Name = Constants.Engine.NamePropertyName &&
+         property.PropertyType = typeof<string> &&
+         Gen.isNameGenerated (property.GetValue target :?> string))
+
+    /// Determine whether a type is safely memoizable.
+    /// Thread-safe.
+    /// TODO: consider moving this into Prime once it's well-tested.
+    let memoizable ty = memoizable2 0 ty
+
+    /// Make a symbolic converter that conditionally-memoizing (IE, only memoizes when doing so is safe).
+    let internal makeSymbolicConverterMemo printing designerTypeOpt ty =
+        if memoizable ty
+        then SymbolicConverter (printing, designerTypeOpt, ty, ToSymbolMemo, OfSymbolMemo)
+        else SymbolicConverter (printing, designerTypeOpt, ty)
+
+    /// Check that the dispatcher has behavior congruent to the given type.
+    let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
+        let dispatcherType = dispatcher.GetType ()
+        let result =
+            dispatcherTargetType = dispatcherType ||
+            dispatcherType.IsSubclassOf dispatcherTargetType
+        result
+
+    /// Get the concrete base types of a type excepting the object type.
+    let rec getBaseTypesExceptObject (targetType : Type) =
+        match BaseTypesExceptObjectCache.TryGetValue targetType with
+        | (true, baseTypes) -> baseTypes
+        | (false, _) ->
+            let baseTypes =
+                match targetType.BaseType with
+                | null -> []
+                | baseType ->
+                    if baseType <> typeof<obj>
+                    then baseType :: getBaseTypesExceptObject baseType
+                    else []
+            BaseTypesExceptObjectCache.Add (targetType, baseTypes)
+            baseTypes
+
+    /// Get the property definitions of a target type not considering inheritance.
+    /// OPTIMIZATION: Memoized for efficiency since Properties will likely return a newly constructed list.
+    let getPropertyDefinitionsNoInherit (targetType : Type) =
+        match PropertyDefinitionsCache.TryGetValue targetType with
+        | (true, definitions) -> definitions
+        | (false, _) ->
+            let definitionsPropertyOpt =
+                match targetType.GetProperty (Constants.Engine.PropertiesPropertyName, BindingFlags.Static ||| BindingFlags.Public) with
+                | null -> None
+                | definitionsProperty -> Some definitionsProperty
+            let definitions =
+                match definitionsPropertyOpt with
+                | Some definitionsProperty ->
+                    match definitionsProperty.GetValue null with
+                    | :? (obj list) as definitions when List.isEmpty definitions -> []
+                    | :? (PropertyDefinition list) as definitions -> definitions
+                    | _ -> failwith ("Properties property for type '" + targetType.Name + "' must be of type PropertyDefinition list.")
+                | None -> []
+            PropertyDefinitionsCache.Add (targetType, definitions)
+            definitions
+
+    /// Get the property definitions of a target type.
+    let getPropertyDefinitions (targetType : Type) =
+        let targetTypes = targetType :: getBaseTypesExceptObject targetType
+        let definitionLists = List.map (fun ty -> getPropertyDefinitionsNoInherit ty) targetTypes
+        let definitionLists = List.rev definitionLists
+        List.concat definitionLists
+
+    /// Get the names of the property definitions of a target type.
+    let getPropertyNames (targetType : Type) =
+        let definitions = getPropertyDefinitions targetType
+        List.map (fun (definition : PropertyDefinition) -> definition.PropertyName) definitions
+
+    /// Get a map of the counts of the property definitions names.
+    let getPropertyNameCounts definitions =
+        Map.fold (fun map (_ : string) definitions ->
+            List.fold (fun map (definition : PropertyDefinition) ->
+                let definitionName = definition.PropertyName
+                match Map.tryFind definitionName map with
+                | Some count -> Map.add definitionName (count + 1) map
+                | None -> Map.add definitionName 1 map)
+                map definitions)
+            Map.empty definitions
+
+    /// Get all the reflective property containers of a target, including dispatcher and / or facets.
+    let getReflectivePropertyContainers (target : 'a) =
+        let targetType = target.GetType ()
+        let dispatcherOpt =
+            match targetType.GetProperty Constants.Engine.DispatcherPropertyName with
+            | null -> None
+            | dispatcherProperty -> Some (dispatcherProperty.GetValue target)
+        let facetsOpt =
+            match targetType.GetProperty Constants.Engine.FacetsPropertyName with
+            | null -> None
+            | facetsProperty ->
+                let facets = facetsProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
+                Some facets
+        match (dispatcherOpt, facetsOpt) with
+        | (Some dispatcher, Some facets) -> dispatcher :: facets
+        | (Some dispatcher, None) -> [dispatcher]
+        | (None, Some facets) -> facets
+        | (None, None) -> []
+
+    /// Get all the reflective container types of a target, including dispatcher and / or facet types.
+    let getReflectivePropertyContainerTypes (target : 'a) =
+        let propertyContainers = getReflectivePropertyContainers target
+        List.map getType propertyContainers
+
+    /// Get all the reflective property definitions of a type, including those of its dispatcher and /
+    /// or facets, organized in a map from the containing type's name to the property definition.
+    let getReflectivePropertyDefinitionMap (target : 'a) =
+        let containerTypes = getReflectivePropertyContainerTypes target
+        Map.ofListBy (fun (ty : Type) -> (ty.Name, getPropertyDefinitions ty)) containerTypes
+
+    /// Get all the unique reflective property definitions of a type, including those of its
+    /// dispatcher and / or facets.
+    let getReflectivePropertyDefinitions (target : 'a) =
+        target
+        |> getReflectivePropertyContainerTypes
+        |> List.map getPropertyDefinitions
+        |> List.concat
+        |> Map.ofListBy (fun definition -> (definition.PropertyName, definition))
+
+    /// A hack to retreive a simplified generic type name
+    let getSimplifiedTypeNameHack (ty : Type) =
+        let typeName = ty.Name
+        let genericTypes = ty.GetGenericArguments ()
+        let genericTypeNameStrs = Array.map (fun (ty : Type) -> ty.Name) genericTypes
+        let genericTypeNamesStr = "<" + String.concat ", " genericTypeNameStrs + ">"
+        typeName.Replace ("`" + scstring (Array.length genericTypeNameStrs), genericTypeNamesStr)
+
+    /// Try to read the target's member property from property descriptors.
+    let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
+        if property.PropertyType = typeof<DesignerProperty> then
+            match Map.tryFind property.Name propertyDescriptors with
+            | Some propertySymbol ->
+                match propertySymbol with
+                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
+                    let converter = SymbolicConverter (false, None, property.PropertyType)
+                    if converter.CanConvertFrom typeof<Symbol> then
+                        let propertyValue = converter.ConvertFrom propertySymbol
+                        property.SetValue (target, propertyValue)
+                    else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
+                | _ -> ()
+            | None -> ()
+        elif property.Name = Constants.Engine.TransformPropertyName &&
+             property.PropertyType = typeof<Transform> then
+             () // nothing to do here since the custom .NET properties will take care of this...
+        else
+            match Map.tryFind property.Name propertyDescriptors with
+            | Some (propertySymbol : Symbol) ->
+                let converter = SymbolicConverter (false, None, property.PropertyType)
+                if converter.CanConvertFrom typeof<Symbol> then
+                    let propertyValue = converter.ConvertFrom propertySymbol
+                    property.SetValue (target, propertyValue)
+            | None -> ()
+
+    /// Read one of a target's xtension properties.
+    let private readXtensionProperty
+        (xtension : Xtension)
+        (propertyDefinitions : Map<string, PropertyDefinition>)
+        (target : 'a)
+        (propertyName : string)
+        (propertySymbol : Symbol) =
+        let targetType = target.GetType ()
+        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties true) then
+            match Map.tryFind propertyName propertyDefinitions with
+            | Some propertyDefinition ->
+                let converter = SymbolicConverter (false, None, propertyDefinition.PropertyType)
+                if converter.CanConvertFrom typeof<Symbol> then
+                    let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                    Xtension.attachProperty propertyName property xtension
+                else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
+            | None ->
+                match propertySymbol with
+                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
+                    let propertyType = typeof<DesignerProperty>
+                    let converter = SymbolicConverter (false, None, propertyType)
+                    if converter.CanConvertFrom typeof<Symbol> then
+                        let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                        Xtension.attachProperty propertyName property xtension
+                    else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
+                | _ -> xtension
+        else xtension
+
+    /// Read a target's xtension properties from property descriptors.
+    let private readXtensionProperties xtension (propertyDescriptors : Map<string, Symbol>) (target : 'a) =
+        let definitions = getReflectivePropertyDefinitions target
+        Map.fold
+            (fun xtension -> readXtensionProperty xtension definitions target)
+            xtension
+            propertyDescriptors
+
+    /// Read a target's Xtension from property descriptors.
+    let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
+        let target = copyTarget target
+        let targetType = target.GetType ()
+        match targetType.GetProperty Constants.Engine.XtensionPropertyName with
+        | null ->
+            Log.error "Target does not support Xtensions due to missing Xtension property."
+            target
+        | xtensionProperty ->
+            match xtensionProperty.GetValue target with
+            | :? Xtension as xtension ->
+                let xtension = readXtensionProperties xtension propertyDescriptors target
+                xtensionProperty.SetValue (target, xtension)
+                target
+            | _ ->
+                Log.error "Target does not support Xtensions due to Xtension property having unexpected type."
+                target
+
+    /// Try to read just the target's OverlayNameOpt from property descriptors.
+    let tryReadOverlayNameOptToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+        let target = copyTarget target
+        let targetType = target.GetType ()
+        let targetProperties = targetType.GetProperties true
+        let overlayNameOptPropertyOpt =
+            Array.tryFind (fun (property : PropertyInfo) ->
+                property.Name = Constants.Engine.OverlayNameOptPropertyName &&
+                property.PropertyType = typeof<string option> &&
+                property.CanWrite)
+                targetProperties
+        match overlayNameOptPropertyOpt with
+        | Some overlayNameOptProperty ->
+            match Map.tryFind overlayNameOptProperty.Name propertyDescriptors with
+            | Some overlayNameOptSymbol ->
+                let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
+                overlayNameOptProperty.SetValue (target, overlayNameOpt)
+                target
+            | None -> target
+        | None -> target
+
+    /// Read just the target's FacetNames from property descriptors.
+    let readFacetNamesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+        let target = copyTarget target
+        let targetType = target.GetType ()
+        let targetProperties = targetType.GetProperties true
+        let facetNamesProperty =
+            Array.find (fun (property : PropertyInfo) ->
+                property.Name = Constants.Engine.FacetNamesPropertyName &&
+                property.PropertyType = typeof<string Set> &&
+                property.CanWrite)
+                targetProperties
+        match Map.tryFind facetNamesProperty.Name propertyDescriptors with
+        | Some facetNamesSymbol ->
+            let facetNames = symbolToValue<string Set> facetNamesSymbol
+            facetNamesProperty.SetValue (target, facetNames)
+            target
+        | None -> target
+
+    /// Read all of a target's member properties from property descriptors (except OverlayNameOpt and FacetNames).
+    let readMemberPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+        let target = copyTarget target
+        let properties = (target.GetType ()).GetPropertiesWritable ()
+        for property in properties do
+            if  property.Name <> Constants.Engine.FacetNamesPropertyName &&
+                property.Name <> Constants.Engine.OverlayNameOptPropertyName &&
+                not (isPropertyNonPersistentByName property.Name) then
+                tryReadMemberProperty propertyDescriptors property target
+        target
+
+    /// Read all of a target's property values from property descriptors (except OverlayNameOpt and FacetNames).
+    let readPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+        let target = readMemberPropertiesToTarget copyTarget propertyDescriptors target
+        readXtension copyTarget propertyDescriptors target
+
+    /// Write an Xtension to property descriptors.
+    let private writeXtension shouldWriteProperty propertyDescriptors xtension =
+        Seq.fold (fun propertyDescriptors (propertyName, (property : Property)) ->
+            let propertyType = property.PropertyType
+            let propertyValue = property.PropertyValue
+            if  propertyType <> typeof<ComputedProperty> &&
+                not (isPropertyNonPersistentByName propertyName) &&
+                shouldWriteProperty propertyName propertyType propertyValue then
+                let converter = SymbolicConverter (false, None, propertyType)
+                let propertySymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                Map.add propertyName propertySymbol propertyDescriptors
+            else propertyDescriptors)
+            propertyDescriptors
+            (Xtension.toSeq xtension)
+
+    /// Write a member property value to a property descriptors.
+    let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
+        if  not (isPropertyNonPersistent property target) &&
+            shouldWriteProperty property.Name property.PropertyType propertyValue then
+            if  property.Name = Constants.Engine.TransformPropertyName &&
+                property.PropertyType = typeof<Transform> then
+                propertyDescriptors // nothing to do here since the custom .NET properties will take care of this...
+            else
+                let converter = SymbolicConverter (false, None, property.PropertyType)
+                let valueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                Map.add property.Name valueSymbol propertyDescriptors
+        else propertyDescriptors
+
+    /// Write all of a target's property values to property descriptors.
+    let writePropertiesFromTarget shouldWriteProperty propertyDescriptors (target : 'a) =
+        let targetType = target.GetType ()
+        let properties = targetType.GetProperties true
+        Seq.fold (fun propertyDescriptors (property : PropertyInfo) ->
+            match property.GetValue target with
+            | :? Xtension as xtension -> writeXtension shouldWriteProperty propertyDescriptors xtension
+            | propertyValue -> writeMemberProperty propertyValue property shouldWriteProperty propertyDescriptors target)
+            propertyDescriptors
+            properties
+
+    /// Get the intrinsic facet of a target type not considering inheritance.
+    let getIntrinsicFacetsNoInherit (targetType : Type) =
+        let intrinsicFacetsPropertyOpt =
+            match targetType.GetProperty (Constants.Engine.FacetsPropertyName, BindingFlags.Static ||| BindingFlags.Public) with
+            | null -> None
+            | intrinsicFacetsProperty -> Some intrinsicFacetsProperty
+        match intrinsicFacetsPropertyOpt with
+        | Some intrinsicFacetsProperty ->
+            let intrinsicFacets = intrinsicFacetsProperty.GetValue null
+            match intrinsicFacets with
+            | :? (obj list) as intrinsicFacets when List.isEmpty intrinsicFacets -> []
+            | :? (Type list) as intrinsicFacets -> intrinsicFacets
+            | _ -> failwith ("Facets property for type '" + targetType.Name + "' must be of type 'Type list'.")
+        | None -> []
+
+    /// Get the intrinsic facet names of a target type not considering inheritance.
+    let getIntrinsicFacetNamesNoInherit targetType =
+        targetType
+        |> getIntrinsicFacetsNoInherit
+        |> List.map (fun (ty : Type) -> ty.Name)
+
+    /// Get the intrinsic facet names of a target type.
+    let getIntrinsicFacetNames (targetType : Type) =
+        let targetTypes = targetType :: getBaseTypesExceptObject targetType
+        let intrinsicFacetNamesLists = List.map (fun ty -> getIntrinsicFacetNamesNoInherit ty) targetTypes
+        let intrinsicFacetNamesLists = List.rev intrinsicFacetNamesLists
+        List.concat intrinsicFacetNamesLists
+
+    /// Attach properties from the given definitions to a target.
+    let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target world =
+        match definitions with
+        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | _ ->
+            let target = copyTarget target
+            let targetType = target.GetType ()
+            match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
+            | null -> failwith "Target does not support Xtensions due to missing Xtension property."
+            | xtensionProperty ->
+                match xtensionProperty.GetValue target with
+                | :? Xtension as xtension ->
+                    let mutable xtension = xtension
+                    for definition in definitions do
+                        let propertyValue = PropertyExpr.eval definition.PropertyExpr world
+                        match targetType.GetPropertyWritable definition.PropertyName with
+                        | null ->
+                            let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
+                            xtension <- Xtension.attachProperty definition.PropertyName property xtension
+                        | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
+                    xtensionProperty.SetValue (target, xtension)
+                | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
+            target
+
+    /// Detach properties from a target.
+    let detachPropertiesViaNames (copyTarget : 'a -> 'a) propertyNames target =
+        let target = copyTarget target
+        let targetType = target.GetType ()
+        match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
+        | null -> failwith "Target does not support Xtensions due to missing Xtension property."
+        | xtensionProperty ->
+            match xtensionProperty.GetValue target with
+            | :? Xtension as xtension ->
+                let mutable xtension = xtension
+                for propertyName in propertyNames do
+                    match targetType.GetPropertyWritable propertyName with
+                    | null ->
+                        xtension <- Xtension.detachProperty propertyName xtension
+                        xtensionProperty.SetValue (target, xtension)
+                    | _ -> failwith ("Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'.")
+            | _ -> ()
+        target
+
+    /// Attach source's properties to a target.
+    let attachProperties (copyTarget : 'a -> 'a) (source : 'b) target world =
+        let sourceType = source.GetType ()
+        let definitions = getPropertyDefinitions sourceType
+        attachPropertiesViaDefinitions copyTarget definitions target world
+
+    /// Detach source's properties to a target.
+    let detachProperties (copyTarget : 'a -> 'a) (source : 'b) target =
+        let sourceType = source.GetType ()
+        let propertyNames = getPropertyNames sourceType
+        detachPropertiesViaNames copyTarget propertyNames target
+
+    /// Check for facet compatibility with the target's dispatcher.
+    let isFacetTypeCompatibleWithDispatcher dispatcherMap (facetType : Type) (target : 'a) =
+        let targetType = target.GetType ()
+        match facetType.GetProperty (Constants.Engine.RequiredDispatcherPropertyName, BindingFlags.Static ||| BindingFlags.Public) with
+        | null -> true
+        | reqdDispatcherNameProperty ->
+            match reqdDispatcherNameProperty.GetValue null with
+            | :? string as reqdDispatcherName ->
+                match Map.tryFind reqdDispatcherName dispatcherMap with
+                | Some reqdDispatcher ->
+                    let reqdDispatcherType = reqdDispatcher.GetType ()
+                    match targetType.GetProperty Constants.Engine.DispatcherPropertyName with
+                    | null -> failwith ("Target '" + scstring target + "' does not implement dispatching in a compatible way.")
+                    | dispatcherProperty ->
+                        let dispatcher = dispatcherProperty.GetValue target
+                        dispatchesAs reqdDispatcherType dispatcher
+                | None -> failwith ("Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map.")
+            | _ -> failwith ("Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string.")
+
+    /// Check for facet compatibility with the target's dispatcher.
+    let isFacetCompatibleWithDispatcher<'d, 'f, 'a> (dispatcherMap : Map<string, 'd>) (facet : 'f) (target : 'a) =
+        let facetType = facet.GetType ()
+        let facetTypes = facetType :: getBaseTypesExceptObject facetType
+        List.forall
+            (fun facetType -> isFacetTypeCompatibleWithDispatcher dispatcherMap facetType target)
+            facetTypes
+
+    /// Attach intrinsic facets to a target by their names.
+    let attachIntrinsicFacetsViaNames<'d, 'f, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
+        match facetNames with
+        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | _ ->
+            let target = copyTarget target
+            let facets =
+                facetNames
+                |> List.map (fun facetName ->
+                    match Map.tryFind facetName facetMap with
+                    | Some facet -> facet
+                    | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
+                |> List.toArray
+            let targetType = target.GetType ()
+            match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
+            | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
+            | facetsProperty ->
+                let facetsExisting = facetsProperty.GetValue target :?> 'f array
+                Array.iter (fun facet ->
+                    if not (isFacetCompatibleWithDispatcher<'d, 'f, 'a> dispatcherMap facet target)
+                    then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
+                    else ())
+                    facets
+                facetsProperty.SetValue (target, Array.append facetsExisting facets)
+                Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
+
+    /// Attach source's intrinsic facets to a target.
+    let attachIntrinsicFacets<'d, 'f, 'b, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
+        let sourceType = source.GetType ()
+        let instrinsicFacetNames = getIntrinsicFacetNames sourceType
+        attachIntrinsicFacetsViaNames<'d, 'f, 'a> copyTarget dispatcherMap facetMap instrinsicFacetNames target world
+
+    /// Initialize backing data utilized by reflection module.
+    let init () =
+
+        // initialize once
+        if not Initialized then
+
+            // process loading assemblies
+            AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
+                AssembliesLoaded.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+            AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
+                snd (AssembliesLoaded.TryGetValue args.Name)))
+
+            // process existing assemblies
+            for assembly in AppDomain.CurrentDomain.GetAssemblies () do
+                AssembliesLoaded.[assembly.FullName] <- assembly
+
+[<AutoOpen>]
+module ReflectionOperators =
+
+    /// Convert an value to an value of the given type using symbolic conversion.
+    /// Thread-safe.
+    let objToObj (ty : Type) (value : obj) =
+        match value with
+        | null -> null
+        | _ ->
+            let ty2 = value.GetType ()
+            if not (ty.IsAssignableFrom ty2) then
+                let converter = SymbolicConverter ty
+                let converter2 = SymbolicConverter ty2
+                let symbol = converter2.ConvertTo (value, typeof<Symbol>)
+                try converter.ConvertFrom symbol
+                with _ ->
+                    match ty.TryGetDefaultValue () with
+                    | Some value ->
+                        Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                        value
+                    | None -> failconv "Could not promote or automatically construct a default value to the required type."
+            else value
+
+namespace Prime
+open Nu
+    
+/// In tandem with the define literal, grants a nice syntax to define value properties.
+type [<NoEquality; NoComparison>] ValueDescription =
+    { NonPersistentDescription : unit }
+        
+    /// Some magic syntax for composing value properties.
+    static member (?) (_ : 'a, propertyName) =
+        fun (value : 'a) ->
+            Reflection.initPropertyNonPersistent true propertyName
+            Define? propertyName value
+
+[<AutoOpen>]
+module ReflectionSyntax =
+
+    /// In tandem with the ValueDescription type, grants a nice syntax to define value properties.
+    let NonPersistent = { NonPersistentDescription = () }

@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -13,7 +13,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float PI = 3.141592654;
 const int SSAO_SAMPLES_MAX = 128;
@@ -59,9 +59,12 @@ const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
     vec3(0.430, -0.194, -0.881),    vec3(-0.568, -0.537, -0.623),   vec3(-0.598, 0.707, -0.377),    vec3(0.366, -0.804, 0.469),
     vec3(0.062, 0.981, -0.184),     vec3(0.211, -0.936, 0.281),     vec3(0.151, -0.988, -0.027),    vec3(-0.949, -0.169, 0.266));
 
+uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
-uniform sampler2D positionTexture;
+uniform mat4 viewInverse;
+uniform mat4 projectionInverse;
+uniform sampler2D depthTexture;
 uniform sampler2D normalPlusTexture;
 uniform ivec2 ssaoResolution;
 uniform float ssaoIntensity;
@@ -90,72 +93,83 @@ float randomAngle()
     return result;
 }
 
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    float z = depth * 2.0 - 1.0;
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionView = projectionInverse * positionClip;
+    positionView /= positionView.w;
+    return viewInverse * positionView;
+}
+
 void main()
 {
-    // ensure position was written
-    vec4 position = texture(positionTexture, texCoordsOut);
-    if (position.w == 1.0)
+    // ensure fragment was written
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth == 0.0) discard;
+
+    // recover position from depth
+    vec4 position = depthToPosition(depth, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+
+    // pre-compute resolution inverse
+    vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
+
+    // ensure sample count is in range and pre-compute sample count inverse
+    int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
+    float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
+
+    // contrive sampling rotation
+    float samplingAngle = randomAngle();
+    mat3 samplingRotation =
+        mat3(
+            cos(samplingAngle), -sin(samplingAngle), 0.0,
+            sin(samplingAngle), cos(samplingAngle), 0.0,
+            0.0, 0.0, 1.0);
+
+    // compute screen space ambient occlusion
+    float ssao = 0.0;
+    vec3 positionView = (view * position).xyz;
+    vec3 normalView = mat3(view) * normal;
+    for (int i = 0; i < ssaoSampleCountCeil; ++i)
     {
-        // retrieve remaining data from geometry buffers
-        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+        // compute sampling direction in view space
+        vec3 samplingDirectionView = samplingRotation * SSAO_SAMPLING_DIRECTIONS[i];
+        samplingDirectionView *= ssaoRadius; // scale by radius
+        samplingDirectionView *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
+        samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
 
-        // pre-compute resolution inverse
-        vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
+        // compute position and sampling position in screen space along with distance from origin
+        vec2 positionScreen = gl_FragCoord.xy * ssaoResolutionInverse;
+        vec3 samplingPositionView = positionView + samplingDirectionView;
+        vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
+        vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
+        float distanceScreen = length(samplingPositionScreen - positionScreen);
 
-        // ensure sample count is in range and pre-compute sample count inverse
-        int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
-        float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
-
-        // contrive sampling rotation
-        float samplingAngle = randomAngle();
-        mat3 samplingRotation =
-            mat3(
-                cos(samplingAngle), -sin(samplingAngle), 0.0,
-                sin(samplingAngle), cos(samplingAngle), 0.0,
-                0.0, 0.0, 1.0);
-
-        // compute screen space ambient occlusion
-        float ssao = 0.0;
-        vec3 positionView = (view * position).xyz;
-        vec3 normalView = mat3(view) * normal;
-        for (int i = 0; i < ssaoSampleCountCeil; ++i)
+        // ensure we're not sampling too far from origin and thus blowing the texture cache
+        if (distanceScreen < ssaoDistanceMax)
         {
-            // compute sampling direction in view space
-            vec3 samplingDirectionView = samplingRotation * SSAO_SAMPLING_DIRECTIONS[i];
-            samplingDirectionView *= ssaoRadius; // scale by radius
-            samplingDirectionView *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
-            samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
-
-            // compute position and sampling position in screen space along with distance from origin
-            vec2 positionScreen = gl_FragCoord.xy * ssaoResolutionInverse;
-            vec3 samplingPositionView = positionView + samplingDirectionView;
-            vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
-            vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
-            float distanceScreen = length(samplingPositionScreen - positionScreen);
-
-            // ensure we're not sampling too far from origin and thus blowing the texture cache
-            if (distanceScreen < ssaoDistanceMax)
+            // ensure sample is actually written
+            float sampleDepth = texture(depthTexture, samplingPositionScreen).r;
+            if (sampleDepth != 0.0)
             {
-                // ensure sample position is actually written
-                vec4 samplePosition = texture(positionTexture, samplingPositionScreen);
-                if (samplePosition.w == 1.0)
-                {
-                    // compute sample position in view space
-                    vec4 samplePositionView = view * samplePosition;
+                // compute sample position in view space
+                vec4 samplePosition = depthToPosition(sampleDepth, samplingPositionScreen);
+                vec4 samplePositionView = view * samplePosition;
 
-                    // perform range check and accumulate if occluded
-                    float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
-                    ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
-                }
+                // perform range check and accumulate if occluded
+                float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
+                ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
             }
         }
-        ssao *= ssaoSampleCountInverse;
-        ssao *= ssaoIntensity;
-        ssao = 1.0 - ssao;
-        ssao = max(0.0, ssao);
-
-        // write
-        frag = ssao;
     }
-    else frag = 1.0; // no occlusion
+    ssao *= ssaoSampleCountInverse;
+    ssao *= ssaoIntensity;
+    ssao = 1.0 - ssao;
+    ssao = max(0.0, ssao);
+
+    // write
+    frag = ssao;
 }

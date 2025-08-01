@@ -23,7 +23,7 @@ module SpriteBatch =
             (match struct (state.ClipOpt, state2.ClipOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
-             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueNone, ValueNone) -> false
              | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
@@ -31,7 +31,7 @@ module SpriteBatch =
             (match struct (state.TextureOpt, state2.TextureOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
-             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueNone, ValueNone) -> false
              | struct (ValueSome t, ValueSome t2) -> t <> t2)
 
         static member inline make absolute clipOpt bfs bfd beq texture =
@@ -136,7 +136,6 @@ module SpriteBatch =
             Hl.Assert ()
 
             // teardown shader
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Gl.UseProgram 0u
             Hl.Assert ()
         
@@ -223,12 +222,14 @@ module SpriteBatch =
     /// Destroy the given sprite batch environment.
     let CreateSpriteBatchEnv shaderFilePath =
 
-        // create vao
-        let vao = Gl.GenVertexArray ()
-        Hl.Assert ()
-
         // create shader
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader shaderFilePath
+        Hl.Assert ()
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
         Hl.Assert ()
 
         // create env

@@ -51,6 +51,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | KinematicCharacter -> Log.infoOnce "KinematicCharacter not supported by PhysicsEngine2d. Using Kinematic configuration instead."; Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
         | DynamicCharacter -> Log.infoOnce "DynamicCharacter not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
+        | Vehicle -> Log.infoOnce "Vehicle not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
 
     static member private handlePenetration
         (bodyShape : Dynamics.Fixture)
@@ -452,8 +453,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 | (true, messages) ->
                     messages.RemoveAll (fun message ->
                         message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
-                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
-                    ignore<int>
+                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex)
+                    |> ignore<int>
                 | (false, _) -> ()
             | None -> ()
 
@@ -540,12 +541,12 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | (false, _) -> ()
 
     static member private getBodyContactNormals bodyId physicsEngine =
-        PhysicsEngine2d.getBodyContacts bodyId physicsEngine |>
-        Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
+        PhysicsEngine2d.getBodyContacts bodyId physicsEngine
+        |> Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
 
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
-        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine |>
-        Array.filter (fun normal ->
+        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
+        |> Array.filter (fun normal ->
             let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
             theta < Constants.Physics.GroundAngleMax)
  
@@ -553,11 +554,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
-            groundNormals |>
-            Seq.map (fun normal -> struct (normal.Dot v3Down, normal)) |>
-            Seq.maxBy fst' |>
-            snd' |>
-            Some
+            groundNormals
+            |> Seq.map (fun normal -> struct (normal.Dot v3Down, normal))
+            |> Seq.maxBy fst'
+            |> snd'
+            |> Some
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
@@ -581,6 +582,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine2d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine2d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | SetBodyVehicleForwardInputMessage _ -> () // no vehicle support
+        | SetBodyVehicleRightInputMessage _ -> () // no vehicle support
+        | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle support
+        | SetBodyVehicleHandBrakeInputMessage _ -> () // no vehicle support
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine2d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -678,6 +683,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                     found <- true
                 i <- inc i
             sensor
+
+        member physicsEngine.GetWheelSpeedAtClutch _ =
+            0.0f // no vehicle support
+
+        member physicsEngine.GetWheelModelMatrix (_, _, _, _) =
+            m4Identity // no vehicle support
+
+        member physicsEngine.GetWheelAngularVelocity (_, _) =
+            0.0f // no vehicle support
 
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()

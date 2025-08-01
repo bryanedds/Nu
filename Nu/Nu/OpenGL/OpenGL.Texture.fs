@@ -21,9 +21,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
+    /// Check that an asset with the given file path should be filtered in a 2D rendering context.
+    let Filtered2d (filePath : string) =
+        let name = PathF.GetFileNameWithoutExtension filePath
+        name.EndsWith "_f" ||
+        name.EndsWith "Filtered"
+
     /// Check that an asset with the given file path can utilize block compression (IE, it's not a normal map,
     /// blend map, or specified as uncompressed).
-    /// TODO: move this somewhere more general?
     let BlockCompressable (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         not (name.EndsWith "_n") &&
@@ -375,9 +380,11 @@ module Texture =
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
     /// A texture that's immediately loaded.
-    type [<Struct>] EagerTexture =
+    type [<Struct; NoEquality; NoComparison>] EagerTexture =
         { TextureMetadata : TextureMetadata
           TextureId : uint }
+
+        /// Destroy this texture's backing OpenGL texture.
         member this.Destroy () =
             Gl.DeleteTextures [|this.TextureId|]
 
@@ -449,25 +456,61 @@ module Texture =
                     fullServeAttempted <- true
 
     /// A 2d texture.
-    type Texture =
+    type [<CustomEquality; NoComparison>] Texture =
         | EmptyTexture
         | EagerTexture of EagerTexture
         | LazyTexture of LazyTexture
+
+        static member hash texture =
+            match texture with
+            | EmptyTexture -> 0
+            | EagerTexture eagerTexture -> hash eagerTexture.TextureId
+            | LazyTexture lazyTexture -> lazyTexture.GetHashCode ()
+
+        static member equals this that =
+            match this with
+            | EmptyTexture ->
+                match that with
+                | EmptyTexture -> true
+                | _ -> false
+            | EagerTexture eagerThis ->
+                match that with
+                | EagerTexture eagerThat -> eagerThis.TextureId = eagerThat.TextureId
+                | _ -> false
+            | LazyTexture lazyThis ->
+                match that with
+                | LazyTexture lazyThat -> lazyThis = lazyThat
+                | _ -> false
+
         member this.TextureMetadata =
             match this with
             | EmptyTexture -> TextureMetadata.empty
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
+
         member this.TextureId =
             match this with
             | EmptyTexture -> 0u
             | EagerTexture eagerTexture -> eagerTexture.TextureId
             | LazyTexture lazyTexture -> lazyTexture.TextureId
+
         member this.Destroy () =
             match this with
             | EmptyTexture -> ()
             | EagerTexture eagerTexture -> eagerTexture.Destroy ()
             | LazyTexture lazyTexture -> lazyTexture.Destroy ()
+
+        override this.GetHashCode () =
+            Texture.hash this
+
+        override this.Equals that =
+            match that with
+            | :? Texture as texture -> Texture.equals this texture
+            | _ -> false
+
+        interface System.IEquatable<Texture> with
+            member this.Equals that =
+                Texture.equals this that
 
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
@@ -522,7 +565,8 @@ module Texture =
         let [<VolatileField>] mutable terminated = false
 
         member private this.Run () =
-            OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
+            let glContext = OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext)
+            OpenGL.Hl.Assert ()
             started <- true
             while not terminated do
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
@@ -535,6 +579,7 @@ module Texture =
                     while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueue.TryDequeue &lazyTexture do
                         lazyTexture.TryServe ()
                 Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
+            OpenGL.Hl.DestroySglContext (glContext, window)
 
         member this.Start () =
             if not started then

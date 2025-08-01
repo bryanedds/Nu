@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 const int TERRAIN_LAYERS_MAX = 6;
@@ -24,6 +24,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewProjection;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -60,11 +61,11 @@ void main()
     blendsOut[0] = blends[0];
     blendsOut[1] = blends[1];
     tintOut = tint;
-    gl_Position = projection * view * positionOut;
+    gl_Position = viewProjection * positionOut;
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 6;
@@ -86,7 +87,7 @@ flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 
-layout(location = 0) out vec4 position;
+layout(location = 0) out float depth;
 layout(location = 1) out vec3 albedo;
 layout(location = 2) out vec4 material;
 layout(location = 3) out vec4 normalPlus;
@@ -97,10 +98,6 @@ void main()
 {
     // ensure layers count is in range
     float layersCountCeil = max(min(layersCount, TERRAIN_LAYERS_MAX), 0);
-
-    // forward position, marking w for written
-    position.xyz = positionOut.xyz;
-    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -140,10 +137,8 @@ void main()
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
-    // discard fragment if even partly transparent
-    if (albedoBlend.w < 0.5) discard;
-
-    // populate albedo, material, and normalPlus
+    // populate depth, albedo, material, and normalPlus
+    depth = gl_FragCoord.z;
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
     normalPlus.xyz = normalize(toWorld * normalize(normalBlend));

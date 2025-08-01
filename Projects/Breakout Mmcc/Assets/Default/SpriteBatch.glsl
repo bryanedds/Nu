@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 const int VERTS = 6;
 const int SPRITE_BATCH_SIZE = 192;
@@ -17,7 +17,7 @@ uniform vec2 pivots[SPRITE_BATCH_SIZE];
 uniform float rotations[SPRITE_BATCH_SIZE];
 uniform vec4 texCoordses[SPRITE_BATCH_SIZE];
 uniform vec4 colors[SPRITE_BATCH_SIZE];
-uniform mat4 viewProjection;
+uniform mat4 viewProjection; // TODO: add view and projection since all the other shaders do?
 
 out vec2 texCoords;
 out vec4 color;
@@ -53,7 +53,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform sampler2D tex;
 

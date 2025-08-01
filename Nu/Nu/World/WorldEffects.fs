@@ -116,7 +116,7 @@ module Effect =
                   LightCutoff = Constants.Render.LightCutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true }
-            let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.CastShadow transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
+            let effectSystem = EffectSystem.make localTime transform.Absolute transform.CastShadow transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
             let (dataToken, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
@@ -126,15 +126,15 @@ module Effect =
 
             // extract tag tokens
             let tagTokens =
-                dataTokens |>
-                Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
-                Map.ofSeq
+                dataTokens
+                |> Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None)
+                |> Map.ofSeq
 
             // spawn emitters via tokens
             let particleSystem =
-                dataTokens |>
-                Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
-                Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
+                dataTokens
+                |> Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None)
+                |> Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
                     match descriptorObj with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
@@ -160,8 +160,8 @@ module Effect =
                                     Constraint = descriptor.Constraint }
                             Some (name, emitter :> Emitter)
                         | _ -> None
-                    | _ -> None) |>
-                Seq.fold (fun particleSystem (name, emitter) ->
+                    | _ -> None)
+                |> Seq.fold (fun particleSystem (name, emitter) ->
                     ParticleSystem.add name emitter particleSystem)
                     effect.ParticleSystem_
 

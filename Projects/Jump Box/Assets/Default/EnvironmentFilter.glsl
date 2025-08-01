@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 layout(location = 0) in vec3 position;
 
@@ -7,15 +7,16 @@ out vec3 positionOut;
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 viewProjection;
 
 void main()
 {
     positionOut = position;
-    gl_Position = projection * view * vec4(positionOut, 1.0);
+    gl_Position = viewProjection * vec4(positionOut, 1.0);
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 const float PI = 3.141592654;
 const uint SAMPLE_COUNT = 1024u;

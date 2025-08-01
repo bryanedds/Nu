@@ -47,29 +47,26 @@ module Symbolics =
 
     /// Attempt to load a symbol package with the given name.
     let tryLoadSymbolPackage packageName metadata symbolics =
-        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
-        | Right assetGraph ->
-            match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Symbol) packageName assetGraph with
-            | Right assets ->
-                let symbolPackage =
-                    match Dictionary.tryFind packageName symbolics.SymbolPackages with
-                    | Some symbolPackage -> symbolPackage
-                    | None ->
-                        let symbolPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                        symbolics.SymbolPackages.[packageName] <- symbolPackage
-                        symbolPackage
-                for asset in assets do
-                    match tryLoadSymbol3 metadata packageName asset with
-                    | Some symbol ->
-                        let lastWriteTime =
-                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, symbol)
-                    | None -> ()
-            | Left error ->
-                Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
+        let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+        match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Symbol) packageName assetGraph with
+        | Right assets ->
+            let symbolPackage =
+                match Dictionary.tryFind packageName symbolics.SymbolPackages with
+                | Some symbolPackage -> symbolPackage
+                | None ->
+                    let symbolPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
+                    symbolics.SymbolPackages.[packageName] <- symbolPackage
+                    symbolPackage
+            for asset in assets do
+                match tryLoadSymbol3 metadata packageName asset with
+                | Some symbol ->
+                    let lastWriteTime =
+                        try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                    symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, symbol)
+                | None -> ()
         | Left error ->
-            Log.info ("Symbol package load failed due to unloadable asset graph due to: '" + error)
+            Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
 
     /// Attempt to load a symbol with the given asset tag.
     let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolics =

@@ -20,6 +20,7 @@ module Configure =
                 match key with
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
+                | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
@@ -41,9 +42,6 @@ module Configure =
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
-                | nameof Constants.Render.ShadowTexturesMax -> Constants.Render.ShadowTexturesMax <- min (scvalue value) Constants.Render.ShadowTexturesMaxShader
-                | nameof Constants.Render.ShadowMapsMax -> Constants.Render.ShadowMapsMax <- min (scvalue value) Constants.Render.ShadowMapsMaxShader
-                | nameof Constants.Render.ShadowDetailedResolutionScalar -> Constants.Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
                 | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
                 | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value

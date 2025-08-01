@@ -72,6 +72,6 @@ module TmxExtensions =
         /// Get each of the map's tilesets paired with their associated image assets (per the given package).
         /// Thread-safe.
         member this.GetImageAssets tileMapPackage =
-            this.Tilesets |>
-            Array.ofSeq |>
-            Array.map (fun (tileSet : TmxTileset) -> struct (tileSet, tileSet.GetImageAsset tileMapPackage))
+            this.Tilesets
+            |> Array.ofSeq
+            |> Array.map (fun (tileSet : TmxTileset) -> struct (tileSet, tileSet.GetImageAsset tileMapPackage))

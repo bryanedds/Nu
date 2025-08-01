@@ -64,14 +64,13 @@ type AddressConverter (pointType : Type) =
 
 /// A generalized address.
 type Address =
-    interface
-        inherit IComparable
-        abstract Names : string array
-        abstract HashCode : int
-        abstract Anonymous : bool
-        end
+    inherit IComparable
+    abstract Names : string array
+    abstract HashCode : int
+    abstract Anonymous : bool
 
 /// Specifies the address of an identifiable value.
+/// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
 /// TODO: have Address constructor throw if multiple wildcards or ellipses are used in Debug build mode.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     { Names : string array
@@ -96,11 +95,14 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member equals<'a> (left : 'a Address) (right : 'a Address) =
         refEq left right || // OPTIMIZATION: first check ref equality.
         left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
-        String.equateMany left.Names right.Names
+        String.equateManyBack left.Names right.Names // OPTIMIZATION: later names in an address tend to have higher variance.
 
     /// Compare Addresses.
     static member compare<'a> (left : 'a Address) (right : 'a Address) =
-        String.compareMany left.Names right.Names
+        if  refEq left right || // OPTIMIZATION: first check ref equality.
+            left.HashCode = right.HashCode then // OPTIMIZATION: check hash equality to bail as quickly as possible.
+            0
+        else String.compareMany left.Names right.Names
 
     /// Convert any address to an obj Address.
     static member generalize<'a> (address : 'a Address) : obj Address =
@@ -176,10 +178,20 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Concatenate two addresses, taking the type of second address.
     static member (<--) (address : 'a Address, address2 : 'b Address) : 'b Address = Address.acats address address2
 
-    interface Address with
-        member this.Names = this.Names
-        member this.HashCode = this.HashCode
-        member this.Anonymous = this.Anonymous
+    override this.Equals that =
+        match that with
+        | :? ('a Address) as that -> Address.equals<'a> this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        this.HashCode
+
+    override this.ToString () =
+        Address.atos<'a> this
+
+    interface 'a Address IEquatable with
+        member this.Equals that =
+            Address<'a>.equals<'a> this that
 
     interface 'a Address IComparable with
         member this.CompareTo that =
@@ -191,20 +203,10 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
             | :? ('a Address) as that -> Address.compare this that
             | _ -> failwith "Cannot compare Address (comparee not of type Address)."
 
-    interface 'a Address IEquatable with
-        member this.Equals that =
-            Address<'a>.equals<'a> this that
-
-    override this.Equals that =
-        match that with
-        | :? ('a Address) as that -> Address.equals<'a> this that
-        | _ -> false
-
-    override this.GetHashCode () =
-        this.HashCode
-
-    override this.ToString () =
-        Address.atos<'a> this
+    interface Address with
+        member this.Names = this.Names
+        member this.HashCode = this.HashCode
+        member this.Anonymous = this.Anonymous
 
 [<RequireQualifiedAccess>]
 module Address =

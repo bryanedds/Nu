@@ -1,5 +1,5 @@
 #shader vertex
-#version 410
+#version 460 core
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -13,7 +13,7 @@ void main()
 }
 
 #shader fragment
-#version 410
+#version 460 core
 
 uniform vec2 scale;
 uniform sampler2D inputTexture;
@@ -24,7 +24,7 @@ layout(location = 0) out vec2 frag;
 
 void main()
 {
-    vec2 depths =
+    frag =
         texture(inputTexture, texCoordsOut + vec2(-3.0) * scale).xy * (1.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(-2.0) * scale).xy * (6.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(-1.0) * scale).xy * (15.0 / 64.0) +
@@ -32,5 +32,4 @@ void main()
         texture(inputTexture, texCoordsOut + vec2(1.0) * scale).xy * (15.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(2.0) * scale).xy * (6.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(3.0) * scale).xy * (1.0 / 64.0);
-    frag = depths;
 }

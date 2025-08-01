@@ -115,7 +115,7 @@ type [<SymbolicExpansion>] Nav3dConfig =
         { CellSize = 0.1f
           CellHeight = 0.1f
           AgentHeight = 1.5f
-          AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
+          AgentRadius = 0.3f
           AgentClimbMax = 0.4f
           AgentSlopeMax = 45.0f
           RegionSizeMin = 8
@@ -156,11 +156,8 @@ type NavOutput =
       NavAngularVelocity : Vector3 }
 
 /// The data collected from a navigation builder result.
-type NavBuilderResultData =
-    { NavPointsMinY : single
-      NavPointsMaxY : single
-      NavPoints : Vector3 array
-      NavEdgesMinY : single
+type [<SymbolicExpansion>] NavBuilderResultData =
+    { NavEdgesMinY : single
       NavEdgesMaxY : single
       NavInteriorEdges : Segment3 array
       NavExteriorEdges : Segment3 array }
@@ -168,23 +165,8 @@ type NavBuilderResultData =
     /// Make from an RcBuilderResult.
     static member make (builderResult : RcBuilderResult) =
 
-        // compute points
-        let dmesh = builderResult.MeshDetail
-        let mutable pointsMinY = Single.MaxValue
-        let mutable pointsMaxY = Single.MinValue
-        let points =
-            [|for i in 0 .. dec dmesh.nmeshes do
-                let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let nverts = dmesh.meshes.[m + 1]
-                let verts = bverts * 3
-                for j in 0 .. dec nverts do
-                    let point = v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2]
-                    if pointsMinY > point.Y then pointsMinY <- point.Y
-                    if pointsMaxY < point.Y then pointsMaxY <- point.Y
-                    point|]
-
         // compute interior edges
+        let dmesh = builderResult.MeshDetail
         let mutable edgesMinY = Single.MaxValue
         let mutable edgesMaxY = Single.MinValue
         let interiorEdges =
@@ -251,10 +233,7 @@ type NavBuilderResultData =
                         k <- inc k|]
 
         // fin
-        { NavPointsMinY = pointsMinY
-          NavPointsMaxY = pointsMaxY
-          NavPoints = points
-          NavEdgesMinY = edgesMinY
+        { NavEdgesMinY = edgesMinY
           NavEdgesMaxY = edgesMaxY
           NavInteriorEdges = interiorEdges
           NavExteriorEdges = exteriorEdges }
@@ -282,9 +261,9 @@ type FlowDirection =
 
 /// A gui layout.
 type Layout =
-    | Flow of FlowDirection * FlowLimit
-    | Dock of Vector4 * bool * bool
-    | Grid of Vector2i * FlowDirection option * bool
+    | Flow of FlowDirection : FlowDirection * FlowLimit : FlowLimit
+    | Dock of Bounds : Vector4 * PercentageBased : bool * ResizeChildren : bool
+    | Grid of Dims : Vector2i * FlowDirectionOpt : FlowDirection option * ResizeChildren : bool
     | Manual
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
@@ -347,7 +326,7 @@ type OverlayNameDescriptor =
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
-      ScheduledOp : 'w -> 'w }
+      ScheduledOp : 'w -> unit }
 
 /// Configuration parameters for the world.
 type [<ReferenceEquality>] WorldConfig =
@@ -391,6 +370,7 @@ type Timers =
       PostUpdateGameTimer : Stopwatch
       PostUpdateScreensTimer : Stopwatch
       PostUpdateGroupsTimer : Stopwatch
+      CoroutinesTimer : Stopwatch
       TaskletsTimer : Stopwatch
       DestructionTimer : Stopwatch
       PerProcessTimer : Stopwatch
@@ -408,6 +388,7 @@ type Timers =
       mutable GcTotalTime : TimeSpan
       mutable GcFrameTime : TimeSpan }
 
+    /// Make timers.
     static member make () =
         let gcTime = GC.GetTotalPauseDuration ()
         { InputTimer = Stopwatch ()
@@ -428,6 +409,7 @@ type Timers =
           PostUpdateGameTimer = Stopwatch ()
           PostUpdateScreensTimer = Stopwatch ()
           PostUpdateGroupsTimer = Stopwatch ()
+          CoroutinesTimer = Stopwatch ()
           TaskletsTimer = Stopwatch ()
           DestructionTimer = Stopwatch ()
           PerProcessTimer = Stopwatch ()
@@ -473,6 +455,7 @@ module AmbientState =
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
+              Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -619,6 +602,20 @@ module AmbientState =
     let mapKeyValueStore mapper state =
         let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
+
+    /// Get the active coroutines.
+    let getCoroutines state =
+        state.Coroutines
+
+    /// Set the active coroutines.
+    let setCoroutines coroutines state =
+        { state with Coroutines = coroutines }
+
+    /// Add a coroutine to the active coroutines.
+    let addCoroutine coroutine state =
+        let id = Gen.id64
+        let coroutines = OMap.add id coroutine state.Coroutines
+        { state with Coroutines = coroutines }
 
     /// Get the tasklets scheduled for future processing.
     let getTasklets state =
@@ -773,6 +770,7 @@ module AmbientState =
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
+          Coroutines = OMap.makeEmpty HashIdentity.Structural config
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

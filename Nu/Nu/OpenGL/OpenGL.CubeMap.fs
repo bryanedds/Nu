@@ -75,8 +75,7 @@ module CubeMap =
           ElementCount : int
           Vertices : Vector3 array
           VertexBuffer : uint
-          IndexBuffer : uint
-          CubeMapVao : uint }
+          IndexBuffer : uint }
 
     /// Describes a renderable cube map surface.
     type [<Struct>] CubeMapSurface =
@@ -153,29 +152,39 @@ module CubeMap =
         // fin
         (vertexData, indexData, bounds)
 
+    let VertexSize =
+        (3 (*position*)) * sizeof<single>
+
+    let CreateCubeMapVao () =
+
+        // create vao
+        let vao =  [|0u|]
+        Gl.CreateVertexArrays vao
+        let vao = vao.[0]
+
+        // per vertex
+        Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
+        Gl.VertexArrayAttribBinding (vao, 0u, 0u)
+        Gl.EnableVertexArrayAttrib (vao, 0u)
+
+        // fin
+        vao
+
     /// Create cube map geometry from a mesh.
     let CreateCubeMapGeometryFromMesh (renderable, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, vertexBuffer, indexBuffer, vao) =
+        let (vertices, vertexBuffer, indexBuffer) =
 
             // make renderable
             if renderable then
 
-                // initialize vao
-                let vao = Gl.GenVertexArray ()
-                Gl.BindVertexArray vao
-                Hl.Assert ()
-
                 // create vertex buffer
                 let vertexBuffer = Gl.GenBuffer ()
-                let vertexSize = (3 (*position*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
                     Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
-                Gl.EnableVertexAttribArray 0u
-                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
                 Hl.Assert ()
 
                 // create index buffer
@@ -187,12 +196,8 @@ module CubeMap =
                     Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
-                // finalize vao
-                Gl.BindVertexArray 0u
-                Hl.Assert ()
-
                 // fin
-                ([||], vertexBuffer, indexBuffer, vao)
+                ([||], vertexBuffer, indexBuffer)
 
             // fake buffers
             else
@@ -206,7 +211,7 @@ module CubeMap =
                     vertices.[i] <- vertex
                 
                 // fin
-                (vertices, 0u, 0u, 0u)
+                (vertices, 0u, 0u)
 
         // make cube map geometry
         let geometry =
@@ -215,8 +220,7 @@ module CubeMap =
               ElementCount = indexData.Length
               Vertices = vertices
               VertexBuffer = vertexBuffer
-              IndexBuffer = indexBuffer
-              CubeMapVao = vao }
+              IndexBuffer = indexBuffer }
 
         // fin
         geometry
@@ -228,16 +232,14 @@ module CubeMap =
 
     /// Destroy cube map geometry.
     let DestroyCubeMapGeometry geometry =
-        OpenGL.Gl.BindVertexArray geometry.CubeMapVao
         OpenGL.Gl.DeleteBuffers geometry.VertexBuffer
         OpenGL.Gl.DeleteBuffers geometry.IndexBuffer
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Gl.DeleteVertexArrays [|geometry.CubeMapVao|]
 
     /// Describes a cube map shader that's loaded into GPU.
     type CubeMapShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ViewProjectionUniform : int
           CubeMapUniform : int
           CubeMapShader : uint }
 
@@ -251,11 +253,13 @@ module CubeMap =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ViewProjectionUniform = viewProjectionUniform
           CubeMapUniform = cubeMapUniform
           CubeMapShader = shader }
 
@@ -263,28 +267,34 @@ module CubeMap =
     let DrawCubeMap
         (view : single array,
          projection : single array,
+         viewProjection : single array,
          cubeMap : Texture.Texture,
          geometry : CubeMapGeometry,
-         shader : CubeMapShader) =
+         shader : CubeMapShader,
+         vao : uint) =
 
         // setup state
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
         Hl.Assert ()
 
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
         // setup shader
         Gl.UseProgram shader.CubeMapShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform1 (shader.CubeMapUniform, 0)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap.TextureId)
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.CubeMapVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, VertexSize)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
         // draw geometry
@@ -292,14 +302,12 @@ module CubeMap =
         Hl.ReportDrawCall 1
         Hl.Assert ()
 
-        // teardown geometry
-        Gl.BindVertexArray 0u
+        // teardown shader
+        Gl.UseProgram 0u
         Hl.Assert ()
 
-        // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Gl.UseProgram 0u
+        // teardown vao
+        Gl.BindVertexArray 0u
         Hl.Assert ()
 
         // teardown state

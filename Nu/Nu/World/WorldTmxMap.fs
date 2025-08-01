@@ -78,9 +78,8 @@ module TmxMap =
             gid |||
             (if hflip then 0x80000000 else 0x0) |||
             (if vflip then 0x40000000 else 0x0) |||
-            (if dflip then 0x20000000 else 0x0) |>
-            uint
-        TmxLayerTile tid
+            (if dflip then 0x20000000 else 0x0)
+        TmxLayerTile (uint tid)
 
     /// Make a TmxObject.
     let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
@@ -286,13 +285,13 @@ module TmxMap =
         bodyShapes
 
     let getBodyShapes tileMapDescriptor =
-        tileMapDescriptor.TileMap.TileLayers |>
-        Seq.fold (fun shapess tileLayer ->
+        tileMapDescriptor.TileMap.TileLayers
+        |> Seq.fold (fun shapess tileLayer ->
             let shapes = getTileLayerBodyShapes tileLayer tileMapDescriptor
             shapes :: shapess)
-            [] |>
-        Seq.concat |>
-        Seq.toList
+            []
+        |> Seq.concat
+        |> Seq.toList
 
     let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =
@@ -313,6 +312,7 @@ module TmxMap =
               Substance = Mass 0.0f
               GravityOverride = Some v3Zero
               CharacterProperties = CharacterProperties.defaultProperties
+              VehicleProperties = VehiclePropertiesAbsent
               CollisionDetection = Discontinuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
@@ -326,6 +326,7 @@ module TmxMap =
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSizeDivisor = max 1 tileSizeDivisor
         let tileSize = v2 (single (tileMap.TileWidth / tileSizeDivisor)) (single (tileMap.TileHeight / tileSizeDivisor))
+        let layerSize = v2 (single tileMap.Width * tileSize.X) (single tileMap.Height * tileSize.Y)
         let tileAssets = tileMap.GetImageAssets tileMapPackage
         let tileGidCount = Array.fold (fun count struct (tileSet : TmxTileset, _) -> let count2 = tileSet.TileCount in count + count2.GetValueOrDefault 0) 0 tileAssets // TODO: make this a public function!
         let tileMapDescriptor = getDescriptor tileMapPosition tileSizeDivisor tileMap
@@ -346,98 +347,66 @@ module TmxMap =
                     then tileMapPosition
                     else tileMapPosition + (viewBounds.Center - parallax * viewBounds.Center)
 
-                // compute positions relative to tile map
-                let (r, r2) =
-                    if absolute then
-                        let r = v2Zero
-                        let r2 = viewBounds.Size
-                        (r, r2)
-                    else
-                        let r = viewBounds.Min - parallaxPosition
-                        let r2 = r + viewBounds.Size
-                        (r, r2)
+                // accumulate when layer is in view
+                let layerBounds = box2 parallaxPosition layerSize
+                if viewBounds.Intersects layerBounds then
 
-                // accumulate decriptors
-                let descriptors = List ()
-                let mutable yC = 0
-                let mutable yO = r.Y + single yC * tileSize.Y
-                yO <- yO + 0.0001f |> floor // NOTE: fixes #766 and seems to provide more horizontal tile alignment stability.
-                while r.Y + single yC * tileSize.Y < r2.Y + tileSize.Y do
-
-                    // compute y index and ensure it's in bounds
-                    let yI = tileMap.Height - 1 - int (yO / tileSize.Y)
-                    if yO >= 0.0f && yI >= 0 && yI < tileMap.Height then
-
-                        // accumulate strip tiles
-                        let tiles = SList.make ()
-                        let mutable xS = 0.0f
-                        let mutable xO = r.X
-                        //xO <- xO + 0.0001f |> floor // NOTE: attempted to fix #832, but caused more issues near the origin in Blaze Vector.
-                        while xO < r2.X + tileSize.X do
-                            let xI = int (xO / tileSize.X)
-                            if xO >= 0.0f && xI >= 0 then
-                                if xI < tileMap.Width then
-                                    let xTileIndex = xI + yI * tileMap.Width
-                                    let xTile = layer.Tiles.[xTileIndex]
-                                    let xTileGid =
-                                        if  xTile.Gid <> 0 && // never offset the zero tile!
-                                            xTile.Gid >= fst tileIndexOffsetRange &&
-                                            xTile.Gid < snd tileIndexOffsetRange then
-                                            let xTileGidOffset = xTile.Gid + tileIndexOffset
-                                            if xTileGidOffset > 0 && xTileGidOffset < tileGidCount then xTileGidOffset
-                                            else xTile.Gid
-                                        else xTile.Gid
-                                    let xTile =
-                                        match tryGetTileAnimationDescriptor xTileIndex layer tileMapDescriptor with
-                                        | ValueSome xTileAnimationDescriptor ->
-                                            let compressedTime =
-                                                match (time, xTileAnimationDescriptor.TileAnimationDelay) with
-                                                | (UpdateTime time, UpdateTime delay) -> time / delay
-                                                | (TickTime time, TickTime delay) -> time / delay
-                                                | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
-                                            let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun * xTileAnimationDescriptor.TileAnimationStride
-                                            makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
-                                        | ValueNone ->
-                                            makeLayerTile xTileGid xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
-                                    tiles.Add xTile
-                            else xS <- xS + tileSize.X
-                            xO <- xO + tileSize.X
-
-                        // compute strip transform
-                        let stripSize = v3 (single tiles.Length * tileSize.X) tileSize.Y 0.0f
-                        let stripPosition = v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3 + stripSize * 0.5f
-                        let mutable transform = Transform.makeDefault ()
-                        transform.Position <- stripPosition
-                        transform.Size <- stripSize
-                        transform.Elevation <- elevation
-                        transform.Absolute <- absolute
-
-                        // check if strip in view bounds
-                        let stripBounds = box2 transform.PerimeterMin.V2 transform.Size.V2
-                        if stripBounds.Intersects viewBounds then
-
-                            // accumulate descriptor
+                    // accumulate descriptors
+                    let descriptors = SList.make ()
+                    for tileY in 0 .. dec tileMap.Height do
+                        let tileStripY = single (tileMap.Height - tileY - 1) * tileSize.Y
+                        let tileStripBounds = box2 (parallaxPosition + v2Up * tileStripY) (v2 layerBounds.Size.X tileSize.Y)
+                        if viewBounds.Intersects tileStripBounds then
+                            let tileStrip = SList.make ()
+                            let offsetX = single (tileMap.Width / 2) * tileSize.X
+                            for tileX in 0 .. dec tileMap.Width do
+                                let tileIndex = tileY * tileMap.Width + tileX
+                                let tile = layer.Tiles.[tileIndex]
+                                let tileGid =
+                                    if  tile.Gid <> 0 && // never offset the zero tile!
+                                        tile.Gid >= fst tileIndexOffsetRange &&
+                                        tile.Gid < snd tileIndexOffsetRange then
+                                        let xTileGidOffset = tile.Gid + tileIndexOffset
+                                        if xTileGidOffset > 0 && xTileGidOffset < tileGidCount then xTileGidOffset
+                                        else tile.Gid
+                                    else tile.Gid
+                                let tile =
+                                    match tryGetTileAnimationDescriptor tileIndex layer tileMapDescriptor with
+                                    | ValueSome xTileAnimationDescriptor ->
+                                        let compressedTime =
+                                            match (time, xTileAnimationDescriptor.TileAnimationDelay) with
+                                            | (UpdateTime time, UpdateTime delay) -> time / delay
+                                            | (TickTime time, TickTime delay) -> time / delay
+                                            | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
+                                        let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun * xTileAnimationDescriptor.TileAnimationStride
+                                        makeLayerTile (tileGid + xTileOffset) tile.HorizontalFlip tile.VerticalFlip tile.DiagonalFlip
+                                    | ValueNone ->
+                                        makeLayerTile tileGid tile.HorizontalFlip tile.VerticalFlip tile.DiagonalFlip
+                                tileStrip.Add tile
+                            let offsetY = tileStripY + tileSize.Y * 0.5f
+                            let mutable transform = Transform.makeDefault ()
+                            transform.Position <- parallaxPosition.V3 + v3Up * offsetY + v3Right * offsetX
+                            transform.Size <- v3 (single tileMap.Width * tileSize.X) tileSize.Y 0.0f
+                            transform.Elevation <- elevation
+                            transform.Absolute <- absolute
                             descriptors.Add
                                 { Elevation = transform.Elevation
                                   Horizon = transform.HorizonUnscaled // ignoring scale and orientation for tile map
                                   AssetTag = AssetTag.makeEmpty () // just disregard asset for render ordering
                                   RenderOperation2d =
-                                    RenderTiles
-                                        { Transform = transform
-                                          ClipOpt = ValueNone // TODO: implement clipping for tile maps.
-                                          Color = tileMapColor
-                                          Emission = tileMapEmission
-                                          MapSize = Vector2i (tileMap.Width, tileMap.Height)
-                                          Tiles = tiles
-                                          TileSourceSize = tileSourceSize
-                                          TileSize = tileSize
-                                          TileAssets = tileAssets }}
-
-                    // loop
-                    yC <- inc yC
-                    yO <- r.Y + single yC * tileSize.Y
-
-                Seq.toList descriptors :: descriptorLists)
+                                  RenderTiles
+                                    { Transform = transform
+                                      ClipOpt = ValueNone // TODO: implement clipping for tile maps.
+                                      Color = tileMapColor
+                                      Emission = tileMapEmission
+                                      MapSize = Vector2i (tileMap.Width, tileMap.Height)
+                                      Tiles = tileStrip
+                                      TileSourceSize = tileSourceSize
+                                      TileSize = tileSize
+                                      TileAssets = tileAssets }}
+                    Seq.toList descriptors :: descriptorLists
+                    
+                else descriptorLists)
                 [] layers
         List.concat descriptorLists
 

@@ -88,7 +88,7 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
 
         // load cube maps directly
         for cubeMap in cubeMapAssets do
-            match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
+            match cubeMap.FilePath |> File.ReadAllLines |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
                 let dirPath = PathF.GetDirectoryName cubeMap.FilePath
                 let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()
