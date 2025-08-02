@@ -193,13 +193,7 @@ type RendererInline () =
             | Some (vkc, renderer3d, renderer2d, rendererImGui) ->
                 Hl.VulkanContext.waitIdle vkc
                 renderer3d.CleanUp ()
-                OpenGL.Hl.Assert ()
-
-                // clean up 2d
                 renderer2d.CleanUp ()
-                OpenGL.Hl.Assert ()
-
-                // clean up imgui
                 rendererImGui.CleanUp ()
                 Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vkc
                 Hl.VulkanContext.cleanup vkc
@@ -422,13 +416,7 @@ type RendererThread () =
         // clean up
         Hl.VulkanContext.waitIdle vkc
         renderer3d.CleanUp ()
-        OpenGL.Hl.Assert ()
-
-        // clean up 2d
         renderer2d.CleanUp ()
-        OpenGL.Hl.Assert ()
-
-        // clean up imgui
         rendererImGui.CleanUp ()
         Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vkc
         Hl.VulkanContext.cleanup vkc

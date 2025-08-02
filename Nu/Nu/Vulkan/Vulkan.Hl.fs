@@ -554,8 +554,8 @@ module Hl =
         
         /// Check if window is minimized.
         static member isWindowMinimized swapchain =
-            let flags = SDL.SDL_GetWindowFlags(swapchain._Window)
-            flags &&& 64u <> 0u // SDL_WINDOW_MINIMIZED TODO: DJL: try do this properly.
+            let flags = SDL.SDL_GetWindowFlags swapchain._Window
+            flags &&& Branchless.reinterpret SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
         
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice renderPass surface swapchain device =
