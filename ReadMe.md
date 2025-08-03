@@ -1,7 +1,5 @@
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
 
-**Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
-
 So... just what is the **Nu Game Engine**?
 
 *"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative-procedural API based on ImGui called ImSim as well as a declarative-functional MVU-based API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
