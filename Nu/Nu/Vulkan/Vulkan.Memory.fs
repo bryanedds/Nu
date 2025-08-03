@@ -52,6 +52,29 @@ module VulkanMemory =
                 NativePtr.memCopy ((offset + i) * 16) typeSize (NativePtr.toVoidPtr ptr) mapping
         else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
     
+    /// Copy data from the source buffer to the destination buffer.
+    let private copyData size source destination (vkc : Hl.VulkanContext) =
+
+        // create command buffer for transfer
+        let mutable cb = Hl.allocateCommandBuffer vkc.TransientCommandPool vkc.Device
+
+        // reset command buffer and begin recording
+        Vulkan.vkResetCommandPool (vkc.Device, vkc.TransientCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
+        let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+        Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
+
+        // copy data
+        let mutable region = VkBufferCopy (size = uint64 size)
+        Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
+
+        // execute command
+        Vulkan.vkEndCommandBuffer cb |> Hl.check
+        let mutable sInfo = VkSubmitInfo ()
+        sInfo.commandBufferCount <- 1u
+        sInfo.pCommandBuffers <- asPointer &cb
+        Vulkan.vkQueueSubmit (vkc.GraphicsQueue, 1u, asPointer &sInfo, vkc.ResourceReadyFence) |> Hl.check
+        Hl.awaitFence vkc.ResourceReadyFence vkc.Device
+    
     /// A manually allocated buffer for diagnostic purposes.
     type ManualBuffer =
         { VkBuffer : VkBuffer 
@@ -107,7 +130,7 @@ module VulkanMemory =
             // map memory if upload enabled
             let mappingPtr = NativePtr.stackalloc<voidptr> 1 // must be allocated manually because managed allocation doesn't work
             if uploadEnabled then Vulkan.vkMapMemory (vkc.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mappingPtr) |> Hl.check
-            let mapping = NativePtr.read mappingPtr // TODO: DJL: find out if this needs to be manually freed.
+            let mapping = NativePtr.read mappingPtr
             
             // make ManualBuffer
             let manualBuffer = 
@@ -196,29 +219,6 @@ module VulkanMemory =
             // fin
             buffer
 
-        /// Copy data from the source buffer to the destination buffer.
-        static member private copyData size (source : Buffer) (destination : Buffer) (vkc : Hl.VulkanContext) =
-
-            // create command buffer for transfer
-            let mutable cb = Hl.allocateCommandBuffer vkc.TransientCommandPool vkc.Device
-
-            // reset command buffer and begin recording
-            Vulkan.vkResetCommandPool (vkc.Device, vkc.TransientCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
-            let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-            Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
-
-            // copy data
-            let mutable region = VkBufferCopy (size = uint64 size)
-            Vulkan.vkCmdCopyBuffer (cb, source.VkBuffer, destination.VkBuffer, 1u, asPointer &region)
-
-            // execute command
-            Vulkan.vkEndCommandBuffer cb |> Hl.check
-            let mutable sInfo = VkSubmitInfo ()
-            sInfo.commandBufferCount <- 1u
-            sInfo.pCommandBuffers <- asPointer &cb
-            Vulkan.vkQueueSubmit (vkc.GraphicsQueue, 1u, asPointer &sInfo, vkc.ResourceReadyFence) |> Hl.check
-            Hl.awaitFence vkc.ResourceReadyFence vkc.Device
-
         /// Upload data to buffer if upload is enabled.
         static member upload offset size data buffer (vkc : Hl.VulkanContext) =
             upload buffer._UploadEnabled offset size data buffer._Mapping
@@ -269,7 +269,7 @@ module VulkanMemory =
         static member createVertexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
             let vertexBuffer = Buffer.createVertex false size vkc
-            Buffer.copyData size stagingBuffer vertexBuffer vkc
+            copyData size stagingBuffer.VkBuffer vertexBuffer.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             vertexBuffer
 
@@ -277,7 +277,7 @@ module VulkanMemory =
         static member createIndexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
             let indexBuffer = Buffer.createIndex false size vkc
-            Buffer.copyData size stagingBuffer indexBuffer vkc
+            copyData size stagingBuffer.VkBuffer indexBuffer.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             indexBuffer
 
