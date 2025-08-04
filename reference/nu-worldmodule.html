@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="WorldModule (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="WorldModule (Nu)">
     
     <title>WorldModule (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -188,7 +161,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
+                    <code><span><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
                   </span>
                   <br/>
                 </div>
@@ -215,7 +188,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -232,7 +205,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
+                  <code><span><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -259,7 +232,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
+                    <code><span><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
                   </span>
                   <br/>
                 </div>
@@ -286,14 +259,14 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-returns">
                 <dt>
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
+                  <code><span><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -325,14 +298,14 @@
                         pred
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
+                    <code><span><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
                   </span>
                   <br/>
                 </div>
@@ -359,7 +332,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -367,7 +340,7 @@
                     pred
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -376,7 +349,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
+                  <code><span><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -424,7 +397,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -453,7 +426,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -477,7 +450,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -509,7 +482,7 @@
                         simulant
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
+                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                     <span>
@@ -517,7 +490,7 @@
                         tasklet
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-tasklet-1.html">Tasklet</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-tasklet-1.html">Tasklet</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -525,7 +498,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -554,7 +527,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -562,7 +535,7 @@
                     simulant
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
+                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -570,7 +543,7 @@
                     tasklet
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-tasklet-1.html">Tasklet</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-tasklet-1.html">Tasklet</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -578,7 +551,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -610,7 +583,7 @@
                         operation
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -618,7 +591,7 @@
                         simulant
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
+                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                     <span>
@@ -626,7 +599,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -655,7 +628,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -663,7 +636,7 @@
                     operation
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -671,7 +644,7 @@
                     simulant
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
+                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -679,7 +652,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -719,7 +692,7 @@
                         job
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-job.html">Job</a></code>
+                      <code><a href="/Nu/reference/nu-job.html">Job</a></code>
                     </span>
                     <br/>
                     <span>
@@ -727,7 +700,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -756,7 +729,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -772,7 +745,7 @@
                     job
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-job.html">Job</a></code>
+                  <code><a href="/Nu/reference/nu-job.html">Job</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -780,7 +753,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -812,7 +785,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -841,7 +814,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -849,7 +822,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -881,7 +854,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -915,7 +888,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -923,7 +896,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -964,7 +937,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -998,7 +971,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1006,7 +979,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1047,7 +1020,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1081,7 +1054,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1089,7 +1062,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1130,7 +1103,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                      <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1164,7 +1137,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1172,7 +1145,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                  <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1213,7 +1186,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                      <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1247,7 +1220,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1255,7 +1228,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                  <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1296,7 +1269,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1330,7 +1303,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1338,7 +1311,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1379,14 +1352,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                    <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1413,7 +1386,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1421,7 +1394,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1430,7 +1403,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                  <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1462,14 +1435,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-game.html">Game</a></code>
+                    <code><a href="/Nu/reference/nu-game.html">Game</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1496,7 +1469,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1504,7 +1477,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1513,7 +1486,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-game.html">Game</a></code>
+                  <code><a href="/Nu/reference/nu-game.html">Game</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1545,14 +1518,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
+                    <code><a href="/Nu/reference/nu-group.html">Group</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1579,7 +1552,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1587,7 +1560,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1596,7 +1569,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
+                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1628,14 +1601,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
+                    <code><a href="/Nu/reference/nu-address.html">Address</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1662,7 +1635,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1670,7 +1643,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1679,7 +1652,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
+                  <code><a href="/Nu/reference/nu-address.html">Address</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1711,7 +1684,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1745,7 +1718,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1753,7 +1726,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1794,14 +1767,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
+                    <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1828,7 +1801,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1836,7 +1809,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1845,7 +1818,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
+                  <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1877,14 +1850,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                    <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1911,7 +1884,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1919,7 +1892,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1928,7 +1901,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                  <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1960,14 +1933,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-game.html">Game</a></code>
+                    <code><a href="/Nu/reference/nu-game.html">Game</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1994,7 +1967,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2002,7 +1975,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2011,7 +1984,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-game.html">Game</a></code>
+                  <code><a href="/Nu/reference/nu-game.html">Game</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2043,14 +2016,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
+                    <code><a href="/Nu/reference/nu-group.html">Group</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2077,7 +2050,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2085,7 +2058,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2094,7 +2067,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
+                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2126,14 +2099,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
+                    <code><a href="/Nu/reference/nu-address.html">Address</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2160,7 +2133,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2168,7 +2141,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2177,7 +2150,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
+                  <code><a href="/Nu/reference/nu-address.html">Address</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2209,7 +2182,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2243,7 +2216,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2251,7 +2224,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2292,14 +2265,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
+                    <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2326,7 +2299,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2334,7 +2307,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2343,7 +2316,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
+                  <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2375,14 +2348,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2409,7 +2382,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2417,7 +2390,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2426,7 +2399,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2458,14 +2431,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-entitydispatcher.html">EntityDispatcher</a></span>&gt;</span></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2492,7 +2465,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2500,7 +2473,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2509,7 +2482,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-entitydispatcher.html">EntityDispatcher</a></span>&gt;</span></code>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2541,14 +2514,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
+                    <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2575,7 +2548,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2583,7 +2556,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2592,7 +2565,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
+                  <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2624,7 +2597,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2658,7 +2631,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2666,7 +2639,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2707,14 +2680,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-facet.html">Facet</a></span>&gt;</span></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-facet.html">Facet</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2741,7 +2714,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2749,7 +2722,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2758,7 +2731,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-facet.html">Facet</a></span>&gt;</span></code>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-facet.html">Facet</a></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2790,7 +2763,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2824,7 +2797,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2832,7 +2805,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2873,14 +2846,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                      <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                    <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2907,7 +2880,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2915,7 +2888,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                  <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2924,7 +2897,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2956,14 +2929,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-gamedispatcher.html">GameDispatcher</a></span>&gt;</span></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-gamedispatcher.html">GameDispatcher</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2990,7 +2963,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2998,7 +2971,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3007,7 +2980,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-gamedispatcher.html">GameDispatcher</a></span>&gt;</span></code>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-gamedispatcher.html">GameDispatcher</a></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3039,14 +3012,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                      <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                    <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3073,7 +3046,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3081,7 +3054,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                  <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3090,7 +3063,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3122,14 +3095,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                    <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3156,7 +3129,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3164,7 +3137,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3173,7 +3146,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3205,14 +3178,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-groupdispatcher.html">GroupDispatcher</a></span>&gt;</span></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-groupdispatcher.html">GroupDispatcher</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3239,7 +3212,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3247,7 +3220,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3256,7 +3229,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-groupdispatcher.html">GroupDispatcher</a></span>&gt;</span></code>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-groupdispatcher.html">GroupDispatcher</a></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3288,7 +3261,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3322,7 +3295,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3330,7 +3303,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3371,7 +3344,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3405,7 +3378,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3413,7 +3386,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3462,7 +3435,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3496,7 +3469,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3512,7 +3485,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3553,7 +3526,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3587,7 +3560,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3595,7 +3568,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3636,14 +3609,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-liveness.html">Liveness</a></code>
+                    <code><a href="/Nu/reference/nu-liveness.html">Liveness</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3670,7 +3643,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3678,7 +3651,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3687,7 +3660,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-liveness.html">Liveness</a></code>
+                  <code><a href="/Nu/reference/nu-liveness.html">Liveness</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3719,14 +3692,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                    <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3753,7 +3726,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3761,7 +3734,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3770,7 +3743,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3802,7 +3775,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3836,7 +3809,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3844,7 +3817,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3885,14 +3858,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                    <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3919,7 +3892,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3927,7 +3900,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3936,7 +3909,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3968,14 +3941,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-screendispatcher.html">ScreenDispatcher</a></span>&gt;</span></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-screendispatcher.html">ScreenDispatcher</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -4002,7 +3975,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4010,7 +3983,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4019,7 +3992,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/nu-screendispatcher.html">ScreenDispatcher</a></span>&gt;</span></code>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-screendispatcher.html">ScreenDispatcher</a></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4051,7 +4024,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4085,7 +4058,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4093,7 +4066,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4134,7 +4107,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                      <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4168,7 +4141,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4176,7 +4149,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                  <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4217,7 +4190,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                      <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4251,7 +4224,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4259,7 +4232,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-worldstate.html">WorldState</a></code>
+                  <code><a href="/Nu/reference/nu-worldstate.html">WorldState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4300,14 +4273,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                    <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4334,7 +4307,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4342,7 +4315,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4351,7 +4324,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4383,7 +4356,7 @@
                         arg0
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
+                      <code><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -4391,14 +4364,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
+                    <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4425,7 +4398,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4433,7 +4406,7 @@
                     arg0
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
+                  <code><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4441,7 +4414,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4450,7 +4423,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
+                  <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4482,7 +4455,7 @@
                         arg0
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
+                      <code><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -4490,14 +4463,14 @@
                         arg1
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
+                    <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4524,7 +4497,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4532,7 +4505,7 @@
                     arg0
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
+                  <code><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4540,7 +4513,7 @@
                     arg1
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4549,7 +4522,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
+                  <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4581,7 +4554,7 @@
                         arg0
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
+                      <code><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -4589,14 +4562,14 @@
                         arg1
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
+                    <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4623,7 +4596,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4631,7 +4604,7 @@
                     arg0
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
+                  <code><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4639,7 +4612,7 @@
                     arg1
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4648,7 +4621,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
+                  <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4696,7 +4669,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4725,7 +4698,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4749,7 +4722,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4781,7 +4754,7 @@
                         pred
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
                     </span>
                     <br/>
                     <span>
@@ -4789,7 +4762,7 @@
                         coroutine
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -4797,7 +4770,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4826,7 +4799,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4834,7 +4807,7 @@
                     pred
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4842,7 +4815,7 @@
                     coroutine
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;<a href="http://localhost:8901/reference/nu-coroutine-1.html">Coroutine</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4850,7 +4823,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4898,7 +4871,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4927,7 +4900,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4951,7 +4924,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4983,7 +4956,7 @@
                         callback
                       </b>
                       :
-                      <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                      <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -4991,7 +4964,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5007,7 +4980,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5036,7 +5009,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5044,7 +5017,7 @@
                     callback
                   </span>
                   :
-                  <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                  <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5052,7 +5025,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5068,7 +5041,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5100,7 +5073,7 @@
                         callback
                       </b>
                       :
-                      <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                      <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5108,7 +5081,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5124,14 +5097,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                    <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                   </span>
                   <br/>
                 </div>
@@ -5158,7 +5131,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5166,7 +5139,7 @@
                     callback
                   </span>
                   :
-                  <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                  <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5174,7 +5147,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5190,7 +5163,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5199,7 +5172,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5239,7 +5212,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5255,7 +5228,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5289,7 +5262,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5305,7 +5278,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5321,7 +5294,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5361,7 +5334,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5369,7 +5342,7 @@
                         eventTrace
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-eventtrace.html">EventTrace</a></code>
+                      <code><a href="/Nu/reference/nu-eventtrace.html">EventTrace</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5401,7 +5374,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5430,7 +5403,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5446,7 +5419,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5454,7 +5427,7 @@
                     eventTrace
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-eventtrace.html">EventTrace</a></code>
+                  <code><a href="/Nu/reference/nu-eventtrace.html">EventTrace</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5486,7 +5459,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5526,7 +5499,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5542,7 +5515,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5576,7 +5549,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5592,7 +5565,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5608,7 +5581,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5640,7 +5613,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5669,7 +5642,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5677,7 +5650,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5717,7 +5690,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5746,7 +5719,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5762,7 +5735,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5794,7 +5767,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5823,7 +5796,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5831,7 +5804,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5863,7 +5836,7 @@
                         delay
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5871,7 +5844,7 @@
                         operation
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -5879,7 +5852,7 @@
                         simulant
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
+                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5887,7 +5860,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5916,7 +5889,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5924,7 +5897,7 @@
                     delay
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5932,7 +5905,7 @@
                     operation
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5940,7 +5913,7 @@
                     simulant
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
+                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5948,7 +5921,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5980,7 +5953,7 @@
                         callback
                       </b>
                       :
-                      <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                      <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="/Nu/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5988,7 +5961,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -5996,7 +5969,7 @@
                         subscriber
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                      <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6012,7 +5985,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6041,7 +6014,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6049,7 +6022,7 @@
                     callback
                   </span>
                   :
-                  <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                  <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="/Nu/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6057,7 +6030,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6065,7 +6038,7 @@
                     subscriber
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                  <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6081,7 +6054,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6113,7 +6086,7 @@
                         callback
                       </b>
                       :
-                      <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                      <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="/Nu/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -6121,7 +6094,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -6129,7 +6102,7 @@
                         entity
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                      <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6145,14 +6118,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                    <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                   </span>
                   <br/>
                 </div>
@@ -6179,7 +6152,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6187,7 +6160,7 @@
                     callback
                   </span>
                   :
-                  <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                  <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;<a href="/Nu/reference/nu-entity.html">Entity</a></span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6195,7 +6168,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6203,7 +6176,7 @@
                     entity
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
+                  <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6219,7 +6192,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6228,7 +6201,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6268,7 +6241,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6297,7 +6270,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6313,7 +6286,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6345,7 +6318,7 @@
                         filter
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
+                      <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6353,7 +6326,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6382,7 +6355,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6390,7 +6363,7 @@
                     filter
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
+                  <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6398,7 +6371,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6438,7 +6411,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6467,7 +6440,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6483,7 +6456,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6523,7 +6496,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6552,7 +6525,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6568,7 +6541,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6600,7 +6573,7 @@
                         viewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6608,7 +6581,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6637,7 +6610,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6645,7 +6618,7 @@
                     viewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6653,7 +6626,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6685,7 +6658,7 @@
                         viewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6693,7 +6666,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6722,7 +6695,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6730,7 +6703,7 @@
                     viewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6738,7 +6711,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6770,7 +6743,7 @@
                         viewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6778,7 +6751,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6807,7 +6780,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6815,7 +6788,7 @@
                     viewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6823,7 +6796,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6855,7 +6828,7 @@
                         callback
                       </b>
                       :
-                      <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                      <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -6863,7 +6836,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -6879,7 +6852,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -6908,7 +6881,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -6916,7 +6889,7 @@
                     callback
                   </span>
                   :
-                  <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                  <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6924,7 +6897,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6940,7 +6913,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6980,7 +6953,7 @@
                         callback
                       </b>
                       :
-                      <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                      <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -6988,7 +6961,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -7004,14 +6977,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                    <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                   </span>
                   <br/>
                 </div>
@@ -7038,7 +7011,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7054,7 +7027,7 @@
                     callback
                   </span>
                   :
-                  <code><span><span><a href="http://localhost:8901/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;<a href="http://localhost:8901/reference/nu-handling.html">Handling</a></span></code>
+                  <code><span><span><a href="/Nu/reference/nu-event-2.html">Event</a>&lt;<span>'a,&#32;'s</span>&gt;</span>&#32;->&#32;<a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;<a href="/Nu/reference/nu-handling.html">Handling</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7062,7 +7035,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7078,7 +7051,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7087,7 +7060,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7135,14 +7108,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-jobresult.html">JobResult</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-jobresult.html">JobResult</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -7170,7 +7143,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7194,7 +7167,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7203,7 +7176,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-jobresult.html">JobResult</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-jobresult.html">JobResult</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7243,7 +7216,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7277,7 +7250,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7293,7 +7266,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7342,7 +7315,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7376,7 +7349,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7392,7 +7365,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7433,7 +7406,7 @@
                         assetTag
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -7441,7 +7414,7 @@
                         metadata
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                      <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7449,7 +7422,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7483,7 +7456,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7491,7 +7464,7 @@
                     assetTag
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7499,7 +7472,7 @@
                     metadata
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                  <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7507,7 +7480,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7548,7 +7521,7 @@
                         implicitDelimiters
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -7556,7 +7529,7 @@
                         assetTags
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a>&#32;list</span></code>
+                      <code><span><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a>&#32;list</span></code>
                     </span>
                     <br/>
                     <span>
@@ -7564,7 +7537,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7598,7 +7571,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7606,7 +7579,7 @@
                     implicitDelimiters
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7614,7 +7587,7 @@
                     assetTags
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a>&#32;list</span></code>
+                  <code><span><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a>&#32;list</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7622,7 +7595,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7663,7 +7636,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7697,7 +7670,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7705,7 +7678,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7746,7 +7719,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7780,7 +7753,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7788,7 +7761,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7829,7 +7802,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7863,7 +7836,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7871,7 +7844,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7912,7 +7885,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -7946,7 +7919,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -7954,7 +7927,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7995,14 +7968,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -8029,7 +8002,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8037,7 +8010,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8046,7 +8019,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8078,14 +8051,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -8112,7 +8085,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8120,7 +8093,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8129,7 +8102,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8169,7 +8142,7 @@
                         packageName
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                      <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8177,7 +8150,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8206,7 +8179,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8222,7 +8195,7 @@
                     packageName
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                  <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8230,7 +8203,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8262,7 +8235,7 @@
                         time
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8270,7 +8243,7 @@
                         lifeTimeOpt
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8278,7 +8251,7 @@
                         particleLifeTimeMaxOpt
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8310,14 +8283,14 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-particles-emitter.html">Emitter</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-particles-emitter.html">Emitter</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -8344,7 +8317,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8352,7 +8325,7 @@
                     time
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8360,7 +8333,7 @@
                     lifeTimeOpt
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8368,7 +8341,7 @@
                     particleLifeTimeMaxOpt
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8400,7 +8373,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8409,7 +8382,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-particles-emitter.html">Emitter</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-particles-emitter.html">Emitter</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8449,7 +8422,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8478,7 +8451,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8494,7 +8467,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8534,7 +8507,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8563,7 +8536,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8579,7 +8552,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8611,7 +8584,7 @@
                         position
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                      <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8619,7 +8592,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8648,7 +8621,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8656,7 +8629,7 @@
                     position
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8664,7 +8637,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8696,7 +8669,7 @@
                         size
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                      <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8704,7 +8677,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8733,7 +8706,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8741,7 +8714,7 @@
                     size
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8749,7 +8722,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8781,7 +8754,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8810,7 +8783,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8818,7 +8791,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8858,7 +8831,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8887,7 +8860,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8903,7 +8876,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8943,7 +8916,7 @@
                         world
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -8972,7 +8945,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -8988,7 +8961,7 @@
                     world
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -9020,10 +8993,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

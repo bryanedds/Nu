@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Sphere (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Sphere (Nu)">
     
     <title>Sphere (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
     </dt>
     <dt>
       Kind: Struct
@@ -309,7 +282,7 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                        - 
                       The box for testing.
                     </span>
@@ -318,7 +291,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
                   The containment type.
                   <br/>
@@ -351,7 +324,7 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -364,7 +337,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -400,7 +373,7 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                        - 
                       The box for testing.
                     </span>
@@ -410,7 +383,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
                       The containment type as an output parameter.
                     </span>
@@ -444,7 +417,7 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -456,7 +429,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -492,7 +465,7 @@
                         frustum
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
                       The frustum for testing.
                     </span>
@@ -501,7 +474,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
                   The containment type.
                   <br/>
@@ -532,7 +505,7 @@
                     frustum
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -545,7 +518,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -581,7 +554,7 @@
                         frustum
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-frustum.html">Frustum</a>&gt;</span></code>
                        - 
                       The frustum for testing.
                     </span>
@@ -591,7 +564,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
                       The containment type as an output parameter.
                     </span>
@@ -625,7 +598,7 @@
                     frustum
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-frustum.html">Frustum</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -637,7 +610,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -673,7 +646,7 @@
                         sphere
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
                       The other sphere for testing.
                     </span>
@@ -682,7 +655,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
                   The containment type.
                   <br/>
@@ -713,7 +686,7 @@
                     sphere
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -726,7 +699,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -762,7 +735,7 @@
                         sphere
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
                       The other sphere for testing.
                     </span>
@@ -772,7 +745,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
                       The containment type as an output parameter.
                     </span>
@@ -806,7 +779,7 @@
                     sphere
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -818,7 +791,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -863,7 +836,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
                   The containment type.
                   <br/>
@@ -907,7 +880,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -953,7 +926,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
                       The containment type as an output parameter.
                     </span>
@@ -999,7 +972,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1035,9 +1008,9 @@
                         other
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> to compare.
+                      The <a href="/Nu/reference/nu-sphere.html">Sphere</a> to compare.
                     </span>
                     <br/>
                   </ul>
@@ -1067,7 +1040,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether current instance is equal to specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+            Compares whether current instance is equal to specified <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
             
                   </p>
                 </div>
@@ -1078,11 +1051,11 @@
                     other
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> to compare.
+                    The <a href="/Nu/reference/nu-sphere.html">Sphere</a> to compare.
                   </p>
                 </dd>
               </dl>
@@ -1216,7 +1189,7 @@
                     Returns: 
                     <code>int</code>
                   </span>
-                  Hash code of this <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  Hash code of this <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -1237,7 +1210,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets the hash code of this <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+            Gets the hash code of this <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
             
                   </p>
                 </div>
@@ -1251,7 +1224,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Hash code of this <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    Hash code of this <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -1283,7 +1256,7 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                        - 
                       The box for testing.
                     </span>
@@ -1294,7 +1267,7 @@
                     Returns: 
                     <code>bool</code>
                   </span>
-                  <code>true</code> if <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise.
+                  <code>true</code> if <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise.
                   <br/>
                 </div>
               </div>
@@ -1312,7 +1285,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this sphere.
+            Gets whether or not a specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1323,7 +1296,7 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1340,7 +1313,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <code>true</code> if <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise.
+                    <code>true</code> if <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise.
                   </p>
                 </dd>
               </dl>
@@ -1372,7 +1345,7 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                        - 
                       The box for testing.
                     </span>
@@ -1384,7 +1357,7 @@
                       :
                       <code><span>byref&lt;bool&gt;</span></code>
                        - 
-                      <code>true</code> if <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
+                      <code>true</code> if <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -1405,7 +1378,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this sphere.
+            Gets whether or not a specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1416,7 +1389,7 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1432,7 +1405,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <code>true</code> if <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
+                    <code>true</code> if <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -1464,7 +1437,7 @@
                         sphere
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
                       The other sphere for testing.
                     </span>
@@ -1475,7 +1448,7 @@
                     Returns: 
                     <code>bool</code>
                   </span>
-                  <code>true</code> if other <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise.
+                  <code>true</code> if other <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise.
                   <br/>
                 </div>
               </div>
@@ -1493,7 +1466,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not the other <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this sphere.
+            Gets whether or not the other <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1504,7 +1477,7 @@
                     sphere
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1521,7 +1494,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <code>true</code> if other <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise.
+                    <code>true</code> if other <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise.
                   </p>
                 </dd>
               </dl>
@@ -1553,7 +1526,7 @@
                         sphere
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
                       The other sphere for testing.
                     </span>
@@ -1565,7 +1538,7 @@
                       :
                       <code><span>byref&lt;bool&gt;</span></code>
                        - 
-                      <code>true</code> if other <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
+                      <code>true</code> if other <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -1586,7 +1559,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not the other <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this sphere.
+            Gets whether or not the other <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1597,7 +1570,7 @@
                     sphere
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1613,7 +1586,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <code>true</code> if other <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
+                    <code>true</code> if other <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this sphere; <code>false</code> otherwise. As an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -1645,7 +1618,7 @@
                         plane
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
                       The plane for testing.
                     </span>
@@ -1654,7 +1627,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                    <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                   </span>
                   Type of intersection.
                   <br/>
@@ -1674,7 +1647,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects with this sphere.
+            Gets whether or not a specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1685,7 +1658,7 @@
                     plane
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1698,7 +1671,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                  <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1734,7 +1707,7 @@
                         plane
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
                       The plane for testing.
                     </span>
@@ -1744,7 +1717,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                        - 
                       Type of intersection as an output parameter.
                     </span>
@@ -1767,7 +1740,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects with this sphere.
+            Gets whether or not a specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1778,7 +1751,7 @@
                     plane
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1790,7 +1763,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1826,7 +1799,7 @@
                         ray
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
+                      <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
                        - 
                       The ray for testing.
                     </span>
@@ -1855,7 +1828,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> intersects with this sphere.
+            Gets whether or not a specified <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1866,7 +1839,7 @@
                     ray
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1915,7 +1888,7 @@
                         ray
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
                        - 
                       The ray for testing.
                     </span>
@@ -1948,7 +1921,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> intersects with this sphere.
+            Gets whether or not a specified <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> intersects with this sphere.
             
                   </p>
                 </div>
@@ -1959,7 +1932,7 @@
                     ray
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2065,7 +2038,7 @@
                     Returns: 
                     <code>string</code>
                   </span>
-                  A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -2086,8 +2059,8 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Returns a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> in the format:
-            {Center:[<a href="http://localhost:8901/reference/nu-sphere.html">Sphere.Center</a>] Radius:[<a href="http://localhost:8901/reference/nu-sphere.html">Sphere.Radius</a>]}
+            Returns a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-sphere.html">Sphere</a> in the format:
+            {Center:[<a href="/Nu/reference/nu-sphere.html">Sphere.Center</a>] Radius:[<a href="/Nu/reference/nu-sphere.html">Sphere.Radius</a>]}
             
                   </p>
                 </div>
@@ -2101,7 +2074,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -2142,9 +2115,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                    <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                   </span>
-                  Transformed <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  Transformed <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                 </div>
               </div>
@@ -2162,7 +2135,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates a new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that contains a transformation of translation and scale from this sphere by the specified !:Matrix.
+            Creates a new <a href="/Nu/reference/nu-sphere.html">Sphere</a> that contains a transformation of translation and scale from this sphere by the specified !:Matrix.
             
                   </p>
                 </div>
@@ -2186,11 +2159,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Transformed <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    Transformed <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -2232,9 +2205,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
-                      Transformed <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                      Transformed <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -2255,7 +2228,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates a new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that contains a transformation of translation and scale from this sphere by the specified !:Matrix.
+            Creates a new <a href="/Nu/reference/nu-sphere.html">Sphere</a> that contains a transformation of translation and scale from this sphere by the specified !:Matrix.
             
                   </p>
                 </div>
@@ -2278,11 +2251,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    Transformed <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                    Transformed <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -2333,9 +2306,9 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the left of the not equal sign.
+                      <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the left of the not equal sign.
                     </span>
                     <br/>
                     <span>
@@ -2343,9 +2316,9 @@
                         b
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the right of the not equal sign.
+                      <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the right of the not equal sign.
                     </span>
                     <br/>
                   </ul>
@@ -2372,7 +2345,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether two <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instances are not equal.
+            Compares whether two <a href="/Nu/reference/nu-sphere.html">Sphere</a> instances are not equal.
             
                   </p>
                 </div>
@@ -2383,11 +2356,11 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the left of the not equal sign.
+                    <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the left of the not equal sign.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2395,11 +2368,11 @@
                     b
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the right of the not equal sign.
+                    <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the right of the not equal sign.
                   </p>
                 </dd>
               </dl>
@@ -2444,9 +2417,9 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the left of the equal sign.
+                      <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the left of the equal sign.
                     </span>
                     <br/>
                     <span>
@@ -2454,9 +2427,9 @@
                         b
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the right of the equal sign.
+                      <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the right of the equal sign.
                     </span>
                     <br/>
                   </ul>
@@ -2483,7 +2456,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether two <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instances are equal.
+            Compares whether two <a href="/Nu/reference/nu-sphere.html">Sphere</a> instances are equal.
             
                   </p>
                 </div>
@@ -2494,11 +2467,11 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the left of the equal sign.
+                    <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the left of the equal sign.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2506,11 +2479,11 @@
                     b
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> instance on the right of the equal sign.
+                    <a href="/Nu/reference/nu-sphere.html">Sphere</a> instance on the right of the equal sign.
                   </p>
                 </dd>
               </dl>
@@ -2555,7 +2528,7 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                        - 
                       The box to create the sphere from.
                     </span>
@@ -2564,9 +2537,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                    <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                   </span>
-                  The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                 </div>
               </div>
@@ -2584,7 +2557,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates the smallest <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that can contain a specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
+            Creates the smallest <a href="/Nu/reference/nu-sphere.html">Sphere</a> that can contain a specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </div>
@@ -2595,7 +2568,7 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2608,11 +2581,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -2644,7 +2617,7 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                        - 
                       The box to create the sphere from.
                     </span>
@@ -2654,9 +2627,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
-                      The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                      The new <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -2677,7 +2650,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates the smallest <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that can contain a specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
+            Creates the smallest <a href="/Nu/reference/nu-sphere.html">Sphere</a> that can contain a specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </div>
@@ -2688,7 +2661,7 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2700,11 +2673,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                    The new <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -2736,7 +2709,7 @@
                         frustum
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
                       The frustum to create the sphere from.
                     </span>
@@ -2745,9 +2718,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                    <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                   </span>
-                  The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                 </div>
               </div>
@@ -2765,7 +2738,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates the smallest <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that can contain a specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Creates the smallest <a href="/Nu/reference/nu-sphere.html">Sphere</a> that can contain a specified <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -2776,7 +2749,7 @@
                     frustum
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2789,11 +2762,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -2834,9 +2807,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                    <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                   </span>
-                  The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                 </div>
               </div>
@@ -2854,7 +2827,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates the smallest <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that can contain a specified list of points in 3D-space. 
+            Creates the smallest <a href="/Nu/reference/nu-sphere.html">Sphere</a> that can contain a specified list of points in 3D-space. 
             
                   </p>
                 </div>
@@ -2878,11 +2851,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -2914,7 +2887,7 @@
                         original
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
                       First sphere.
                     </span>
@@ -2924,7 +2897,7 @@
                         additional
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
                       Second sphere.
                     </span>
@@ -2933,9 +2906,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                    <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                   </span>
-                  The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                 </div>
               </div>
@@ -2953,7 +2926,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates the smallest <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that can contain two spheres.
+            Creates the smallest <a href="/Nu/reference/nu-sphere.html">Sphere</a> that can contain two spheres.
             
                   </p>
                 </div>
@@ -2964,7 +2937,7 @@
                     original
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2976,7 +2949,7 @@
                     additional
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2989,11 +2962,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    The new <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -3025,7 +2998,7 @@
                         original
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
                       First sphere.
                     </span>
@@ -3035,7 +3008,7 @@
                         additional
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
                       Second sphere.
                     </span>
@@ -3045,9 +3018,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
-                      The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                      The new <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -3068,7 +3041,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Creates the smallest <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> that can contain two spheres.
+            Creates the smallest <a href="/Nu/reference/nu-sphere.html">Sphere</a> that can contain two spheres.
             
                   </p>
                 </div>
@@ -3079,7 +3052,7 @@
                     original
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3091,7 +3064,7 @@
                     additional
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3103,11 +3076,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The new <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                    The new <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -3132,10 +3105,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

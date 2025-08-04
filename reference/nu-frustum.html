@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Frustum (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Frustum (Nu)">
     
     <title>Frustum (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-frustum.html">Frustum</a>&gt;</span></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -279,7 +252,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -306,7 +279,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -333,7 +306,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                    <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -360,7 +333,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -392,18 +365,18 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for testing.
+                      A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for testing.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
-                  Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
+                  Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
                   <br/>
                 </div>
               </div>
@@ -421,7 +394,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </div>
@@ -432,11 +405,11 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for testing.
+                    A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for testing.
                   </p>
                 </dd>
               </dl>
@@ -445,11 +418,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
                   </p>
                 </dd>
               </dl>
@@ -481,9 +454,9 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for testing.
+                      A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for testing.
                     </span>
                     <br/>
                     <span>
@@ -491,9 +464,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
-                      Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> as an output parameter.
+                      Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -514,7 +487,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </div>
@@ -525,11 +498,11 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for testing.
+                    A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for testing.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -537,11 +510,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> as an output parameter.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -573,18 +546,18 @@
                         frustum
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> for testing.
+                      A <a href="/Nu/reference/nu-frustum.html">Frustum</a> for testing.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
-                  Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+                  Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
                   <br/>
                 </div>
               </div>
@@ -602,7 +575,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -613,11 +586,11 @@
                     frustum
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> for testing.
+                    A <a href="/Nu/reference/nu-frustum.html">Frustum</a> for testing.
                   </p>
                 </dd>
               </dl>
@@ -626,11 +599,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
                   </p>
                 </dd>
               </dl>
@@ -662,18 +635,18 @@
                         sphere
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for testing.
+                      A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for testing.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
-                  Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                  Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   <br/>
                 </div>
               </div>
@@ -691,7 +664,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
             
                   </p>
                 </div>
@@ -702,11 +675,11 @@
                     sphere
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for testing.
+                    A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for testing.
                   </p>
                 </dd>
               </dl>
@@ -715,11 +688,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
                   </p>
                 </dd>
               </dl>
@@ -751,9 +724,9 @@
                         sphere
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for testing.
+                      A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for testing.
                     </span>
                     <br/>
                     <span>
@@ -761,9 +734,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
-                      Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                      Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -784,7 +757,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-sphere.html">Sphere</a>.
             
                   </p>
                 </div>
@@ -795,11 +768,11 @@
                     sphere
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for testing.
+                    A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for testing.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -807,11 +780,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> as an output parameter.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -852,9 +825,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
-                  Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
+                  Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
                   <br/>
                 </div>
               </div>
@@ -872,7 +845,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
             
                   </p>
                 </div>
@@ -896,11 +869,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
                   </p>
                 </dd>
               </dl>
@@ -942,9 +915,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
-                      Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> as an output parameter.
+                      Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -965,7 +938,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Containment test between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
+            Containment test between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>.
             
                   </p>
                 </div>
@@ -988,11 +961,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    Result of testing for containment between this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> as an output parameter.
+                    Result of testing for containment between this <a href="/Nu/reference/nu-frustum.html">Frustum</a> and specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -1085,9 +1058,9 @@
                         other
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> to compare.
+                      The <a href="/Nu/reference/nu-frustum.html">Frustum</a> to compare.
                     </span>
                     <br/>
                   </ul>
@@ -1117,7 +1090,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether current instance is equal to specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Compares whether current instance is equal to specified <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1128,11 +1101,11 @@
                     other
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> to compare.
+                    The <a href="/Nu/reference/nu-frustum.html">Frustum</a> to compare.
                   </p>
                 </dd>
               </dl>
@@ -1209,7 +1182,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether current instance is equal to specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Compares whether current instance is equal to specified <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1264,7 +1237,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1291,7 +1264,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1325,7 +1298,7 @@
                       :
                       <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>[]</span></code>
                        - 
-                      The array which values will be replaced to corner values of this instance. It must have size of <a href="http://localhost:8901/reference/nu-frustum.html">Frustum.CornerCount</a>.
+                      The array which values will be replaced to corner values of this instance. It must have size of <a href="/Nu/reference/nu-frustum.html">Frustum.CornerCount</a>.
                     </span>
                     <br/>
                   </ul>
@@ -1361,7 +1334,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The array which values will be replaced to corner values of this instance. It must have size of <a href="http://localhost:8901/reference/nu-frustum.html">Frustum.CornerCount</a>.
+                    The array which values will be replaced to corner values of this instance. It must have size of <a href="/Nu/reference/nu-frustum.html">Frustum.CornerCount</a>.
                   </p>
                 </dd>
               </dl>
@@ -1390,7 +1363,7 @@
                     Returns: 
                     <code>int</code>
                   </span>
-                  Hash code of this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+                  Hash code of this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -1411,7 +1384,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets the hash code of this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets the hash code of this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1425,7 +1398,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Hash code of this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+                    Hash code of this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
                   </p>
                 </dd>
               </dl>
@@ -1457,9 +1430,9 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for intersection test.
+                      A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for intersection test.
                     </span>
                     <br/>
                   </ul>
@@ -1468,7 +1441,7 @@
                     Returns: 
                     <code>bool</code>
                   </span>
-                  <code>true</code> if specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
+                  <code>true</code> if specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
                   <br/>
                 </div>
               </div>
@@ -1486,7 +1459,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets whether or not a specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1497,11 +1470,11 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for intersection test.
+                    A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for intersection test.
                   </p>
                 </dd>
               </dl>
@@ -1514,7 +1487,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <code>true</code> if specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
+                    <code>true</code> if specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
                   </p>
                 </dd>
               </dl>
@@ -1546,9 +1519,9 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for intersection test.
+                      A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for intersection test.
                     </span>
                     <br/>
                     <span>
@@ -1558,7 +1531,7 @@
                       :
                       <code><span>byref&lt;bool&gt;</span></code>
                        - 
-                      <code>true</code> if specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
+                      <code>true</code> if specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -1579,7 +1552,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets whether or not a specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1590,11 +1563,11 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> for intersection test.
+                    A <a href="/Nu/reference/nu-box3-0.html">Box3</a> for intersection test.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -1606,7 +1579,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <code>true</code> if specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
+                    <code>true</code> if specified <a href="/Nu/reference/nu-box3-0.html">Box3</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -1638,9 +1611,9 @@
                         frustum
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      An other <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> for intersection test.
+                      An other <a href="/Nu/reference/nu-frustum.html">Frustum</a> for intersection test.
                     </span>
                     <br/>
                   </ul>
@@ -1649,7 +1622,7 @@
                     Returns: 
                     <code>bool</code>
                   </span>
-                  <code>true</code> if other <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
+                  <code>true</code> if other <a href="/Nu/reference/nu-frustum.html">Frustum</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
                   <br/>
                 </div>
               </div>
@@ -1667,7 +1640,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets whether or not a specified <a href="/Nu/reference/nu-frustum.html">Frustum</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1678,11 +1651,11 @@
                     frustum
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    An other <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> for intersection test.
+                    An other <a href="/Nu/reference/nu-frustum.html">Frustum</a> for intersection test.
                   </p>
                 </dd>
               </dl>
@@ -1695,7 +1668,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <code>true</code> if other <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
+                    <code>true</code> if other <a href="/Nu/reference/nu-frustum.html">Frustum</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
                   </p>
                 </dd>
               </dl>
@@ -1727,9 +1700,9 @@
                         sphere
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for intersection test.
+                      A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for intersection test.
                     </span>
                     <br/>
                   </ul>
@@ -1738,7 +1711,7 @@
                     Returns: 
                     <code>bool</code>
                   </span>
-                  <code>true</code> if specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
+                  <code>true</code> if specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
                   <br/>
                 </div>
               </div>
@@ -1756,7 +1729,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets whether or not a specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1767,11 +1740,11 @@
                     sphere
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for intersection test.
+                    A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for intersection test.
                   </p>
                 </dd>
               </dl>
@@ -1784,7 +1757,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <code>true</code> if specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
+                    <code>true</code> if specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise.
                   </p>
                 </dd>
               </dl>
@@ -1816,9 +1789,9 @@
                         sphere
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for intersection test.
+                      A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for intersection test.
                     </span>
                     <br/>
                     <span>
@@ -1828,7 +1801,7 @@
                       :
                       <code><span>byref&lt;bool&gt;</span></code>
                        - 
-                      <code>true</code> if specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
+                      <code>true</code> if specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -1849,7 +1822,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets whether or not a specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets whether or not a specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1860,11 +1833,11 @@
                     sphere
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> for intersection test.
+                    A <a href="/Nu/reference/nu-sphere.html">Sphere</a> for intersection test.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -1876,7 +1849,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <code>true</code> if specified <a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a> intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
+                    <code>true</code> if specified <a href="/Nu/reference/nu-sphere.html">Sphere</a> intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a>; <code>false</code> otherwise as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -1908,16 +1881,16 @@
                         plane
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> for intersection test.
+                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> for intersection test.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                    <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                   </span>
                   A plane intersection type.
                   <br/>
@@ -1937,7 +1910,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets type of intersection between specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> and this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets type of intersection between specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> and this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -1948,11 +1921,11 @@
                     plane
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> for intersection test.
+                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> for intersection test.
                   </p>
                 </dd>
               </dl>
@@ -1961,7 +1934,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                  <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1997,9 +1970,9 @@
                         plane
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> for intersection test.
+                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> for intersection test.
                     </span>
                     <br/>
                     <span>
@@ -2007,7 +1980,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                        - 
                       A plane intersection type as an output parameter.
                     </span>
@@ -2030,7 +2003,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets type of intersection between specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> and this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+            Gets type of intersection between specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> and this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
             
                   </p>
                 </div>
@@ -2041,11 +2014,11 @@
                     plane
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> for intersection test.
+                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> for intersection test.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2053,7 +2026,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2089,9 +2062,9 @@
                         ray
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
+                      <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> for intersection test.
+                      A <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> for intersection test.
                     </span>
                     <br/>
                   </ul>
@@ -2100,7 +2073,7 @@
                     Returns: 
                     <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;float32&gt;</span></code>
                   </span>
-                  Distance at which ray intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
+                  Distance at which ray intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
                   <br/>
                 </div>
               </div>
@@ -2118,7 +2091,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets the distance of intersection of <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> and this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
+            Gets the distance of intersection of <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> and this <a href="/Nu/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
             
                   </p>
                 </div>
@@ -2129,11 +2102,11 @@
                     ray
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> for intersection test.
+                    A <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> for intersection test.
                   </p>
                 </dd>
               </dl>
@@ -2146,7 +2119,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    Distance at which ray intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
+                    Distance at which ray intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
                   </p>
                 </dd>
               </dl>
@@ -2178,9 +2151,9 @@
                         ray
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
                        - 
-                      A <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> for intersection test.
+                      A <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> for intersection test.
                     </span>
                     <br/>
                     <span>
@@ -2190,7 +2163,7 @@
                       :
                       <code><span>byref&lt;<span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;float32&gt;</span>&gt;</span></code>
                        - 
-                      Distance at which ray intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> or null if no intersection happens as an output parameter.
+                      Distance at which ray intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a> or null if no intersection happens as an output parameter.
                     </span>
                     <br/>
                   </ul>
@@ -2211,7 +2184,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Gets the distance of intersection of <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> and this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
+            Gets the distance of intersection of <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> and this <a href="/Nu/reference/nu-frustum.html">Frustum</a> or null if no intersection happens.
             
                   </p>
                 </div>
@@ -2222,11 +2195,11 @@
                     ray
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a> for intersection test.
+                    A <a href="/Nu/reference/nu-ray3-0.html">Ray3</a> for intersection test.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2238,7 +2211,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    Distance at which ray intersects with this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> or null if no intersection happens as an output parameter.
+                    Distance at which ray intersects with this <a href="/Nu/reference/nu-frustum.html">Frustum</a> or null if no intersection happens as an output parameter.
                   </p>
                 </dd>
               </dl>
@@ -2265,7 +2238,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2292,7 +2265,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2357,7 +2330,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2384,7 +2357,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2411,7 +2384,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2438,7 +2411,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2465,7 +2438,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-segment3-0.html">Segment3</a>[]</span></code>
+                    <code><span><a href="/Nu/reference/nu-segment3-0.html">Segment3</a>[]</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2478,7 +2451,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><a href="http://localhost:8901/reference/nu-segment3-0.html">Segment3</a>[]</span></code>
+                <code><span><a href="/Nu/reference/nu-segment3-0.html">Segment3</a>[]</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2506,7 +2479,7 @@
                     Returns: 
                     <code>string</code>
                   </span>
-                  <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+                  <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -2527,7 +2500,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Returns a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> in the format:
+            Returns a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-frustum.html">Frustum</a> in the format:
             {Near:[nearPlane] Far:[farPlane] Left:[leftPlane] Right:[rightPlane] Top:[topPlane] Bottom:[bottomPlane]}
             
                   </p>
@@ -2542,7 +2515,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a>.
+                    <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-frustum.html">Frustum</a>.
                   </p>
                 </dd>
               </dl>
@@ -2569,7 +2542,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2596,7 +2569,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2647,9 +2620,9 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the left of the not equal sign.
+                      <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the left of the not equal sign.
                     </span>
                     <br/>
                     <span>
@@ -2657,9 +2630,9 @@
                         b
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the right of the not equal sign.
+                      <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the right of the not equal sign.
                     </span>
                     <br/>
                   </ul>
@@ -2686,7 +2659,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether two <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instances are not equal.
+            Compares whether two <a href="/Nu/reference/nu-frustum.html">Frustum</a> instances are not equal.
             
                   </p>
                 </div>
@@ -2697,11 +2670,11 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the left of the not equal sign.
+                    <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the left of the not equal sign.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2709,11 +2682,11 @@
                     b
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the right of the not equal sign.
+                    <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the right of the not equal sign.
                   </p>
                 </dd>
               </dl>
@@ -2758,9 +2731,9 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the left of the equal sign.
+                      <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the left of the equal sign.
                     </span>
                     <br/>
                     <span>
@@ -2768,9 +2741,9 @@
                         b
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the right of the equal sign.
+                      <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the right of the equal sign.
                     </span>
                     <br/>
                   </ul>
@@ -2797,7 +2770,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Compares whether two <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instances are equal.
+            Compares whether two <a href="/Nu/reference/nu-frustum.html">Frustum</a> instances are equal.
             
                   </p>
                 </div>
@@ -2808,11 +2781,11 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the left of the equal sign.
+                    <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the left of the equal sign.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2820,11 +2793,11 @@
                     b
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a> instance on the right of the equal sign.
+                    <a href="/Nu/reference/nu-frustum.html">Frustum</a> instance on the right of the equal sign.
                   </p>
                 </dd>
               </dl>
@@ -2862,10 +2835,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

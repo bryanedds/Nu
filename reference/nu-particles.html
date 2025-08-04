@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Nu.Particles" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Nu.Particles">
     
     <title>Nu.Particles | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -138,7 +111,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicBillboardEmitterDescriptor">
-              <a href="http://localhost:8901/reference/nu-particles-basicbillboardemitterdescriptor.html">
+              <a href="/Nu/reference/nu-particles-basicbillboardemitterdescriptor.html">
                 BasicBillboardEmitterDescriptor
               </a>
             </a>
@@ -165,7 +138,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicBillboardEmitterDescriptors">
-              <a href="http://localhost:8901/reference/nu-particles-basicbillboardemitterdescriptors.html">
+              <a href="/Nu/reference/nu-particles-basicbillboardemitterdescriptors.html">
                 BasicBillboardEmitterDescriptors
               </a>
             </a>
@@ -192,7 +165,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicParticle">
-              <a href="http://localhost:8901/reference/nu-particles-basicparticlemodule.html">
+              <a href="/Nu/reference/nu-particles-basicparticlemodule.html">
                 BasicParticle (Module)
               </a>
             </a>
@@ -219,7 +192,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicParticle">
-              <a href="http://localhost:8901/reference/nu-particles-basicparticle.html">
+              <a href="/Nu/reference/nu-particles-basicparticle.html">
                 BasicParticle (Type)
               </a>
             </a>
@@ -246,7 +219,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicSpriteEmitterDescriptor">
-              <a href="http://localhost:8901/reference/nu-particles-basicspriteemitterdescriptor.html">
+              <a href="/Nu/reference/nu-particles-basicspriteemitterdescriptor.html">
                 BasicSpriteEmitterDescriptor
               </a>
             </a>
@@ -273,7 +246,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicSpriteEmitterDescriptors">
-              <a href="http://localhost:8901/reference/nu-particles-basicspriteemitterdescriptors.html">
+              <a href="/Nu/reference/nu-particles-basicspriteemitterdescriptors.html">
                 BasicSpriteEmitterDescriptors
               </a>
             </a>
@@ -300,7 +273,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicStaticBillboardEmitter">
-              <a href="http://localhost:8901/reference/nu-particles-basicstaticbillboardemittermodule.html">
+              <a href="/Nu/reference/nu-particles-basicstaticbillboardemittermodule.html">
                 BasicStaticBillboardEmitter (Module)
               </a>
             </a>
@@ -327,7 +300,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicStaticBillboardEmitter">
-              <a href="http://localhost:8901/reference/nu-particles-basicstaticbillboardemitter.html">
+              <a href="/Nu/reference/nu-particles-basicstaticbillboardemitter.html">
                 BasicStaticBillboardEmitter (Type)
               </a>
             </a>
@@ -354,7 +327,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicStaticSpriteEmitter">
-              <a href="http://localhost:8901/reference/nu-particles-basicstaticspriteemittermodule.html">
+              <a href="/Nu/reference/nu-particles-basicstaticspriteemittermodule.html">
                 BasicStaticSpriteEmitter (Module)
               </a>
             </a>
@@ -381,7 +354,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BasicStaticSpriteEmitter">
-              <a href="http://localhost:8901/reference/nu-particles-basicstaticspriteemitter.html">
+              <a href="/Nu/reference/nu-particles-basicstaticspriteemitter.html">
                 BasicStaticSpriteEmitter (Type)
               </a>
             </a>
@@ -408,7 +381,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Behavior">
-              <a href="http://localhost:8901/reference/nu-particles-behavior.html">
+              <a href="/Nu/reference/nu-particles-behavior.html">
                 Behavior
               </a>
             </a>
@@ -435,7 +408,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Behavior<'a, 'b>">
-              <a href="http://localhost:8901/reference/nu-particles-behavior-2.html">
+              <a href="/Nu/reference/nu-particles-behavior-2.html">
                 Behavior<'a, 'b>
               </a>
             </a>
@@ -462,7 +435,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Behaviors">
-              <a href="http://localhost:8901/reference/nu-particles-behaviors.html">
+              <a href="/Nu/reference/nu-particles-behaviors.html">
                 Behaviors
               </a>
             </a>
@@ -489,7 +462,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BillboardEmitterDescriptor<'a>">
-              <a href="http://localhost:8901/reference/nu-particles-billboardemitterdescriptor-1.html">
+              <a href="/Nu/reference/nu-particles-billboardemitterdescriptor-1.html">
                 BillboardEmitterDescriptor<'a>
               </a>
             </a>
@@ -516,7 +489,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="BillboardEmitterDescriptors<'a>">
-              <a href="http://localhost:8901/reference/nu-particles-billboardemitterdescriptors-1.html">
+              <a href="/Nu/reference/nu-particles-billboardemitterdescriptors-1.html">
                 BillboardEmitterDescriptors<'a>
               </a>
             </a>
@@ -543,7 +516,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Body">
-              <a href="http://localhost:8901/reference/nu-particles-body.html">
+              <a href="/Nu/reference/nu-particles-body.html">
                 Body
               </a>
             </a>
@@ -570,7 +543,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Constraint">
-              <a href="http://localhost:8901/reference/nu-particles-constraint.html">
+              <a href="/Nu/reference/nu-particles-constraint.html">
                 Constraint
               </a>
             </a>
@@ -597,7 +570,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Emitter">
-              <a href="http://localhost:8901/reference/nu-particles-emitter.html">
+              <a href="/Nu/reference/nu-particles-emitter.html">
                 Emitter
               </a>
             </a>
@@ -624,7 +597,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="EmitterDescriptor">
-              <a href="http://localhost:8901/reference/nu-particles-emitterdescriptor.html">
+              <a href="/Nu/reference/nu-particles-emitterdescriptor.html">
                 EmitterDescriptor
               </a>
             </a>
@@ -651,7 +624,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Force">
-              <a href="http://localhost:8901/reference/nu-particles-force.html">
+              <a href="/Nu/reference/nu-particles-force.html">
                 Force
               </a>
             </a>
@@ -678,7 +651,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="In<'a, 'b>">
-              <a href="http://localhost:8901/reference/nu-particles-in-2.html">
+              <a href="/Nu/reference/nu-particles-in-2.html">
                 In<'a, 'b>
               </a>
             </a>
@@ -705,7 +678,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Life">
-              <a href="http://localhost:8901/reference/nu-particles-life.html">
+              <a href="/Nu/reference/nu-particles-life.html">
                 Life
               </a>
             </a>
@@ -735,7 +708,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Logic">
-              <a href="http://localhost:8901/reference/nu-particles-logic.html">
+              <a href="/Nu/reference/nu-particles-logic.html">
                 Logic
               </a>
             </a>
@@ -762,7 +735,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="LogicType">
-              <a href="http://localhost:8901/reference/nu-particles-logictype.html">
+              <a href="/Nu/reference/nu-particles-logictype.html">
                 LogicType
               </a>
             </a>
@@ -789,7 +762,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Out<'a, 'b>">
-              <a href="http://localhost:8901/reference/nu-particles-out-2.html">
+              <a href="/Nu/reference/nu-particles-out-2.html">
                 Out<'a, 'b>
               </a>
             </a>
@@ -816,7 +789,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Output">
-              <a href="http://localhost:8901/reference/nu-particles-output.html">
+              <a href="/Nu/reference/nu-particles-output.html">
                 Output
               </a>
             </a>
@@ -843,7 +816,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Particle">
-              <a href="http://localhost:8901/reference/nu-particles-particle.html">
+              <a href="/Nu/reference/nu-particles-particle.html">
                 Particle
               </a>
             </a>
@@ -870,7 +843,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="ParticlesDescriptor">
-              <a href="http://localhost:8901/reference/nu-particles-particlesdescriptor.html">
+              <a href="/Nu/reference/nu-particles-particlesdescriptor.html">
                 ParticlesDescriptor
               </a>
             </a>
@@ -897,7 +870,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="ParticleSystem">
-              <a href="http://localhost:8901/reference/nu-particles-particlesystem.html">
+              <a href="/Nu/reference/nu-particles-particlesystem.html">
                 ParticleSystem
               </a>
             </a>
@@ -925,7 +898,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="'a Range">
-              <a href="http://localhost:8901/reference/nu-particles-range-1.html">
+              <a href="/Nu/reference/nu-particles-range-1.html">
                 'a Range
               </a>
             </a>
@@ -952,7 +925,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="RangeApplicator">
-              <a href="http://localhost:8901/reference/nu-particles-rangeapplicator.html">
+              <a href="/Nu/reference/nu-particles-rangeapplicator.html">
                 RangeApplicator
               </a>
             </a>
@@ -979,7 +952,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="'a RangeType">
-              <a href="http://localhost:8901/reference/nu-particles-rangetype-1.html">
+              <a href="/Nu/reference/nu-particles-rangetype-1.html">
                 'a RangeType
               </a>
             </a>
@@ -1006,7 +979,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Scope">
-              <a href="http://localhost:8901/reference/nu-particles-scope.html">
+              <a href="/Nu/reference/nu-particles-scope.html">
                 Scope
               </a>
             </a>
@@ -1033,7 +1006,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Scope<'a, 'b>">
-              <a href="http://localhost:8901/reference/nu-particles-scope-2.html">
+              <a href="/Nu/reference/nu-particles-scope-2.html">
                 Scope<'a, 'b>
               </a>
             </a>
@@ -1060,7 +1033,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="SpriteEmitterDescriptor<'a>">
-              <a href="http://localhost:8901/reference/nu-particles-spriteemitterdescriptor-1.html">
+              <a href="/Nu/reference/nu-particles-spriteemitterdescriptor-1.html">
                 SpriteEmitterDescriptor<'a>
               </a>
             </a>
@@ -1087,7 +1060,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="SpriteEmitterDescriptors<'a>">
-              <a href="http://localhost:8901/reference/nu-particles-spriteemitterdescriptors-1.html">
+              <a href="/Nu/reference/nu-particles-spriteemitterdescriptors-1.html">
                 SpriteEmitterDescriptors<'a>
               </a>
             </a>
@@ -1114,7 +1087,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="StaticBillboardEmitter<'a>">
-              <a href="http://localhost:8901/reference/nu-particles-staticbillboardemitter-1.html">
+              <a href="/Nu/reference/nu-particles-staticbillboardemitter-1.html">
                 StaticBillboardEmitter<'a>
               </a>
             </a>
@@ -1141,7 +1114,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="StaticSpriteEmitter<'a>">
-              <a href="http://localhost:8901/reference/nu-particles-staticspriteemitter-1.html">
+              <a href="/Nu/reference/nu-particles-staticspriteemitter-1.html">
                 StaticSpriteEmitter<'a>
               </a>
             </a>
@@ -1168,7 +1141,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Transformer">
-              <a href="http://localhost:8901/reference/nu-particles-transformer.html">
+              <a href="/Nu/reference/nu-particles-transformer.html">
                 Transformer
               </a>
             </a>
@@ -1195,7 +1168,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="'a Transformer">
-              <a href="http://localhost:8901/reference/nu-particles-transformer-1.html">
+              <a href="/Nu/reference/nu-particles-transformer-1.html">
                 'a Transformer
               </a>
             </a>
@@ -1235,10 +1208,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

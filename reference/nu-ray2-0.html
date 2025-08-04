@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Ray2 (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Ray2 (Nu)">
     
     <title>Ray2 (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-ray2-0.html">Ray2</a>&gt;</span></code>
     </dt>
     <dt>
       Kind: Struct
@@ -202,7 +175,7 @@
                       :
                       <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a></code>
                        - 
-                      The origin of the <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                      The origin of the <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                     </span>
                     <br/>
                     <span>
@@ -212,7 +185,7 @@
                       :
                       <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a></code>
                        - 
-                      The direction of the <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                      The direction of the <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                     </span>
                     <br/>
                   </ul>
@@ -233,7 +206,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Create a <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+            Create a <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
             
                   </p>
                 </div>
@@ -248,7 +221,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The origin of the <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                    The origin of the <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -260,7 +233,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The direction of the <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                    The direction of the <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   </p>
                 </dd>
               </dl>
@@ -313,7 +286,7 @@
                       :
                       <code>obj</code>
                        - 
-                      The <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to test for equality with this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                      The <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to test for equality with this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                     </span>
                     <br/>
                   </ul>
@@ -325,7 +298,7 @@
                   <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>,
+ if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -351,7 +324,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+            Check if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
             
                   </p>
                 </div>
@@ -366,7 +339,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to test for equality with this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                    The <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to test for equality with this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   </p>
                 </dd>
               </dl>
@@ -382,7 +355,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>,
+ if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -419,9 +392,9 @@
                         other
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                      <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> to test for equality with this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                      The <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> to test for equality with this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                     </span>
                     <br/>
                   </ul>
@@ -433,7 +406,7 @@
                   <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> is equal to this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>,
+ if the specified <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> is equal to this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -459,7 +432,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if the specified <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> is equal to this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+            Check if the specified <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> is equal to this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
             
                   </p>
                 </div>
@@ -470,11 +443,11 @@
                     other
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> to test for equality with this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                    The <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> to test for equality with this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   </p>
                 </dd>
               </dl>
@@ -490,7 +463,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> is equal to this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>,
+ if the specified <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> is equal to this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -524,7 +497,7 @@
                     Returns: 
                     <code>int</code>
                   </span>
-                  A hash code for this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                  A hash code for this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -545,7 +518,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get a hash code for this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+            Get a hash code for this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
             
                   </p>
                 </div>
@@ -559,7 +532,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    A hash code for this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                    A hash code for this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   </p>
                 </dd>
               </dl>
@@ -591,9 +564,9 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a> to test for intersection.
+                      The <a href="/Nu/reference/nu-box2-0.html">Box2</a> to test for intersection.
                     </span>
                     <br/>
                   </ul>
@@ -607,7 +580,7 @@
 </code></pre>
 
  if this
-            <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>.
+            <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="/Nu/reference/nu-box2-0.html">Box2</a>.
             
                   <br/>
                 </div>
@@ -626,7 +599,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> intersects the specified <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>.
+            Check if this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> intersects the specified <a href="/Nu/reference/nu-box2-0.html">Box2</a>.
             
                   </p>
                 </div>
@@ -637,11 +610,11 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a> to test for intersection.
+                    The <a href="/Nu/reference/nu-box2-0.html">Box2</a> to test for intersection.
                   </p>
                 </dd>
               </dl>
@@ -659,7 +632,7 @@
 </code></pre>
 
  if this
-            <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>.
+            <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="/Nu/reference/nu-box2-0.html">Box2</a>.
             
                   </p>
                 </dd>
@@ -692,9 +665,9 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&gt;</span></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a> to test for intersection.
+                      The <a href="/Nu/reference/nu-box2-0.html">Box2</a> to test for intersection.
                     </span>
                     <br/>
                     <span>
@@ -709,7 +682,7 @@
 </code></pre>
 
  if this
-            <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>.
+            <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="/Nu/reference/nu-box2-0.html">Box2</a>.
             
                     </span>
                     <br/>
@@ -731,7 +704,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> intersects the specified <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>.
+            Check if this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> intersects the specified <a href="/Nu/reference/nu-box2-0.html">Box2</a>.
             
                   </p>
                 </div>
@@ -742,11 +715,11 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a> to test for intersection.
+                    The <a href="/Nu/reference/nu-box2-0.html">Box2</a> to test for intersection.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -763,7 +736,7 @@
 </code></pre>
 
  if this
-            <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>.
+            <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> does not intersect the <a href="/Nu/reference/nu-box2-0.html">Box2</a>.
             
                   </p>
                 </dd>
@@ -869,7 +842,7 @@
                     Returns: 
                     <code>string</code>
                   </span>
-                  A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                  A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -890,7 +863,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+            Get a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
             
                   </p>
                 </div>
@@ -904,7 +877,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a>.
+                    A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a>.
                   </p>
                 </dd>
               </dl>
@@ -943,7 +916,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                    <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -962,7 +935,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Transform this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> by a matrix.
+            Transform this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> by a matrix.
             
                   </p>
                 </div>
@@ -982,7 +955,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1021,7 +994,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                    <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1040,7 +1013,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Transform this <a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a> by a quaternion.
+            Transform this <a href="/Nu/reference/nu-ray2-0.html">Ray2</a> by a quaternion.
             
                   </p>
                 </div>
@@ -1060,7 +1033,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1111,7 +1084,7 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                      <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                        - 
                       A ray to check for inequality.
                     </span>
@@ -1121,7 +1094,7 @@
                         b
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                      <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                        - 
                       A ray to check for inequality.
                     </span>
@@ -1167,7 +1140,7 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1179,7 +1152,7 @@
                     b
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1234,7 +1207,7 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                      <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                        - 
                       A ray to check for equality.
                     </span>
@@ -1244,7 +1217,7 @@
                         b
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                      <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                        - 
                       A ray to check for equality.
                     </span>
@@ -1290,7 +1263,7 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1302,7 +1275,7 @@
                     b
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-ray2-0.html">Ray2</a></code>
+                  <code><a href="/Nu/reference/nu-ray2-0.html">Ray2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1350,10 +1323,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

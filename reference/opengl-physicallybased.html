@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="PhysicallyBased (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="PhysicallyBased (Nu)">
     
     <title>PhysicallyBased (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/opengl.html">
+      <a href="/Nu/reference/opengl.html">
         OpenGL
       </a>
     </dt>
@@ -159,7 +132,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedBuffers">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">
                   PhysicallyBasedBuffers
                 </a>
               </a>
@@ -186,7 +159,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredAmbientShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">
                   PhysicallyBasedDeferredAmbientShader
                 </a>
               </a>
@@ -213,7 +186,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredColoringShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">
                   PhysicallyBasedDeferredColoringShader
                 </a>
               </a>
@@ -240,7 +213,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredCompositionShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">
                   PhysicallyBasedDeferredCompositionShader
                 </a>
               </a>
@@ -267,7 +240,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredEnvironmentFilterShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">
                   PhysicallyBasedDeferredEnvironmentFilterShader
                 </a>
               </a>
@@ -294,7 +267,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredIrradianceShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">
                   PhysicallyBasedDeferredIrradianceShader
                 </a>
               </a>
@@ -321,7 +294,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredLightMappingShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">
                   PhysicallyBasedDeferredLightMappingShader
                 </a>
               </a>
@@ -348,7 +321,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredLightingShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">
                   PhysicallyBasedDeferredLightingShader
                 </a>
               </a>
@@ -375,7 +348,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredSsaoShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">
                   PhysicallyBasedDeferredSsaoShader
                 </a>
               </a>
@@ -402,7 +375,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedDeferredTerrainShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">
                   PhysicallyBasedDeferredTerrainShader
                 </a>
               </a>
@@ -429,7 +402,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedGeometry">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">
                   PhysicallyBasedGeometry
                 </a>
               </a>
@@ -456,7 +429,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedLight">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedlight.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedlight.html">
                   PhysicallyBasedLight
                 </a>
               </a>
@@ -483,7 +456,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedLightProbe">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedlightprobe.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedlightprobe.html">
                   PhysicallyBasedLightProbe
                 </a>
               </a>
@@ -510,7 +483,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedMaterial">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">
                   PhysicallyBasedMaterial
                 </a>
               </a>
@@ -537,7 +510,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedMaterialProperties">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">
                   PhysicallyBasedMaterialProperties
                 </a>
               </a>
@@ -564,7 +537,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedModel">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">
                   PhysicallyBasedModel
                 </a>
               </a>
@@ -591,7 +564,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedPart">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedpart.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedpart.html">
                   PhysicallyBasedPart
                 </a>
               </a>
@@ -618,7 +591,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedSceneClient">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsceneclient.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedsceneclient.html">
                   PhysicallyBasedSceneClient
                 </a>
               </a>
@@ -645,7 +618,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedShader">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">
                   PhysicallyBasedShader
                 </a>
               </a>
@@ -672,7 +645,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedShaders">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">
                   PhysicallyBasedShaders
                 </a>
               </a>
@@ -699,7 +672,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="PhysicallyBasedSurface">
-                <a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">
+                <a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">
                   PhysicallyBasedSurface
                 </a>
               </a>
@@ -1001,7 +974,7 @@
                         lightAmbientColor
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1097,7 +1070,7 @@
                         fogColor
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1137,7 +1110,7 @@
                         brdfTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1145,7 +1118,7 @@
                         irradianceMap
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1153,7 +1126,7 @@
                         environmentFilterMap
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1169,7 +1142,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1250,7 +1223,7 @@
                     lightAmbientColor
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1346,7 +1319,7 @@
                     fogColor
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1386,7 +1359,7 @@
                     brdfTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1394,7 +1367,7 @@
                     irradianceMap
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1402,7 +1375,7 @@
                     environmentFilterMap
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1418,7 +1391,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1473,7 +1446,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
+                    <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1522,7 +1495,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
+                  <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1586,14 +1559,14 @@
                         bounds
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1656,7 +1629,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1665,7 +1638,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1720,7 +1693,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1776,7 +1749,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1823,7 +1796,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1871,7 +1844,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1971,7 +1944,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2011,7 +1984,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2050,7 +2023,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2090,7 +2063,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2122,14 +2095,14 @@
                         geometryViewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2160,7 +2133,7 @@
                     geometryViewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2169,7 +2142,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2208,7 +2181,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2248,7 +2221,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2287,7 +2260,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2327,7 +2300,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2374,7 +2347,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2422,7 +2395,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2461,7 +2434,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2501,7 +2474,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2540,7 +2513,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2580,7 +2553,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2627,7 +2600,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2675,7 +2648,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2714,7 +2687,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2754,7 +2727,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2801,7 +2774,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2849,7 +2822,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2896,7 +2869,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2944,7 +2917,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2983,7 +2956,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3023,7 +2996,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3071,7 +3044,7 @@
                         defaultMaterial
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3079,7 +3052,7 @@
                         textureClient
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-textureclient.html">TextureClient</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-textureclient.html">TextureClient</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3094,7 +3067,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span></code>
+                    <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3144,7 +3117,7 @@
                     defaultMaterial
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3152,7 +3125,7 @@
                     textureClient
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-textureclient.html">TextureClient</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-textureclient.html">TextureClient</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3169,7 +3142,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span></code>
+                  <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3208,7 +3181,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3248,7 +3221,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3287,7 +3260,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3327,7 +3300,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3366,7 +3339,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3406,7 +3379,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3461,7 +3434,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3517,7 +3490,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3564,7 +3537,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3595,7 +3568,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -3641,7 +3614,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
+                    <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3690,7 +3663,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
+                  <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a>&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.slist.slist-1">SList</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3754,14 +3727,14 @@
                         bounds
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3824,7 +3797,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3833,7 +3806,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3888,7 +3861,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3944,7 +3917,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3991,7 +3964,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4039,7 +4012,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>single&#32;array</span>&#32;*&#32;'a&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4148,7 +4121,7 @@
                         surfaceMatrix
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4156,7 +4129,7 @@
                         surfaceBounds
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4164,7 +4137,7 @@
                         properties
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4188,14 +4161,14 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4242,7 +4215,7 @@
                     surfaceMatrix
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4250,7 +4223,7 @@
                     surfaceBounds
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4258,7 +4231,7 @@
                     properties
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4282,7 +4255,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4291,7 +4264,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4355,14 +4328,14 @@
                         bounds
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4425,7 +4398,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4434,7 +4407,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4473,7 +4446,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4513,7 +4486,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4606,7 +4579,7 @@
                         buffers
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4639,7 +4612,7 @@
                     buffers
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4671,7 +4644,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4704,7 +4677,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4736,7 +4709,7 @@
                         model
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4769,7 +4742,7 @@
                     model
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4801,7 +4774,7 @@
                         shaders
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4817,7 +4790,7 @@
                   shaders
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -4848,7 +4821,7 @@
                         colorTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4856,7 +4829,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4864,7 +4837,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4872,7 +4845,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
+                      <code><a href="/Nu/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4913,7 +4886,7 @@
                     colorTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4921,7 +4894,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4929,7 +4902,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4937,7 +4910,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
+                  <code><a href="/Nu/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4977,7 +4950,7 @@
                         colorDownSampledTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4985,7 +4958,7 @@
                         depthDownSampledTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4993,7 +4966,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5001,7 +4974,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5009,7 +4982,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
+                      <code><a href="/Nu/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5050,7 +5023,7 @@
                     colorDownSampledTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5058,7 +5031,7 @@
                     depthDownSampledTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5066,7 +5039,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5074,7 +5047,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5082,7 +5055,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
+                  <code><a href="/Nu/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5122,7 +5095,7 @@
                         inputTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5130,7 +5103,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5138,7 +5111,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
+                      <code><a href="/Nu/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5179,7 +5152,7 @@
                     inputTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5187,7 +5160,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5195,7 +5168,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
+                  <code><a href="/Nu/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5235,7 +5208,7 @@
                         inputTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5243,7 +5216,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5251,7 +5224,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
+                      <code><a href="/Nu/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5292,7 +5265,7 @@
                     inputTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5300,7 +5273,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5308,7 +5281,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
+                  <code><a href="/Nu/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5356,7 +5329,7 @@
                         inputTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5364,7 +5337,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5372,7 +5345,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                      <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5421,7 +5394,7 @@
                     inputTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5429,7 +5402,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5437,7 +5410,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                  <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5501,7 +5474,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5509,7 +5482,7 @@
                         lightMappingTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5517,7 +5490,7 @@
                         lightMapAmbientColor
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5533,7 +5506,7 @@
                         lightMapAmbientColors
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -5549,7 +5522,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5557,7 +5530,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5622,7 +5595,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5630,7 +5603,7 @@
                     lightMappingTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5638,7 +5611,7 @@
                     lightMapAmbientColor
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5654,7 +5627,7 @@
                     lightMapAmbientColors
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5670,7 +5643,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5678,7 +5651,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredambientshader.html">PhysicallyBasedDeferredAmbientShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5902,7 +5875,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5910,7 +5883,7 @@
                         albedoTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5918,7 +5891,7 @@
                         materialTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5926,7 +5899,7 @@
                         normalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5934,7 +5907,7 @@
                         lightAccumTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5942,7 +5915,7 @@
                         brdfTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5950,7 +5923,7 @@
                         ambientTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5958,7 +5931,7 @@
                         irradianceTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5966,7 +5939,7 @@
                         environmentFilterTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5974,7 +5947,7 @@
                         ssaoTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5982,7 +5955,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5990,7 +5963,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6215,7 +6188,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6223,7 +6196,7 @@
                     albedoTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6231,7 +6204,7 @@
                     materialTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6239,7 +6212,7 @@
                     normalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6247,7 +6220,7 @@
                     lightAccumTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6255,7 +6228,7 @@
                     brdfTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6263,7 +6236,7 @@
                     ambientTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6271,7 +6244,7 @@
                     irradianceTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6279,7 +6252,7 @@
                     environmentFilterTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6287,7 +6260,7 @@
                     ssaoTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6295,7 +6268,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6303,7 +6276,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcoloringshader.html">PhysicallyBasedDeferredColoringShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6391,7 +6364,7 @@
                         fogColor
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6399,7 +6372,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6407,7 +6380,7 @@
                         colorTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6415,7 +6388,7 @@
                         fogAccumTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6423,7 +6396,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6431,7 +6404,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6520,7 +6493,7 @@
                     fogColor
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6528,7 +6501,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6536,7 +6509,7 @@
                     colorTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6544,7 +6517,7 @@
                     fogAccumTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6552,7 +6525,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6560,7 +6533,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredcompositionshader.html">PhysicallyBasedDeferredCompositionShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6624,7 +6597,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6632,7 +6605,7 @@
                         materialTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6640,7 +6613,7 @@
                         normalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6648,7 +6621,7 @@
                         lightMappingTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6656,7 +6629,7 @@
                         environmentFilterMap
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6664,7 +6637,7 @@
                         environmentFilterMaps
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -6696,7 +6669,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6704,7 +6677,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6769,7 +6742,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6777,7 +6750,7 @@
                     materialTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6785,7 +6758,7 @@
                     normalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6793,7 +6766,7 @@
                     lightMappingTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6801,7 +6774,7 @@
                     environmentFilterMap
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6809,7 +6782,7 @@
                     environmentFilterMaps
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6841,7 +6814,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6849,7 +6822,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredenvironmentfiltershader.html">PhysicallyBasedDeferredEnvironmentFilterShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6913,7 +6886,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6921,7 +6894,7 @@
                         normalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6929,7 +6902,7 @@
                         lightMappingTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6937,7 +6910,7 @@
                         irradianceMap
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6945,7 +6918,7 @@
                         irradianceMaps
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -6953,7 +6926,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -6961,7 +6934,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7026,7 +6999,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7034,7 +7007,7 @@
                     normalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7042,7 +7015,7 @@
                     lightMappingTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7050,7 +7023,7 @@
                     irradianceMap
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7058,7 +7031,7 @@
                     irradianceMaps
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7066,7 +7039,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7074,7 +7047,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredirradianceshader.html">PhysicallyBasedDeferredIrradianceShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7138,7 +7111,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7146,7 +7119,7 @@
                         normalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7186,7 +7159,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7194,7 +7167,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7259,7 +7232,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7267,7 +7240,7 @@
                     normalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7307,7 +7280,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7315,7 +7288,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightmappingshader.html">PhysicallyBasedDeferredLightMappingShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7483,7 +7456,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7491,7 +7464,7 @@
                         albedoTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7499,7 +7472,7 @@
                         materialTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7507,7 +7480,7 @@
                         normalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7515,7 +7488,7 @@
                         subdermalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7523,7 +7496,7 @@
                         scatterPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7531,7 +7504,7 @@
                         shadowTextures
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -7539,7 +7512,7 @@
                         shadowMaps
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -7563,7 +7536,7 @@
                         lightColors
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -7667,7 +7640,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7675,7 +7648,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7844,7 +7817,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7852,7 +7825,7 @@
                     albedoTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7860,7 +7833,7 @@
                     materialTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7868,7 +7841,7 @@
                     normalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7876,7 +7849,7 @@
                     subdermalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7884,7 +7857,7 @@
                     scatterPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7892,7 +7865,7 @@
                     shadowTextures
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7900,7 +7873,7 @@
                     shadowMaps
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7924,7 +7897,7 @@
                     lightColors
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8028,7 +8001,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8036,7 +8009,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredlightingshader.html">PhysicallyBasedDeferredLightingShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8124,7 +8097,7 @@
                         depthTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8132,7 +8105,7 @@
                         normalPlusTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8188,7 +8161,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8196,7 +8169,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8285,7 +8258,7 @@
                     depthTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8293,7 +8266,7 @@
                     normalPlusTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8349,7 +8322,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8357,7 +8330,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredssaoshader.html">PhysicallyBasedDeferredSsaoShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8397,7 +8370,7 @@
                         batchPhase
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-batchphase.html">BatchPhase</a></code>
+                      <code><a href="/Nu/reference/nu-batchphase.html">BatchPhase</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8501,7 +8474,7 @@
                         material
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8509,7 +8482,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8517,7 +8490,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8566,7 +8539,7 @@
                     batchPhase
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-batchphase.html">BatchPhase</a></code>
+                  <code><a href="/Nu/reference/nu-batchphase.html">BatchPhase</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8670,7 +8643,7 @@
                     material
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8678,7 +8651,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8686,7 +8659,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8734,7 +8707,7 @@
                         batchPhase
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-batchphase.html">BatchPhase</a></code>
+                      <code><a href="/Nu/reference/nu-batchphase.html">BatchPhase</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8806,7 +8779,7 @@
                         material
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8814,7 +8787,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8822,7 +8795,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8871,7 +8844,7 @@
                     batchPhase
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-batchphase.html">BatchPhase</a></code>
+                  <code><a href="/Nu/reference/nu-batchphase.html">BatchPhase</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8943,7 +8916,7 @@
                     material
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8951,7 +8924,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8959,7 +8932,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9031,7 +9004,7 @@
                         irradianceMaps
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9039,7 +9012,7 @@
                         environmentFilterMaps
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9047,7 +9020,7 @@
                         shadowTextures
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9055,7 +9028,7 @@
                         shadowMaps
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9087,7 +9060,7 @@
                         lightMapAmbientColors
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9127,7 +9100,7 @@
                         lightColors
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9223,7 +9196,7 @@
                         material
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9231,7 +9204,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9239,7 +9212,7 @@
                         depthTest
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                      <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9255,7 +9228,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9328,7 +9301,7 @@
                     irradianceMaps
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9336,7 +9309,7 @@
                     environmentFilterMaps
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9344,7 +9317,7 @@
                     shadowTextures
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9352,7 +9325,7 @@
                     shadowMaps
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9384,7 +9357,7 @@
                     lightMapAmbientColors
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9424,7 +9397,7 @@
                     lightColors
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;array</span></code>
+                  <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9520,7 +9493,7 @@
                     material
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9528,7 +9501,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9536,7 +9509,7 @@
                     depthTest
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                  <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9552,7 +9525,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -9688,7 +9661,7 @@
                         materials
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a>&#32;array</span></code>
+                      <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -9696,7 +9669,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9704,7 +9677,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9816,7 +9789,7 @@
                   materials
                 </span>
                 :
-                <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a>&#32;array</span></code>
+                <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -9824,7 +9797,7 @@
                   geometry
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -9832,7 +9805,7 @@
                   shader
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybaseddeferredterrainshader.html">PhysicallyBasedDeferredTerrainShader</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -9871,7 +9844,7 @@
                         arg0
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -9912,7 +9885,7 @@
                     arg0
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshader.html">PhysicallyBasedShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -10319,7 +10292,7 @@
                         defaultMaterial
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                      <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                     </span>
                     <br/>
                     <span>
@@ -10327,7 +10300,7 @@
                         textureClient
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-textureclient.html">TextureClient</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-textureclient.html">TextureClient</a></code>
                     </span>
                     <br/>
                     <span>
@@ -10342,7 +10315,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>'a,&#32;<span><span>(<span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span>)</span>&#32;array</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>'a,&#32;<span><span>(<span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span>)</span>&#32;array</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -10390,7 +10363,7 @@
                     defaultMaterial
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -10398,7 +10371,7 @@
                     textureClient
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-textureclient.html">TextureClient</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-textureclient.html">TextureClient</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -10415,7 +10388,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>'a,&#32;<span><span>(<span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span>)</span>&#32;array</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>'a,&#32;<span><span>(<span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterialproperties.html">PhysicallyBasedMaterialProperties</a>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></span>)</span>&#32;array</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10448,10 +10421,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="BodyShape (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="BodyShape (Nu)">
     
     <title>BodyShape (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-bodyshape.html">BodyShape</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
@@ -175,7 +148,7 @@
                 <p>
                   <a id="BodyShapes">
                     <a href="#BodyShapes">
-                      <code><span>BodyShapes&#32;<span><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></span></code>
+                      <code><span>BodyShapes&#32;<span><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></span></code>
                     </a>
                   </a>
                 </p>
@@ -183,7 +156,7 @@
               <div class="fsdocs-tip" id="4435">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>BodyShapes&#32;<span><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></span></code>
+                  <code><span>BodyShapes&#32;<span><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -193,7 +166,7 @@
                         Item
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></code>
+                      <code><span><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -209,7 +182,7 @@
                   Item
                 </span>
                 :
-                <code><span><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></code>
+                <code><span><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -222,7 +195,7 @@
                 <p>
                   <a id="BoxRoundedShape">
                     <a href="#BoxRoundedShape">
-                      <code><span>BoxRoundedShape&#32;<a href="http://localhost:8901/reference/nu-boxroundedshape.html">BoxRoundedShape</a></span></code>
+                      <code><span>BoxRoundedShape&#32;<a href="/Nu/reference/nu-boxroundedshape.html">BoxRoundedShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -230,7 +203,7 @@
               <div class="fsdocs-tip" id="4436">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>BoxRoundedShape&#32;<a href="http://localhost:8901/reference/nu-boxroundedshape.html">BoxRoundedShape</a></span></code>
+                  <code><span>BoxRoundedShape&#32;<a href="/Nu/reference/nu-boxroundedshape.html">BoxRoundedShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -240,7 +213,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-boxroundedshape.html">BoxRoundedShape</a></code>
+                      <code><a href="/Nu/reference/nu-boxroundedshape.html">BoxRoundedShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -256,7 +229,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-boxroundedshape.html">BoxRoundedShape</a></code>
+                <code><a href="/Nu/reference/nu-boxroundedshape.html">BoxRoundedShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -269,7 +242,7 @@
                 <p>
                   <a id="BoxShape">
                     <a href="#BoxShape">
-                      <code><span>BoxShape&#32;<a href="http://localhost:8901/reference/nu-boxshape.html">BoxShape</a></span></code>
+                      <code><span>BoxShape&#32;<a href="/Nu/reference/nu-boxshape.html">BoxShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -277,7 +250,7 @@
               <div class="fsdocs-tip" id="4437">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>BoxShape&#32;<a href="http://localhost:8901/reference/nu-boxshape.html">BoxShape</a></span></code>
+                  <code><span>BoxShape&#32;<a href="/Nu/reference/nu-boxshape.html">BoxShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -287,7 +260,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-boxshape.html">BoxShape</a></code>
+                      <code><a href="/Nu/reference/nu-boxshape.html">BoxShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -303,7 +276,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-boxshape.html">BoxShape</a></code>
+                <code><a href="/Nu/reference/nu-boxshape.html">BoxShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -316,7 +289,7 @@
                 <p>
                   <a id="CapsuleShape">
                     <a href="#CapsuleShape">
-                      <code><span>CapsuleShape&#32;<a href="http://localhost:8901/reference/nu-capsuleshape.html">CapsuleShape</a></span></code>
+                      <code><span>CapsuleShape&#32;<a href="/Nu/reference/nu-capsuleshape.html">CapsuleShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -324,7 +297,7 @@
               <div class="fsdocs-tip" id="4438">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CapsuleShape&#32;<a href="http://localhost:8901/reference/nu-capsuleshape.html">CapsuleShape</a></span></code>
+                  <code><span>CapsuleShape&#32;<a href="/Nu/reference/nu-capsuleshape.html">CapsuleShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -334,7 +307,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-capsuleshape.html">CapsuleShape</a></code>
+                      <code><a href="/Nu/reference/nu-capsuleshape.html">CapsuleShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -350,7 +323,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-capsuleshape.html">CapsuleShape</a></code>
+                <code><a href="/Nu/reference/nu-capsuleshape.html">CapsuleShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -396,7 +369,7 @@
                 <p>
                   <a id="GeometryShape">
                     <a href="#GeometryShape">
-                      <code><span>GeometryShape&#32;<a href="http://localhost:8901/reference/nu-geometryshape.html">GeometryShape</a></span></code>
+                      <code><span>GeometryShape&#32;<a href="/Nu/reference/nu-geometryshape.html">GeometryShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -404,7 +377,7 @@
               <div class="fsdocs-tip" id="4440">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>GeometryShape&#32;<a href="http://localhost:8901/reference/nu-geometryshape.html">GeometryShape</a></span></code>
+                  <code><span>GeometryShape&#32;<a href="/Nu/reference/nu-geometryshape.html">GeometryShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -414,7 +387,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-geometryshape.html">GeometryShape</a></code>
+                      <code><a href="/Nu/reference/nu-geometryshape.html">GeometryShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -430,7 +403,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-geometryshape.html">GeometryShape</a></code>
+                <code><a href="/Nu/reference/nu-geometryshape.html">GeometryShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -443,7 +416,7 @@
                 <p>
                   <a id="PointsShape">
                     <a href="#PointsShape">
-                      <code><span>PointsShape&#32;<a href="http://localhost:8901/reference/nu-pointsshape.html">PointsShape</a></span></code>
+                      <code><span>PointsShape&#32;<a href="/Nu/reference/nu-pointsshape.html">PointsShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -451,7 +424,7 @@
               <div class="fsdocs-tip" id="4441">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PointsShape&#32;<a href="http://localhost:8901/reference/nu-pointsshape.html">PointsShape</a></span></code>
+                  <code><span>PointsShape&#32;<a href="/Nu/reference/nu-pointsshape.html">PointsShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -461,7 +434,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-pointsshape.html">PointsShape</a></code>
+                      <code><a href="/Nu/reference/nu-pointsshape.html">PointsShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -477,7 +450,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-pointsshape.html">PointsShape</a></code>
+                <code><a href="/Nu/reference/nu-pointsshape.html">PointsShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -490,7 +463,7 @@
                 <p>
                   <a id="SphereShape">
                     <a href="#SphereShape">
-                      <code><span>SphereShape&#32;<a href="http://localhost:8901/reference/nu-sphereshape.html">SphereShape</a></span></code>
+                      <code><span>SphereShape&#32;<a href="/Nu/reference/nu-sphereshape.html">SphereShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -498,7 +471,7 @@
               <div class="fsdocs-tip" id="4442">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SphereShape&#32;<a href="http://localhost:8901/reference/nu-sphereshape.html">SphereShape</a></span></code>
+                  <code><span>SphereShape&#32;<a href="/Nu/reference/nu-sphereshape.html">SphereShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -508,7 +481,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-sphereshape.html">SphereShape</a></code>
+                      <code><a href="/Nu/reference/nu-sphereshape.html">SphereShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -524,7 +497,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-sphereshape.html">SphereShape</a></code>
+                <code><a href="/Nu/reference/nu-sphereshape.html">SphereShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -537,7 +510,7 @@
                 <p>
                   <a id="StaticModelShape">
                     <a href="#StaticModelShape">
-                      <code><span>StaticModelShape&#32;<a href="http://localhost:8901/reference/nu-staticmodelshape.html">StaticModelShape</a></span></code>
+                      <code><span>StaticModelShape&#32;<a href="/Nu/reference/nu-staticmodelshape.html">StaticModelShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -545,7 +518,7 @@
               <div class="fsdocs-tip" id="4443">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StaticModelShape&#32;<a href="http://localhost:8901/reference/nu-staticmodelshape.html">StaticModelShape</a></span></code>
+                  <code><span>StaticModelShape&#32;<a href="/Nu/reference/nu-staticmodelshape.html">StaticModelShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -555,7 +528,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-staticmodelshape.html">StaticModelShape</a></code>
+                      <code><a href="/Nu/reference/nu-staticmodelshape.html">StaticModelShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -571,7 +544,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-staticmodelshape.html">StaticModelShape</a></code>
+                <code><a href="/Nu/reference/nu-staticmodelshape.html">StaticModelShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -584,7 +557,7 @@
                 <p>
                   <a id="StaticModelSurfaceShape">
                     <a href="#StaticModelSurfaceShape">
-                      <code><span>StaticModelSurfaceShape&#32;<a href="http://localhost:8901/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></span></code>
+                      <code><span>StaticModelSurfaceShape&#32;<a href="/Nu/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -592,7 +565,7 @@
               <div class="fsdocs-tip" id="4444">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StaticModelSurfaceShape&#32;<a href="http://localhost:8901/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></span></code>
+                  <code><span>StaticModelSurfaceShape&#32;<a href="/Nu/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -602,7 +575,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></code>
+                      <code><a href="/Nu/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -618,7 +591,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></code>
+                <code><a href="/Nu/reference/nu-staticmodelsurfaceshape.html">StaticModelSurfaceShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -631,7 +604,7 @@
                 <p>
                   <a id="TerrainShape">
                     <a href="#TerrainShape">
-                      <code><span>TerrainShape&#32;<a href="http://localhost:8901/reference/nu-terrainshape.html">TerrainShape</a></span></code>
+                      <code><span>TerrainShape&#32;<a href="/Nu/reference/nu-terrainshape.html">TerrainShape</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -639,7 +612,7 @@
               <div class="fsdocs-tip" id="4445">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>TerrainShape&#32;<a href="http://localhost:8901/reference/nu-terrainshape.html">TerrainShape</a></span></code>
+                  <code><span>TerrainShape&#32;<a href="/Nu/reference/nu-terrainshape.html">TerrainShape</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -649,7 +622,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-terrainshape.html">TerrainShape</a></code>
+                      <code><a href="/Nu/reference/nu-terrainshape.html">TerrainShape</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -665,7 +638,7 @@
                   Item
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-terrainshape.html">TerrainShape</a></code>
+                <code><a href="/Nu/reference/nu-terrainshape.html">TerrainShape</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1199,7 +1172,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodyshapeproperties.html">BodyShapeProperties</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-bodyshapeproperties.html">BodyShapeProperties</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1229,7 +1202,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodyshapeproperties.html">BodyShapeProperties</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-bodyshapeproperties.html">BodyShapeProperties</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1256,7 +1229,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-affine.html">Affine</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-affine.html">Affine</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1286,7 +1259,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-affine.html">Affine</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-affine.html">Affine</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1312,10 +1285,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

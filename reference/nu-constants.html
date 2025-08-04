@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Nu.Constants" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Nu.Constants">
     
     <title>Nu.Constants | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -138,7 +111,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Address">
-              <a href="http://localhost:8901/reference/nu-constants-address.html">
+              <a href="/Nu/reference/nu-constants-address.html">
                 Address
               </a>
             </a>
@@ -165,7 +138,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Assimp">
-              <a href="http://localhost:8901/reference/nu-constants-assimp.html">
+              <a href="/Nu/reference/nu-constants-assimp.html">
                 Assimp
               </a>
             </a>
@@ -192,7 +165,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Associations">
-              <a href="http://localhost:8901/reference/nu-constants-associations.html">
+              <a href="/Nu/reference/nu-constants-associations.html">
                 Associations
               </a>
             </a>
@@ -219,7 +192,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Audio">
-              <a href="http://localhost:8901/reference/nu-constants-audio.html">
+              <a href="/Nu/reference/nu-constants-audio.html">
                 Audio
               </a>
             </a>
@@ -246,7 +219,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Dissolve">
-              <a href="http://localhost:8901/reference/nu-constants-dissolve.html">
+              <a href="/Nu/reference/nu-constants-dissolve.html">
                 Dissolve
               </a>
             </a>
@@ -273,7 +246,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Effects">
-              <a href="http://localhost:8901/reference/nu-constants-effects.html">
+              <a href="/Nu/reference/nu-constants-effects.html">
                 Effects
               </a>
             </a>
@@ -300,7 +273,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Engine">
-              <a href="http://localhost:8901/reference/nu-constants-engine.html">
+              <a href="/Nu/reference/nu-constants-engine.html">
                 Engine
               </a>
             </a>
@@ -327,7 +300,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="GameTime">
-              <a href="http://localhost:8901/reference/nu-constants-gametime.html">
+              <a href="/Nu/reference/nu-constants-gametime.html">
                 GameTime
               </a>
             </a>
@@ -354,7 +327,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Gui">
-              <a href="http://localhost:8901/reference/nu-constants-gui.html">
+              <a href="/Nu/reference/nu-constants-gui.html">
                 Gui
               </a>
             </a>
@@ -381,7 +354,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="ImGui">
-              <a href="http://localhost:8901/reference/nu-constants-imgui.html">
+              <a href="/Nu/reference/nu-constants-imgui.html">
                 ImGui
               </a>
             </a>
@@ -408,7 +381,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Lens">
-              <a href="http://localhost:8901/reference/nu-constants-lens.html">
+              <a href="/Nu/reference/nu-constants-lens.html">
                 Lens
               </a>
             </a>
@@ -435,7 +408,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Nav">
-              <a href="http://localhost:8901/reference/nu-constants-nav.html">
+              <a href="/Nu/reference/nu-constants-nav.html">
                 Nav
               </a>
             </a>
@@ -462,7 +435,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="OpenGL">
-              <a href="http://localhost:8901/reference/nu-constants-opengl.html">
+              <a href="/Nu/reference/nu-constants-opengl.html">
                 OpenGL
               </a>
             </a>
@@ -489,7 +462,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Particles">
-              <a href="http://localhost:8901/reference/nu-constants-particles.html">
+              <a href="/Nu/reference/nu-constants-particles.html">
                 Particles
               </a>
             </a>
@@ -516,7 +489,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Paths">
-              <a href="http://localhost:8901/reference/nu-constants-paths.html">
+              <a href="/Nu/reference/nu-constants-paths.html">
                 Paths
               </a>
             </a>
@@ -543,7 +516,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Physics">
-              <a href="http://localhost:8901/reference/nu-constants-physics.html">
+              <a href="/Nu/reference/nu-constants-physics.html">
                 Physics
               </a>
             </a>
@@ -570,7 +543,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Relation">
-              <a href="http://localhost:8901/reference/nu-constants-relation.html">
+              <a href="/Nu/reference/nu-constants-relation.html">
                 Relation
               </a>
             </a>
@@ -597,7 +570,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Render">
-              <a href="http://localhost:8901/reference/nu-constants-render.html">
+              <a href="/Nu/reference/nu-constants-render.html">
                 Render
               </a>
             </a>
@@ -624,7 +597,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Slide">
-              <a href="http://localhost:8901/reference/nu-constants-slide.html">
+              <a href="/Nu/reference/nu-constants-slide.html">
                 Slide
               </a>
             </a>
@@ -651,7 +624,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TileMap">
-              <a href="http://localhost:8901/reference/nu-constants-tilemap.html">
+              <a href="/Nu/reference/nu-constants-tilemap.html">
                 TileMap
               </a>
             </a>
@@ -691,10 +664,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

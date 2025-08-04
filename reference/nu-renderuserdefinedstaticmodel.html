@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="RenderUserDefinedStaticModel (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="RenderUserDefinedStaticModel (Nu)">
     
     <title>RenderUserDefinedStaticModel (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
@@ -189,7 +162,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                    <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -202,7 +175,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -306,7 +279,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                    <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                   </span>
                   <br/>
                 </div>
@@ -319,7 +292,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -345,7 +318,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;option</span></code>
+                    <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -358,7 +331,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;option</span></code>
+                <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;option</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -384,7 +357,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a></code>
+                    <code><a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a></code>
                   </span>
                   <br/>
                 </div>
@@ -397,7 +370,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a></code>
+                <code><a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -462,7 +435,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                    <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                   </span>
                   <br/>
                 </div>
@@ -475,7 +448,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -501,7 +474,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                    <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                   </span>
                   <br/>
                 </div>
@@ -514,7 +487,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -540,7 +513,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                    <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                   </span>
                   <br/>
                 </div>
@@ -553,7 +526,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -579,7 +552,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="http://localhost:8901/reference/nu-staticmodelsurfacedescriptor.html">StaticModelSurfaceDescriptor</a>&#32;array</span></code>
+                    <code><span><a href="/Nu/reference/nu-staticmodelsurfacedescriptor.html">StaticModelSurfaceDescriptor</a>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -592,7 +565,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="http://localhost:8901/reference/nu-staticmodelsurfacedescriptor.html">StaticModelSurfaceDescriptor</a>&#32;array</span></code>
+                <code><span><a href="/Nu/reference/nu-staticmodelsurfacedescriptor.html">StaticModelSurfaceDescriptor</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -620,10 +593,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

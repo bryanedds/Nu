@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Color (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Color (Nu)">
     
     <title>Color (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-color-0.html">Color</a>&gt;</span></code>
     </dt>
     <dt>
       Kind: Struct
@@ -244,7 +217,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-color-0.html">Color</a> struct.
+            Initializes a new instance of the <a href="/Nu/reference/nu-color-0.html">Color</a> struct.
             
                   </p>
                 </div>
@@ -332,7 +305,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-color-0.html">Color</a> struct from a Vector4.
+            Initializes a new instance of the <a href="/Nu/reference/nu-color-0.html">Color</a> struct from a Vector4.
             
                   </p>
                 </div>
@@ -420,7 +393,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-color-0.html">Color</a> struct from byte values.
+            Initializes a new instance of the <a href="/Nu/reference/nu-color-0.html">Color</a> struct from byte values.
             
                   </p>
                 </div>
@@ -510,7 +483,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-color-0.html">Color</a> struct from a packed byte value.
+            Initializes a new instance of the <a href="/Nu/reference/nu-color-0.html">Color</a> struct from a packed byte value.
             
                   </p>
                 </div>
@@ -846,7 +819,7 @@
                         other
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The Color structure to compare to.
                     </span>
@@ -889,7 +862,7 @@
                     other
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1389,7 +1362,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Instantiates a new <a href="http://localhost:8901/reference/nu-color-0.html#V4">Color.V4</a> from the R, G, B and A components of a <a href="http://localhost:8901/reference/nu-color-0.html">Color</a>.
+            Instantiates a new <a href="/Nu/reference/nu-color-0.html#V4">Color.V4</a> from the R, G, B and A components of a <a href="/Nu/reference/nu-color-0.html">Color</a>.
             
                   </p>
                 </div>
@@ -1454,7 +1427,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The instance.
                     </span>
@@ -1473,7 +1446,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1504,7 +1477,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1529,7 +1502,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1575,7 +1548,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The instance.
                     </span>
@@ -1584,7 +1557,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1627,7 +1600,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1640,7 +1613,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1676,7 +1649,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Right operand.
                     </span>
@@ -1686,7 +1659,7 @@
                         scale
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Left operand.
                     </span>
@@ -1695,7 +1668,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   Result of multiplication.
                   <br/>
@@ -1726,7 +1699,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1738,7 +1711,7 @@
                     scale
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1751,7 +1724,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1787,7 +1760,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The first instance.
                     </span>
@@ -1797,7 +1770,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The second instance.
                     </span>
@@ -1806,7 +1779,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1837,7 +1810,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1849,7 +1822,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1862,7 +1835,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1898,7 +1871,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The first instance.
                     </span>
@@ -1908,7 +1881,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The second instance.
                     </span>
@@ -1917,7 +1890,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1948,7 +1921,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1960,7 +1933,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1973,7 +1946,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2009,7 +1982,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The instance.
                     </span>
@@ -2028,7 +2001,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -2059,7 +2032,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2084,7 +2057,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2120,7 +2093,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The first instance.
                     </span>
@@ -2130,7 +2103,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The second instance.
                     </span>
@@ -2170,7 +2143,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2182,7 +2155,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2231,7 +2204,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The first instance.
                     </span>
@@ -2241,7 +2214,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       The second instance.
                     </span>
@@ -2281,7 +2254,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2293,7 +2266,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2337,7 +2310,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2364,7 +2337,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2391,7 +2364,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2418,7 +2391,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2445,7 +2418,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2472,7 +2445,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2499,7 +2472,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2526,7 +2499,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2553,7 +2526,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2580,7 +2553,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2607,7 +2580,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2634,7 +2607,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2661,7 +2634,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2688,7 +2661,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2715,7 +2688,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2742,7 +2715,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2769,7 +2742,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2796,7 +2769,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2823,7 +2796,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2850,7 +2823,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2877,7 +2850,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2904,7 +2877,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2931,7 +2904,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2958,7 +2931,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2985,7 +2958,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3012,7 +2985,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3039,7 +3012,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3066,7 +3039,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3093,7 +3066,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3120,7 +3093,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3147,7 +3120,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3174,7 +3147,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3201,7 +3174,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3228,7 +3201,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3255,7 +3228,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3282,7 +3255,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3309,7 +3282,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3336,7 +3309,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3363,7 +3336,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3390,7 +3363,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3417,7 +3390,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3444,7 +3417,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3471,7 +3444,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3498,7 +3471,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3525,7 +3498,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3552,7 +3525,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3579,7 +3552,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3606,7 +3579,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3633,7 +3606,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3660,7 +3633,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3687,7 +3660,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3714,7 +3687,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3741,7 +3714,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3768,7 +3741,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3795,7 +3768,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3822,7 +3795,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3849,7 +3822,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3876,7 +3849,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3903,7 +3876,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3930,7 +3903,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3957,7 +3930,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3984,7 +3957,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4011,7 +3984,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4038,7 +4011,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4065,7 +4038,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4092,7 +4065,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4119,7 +4092,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4146,7 +4119,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4173,7 +4146,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4200,7 +4173,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4227,7 +4200,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4254,7 +4227,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4281,7 +4254,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4308,7 +4281,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4335,7 +4308,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4362,7 +4335,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4389,7 +4362,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4416,7 +4389,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4443,7 +4416,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4470,7 +4443,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4497,7 +4470,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4524,7 +4497,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4556,7 +4529,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Left operand.
                     </span>
@@ -4575,7 +4548,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   Result of the operation.
                   <br/>
@@ -4606,7 +4579,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -4631,7 +4604,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -4667,7 +4640,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Left operand.
                     </span>
@@ -4677,7 +4650,7 @@
                         scale
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Right operand.
                     </span>
@@ -4686,7 +4659,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4716,7 +4689,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -4728,7 +4701,7 @@
                     scale
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -4741,7 +4714,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4768,7 +4741,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4795,7 +4768,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4822,7 +4795,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4849,7 +4822,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4876,7 +4849,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4903,7 +4876,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4930,7 +4903,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4957,7 +4930,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4984,7 +4957,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5011,7 +4984,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5038,7 +5011,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5065,7 +5038,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5092,7 +5065,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5119,7 +5092,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5146,7 +5119,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5173,7 +5146,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5200,7 +5173,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5227,7 +5200,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5254,7 +5227,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5281,7 +5254,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5308,7 +5281,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5335,7 +5308,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5362,7 +5335,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5389,7 +5362,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5416,7 +5389,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5443,7 +5416,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5470,7 +5443,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5497,7 +5470,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5524,7 +5497,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5551,7 +5524,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5578,7 +5551,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5605,7 +5578,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5632,7 +5605,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5659,7 +5632,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5686,7 +5659,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5713,7 +5686,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5740,7 +5713,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5767,7 +5740,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5794,7 +5767,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5821,7 +5794,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5848,7 +5821,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5875,7 +5848,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5902,7 +5875,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -5929,7 +5902,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5961,7 +5934,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5969,7 +5942,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5984,7 +5957,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6012,7 +5985,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6020,7 +5993,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6037,7 +6010,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6064,7 +6037,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6091,7 +6064,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6118,7 +6091,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6145,7 +6118,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6172,7 +6145,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6199,7 +6172,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6226,7 +6199,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6253,7 +6226,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6280,7 +6253,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6307,7 +6280,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6334,7 +6307,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6361,7 +6334,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6388,7 +6361,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6415,7 +6388,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6442,7 +6415,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6469,7 +6442,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6496,7 +6469,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6523,7 +6496,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6550,7 +6523,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6577,7 +6550,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6604,7 +6577,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6631,7 +6604,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6658,7 +6631,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6685,7 +6658,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6712,7 +6685,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6739,7 +6712,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6766,7 +6739,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6793,7 +6766,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6820,7 +6793,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6847,7 +6820,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6874,7 +6847,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6901,7 +6874,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6928,7 +6901,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -6955,7 +6928,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6982,7 +6955,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7009,7 +6982,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7036,7 +7009,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7063,7 +7036,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7090,7 +7063,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7117,7 +7090,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7144,7 +7117,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7171,7 +7144,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7198,7 +7171,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7225,7 +7198,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7252,7 +7225,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7279,7 +7252,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7306,7 +7279,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7333,7 +7306,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7360,7 +7333,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7387,7 +7360,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7414,7 +7387,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7441,7 +7414,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7468,7 +7441,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7495,7 +7468,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7522,7 +7495,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7549,7 +7522,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7576,7 +7549,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7603,7 +7576,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7630,7 +7603,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7657,7 +7630,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7684,7 +7657,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7711,7 +7684,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7743,7 +7716,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Left operand.
                     </span>
@@ -7762,7 +7735,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   Result of the operation.
                   <br/>
@@ -7793,7 +7766,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -7818,7 +7791,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -7854,7 +7827,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Left operand.
                     </span>
@@ -7864,7 +7837,7 @@
                         scale
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                        - 
                       Right operand.
                     </span>
@@ -7873,7 +7846,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7903,7 +7876,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -7915,7 +7888,7 @@
                     scale
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -7928,7 +7901,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7955,7 +7928,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -7982,7 +7955,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8009,7 +7982,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8036,7 +8009,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8063,7 +8036,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8090,7 +8063,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8117,7 +8090,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8144,7 +8117,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8171,7 +8144,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8198,7 +8171,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8225,7 +8198,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8252,7 +8225,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8279,7 +8252,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8306,7 +8279,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8333,7 +8306,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8360,7 +8333,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8387,7 +8360,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8414,7 +8387,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8441,7 +8414,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8468,7 +8441,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8495,7 +8468,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8522,7 +8495,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8549,7 +8522,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8576,7 +8549,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8603,7 +8576,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8630,7 +8603,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8657,7 +8630,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8684,7 +8657,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8711,7 +8684,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8738,7 +8711,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8765,7 +8738,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8792,7 +8765,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8819,7 +8792,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8846,7 +8819,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8873,7 +8846,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8900,7 +8873,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8927,7 +8900,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -8954,7 +8927,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8981,7 +8954,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9008,7 +8981,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9035,7 +9008,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9062,7 +9035,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9089,7 +9062,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9116,7 +9089,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9143,7 +9116,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9170,7 +9143,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9197,7 +9170,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9224,7 +9197,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9251,7 +9224,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9278,7 +9251,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9305,7 +9278,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9332,7 +9305,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9359,7 +9332,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9386,7 +9359,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9413,7 +9386,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9440,7 +9413,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9467,7 +9440,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9494,7 +9467,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9521,7 +9494,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9548,7 +9521,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9575,7 +9548,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9602,7 +9575,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9629,7 +9602,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9656,7 +9629,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9683,7 +9656,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9710,7 +9683,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9737,7 +9710,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9764,7 +9737,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9791,7 +9764,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9818,7 +9791,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9845,7 +9818,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9872,7 +9845,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9899,7 +9872,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9926,7 +9899,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9953,7 +9926,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -9980,7 +9953,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10007,7 +9980,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10034,7 +10007,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10061,7 +10034,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10088,7 +10061,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10115,7 +10088,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10142,7 +10115,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10169,7 +10142,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10196,7 +10169,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10223,7 +10196,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10250,7 +10223,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10277,7 +10250,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10304,7 +10277,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10331,7 +10304,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10358,7 +10331,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10385,7 +10358,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10412,7 +10385,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10439,7 +10412,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10466,7 +10439,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10493,7 +10466,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                    <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                   </span>
                   <br/>
                 </div>
@@ -10520,7 +10493,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -10545,10 +10518,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

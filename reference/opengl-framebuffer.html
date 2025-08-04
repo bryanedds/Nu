@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Framebuffer (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Framebuffer (Nu)">
     
     <title>Framebuffer (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/opengl.html">
+      <a href="/Nu/reference/opengl.html">
         OpenGL
       </a>
     </dt>
@@ -180,7 +153,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -229,7 +202,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -277,7 +250,7 @@
                         color
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -285,7 +258,7 @@
                         depth
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -334,7 +307,7 @@
                     color
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -342,7 +315,7 @@
                     depth
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -390,7 +363,7 @@
                         environmentFilter
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -439,7 +412,7 @@
                     environmentFilter
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -487,7 +460,7 @@
                         downSample
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -495,7 +468,7 @@
                         upSample
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -544,7 +517,7 @@
                     downSample
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -552,7 +525,7 @@
                     upSample
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -600,7 +573,7 @@
                         filterBoxBlurTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -649,7 +622,7 @@
                     filterBoxBlurTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -697,7 +670,7 @@
                         filter
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -746,7 +719,7 @@
                     filter
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -794,7 +767,7 @@
                         filterGaussianTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -843,7 +816,7 @@
                     filterGaussianTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -891,7 +864,7 @@
                         position
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -899,7 +872,7 @@
                         albedo
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -907,7 +880,7 @@
                         material
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -915,7 +888,7 @@
                         normalPlus
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -923,7 +896,7 @@
                         subdermalPlus
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -931,7 +904,7 @@
                         scatterPlus
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -980,7 +953,7 @@
                     position
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -988,7 +961,7 @@
                     albedo
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -996,7 +969,7 @@
                     material
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1004,7 +977,7 @@
                     normalPlus
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1012,7 +985,7 @@
                     subdermalPlus
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1020,7 +993,7 @@
                     scatterPlus
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1068,7 +1041,7 @@
                         irradiance
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1117,7 +1090,7 @@
                     irradiance
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1165,7 +1138,7 @@
                         lightMapping
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1214,7 +1187,7 @@
                     lightMapping
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1262,7 +1235,7 @@
                         lightAccum
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1270,7 +1243,7 @@
                         fogAccum
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1319,7 +1292,7 @@
                     lightAccum
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1327,7 +1300,7 @@
                     fogAccum
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1375,7 +1348,7 @@
                         shadowMap
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1424,7 +1397,7 @@
                     shadowMap
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1472,7 +1445,7 @@
                         shadowTexture
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1521,7 +1494,7 @@
                     shadowTexture
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1569,7 +1542,7 @@
                         ssao
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1618,7 +1591,7 @@
                     ssao
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1681,7 +1654,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1729,7 +1702,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1776,7 +1749,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1824,7 +1797,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1871,7 +1844,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1919,7 +1892,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1966,7 +1939,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2014,7 +1987,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2061,7 +2034,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2109,7 +2082,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2156,7 +2129,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2204,7 +2177,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2251,7 +2224,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2299,7 +2272,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2346,7 +2319,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2394,7 +2367,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2441,7 +2414,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2489,7 +2462,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2536,7 +2509,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2584,7 +2557,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2631,7 +2604,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2679,7 +2652,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2726,7 +2699,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2774,7 +2747,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2821,7 +2794,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2852,7 +2825,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2898,7 +2871,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2946,7 +2919,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2993,7 +2966,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3041,7 +3014,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3074,10 +3047,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

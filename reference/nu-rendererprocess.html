@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="RendererProcess (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="RendererProcess (Nu)">
     
     <title>RendererProcess (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="http://localhost:8901/reference/nu-rendererprocess.html">RendererProcess</a></code>
+      <code><a href="/Nu/reference/nu-rendererprocess.html">RendererProcess</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -238,7 +211,7 @@
                         arg0
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-rendermessage2d.html">RenderMessage2d</a></code>
+                      <code><a href="/Nu/reference/nu-rendermessage2d.html">RenderMessage2d</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -274,7 +247,7 @@
                     arg0
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-rendermessage2d.html">RenderMessage2d</a></code>
+                  <code><a href="/Nu/reference/nu-rendermessage2d.html">RenderMessage2d</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -306,7 +279,7 @@
                         arg0
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a></code>
+                      <code><a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -342,7 +315,7 @@
                     arg0
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a></code>
+                  <code><a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -374,7 +347,7 @@
                         arg0
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-rendermessageimgui.html">RenderMessageImGui</a></code>
+                      <code><a href="/Nu/reference/nu-rendermessageimgui.html">RenderMessageImGui</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -410,7 +383,7 @@
                     arg0
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-rendermessageimgui.html">RenderMessageImGui</a></code>
+                  <code><a href="/Nu/reference/nu-rendermessageimgui.html">RenderMessageImGui</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -458,7 +431,7 @@
                         arg2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                      <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                     </span>
                     <br/>
                     <span>
@@ -466,7 +439,7 @@
                         arg3
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
+                      <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
                     </span>
                     <br/>
                     <span>
@@ -474,7 +447,7 @@
                         arg4
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -490,7 +463,7 @@
                         arg6
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -514,7 +487,7 @@
                         arg9
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                      <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                     </span>
                     <br/>
                     <span>
@@ -522,7 +495,7 @@
                         arg10
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                      <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                     </span>
                     <br/>
                     <span>
@@ -530,7 +503,7 @@
                         arg11
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                      <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -582,7 +555,7 @@
                     arg2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                  <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -590,7 +563,7 @@
                     arg3
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
+                  <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -598,7 +571,7 @@
                     arg4
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -614,7 +587,7 @@
                     arg6
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -638,7 +611,7 @@
                     arg9
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                  <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -646,7 +619,7 @@
                     arg10
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                  <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -654,7 +627,7 @@
                     arg11
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                  <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -702,7 +675,7 @@
                         arg2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
+                      <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
                     </span>
                     <br/>
                     <span>
@@ -710,7 +683,7 @@
                         arg3
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-transform.html">Transform</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-transform.html">Transform</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -718,7 +691,7 @@
                         arg4
                       </b>
                       :
-                      <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
+                      <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -726,7 +699,7 @@
                         arg5
                       </b>
                       :
-                      <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
+                      <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -734,7 +707,7 @@
                         arg6
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -742,7 +715,7 @@
                         arg7
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-color-0.html">Color</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -750,7 +723,7 @@
                         arg8
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-blend.html">Blend</a></code>
+                      <code><a href="/Nu/reference/nu-blend.html">Blend</a></code>
                     </span>
                     <br/>
                     <span>
@@ -758,7 +731,7 @@
                         arg9
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-color-0.html">Color</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -766,7 +739,7 @@
                         arg10
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-flip.html">Flip</a></code>
+                      <code><a href="/Nu/reference/nu-flip.html">Flip</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -818,7 +791,7 @@
                     arg2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
+                  <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -826,7 +799,7 @@
                     arg3
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-transform.html">Transform</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-transform.html">Transform</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -834,7 +807,7 @@
                     arg4
                   </span>
                   :
-                  <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
+                  <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -842,7 +815,7 @@
                     arg5
                   </span>
                   :
-                  <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
+                  <code><span>inref&lt;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpvalueoption-1">ValueOption</a>&lt;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -850,7 +823,7 @@
                     arg6
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -858,7 +831,7 @@
                     arg7
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-color-0.html">Color</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -866,7 +839,7 @@
                     arg8
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-blend.html">Blend</a></code>
+                  <code><a href="/Nu/reference/nu-blend.html">Blend</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -874,7 +847,7 @@
                     arg9
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-color-0.html">Color</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -882,7 +855,7 @@
                     arg10
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-flip.html">Flip</a></code>
+                  <code><a href="/Nu/reference/nu-flip.html">Flip</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -930,7 +903,7 @@
                         arg2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                      <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                     </span>
                     <br/>
                     <span>
@@ -938,7 +911,7 @@
                         arg3
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
+                      <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
                     </span>
                     <br/>
                     <span>
@@ -946,7 +919,7 @@
                         arg4
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -954,7 +927,7 @@
                         arg5
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -970,7 +943,7 @@
                         arg7
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                      <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                     </span>
                     <br/>
                     <span>
@@ -978,7 +951,7 @@
                         arg8
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                      <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                     </span>
                     <br/>
                     <span>
@@ -986,7 +959,7 @@
                         arg9
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                      <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1038,7 +1011,7 @@
                     arg2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                  <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1046,7 +1019,7 @@
                     arg3
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
+                  <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1054,7 +1027,7 @@
                     arg4
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1062,7 +1035,7 @@
                     arg5
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1078,7 +1051,7 @@
                     arg7
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                  <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1086,7 +1059,7 @@
                     arg8
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                  <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1094,7 +1067,7 @@
                     arg9
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                  <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1142,7 +1115,7 @@
                         arg2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                      <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1150,7 +1123,7 @@
                         arg3
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
+                      <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1158,7 +1131,7 @@
                         arg4
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1166,7 +1139,7 @@
                         arg5
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-material.html">Material</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-material.html">Material</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1174,7 +1147,7 @@
                         arg6
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1190,7 +1163,7 @@
                         arg8
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                      <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1198,7 +1171,7 @@
                         arg9
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                      <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1206,7 +1179,7 @@
                         arg10
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                      <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1258,7 +1231,7 @@
                     arg2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
+                  <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1266,7 +1239,7 @@
                     arg3
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
+                  <code><span><a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1274,7 +1247,7 @@
                     arg4
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1282,7 +1255,7 @@
                     arg5
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-material.html">Material</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-material.html">Material</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1290,7 +1263,7 @@
                     arg6
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1306,7 +1279,7 @@
                     arg8
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a></code>
+                  <code><a href="/Nu/reference/nu-depthtest.html">DepthTest</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1314,7 +1287,7 @@
                     arg9
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-rendertype.html">RenderType</a></code>
+                  <code><a href="/Nu/reference/nu-rendertype.html">RenderType</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1322,7 +1295,7 @@
                     arg10
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
+                  <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1349,7 +1322,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
+                    <code><a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1382,7 +1355,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
+                  <code><a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1464,7 +1437,7 @@
                         arg1
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-window.html">Window</a>&#32;option</span></code>
+                      <code><span><a href="/Nu/reference/nu-window.html">Window</a>&#32;option</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1472,7 +1445,7 @@
                         arg2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1480,7 +1453,7 @@
                         arg3
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1488,7 +1461,7 @@
                         arg4
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1532,7 +1505,7 @@
                     arg1
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-window.html">Window</a>&#32;option</span></code>
+                  <code><span><a href="/Nu/reference/nu-window.html">Window</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1540,7 +1513,7 @@
                     arg2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1548,7 +1521,7 @@
                     arg3
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1556,7 +1529,7 @@
                     arg4
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1588,7 +1561,7 @@
                         arg0
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1596,7 +1569,7 @@
                         arg1
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1604,7 +1577,7 @@
                         arg2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1612,7 +1585,7 @@
                         arg3
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1660,7 +1633,7 @@
                         arg9
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                      <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1668,7 +1641,7 @@
                         arg10
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1676,7 +1649,7 @@
                         arg11
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1684,7 +1657,7 @@
                         arg12
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1728,7 +1701,7 @@
                     arg0
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1736,7 +1709,7 @@
                     arg1
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1744,7 +1717,7 @@
                     arg2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1752,7 +1725,7 @@
                     arg3
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1800,7 +1773,7 @@
                     arg9
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1808,7 +1781,7 @@
                     arg10
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1816,7 +1789,7 @@
                     arg11
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1824,7 +1797,7 @@
                     arg12
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1906,7 +1879,7 @@
                         arg0
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
+                      <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1947,7 +1920,7 @@
                     arg0
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
+                  <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1982,10 +1955,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

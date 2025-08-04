@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="GlRenderer3d (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="GlRenderer3d (Nu)">
     
     <title>GlRenderer3d (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="http://localhost:8901/reference/nu-renderer3d.html">Renderer3d</a></code>
+      <code><a href="/Nu/reference/nu-renderer3d.html">Renderer3d</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -187,7 +160,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -200,7 +173,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -226,7 +199,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                   </span>
                   <br/>
                 </div>
@@ -239,7 +212,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -265,7 +238,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                   </span>
                   <br/>
                 </div>
@@ -278,7 +251,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -304,7 +277,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                   </span>
                   <br/>
                 </div>
@@ -317,7 +290,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -343,7 +316,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -356,7 +329,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -460,7 +433,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                   </span>
                   <br/>
                 </div>
@@ -473,7 +446,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -538,7 +511,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-lightmap-environmentfiltershader.html">EnvironmentFilterShader</a></code>
+                    <code><a href="/Nu/reference/opengl-lightmap-environmentfiltershader.html">EnvironmentFilterShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -551,7 +524,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-lightmap-environmentfiltershader.html">EnvironmentFilterShader</a></code>
+                <code><a href="/Nu/reference/opengl-lightmap-environmentfiltershader.html">EnvironmentFilterShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -577,7 +550,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
+                    <code><a href="/Nu/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -590,7 +563,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
+                <code><a href="/Nu/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -616,7 +589,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
+                    <code><a href="/Nu/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -629,7 +602,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
+                <code><a href="/Nu/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -655,7 +628,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
+                    <code><a href="/Nu/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -668,7 +641,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
+                <code><a href="/Nu/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -694,7 +667,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
+                    <code><a href="/Nu/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -707,7 +680,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
+                <code><a href="/Nu/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -733,7 +706,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                    <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -746,7 +719,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -772,7 +745,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                    <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -785,7 +758,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -811,7 +784,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="/Nu/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="/Nu/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -824,7 +797,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="/Nu/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="/Nu/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -850,7 +823,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="/Nu/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="/Nu/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -863,7 +836,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<span>single&#32;*&#32;single&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;*&#32;<a href="/Nu/reference/nu-presence.html">Presence</a>&#32;*&#32;<a href="/Nu/reference/nu-box2-0.html">Box2</a>&#32;*&#32;<a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a>&#32;*&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&#32;array</span>&#32;voption</span>&#32;*&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedsurface.html">PhysicallyBasedSurface</a>&#32;*&#32;<a href="/Nu/reference/nu-depthtest.html">DepthTest</a>&#32;*&#32;single&#32;*&#32;int</span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -889,7 +862,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                    <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -905,7 +878,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -973,7 +946,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                   </span>
                   <br/>
                 </div>
@@ -986,7 +959,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1090,7 +1063,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
+                    <code><a href="/Nu/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1103,7 +1076,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
+                <code><a href="/Nu/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1129,7 +1102,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="http://localhost:8901/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span>,&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="http://localhost:8901/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="/Nu/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span>,&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="/Nu/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1142,7 +1115,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="http://localhost:8901/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span>,&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="http://localhost:8901/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="/Nu/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span>,&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentqueue-1">ConcurrentQueue</a>&lt;<a href="/Nu/reference/opengl-texture-lazytexture.html">LazyTexture</a>&gt;</span></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1168,7 +1141,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="http://localhost:8901/reference/opengl-lightmap-lightmap.html">LightMap</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="/Nu/reference/opengl-lightmap-lightmap.html">LightMap</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1181,7 +1154,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="http://localhost:8901/reference/opengl-lightmap-lightmap.html">LightMap</a></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="/Nu/reference/opengl-lightmap-lightmap.html">LightMap</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1246,7 +1219,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
+                    <code><a href="/Nu/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1262,7 +1235,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
+                <code><a href="/Nu/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1330,7 +1303,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="http://localhost:8901/reference/nu-sortablelight.html">SortableLight</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="/Nu/reference/nu-sortablelight.html">SortableLight</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1343,7 +1316,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="http://localhost:8901/reference/nu-sortablelight.html">SortableLight</a></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span>uint64,&#32;<a href="/Nu/reference/nu-sortablelight.html">SortableLight</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1408,7 +1381,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1424,7 +1397,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedbuffers.html">PhysicallyBasedBuffers</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1450,7 +1423,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1463,7 +1436,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmaterial.html">PhysicallyBasedMaterial</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1489,7 +1462,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1502,7 +1475,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1528,7 +1501,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
+                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1544,7 +1517,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
+                <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedshaders.html">PhysicallyBasedShaders</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1609,7 +1582,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="http://localhost:8901/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>,&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="/Nu/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>,&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1622,7 +1595,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="http://localhost:8901/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>,&#32;<a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="/Nu/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>,&#32;<a href="/Nu/reference/opengl-physicallybased-physicallybasedgeometry.html">PhysicallyBasedGeometry</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1648,7 +1621,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<a href="http://localhost:8901/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<a href="/Nu/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1661,7 +1634,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<a href="http://localhost:8901/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<a href="/Nu/reference/nu-terraingeometrydescriptor.html">TerrainGeometryDescriptor</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1726,7 +1699,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                    <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1742,7 +1715,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1888,7 +1861,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-renderassetcached.html">RenderAssetCached</a></code>
+                    <code><a href="/Nu/reference/nu-renderassetcached.html">RenderAssetCached</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1904,7 +1877,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-renderassetcached.html">RenderAssetCached</a></code>
+                <code><a href="/Nu/reference/nu-renderassetcached.html">RenderAssetCached</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1930,7 +1903,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1943,7 +1916,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1969,7 +1942,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-renderpackagecached.html">RenderPackageCached</a></code>
+                    <code><a href="/Nu/reference/nu-renderpackagecached.html">RenderPackageCached</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1985,7 +1958,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-renderpackagecached.html">RenderPackageCached</a></code>
+                <code><a href="/Nu/reference/nu-renderpackagecached.html">RenderPackageCached</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2011,7 +1984,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="http://localhost:8901/reference/nu-packages-2.html">Packages</a>&lt;<span><a href="http://localhost:8901/reference/nu-renderasset.html">RenderAsset</a>,&#32;<a href="http://localhost:8901/reference/nu-assetclient.html">AssetClient</a></span>&gt;</span></code>
+                    <code><span><a href="/Nu/reference/nu-packages-2.html">Packages</a>&lt;<span><a href="/Nu/reference/nu-renderasset.html">RenderAsset</a>,&#32;<a href="/Nu/reference/nu-assetclient.html">AssetClient</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2024,7 +1997,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="http://localhost:8901/reference/nu-packages-2.html">Packages</a>&lt;<span><a href="http://localhost:8901/reference/nu-renderasset.html">RenderAsset</a>,&#32;<a href="http://localhost:8901/reference/nu-assetclient.html">AssetClient</a></span>&gt;</span></code>
+                <code><span><a href="/Nu/reference/nu-packages-2.html">Packages</a>&lt;<span><a href="/Nu/reference/nu-renderasset.html">RenderAsset</a>,&#32;<a href="/Nu/reference/nu-assetclient.html">AssetClient</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2050,7 +2023,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="http://localhost:8901/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="/Nu/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="/Nu/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2066,7 +2039,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="http://localhost:8901/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="/Nu/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="/Nu/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2092,7 +2065,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="http://localhost:8901/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="/Nu/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="/Nu/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2108,7 +2081,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="http://localhost:8901/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary</a>&lt;<span><a href="/Nu/reference/nu-renderpass.html">RenderPass</a>,&#32;<a href="/Nu/reference/nu-rendertasks.html">RenderTasks</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2134,7 +2107,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
+                    <code><a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2150,7 +2123,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
+                <code><a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2215,7 +2188,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-skybox-skyboxshader.html">SkyBoxShader</a></code>
+                    <code><a href="/Nu/reference/opengl-skybox-skyboxshader.html">SkyBoxShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2228,7 +2201,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-skybox-skyboxshader.html">SkyBoxShader</a></code>
+                <code><a href="/Nu/reference/opengl-skybox-skyboxshader.html">SkyBoxShader</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2254,7 +2227,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-textureserver.html">TextureServer</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-textureserver.html">TextureServer</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2267,7 +2240,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-textureserver.html">TextureServer</a></code>
+                <code><a href="/Nu/reference/opengl-texture-textureserver.html">TextureServer</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2335,7 +2308,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                    <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2348,7 +2321,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
+                <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2409,7 +2382,7 @@
                         window
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-window.html">Window</a></code>
+                      <code><a href="/Nu/reference/nu-window.html">Window</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2417,7 +2390,7 @@
                         geometryViewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2425,14 +2398,14 @@
                         rasterViewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
+                    <code><a href="/Nu/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2471,7 +2444,7 @@
                     window
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-window.html">Window</a></code>
+                  <code><a href="/Nu/reference/nu-window.html">Window</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2479,7 +2452,7 @@
                     geometryViewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2487,7 +2460,7 @@
                     rasterViewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2496,7 +2469,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
+                  <code><a href="/Nu/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2528,7 +2501,7 @@
                         frustumInterior
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2536,7 +2509,7 @@
                         frustumExterior
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2544,7 +2517,7 @@
                         frustumImposter
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2552,7 +2525,7 @@
                         lightBox
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2584,7 +2557,7 @@
                         geometryViewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2592,7 +2565,7 @@
                         rasterViewport
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2616,7 +2589,7 @@
                         renderMessages
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2624,7 +2597,7 @@
                         renderer
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
+                      <code><a href="/Nu/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2657,7 +2630,7 @@
                     frustumInterior
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2665,7 +2638,7 @@
                     frustumExterior
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2673,7 +2646,7 @@
                     frustumImposter
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2681,7 +2654,7 @@
                     lightBox
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2713,7 +2686,7 @@
                     geometryViewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2721,7 +2694,7 @@
                     rasterViewport
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2745,7 +2718,7 @@
                     renderMessages
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2753,7 +2726,7 @@
                     renderer
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
+                  <code><a href="/Nu/reference/nu-glrenderer3d.html">GlRenderer3d</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2778,10 +2751,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Behavior (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Behavior (Nu)">
     
     <title>Behavior (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu-behaviors.html">
+      <a href="/Nu/reference/nu-behaviors.html">
         Nu.Behaviors
       </a>
     </dt>
@@ -180,14 +153,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -221,7 +194,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -230,7 +203,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -270,14 +243,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -319,7 +292,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -328,7 +301,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -368,14 +341,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -414,7 +387,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -423,7 +396,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -455,7 +428,7 @@
                         bhvrF
                       </b>
                       :
-                      <code><span><span>(<span>'a&#32;->&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'a&#32;->&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -463,14 +436,14 @@
                         bhvrA
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -501,7 +474,7 @@
                     bhvrF
                   </span>
                   :
-                  <code><span><span>(<span>'a&#32;->&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;->&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -509,7 +482,7 @@
                     bhvrA
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -518,7 +491,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -550,7 +523,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -558,14 +531,14 @@
                         f
                       </b>
                       :
-                      <code><span>'a&#32;->&#32;<span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
+                      <code><span>'a&#32;->&#32;<span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -596,7 +569,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -604,7 +577,7 @@
                     f
                   </span>
                   :
-                  <code><span>'a&#32;->&#32;<span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
+                  <code><span>'a&#32;->&#32;<span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -613,7 +586,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -652,7 +625,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -693,7 +666,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -741,14 +714,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -800,7 +773,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -809,7 +782,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -865,14 +838,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -935,7 +908,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -944,7 +917,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1008,14 +981,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1086,7 +1059,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1095,7 +1068,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1151,14 +1124,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1219,7 +1192,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1228,7 +1201,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1276,14 +1249,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1336,7 +1309,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1345,7 +1318,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1377,14 +1350,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1420,7 +1393,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1429,7 +1402,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1469,14 +1442,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1520,7 +1493,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1529,7 +1502,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1561,14 +1534,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'a&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'a&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1599,7 +1572,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1608,7 +1581,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'a&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1664,14 +1637,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1734,7 +1707,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1743,7 +1716,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1799,14 +1772,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1869,7 +1842,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1878,7 +1851,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1926,14 +1899,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1986,7 +1959,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1995,7 +1968,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2051,14 +2024,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2121,7 +2094,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2130,7 +2103,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2178,14 +2151,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2238,7 +2211,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2247,7 +2220,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2295,14 +2268,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2355,7 +2328,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2364,7 +2337,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2404,14 +2377,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2455,7 +2428,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2464,7 +2437,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2496,14 +2469,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2534,7 +2507,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2543,7 +2516,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2582,7 +2555,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2622,7 +2595,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2654,14 +2627,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2697,7 +2670,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2706,7 +2679,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2738,14 +2711,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2781,7 +2754,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2790,7 +2763,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2822,14 +2795,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2865,7 +2838,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2874,7 +2847,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2906,14 +2879,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -2949,7 +2922,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2958,7 +2931,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3006,14 +2979,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'f&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'f&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -3066,7 +3039,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3075,7 +3048,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'f&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'f&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3115,14 +3088,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3161,7 +3134,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3170,7 +3143,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3210,7 +3183,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3218,14 +3191,14 @@
                         bhvr2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3264,7 +3237,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3272,7 +3245,7 @@
                     bhvr2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3281,7 +3254,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3321,7 +3294,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3329,7 +3302,7 @@
                         bhvr2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3337,14 +3310,14 @@
                         bhvr3
                       </b>
                       :
-                      <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'d&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'d&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3383,7 +3356,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3391,7 +3364,7 @@
                     bhvr2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3399,7 +3372,7 @@
                     bhvr3
                   </span>
                   :
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3408,7 +3381,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'d&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'d&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3448,7 +3421,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3456,7 +3429,7 @@
                         bhvr2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3464,7 +3437,7 @@
                         bhvr3
                       </b>
                       :
-                      <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3472,14 +3445,14 @@
                         bhvr4
                       </b>
                       :
-                      <code><span>'d&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'d&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'e&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'e&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3518,7 +3491,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3526,7 +3499,7 @@
                     bhvr2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3534,7 +3507,7 @@
                     bhvr3
                   </span>
                   :
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3542,7 +3515,7 @@
                     bhvr4
                   </span>
                   :
-                  <code><span>'d&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'d&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3551,7 +3524,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'e&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'e&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3591,7 +3564,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3599,7 +3572,7 @@
                         bhvr2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3607,7 +3580,7 @@
                         bhvr3
                       </b>
                       :
-                      <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3615,7 +3588,7 @@
                         bhvr4
                       </b>
                       :
-                      <code><span>'d&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'d&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3623,14 +3596,14 @@
                         bhvr5
                       </b>
                       :
-                      <code><span>'e&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'e&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'f&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'f&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3669,7 +3642,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3677,7 +3650,7 @@
                     bhvr2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3685,7 +3658,7 @@
                     bhvr3
                   </span>
                   :
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3693,7 +3666,7 @@
                     bhvr4
                   </span>
                   :
-                  <code><span>'d&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'d&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3701,7 +3674,7 @@
                     bhvr5
                   </span>
                   :
-                  <code><span>'e&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'e&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3710,7 +3683,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'f&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'f&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3758,14 +3731,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -3817,7 +3790,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3826,7 +3799,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3866,14 +3839,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3912,7 +3885,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3921,7 +3894,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3961,7 +3934,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -3969,14 +3942,14 @@
                         bhvr2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4015,7 +3988,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4023,7 +3996,7 @@
                     bhvr2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4032,7 +4005,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4072,14 +4045,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4118,7 +4091,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4127,7 +4100,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4167,14 +4140,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4213,7 +4186,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4222,7 +4195,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4262,14 +4235,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'c&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'c&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'c&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'c&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4308,7 +4281,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'c&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'c&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4317,7 +4290,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'c&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'c&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4357,14 +4330,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4408,7 +4381,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4417,7 +4390,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4457,14 +4430,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4508,7 +4481,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4517,7 +4490,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4557,14 +4530,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4608,7 +4581,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4617,7 +4590,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4657,14 +4630,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4706,7 +4679,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4715,7 +4688,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4747,14 +4720,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4790,7 +4763,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4799,7 +4772,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4839,14 +4812,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4890,7 +4863,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4899,7 +4872,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4939,14 +4912,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -4988,7 +4961,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4997,7 +4970,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5029,7 +5002,7 @@
                         length
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5037,14 +5010,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>float32&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>float32&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5078,7 +5051,7 @@
                     length
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5086,7 +5059,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5095,7 +5068,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>float32&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>float32&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5127,14 +5100,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5170,7 +5143,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5179,7 +5152,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5219,14 +5192,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5268,7 +5241,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5277,7 +5250,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5317,14 +5290,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5366,7 +5339,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5375,7 +5348,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5407,7 +5380,7 @@
                         n
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                      <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5415,14 +5388,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5456,7 +5429,7 @@
                     n
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5464,7 +5437,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5473,7 +5446,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5513,14 +5486,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5562,7 +5535,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5571,7 +5544,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5603,7 +5576,7 @@
                         n
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5611,14 +5584,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5652,7 +5625,7 @@
                     n
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5660,7 +5633,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5669,7 +5642,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5709,14 +5682,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5758,7 +5731,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5767,7 +5740,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5799,7 +5772,7 @@
                         n
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5807,14 +5780,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5848,7 +5821,7 @@
                     n
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5856,7 +5829,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5865,7 +5838,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -5897,7 +5870,7 @@
                         n
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5905,14 +5878,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -5946,7 +5919,7 @@
                     n
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
+                  <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5954,7 +5927,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5963,7 +5936,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-color-0.html">Color</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-color-0.html">Color</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6003,14 +5976,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>float&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>float&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>float&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>float&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6052,7 +6025,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>float&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>float&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6061,7 +6034,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>float&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>float&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6101,14 +6074,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6152,7 +6125,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6161,7 +6134,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6201,14 +6174,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6252,7 +6225,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6261,7 +6234,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6301,14 +6274,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -6347,7 +6320,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6356,7 +6329,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6388,7 +6361,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -6396,14 +6369,14 @@
                         bhvr2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -6434,7 +6407,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -6442,7 +6415,7 @@
                     bhvr2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6451,7 +6424,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6491,14 +6464,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6543,7 +6516,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6552,7 +6525,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6584,14 +6557,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.random">Random</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.random">Random</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6627,7 +6600,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6636,7 +6609,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.random">Random</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.random">Random</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6668,14 +6641,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6711,7 +6684,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6720,7 +6693,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6752,14 +6725,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>float&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>float&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6795,7 +6768,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6804,7 +6777,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>float&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>float&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6836,14 +6809,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6879,7 +6852,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6888,7 +6861,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -6920,14 +6893,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>int&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>int&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -6963,7 +6936,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -6972,7 +6945,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>int&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>int&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7004,14 +6977,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>int64&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>int64&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7047,7 +7020,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7056,7 +7029,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>int64&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>int64&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7096,14 +7069,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7147,7 +7120,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7156,7 +7129,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7195,7 +7168,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -7235,7 +7208,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7267,7 +7240,7 @@
                         a
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -7275,7 +7248,7 @@
                         bhvr
                       </b>
                       :
-                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -7313,7 +7286,7 @@
                     a
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -7321,7 +7294,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7370,14 +7343,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7421,7 +7394,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7430,7 +7403,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7486,14 +7459,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7556,7 +7529,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7565,7 +7538,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7629,14 +7602,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7707,7 +7680,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7716,7 +7689,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7772,14 +7745,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7840,7 +7813,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7849,7 +7822,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -7897,14 +7870,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -7957,7 +7930,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -7966,7 +7939,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>single&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>single&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8014,14 +7987,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>^c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>^c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -8073,7 +8046,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8082,7 +8055,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>^c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8114,14 +8087,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8152,7 +8125,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8161,7 +8134,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8201,14 +8174,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>int&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>int&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -8253,7 +8226,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8262,7 +8235,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>int&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>int&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8302,14 +8275,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -8353,7 +8326,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>^b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>^b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8362,7 +8335,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'c&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>'c&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8394,14 +8367,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8432,7 +8405,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'b</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8441,7 +8414,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8468,7 +8441,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8498,7 +8471,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8530,7 +8503,7 @@
                         stride
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8545,7 +8518,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>float32&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>float32&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8579,7 +8552,7 @@
                     stride
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8596,7 +8569,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>float32&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>float32&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8628,7 +8601,7 @@
                         stride
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8643,7 +8616,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8677,7 +8650,7 @@
                     stride
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8694,7 +8667,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8726,7 +8699,7 @@
                         start
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8734,14 +8707,14 @@
                         length
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>float32&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>float32&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8775,7 +8748,7 @@
                     start
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8783,7 +8756,7 @@
                     length
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8792,7 +8765,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>float32&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>float32&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8824,7 +8797,7 @@
                         start
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                     <span>
@@ -8832,14 +8805,14 @@
                         length
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8873,7 +8846,7 @@
                     start
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -8881,7 +8854,7 @@
                     length
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -8890,7 +8863,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gametime.html">GameTime</a>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8917,7 +8890,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -8947,7 +8920,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -8987,14 +8960,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -9033,7 +9006,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -9042,7 +9015,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'a&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9082,14 +9055,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -9128,7 +9101,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'b&#32;*&#32;'c</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -9137,7 +9110,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span><span>(<span>'b&#32;*&#32;'a</span>)</span>&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9177,14 +9150,14 @@
                         bhvr
                       </b>
                       :
-                      <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                      <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -9226,7 +9199,7 @@
                     bhvr
                   </span>
                   :
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -9235,7 +9208,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -9268,10 +9241,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

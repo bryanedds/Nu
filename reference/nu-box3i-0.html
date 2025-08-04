@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Box3i (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Box3i (Nu)">
     
     <title>Box3i (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -137,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
     </dt>
     <dt>
       Kind: Struct
@@ -200,7 +173,7 @@
                         min
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -208,7 +181,7 @@
                         size
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -229,7 +202,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> struct.
+            Initializes a new instance of the <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> struct.
             
                   </p>
                 </div>
@@ -240,7 +213,7 @@
                     min
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -248,7 +221,7 @@
                     size
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -341,7 +314,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> struct.
+            Initializes a new instance of the <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> struct.
             
                   </p>
                 </div>
@@ -443,14 +416,14 @@
                         point
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                    <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                   </span>
                   Box containing area of both.
                   <br/>
@@ -481,7 +454,7 @@
                     point
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -490,7 +463,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -526,7 +499,7 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
                       
                     </span>
@@ -535,7 +508,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                    <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                   </span>
                   Box containing area of both.
                   <br/>
@@ -566,7 +539,7 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -579,7 +552,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -615,19 +588,19 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                      The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
                   
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                   <br/>
@@ -647,7 +620,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-              Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains another <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+              Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains another <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
             
                   </p>
                 </div>
@@ -658,11 +631,11 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                    The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                   </p>
                 </dd>
               </dl>
@@ -671,12 +644,12 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                   </p>
@@ -710,9 +683,9 @@
                         box
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                      The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                     </span>
                     <br/>
                     <span>
@@ -720,10 +693,10 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
                       
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                     </span>
@@ -746,7 +719,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-              Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains another <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+              Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains another <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
             
                   </p>
                 </div>
@@ -757,11 +730,11 @@
                     box
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                    The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -769,12 +742,12 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                   </p>
@@ -808,19 +781,19 @@
                         point
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test.
+                      The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
-                  <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains
-              <span class="fsdocs-param-name">point</span> or <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+                  <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
             
                   <br/>
                 </div>
@@ -839,7 +812,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-              Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains a point.
+              Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains a point.
             
                   </p>
                 </div>
@@ -850,11 +823,11 @@
                     point
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test.
+                    The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test.
                   </p>
                 </dd>
               </dl>
@@ -863,12 +836,12 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains
-              <span class="fsdocs-param-name">point</span> or <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+                    <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
             
                   </p>
                 </dd>
@@ -901,9 +874,9 @@
                         point
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test.
+                      The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test.
                     </span>
                     <br/>
                     <span>
@@ -911,10 +884,10 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
-                      <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains
-              <span class="fsdocs-param-name">point</span> or <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+                      <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
             
                     </span>
                     <br/>
@@ -936,7 +909,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-              Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains a point.
+              Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains a point.
             
                   </p>
                 </div>
@@ -947,11 +920,11 @@
                     point
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test.
+                    The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -959,12 +932,12 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains
-              <span class="fsdocs-param-name">point</span> or <a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+                    <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/nu-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
             
                   </p>
                 </dd>
@@ -997,19 +970,19 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                      The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                    <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                   </span>
                   
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                   <br/>
@@ -1029,7 +1002,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-              Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains another <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> AND no box outside of this box intersects with it.
+              Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains another <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> AND no box outside of this box intersects with it.
             
                   </p>
                 </div>
@@ -1040,11 +1013,11 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                    The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                   </p>
                 </dd>
               </dl>
@@ -1053,12 +1026,12 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a></code>
+                  <code><a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                   </p>
@@ -1092,9 +1065,9 @@
                         box
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                      The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                     </span>
                     <br/>
                     <span>
@@ -1102,10 +1075,10 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                        - 
                       
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                     </span>
@@ -1128,7 +1101,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-              Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains another <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> AND no box outside of this box intersects with it.
+              Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains another <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> AND no box outside of this box intersects with it.
             
                   </p>
                 </div>
@@ -1139,11 +1112,11 @@
                     box
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
+                    The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for overlap.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -1151,12 +1124,12 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="/Nu/reference/nu-containmenttype.html">ContainmentType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-              A value indicating if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> contains,
+              A value indicating if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> contains,
               intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
             
                   </p>
@@ -1185,9 +1158,9 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
+                    <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
                   </span>
-                  An array of <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> containing the corners of this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+                  An array of <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> containing the corners of this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
                   <br/>
                 </div>
               </div>
@@ -1205,7 +1178,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get an array of <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> containing the corners of this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+            Get an array of <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> containing the corners of this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
             
                   </p>
                 </div>
@@ -1215,11 +1188,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
+                  <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    An array of <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> containing the corners of this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+                    An array of <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> containing the corners of this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
                   </p>
                 </dd>
               </dl>
@@ -1315,7 +1288,7 @@
                         other
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1339,7 +1312,7 @@
                   other
                 </span>
                 :
-                <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1421,9 +1394,9 @@
                         point
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
+                      The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
                     </span>
                     <br/>
                   </ul>
@@ -1435,7 +1408,7 @@
                   <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1458,7 +1431,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> is intersected by a <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>.
+            Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> is intersected by a <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>.
             
                   </p>
                 </div>
@@ -1469,11 +1442,11 @@
                     point
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
+                    The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
                   </p>
                 </dd>
               </dl>
@@ -1489,7 +1462,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1526,9 +1499,9 @@
                         point
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
+                      The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
                     </span>
                     <br/>
                     <span>
@@ -1541,7 +1514,7 @@
                       <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1567,7 +1540,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> is intersected by a <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>.
+            Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> is intersected by a <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>.
             
                   </p>
                 </div>
@@ -1578,11 +1551,11 @@
                     point
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
+                    The <a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a> to test for intersection.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -1597,7 +1570,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">point</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1634,9 +1607,9 @@
                         box
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
+                      The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
                     </span>
                     <br/>
                   </ul>
@@ -1648,7 +1621,7 @@
                   <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1671,7 +1644,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects another <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+            Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects another <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
             
                   </p>
                 </div>
@@ -1682,11 +1655,11 @@
                     box
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
+                    The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
                   </p>
                 </dd>
               </dl>
@@ -1702,7 +1675,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1739,9 +1712,9 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
                        - 
-                      The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
+                      The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
                     </span>
                     <br/>
                     <span>
@@ -1754,7 +1727,7 @@
                       <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1780,7 +1753,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects another <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>.
+            Check if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects another <a href="/Nu/reference/nu-box3i-0.html">Box3i</a>.
             
                   </p>
                 </div>
@@ -1791,11 +1764,11 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3i-0.html">Box3i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
+                    The <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> to test for intersection.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -1810,7 +1783,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if this <a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
+ if this <a href="/Nu/reference/nu-box3i-0.html">Box3i</a> intersects <span class="fsdocs-param-name">box</span>,
               <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1842,7 +1815,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                    <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1869,7 +1842,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1962,7 +1935,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
                       The left operand.
                     </span>
@@ -1972,7 +1945,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
                       The right operand.
                     </span>
@@ -2011,7 +1984,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2023,7 +1996,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2068,7 +2041,7 @@
                         left
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
                       The left operand.
                     </span>
@@ -2078,7 +2051,7 @@
                         right
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                      <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                        - 
                       The right operand.
                     </span>
@@ -2117,7 +2090,7 @@
                     left
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2129,7 +2102,7 @@
                     right
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2174,7 +2147,7 @@
                         point
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2182,14 +2155,14 @@
                         point2
                       </b>
                       :
-                      <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                      <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                    <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2217,7 +2190,7 @@
                     point
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2225,7 +2198,7 @@
                     point2
                   </span>
                   :
-                  <code><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a></code>
+                  <code><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2234,7 +2207,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2266,14 +2239,14 @@
                         points
                       </b>
                       :
-                      <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
+                      <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                    <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2301,7 +2274,7 @@
                     points
                   </span>
                   :
-                  <code><span><a href="http://localhost:8901/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
+                  <code><span><a href="/Nu/reference/nu-vector3i-0.html">Vector3i</a>[]</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2310,7 +2283,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="http://localhost:8901/reference/nu-box3i-0.html">Box3i</a></code>
+                  <code><a href="/Nu/reference/nu-box3i-0.html">Box3i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2335,10 +2308,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

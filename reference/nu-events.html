@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Events (Nu)" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Events (Nu)">
     
     <title>Events (Nu) | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -124,7 +97,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="http://localhost:8901/reference/nu.html">
+      <a href="/Nu/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -175,7 +148,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -205,7 +178,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -232,7 +205,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -262,7 +235,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -289,7 +262,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -319,7 +292,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -346,7 +319,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -376,7 +349,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -403,7 +376,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -433,7 +406,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -460,7 +433,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -490,7 +463,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -517,7 +490,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -547,7 +520,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -574,7 +547,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -604,7 +577,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -643,7 +616,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-changedata.html">ChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-changedata.html">ChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -683,7 +656,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-changedata.html">ChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-changedata.html">ChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -710,7 +683,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -740,7 +713,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -767,7 +740,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -797,7 +770,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -824,7 +797,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -854,7 +827,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -881,7 +854,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -911,7 +884,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -938,7 +911,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -968,7 +941,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -995,7 +968,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1025,7 +998,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1052,7 +1025,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1082,7 +1055,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1109,7 +1082,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1139,7 +1112,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1178,7 +1151,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1218,7 +1191,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1257,7 +1230,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1297,7 +1270,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1336,7 +1309,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1376,7 +1349,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1415,7 +1388,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1455,7 +1428,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1482,7 +1455,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1512,7 +1485,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1539,7 +1512,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1569,7 +1542,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1596,7 +1569,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1626,7 +1599,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1653,7 +1626,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1683,7 +1656,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1710,7 +1683,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1740,7 +1713,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1767,7 +1740,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1797,7 +1770,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1836,7 +1809,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1876,7 +1849,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1915,7 +1888,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1955,7 +1928,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1982,7 +1955,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2012,7 +1985,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2039,7 +2012,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2069,7 +2042,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2096,7 +2069,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2126,7 +2099,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2153,7 +2126,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2183,7 +2156,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2210,7 +2183,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2240,7 +2213,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2267,7 +2240,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2297,7 +2270,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2324,7 +2297,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2354,7 +2327,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2381,7 +2354,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2411,7 +2384,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2438,7 +2411,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2468,7 +2441,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2495,7 +2468,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2525,7 +2498,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2552,7 +2525,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2582,7 +2555,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2609,7 +2582,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2639,7 +2612,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2666,7 +2639,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2696,7 +2669,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2723,7 +2696,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2753,7 +2726,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2780,7 +2753,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2810,7 +2783,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2837,7 +2810,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2867,7 +2840,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2894,7 +2867,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2924,7 +2897,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2951,7 +2924,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2981,7 +2954,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3008,7 +2981,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3038,7 +3011,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3065,7 +3038,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3095,7 +3068,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3122,7 +3095,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3152,7 +3125,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3179,7 +3152,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3209,7 +3182,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3236,7 +3209,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3266,7 +3239,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3293,7 +3266,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3323,7 +3296,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3350,7 +3323,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3380,7 +3353,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3407,7 +3380,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3437,7 +3410,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3464,7 +3437,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3494,7 +3467,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3521,7 +3494,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3551,7 +3524,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3578,7 +3551,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3608,7 +3581,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3635,7 +3608,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3665,7 +3638,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3692,7 +3665,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3722,7 +3695,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3749,7 +3722,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3779,7 +3752,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3806,7 +3779,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3836,7 +3809,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3863,7 +3836,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3893,7 +3866,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3920,7 +3893,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3950,7 +3923,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3977,7 +3950,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4007,7 +3980,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4034,7 +4007,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4064,7 +4037,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4091,7 +4064,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4121,7 +4094,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4148,7 +4121,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4178,7 +4151,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4205,7 +4178,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4235,7 +4208,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4268,10 +4241,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>

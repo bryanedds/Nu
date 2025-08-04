@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="http://localhost:8901/">
+<html lang="en" data-root="/Nu/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Nu.Effects" />
-    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="http://localhost:8901/">
+    <meta name="twitter:site" content="/Nu/">
     <meta name="twitter:title" content="Nu.Effects">
     
     <title>Nu.Effects | Nu</title>
@@ -20,39 +20,12 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
-    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
-<script type="text/javascript">
-    var wsUri = "ws://localhost:8901/websocket";
-    function init()
-    {
-        websocket = new WebSocket(wsUri);
-        websocket.onmessage = function(evt) {
-            const data = evt.data;
-            if (data.endsWith(".css")) {
-                console.log(`Trying to reload ${data}`);
-                const link = document.querySelector(`link[href*='${data}']`);
-                if (link) {
-                    const href = new URL(link.href);
-                    const ticks = new Date().getTime();
-                    href.searchParams.set("v", ticks);
-                    link.href = href.toString();
-                }
-            }
-            else {
-                console.log('closing');
-                websocket.close();
-                document.location.reload();
-            }
-        }
-    }
-    window.addEventListener("load", init, false);
-</script>
-
 </head>
 <body class="api-docs">
 <header>
@@ -75,14 +48,14 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="http://localhost:8901/">
-            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
@@ -109,7 +82,7 @@
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="http://localhost:8901/reference/index.html">
+  <a class="nav-link" href="/Nu/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -138,7 +111,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Argument">
-              <a href="http://localhost:8901/reference/nu-effects-argument.html">
+              <a href="/Nu/reference/nu-effects-argument.html">
                 Argument
               </a>
             </a>
@@ -165,7 +138,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Aspect">
-              <a href="http://localhost:8901/reference/nu-effects-aspect.html">
+              <a href="/Nu/reference/nu-effects-aspect.html">
                 Aspect
               </a>
             </a>
@@ -192,7 +165,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Content">
-              <a href="http://localhost:8901/reference/nu-effects-content.html">
+              <a href="/Nu/reference/nu-effects-content.html">
                 Content
               </a>
             </a>
@@ -219,7 +192,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Definition">
-              <a href="http://localhost:8901/reference/nu-effects-definition.html">
+              <a href="/Nu/reference/nu-effects-definition.html">
                 Definition
               </a>
             </a>
@@ -246,7 +219,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Definitions">
-              <a href="http://localhost:8901/reference/nu-effects-definitions.html">
+              <a href="/Nu/reference/nu-effects-definitions.html">
                 Definitions
               </a>
             </a>
@@ -273,7 +246,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="EffectDescriptor">
-              <a href="http://localhost:8901/reference/nu-effects-effectdescriptormodule.html">
+              <a href="/Nu/reference/nu-effects-effectdescriptormodule.html">
                 EffectDescriptor (Module)
               </a>
             </a>
@@ -300,7 +273,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="EffectDescriptor">
-              <a href="http://localhost:8901/reference/nu-effects-effectdescriptor.html">
+              <a href="/Nu/reference/nu-effects-effectdescriptor.html">
                 EffectDescriptor (Type)
               </a>
             </a>
@@ -327,7 +300,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="EffectSystem">
-              <a href="http://localhost:8901/reference/nu-effects-effectsystemmodule.html">
+              <a href="/Nu/reference/nu-effects-effectsystemmodule.html">
                 EffectSystem (Module)
               </a>
             </a>
@@ -354,7 +327,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="EffectSystem">
-              <a href="http://localhost:8901/reference/nu-effects-effectsystem.html">
+              <a href="/Nu/reference/nu-effects-effectsystem.html">
                 EffectSystem (Type)
               </a>
             </a>
@@ -381,7 +354,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="KeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-keyframe.html">
+              <a href="/Nu/reference/nu-effects-keyframe.html">
                 KeyFrame
               </a>
             </a>
@@ -408,7 +381,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="LogicApplicator">
-              <a href="http://localhost:8901/reference/nu-effects-logicapplicator.html">
+              <a href="/Nu/reference/nu-effects-logicapplicator.html">
                 LogicApplicator
               </a>
             </a>
@@ -435,7 +408,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="LogicKeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-logickeyframe.html">
+              <a href="/Nu/reference/nu-effects-logickeyframe.html">
                 LogicKeyFrame
               </a>
             </a>
@@ -462,7 +435,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Rate">
-              <a href="http://localhost:8901/reference/nu-effects-rate.html">
+              <a href="/Nu/reference/nu-effects-rate.html">
                 Rate
               </a>
             </a>
@@ -489,7 +462,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Resource">
-              <a href="http://localhost:8901/reference/nu-effects-resource.html">
+              <a href="/Nu/reference/nu-effects-resource.html">
                 Resource
               </a>
             </a>
@@ -516,7 +489,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Shift">
-              <a href="http://localhost:8901/reference/nu-effects-shift.html">
+              <a href="/Nu/reference/nu-effects-shift.html">
                 Shift
               </a>
             </a>
@@ -543,7 +516,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Slice">
-              <a href="http://localhost:8901/reference/nu-effects-slice.html">
+              <a href="/Nu/reference/nu-effects-slice.html">
                 Slice
               </a>
             </a>
@@ -570,7 +543,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Tween2IKeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tween2ikeyframe.html">
+              <a href="/Nu/reference/nu-effects-tween2ikeyframe.html">
                 Tween2IKeyFrame
               </a>
             </a>
@@ -597,7 +570,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Tween2KeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tween2keyframe.html">
+              <a href="/Nu/reference/nu-effects-tween2keyframe.html">
                 Tween2KeyFrame
               </a>
             </a>
@@ -624,7 +597,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Tween3KeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">
+              <a href="/Nu/reference/nu-effects-tween3keyframe.html">
                 Tween3KeyFrame
               </a>
             </a>
@@ -651,7 +624,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Tween4KeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tween4keyframe.html">
+              <a href="/Nu/reference/nu-effects-tween4keyframe.html">
                 Tween4KeyFrame
               </a>
             </a>
@@ -678,7 +651,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TweenAlgorithm">
-              <a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">
+              <a href="/Nu/reference/nu-effects-tweenalgorithm.html">
                 TweenAlgorithm
               </a>
             </a>
@@ -705,7 +678,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TweenApplicator">
-              <a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">
+              <a href="/Nu/reference/nu-effects-tweenapplicator.html">
                 TweenApplicator
               </a>
             </a>
@@ -732,7 +705,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TweenBox2KeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tweenbox2keyframe.html">
+              <a href="/Nu/reference/nu-effects-tweenbox2keyframe.html">
                 TweenBox2KeyFrame
               </a>
             </a>
@@ -759,7 +732,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TweenCKeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tweenckeyframe.html">
+              <a href="/Nu/reference/nu-effects-tweenckeyframe.html">
                 TweenCKeyFrame
               </a>
             </a>
@@ -786,7 +759,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TweenIKeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tweenikeyframe.html">
+              <a href="/Nu/reference/nu-effects-tweenikeyframe.html">
                 TweenIKeyFrame
               </a>
             </a>
@@ -813,7 +786,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TweenKeyFrame">
-              <a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">
+              <a href="/Nu/reference/nu-effects-tweenkeyframe.html">
                 TweenKeyFrame
               </a>
             </a>
@@ -853,10 +826,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
-<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
 
 </body>
 </html>
