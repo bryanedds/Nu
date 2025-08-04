@@ -10,11 +10,18 @@ open Nu
 module VulkanMemory =
 
     type private BufferType =
-        | Staging
+        | Staging of bool
         | Vertex of bool
         | Index of bool
         | Uniform
 
+        member this.IsParallel =
+            match this with
+            | Staging inFrame -> inFrame
+            | Vertex uploadEnabled -> uploadEnabled
+            | Index uploadEnabled -> uploadEnabled
+            | Uniform -> true
+        
         static member private makeInfoInternal size usage =
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
@@ -24,7 +31,7 @@ module VulkanMemory =
         
         static member makeInfo size bufferType =
             match bufferType with
-            | Staging -> BufferType.makeInfoInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+            | Staging _ -> BufferType.makeInfoInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
             | Vertex uploadEnabled ->
                 let usage =
                     if uploadEnabled
@@ -76,6 +83,7 @@ module VulkanMemory =
         Hl.awaitFence vkc.ResourceReadyFence vkc.Device
     
     /// A manually allocated buffer for diagnostic purposes.
+    /// TODO: DJL: adapt to simplified buffer api.
     type ManualBuffer =
         { VkBuffer : VkBuffer 
           Memory : VkDeviceMemory
@@ -157,7 +165,7 @@ module VulkanMemory =
         
         /// Create a manually allocated staging buffer.
         static member createStaging size vkc =
-            let info = BufferType.makeInfo size Staging
+            let info = BufferType.makeInfo size (Staging false)
             let manualBuffer = ManualBuffer.createInternal true info vkc
             manualBuffer
 
@@ -186,7 +194,7 @@ module VulkanMemory =
             Vulkan.vkFreeMemory (vkc.Device, buffer.Memory, nullPtr)
     
     /// Abstraction for vma allocated buffer.
-    type Buffer =
+    type private BufferInternal =
         private
             { _VkBuffer : VkBuffer
               _Allocation : VmaAllocation
@@ -196,7 +204,8 @@ module VulkanMemory =
         /// The VkBuffer.
         member this.VkBuffer = this._VkBuffer
         
-        static member private createInternal uploadEnabled bufferInfo (vkc : Hl.VulkanContext) =
+        /// Create BufferInternal.
+        static member create uploadEnabled bufferInfo (vkc : Hl.VulkanContext) =
 
             // allocation create info
             let mutable info = VmaAllocationCreateInfo ()
@@ -209,25 +218,27 @@ module VulkanMemory =
             let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
             Vma.vmaCreateBuffer (vkc.VmaAllocator, &bufferInfo, &info, &vkBuffer, &allocation, asPointer &allocationInfo) |> Hl.check
 
-            // make Buffer
-            let buffer =
+            // make BufferInternal
+            let bufferInternal =
                 { _VkBuffer = vkBuffer
                   _Allocation = allocation
                   _Mapping = allocationInfo.pMappedData
                   _UploadEnabled = uploadEnabled }
 
             // fin
-            buffer
+            bufferInternal
 
-        /// Upload data to buffer if upload is enabled.
-        static member upload offset size data buffer (vkc : Hl.VulkanContext) =
-            upload buffer._UploadEnabled offset size data buffer._Mapping
-            Vma.vmaFlushAllocation (vkc.VmaAllocator, buffer._Allocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
+        /// Upload data to buffer if upload is enabled, including manual flush.
+        static member upload offset size data bufferInternal (vkc : Hl.VulkanContext) =
+            upload bufferInternal._UploadEnabled offset size data bufferInternal._Mapping
+            Vma.vmaFlushAllocation (vkc.VmaAllocator, bufferInternal._Allocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
 
-        /// Upload data to buffer with a stride of 16 if upload is enabled.
-        static member uploadStrided16 offset typeSize count data buffer (vkc : Hl.VulkanContext) =
-            uploadStrided16 buffer._UploadEnabled offset typeSize count data buffer._Mapping
-            Vma.vmaFlushAllocation (vkc.VmaAllocator, buffer._Allocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
+        /// Upload data to buffer with a stride of 16 if upload is enabled, including manual flush.
+        static member uploadStrided16 offset typeSize count data bufferInternal (vkc : Hl.VulkanContext) =
+            uploadStrided16 bufferInternal._UploadEnabled offset typeSize count data bufferInternal._Mapping
+            Vma.vmaFlushAllocation (vkc.VmaAllocator, bufferInternal._Allocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
+        
+        // TODO: DJL: fix up the rest of these.
         
         /// Upload an array to buffer if upload is enabled.
         static member uploadArray offset (array : 'a array) buffer vkc =
@@ -235,30 +246,6 @@ module VulkanMemory =
             use arrayPin = new ArrayPin<_> (array)
             Buffer.upload offset size arrayPin.NativeInt buffer vkc
 
-        /// Create an allocated staging buffer.
-        static member createStaging size vkc =
-            let info = BufferType.makeInfo size Staging
-            let buffer = Buffer.createInternal true info vkc
-            buffer
-
-        /// Create an allocated vertex buffer.
-        static member createVertex uploadEnabled size vkc =
-            let info = BufferType.makeInfo size (Vertex uploadEnabled)
-            let buffer = Buffer.createInternal uploadEnabled info vkc
-            buffer
-
-        /// Create an allocated index buffer.
-        static member createIndex uploadEnabled size vkc =
-            let info = BufferType.makeInfo size (Index uploadEnabled)
-            let buffer = Buffer.createInternal uploadEnabled info vkc
-            buffer
-
-        /// Create an allocated uniform buffer.
-        static member createUniform size vkc =
-            let info = BufferType.makeInfo size Uniform
-            let buffer = Buffer.createInternal true info vkc
-            buffer
-        
         /// Create an allocated staging buffer and stage the data.
         static member stageData size data vkc =
             let buffer = Buffer.createStaging size vkc
@@ -294,8 +281,8 @@ module VulkanMemory =
             Buffer.createIndexStaged size arrayPin.NativeInt vkc
         
         /// Destroy buffer and allocation.
-        static member destroy buffer vkc =
-            Vma.vmaDestroyBuffer (vkc.VmaAllocator, buffer.VkBuffer, buffer._Allocation)
+        static member destroy bufferInternal vkc =
+            Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, bufferInternal._Allocation)
 
     /// Abstraction for vma allocated image.
     type Image =
@@ -319,60 +306,70 @@ module VulkanMemory =
             let image = { _VkImage = vkImage; _Allocation = allocation }
             image
 
-    /// A set of upload enabled buffers for each frame in flight.
-    type FifBuffer =
+    /// The Vulkan buffer interface for Nu, which internally automates parallelization for frames in flight as necessary.
+    type Buffer =
         private 
-            { Buffers : Buffer array
+            { BufferInternals : BufferInternal array
               BufferSizes : int array
               BufferType : BufferType }
 
-        member private this.Current = this.Buffers.[Hl.CurrentFrame]
+        member private this.IsParallel = this.BufferType.IsParallel
         
-        /// The VkBuffer for the current frame.
+        member private this.Current = if this.IsParallel then this.BufferInternals.[Hl.CurrentFrame] else this.BufferInternals.[0]
+        
+        /// The currently needed VkBuffer.
         member this.VkBuffer = this.Current.VkBuffer
 
-        /// The VkBuffer for each frame in flight.
-        member this.PerFrameBuffers = Array.map (fun (buffer : Buffer) -> buffer.VkBuffer) this.Buffers
+        /// All VkBuffers as parallelized.
+        member this.VkBuffers = Array.map (fun (bufferInternal : BufferInternal) -> bufferInternal.VkBuffer) this.BufferInternals
 
-        /// Create a Buffer based on usage.
-        static member private createBuffer size bufferType vkc =
+        /// Create a BufferInternal.
+        static member private createBufferInternal size bufferType vkc =
+            
+            // make info
+            let info = BufferType.makeInfo size bufferType
+
+            // create BufferInternal
             match bufferType with
-            | Staging -> Buffer.createStaging size vkc
-            | Vertex uploadEnabled -> Buffer.createVertex uploadEnabled size vkc
-            | Index uploadEnabled -> Buffer.createIndex uploadEnabled size vkc
-            | Uniform -> Buffer.createUniform size vkc
+            | Staging _ -> BufferInternal.create true info vkc
+            | Vertex uploadEnabled -> BufferInternal.create uploadEnabled info vkc
+            | Index uploadEnabled -> BufferInternal.create uploadEnabled info vkc
+            | Uniform -> BufferInternal.create true info vkc
         
-        /// Create a FifBuffer.
-        static member private createInternal size bufferType vkc =
+        /// Create a Buffer.
+        static member private createInternal size (bufferType : BufferType) vkc =
             
             // create buffers and sizes
-            let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
-            let buffers = Array.zeroCreate<Buffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec buffers.Length do buffers.[i] <- FifBuffer.createBuffer size bufferType vkc
+            let length = if bufferType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
+            let bufferSizes = Array.create length size
+            let bufferInternals = Array.zeroCreate<BufferInternal> length
+            for i in 0 .. dec bufferInternals.Length do bufferInternals.[i] <- Buffer.createBufferInternal size bufferType vkc
 
-            // make FifBuffer
-            let fifBuffer =
-                { Buffers = buffers 
+            // make Buffer
+            let buffer =
+                { BufferInternals = bufferInternals 
                   BufferSizes = bufferSizes
                   BufferType = bufferType }
 
             // fin
-            fifBuffer
+            buffer
+        
+        // TODO: DJL: fix up the rest of these.
         
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
         static member updateSize size fifBuffer vkc =
             if size > fifBuffer.BufferSizes.[Hl.CurrentFrame] then
-                Buffer.destroy fifBuffer.Current vkc
+                BufferInternal.destroy fifBuffer.Current vkc
                 fifBuffer.Buffers.[Hl.CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferType vkc
                 fifBuffer.BufferSizes.[Hl.CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
         static member upload offset size data (fifBuffer : FifBuffer) vkc =
-            Buffer.upload offset size data fifBuffer.Current vkc
+            BufferInternal.upload offset size data fifBuffer.Current vkc
 
         /// Upload data to FifBuffer with a stride of 16.
         static member uploadStrided16 offset typeSize count data (fifBuffer : FifBuffer) vkc =
-            Buffer.uploadStrided16 offset typeSize count data fifBuffer.Current vkc
+            BufferInternal.uploadStrided16 offset typeSize count data fifBuffer.Current vkc
         
         
         /// Upload an array to FifBuffer.
@@ -381,7 +378,7 @@ module VulkanMemory =
 
         /// Create a staging FifBuffer.
         static member createStaging size vkc =
-            FifBuffer.createInternal size Staging vkc
+            FifBuffer.createInternal size (Staging false) vkc
         
         /// Create a vertex FifBuffer.
         static member createVertex size vkc =
@@ -401,4 +398,4 @@ module VulkanMemory =
 
         /// Destroy FifBuffer.
         static member destroy fifBuffer vkc =
-            for i in 0 .. dec fifBuffer.Buffers.Length do Buffer.destroy fifBuffer.Buffers.[i] vkc
+            for i in 0 .. dec fifBuffer.Buffers.Length do BufferInternal.destroy fifBuffer.Buffers.[i] vkc
