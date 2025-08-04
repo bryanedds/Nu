@@ -121,7 +121,7 @@ module CoroutineBuilder =
     [<DebuggerHidden; DebuggerStepThrough>]
     let inline coroutine launcher = CoroutineBuilder launcher
 
-/// Coroutine operators/
+/// Coroutine operators.
 module Coroutine =
 
     /// A coroutine that cancels the entire tree.
