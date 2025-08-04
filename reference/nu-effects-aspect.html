@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Aspect (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Aspect (Nu)">
     
     <title>Aspect (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu-effects.html">
+      <a href="http://localhost:8901/reference/nu-effects.html">
         Nu.Effects
       </a>
     </dt>
@@ -110,7 +137,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-effects-aspect.html">Aspect</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
@@ -213,7 +240,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -221,7 +248,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -229,7 +256,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -237,7 +264,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -253,7 +280,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -261,7 +288,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -269,7 +296,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -277,7 +304,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -308,7 +335,7 @@
                         Aspects
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -324,7 +351,7 @@
                   Aspects
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -337,7 +364,7 @@
                 <p>
                   <a id="Blend">
                     <a href="#Blend">
-                      <code><span>Blend&#32;<a href="/Nu/reference/nu-blend.html">Blend</a></span></code>
+                      <code><span>Blend&#32;<a href="http://localhost:8901/reference/nu-blend.html">Blend</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -345,7 +372,7 @@
               <div class="fsdocs-tip" id="7858">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Blend&#32;<a href="/Nu/reference/nu-blend.html">Blend</a></span></code>
+                  <code><span>Blend&#32;<a href="http://localhost:8901/reference/nu-blend.html">Blend</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -355,7 +382,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-blend.html">Blend</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-blend.html">Blend</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -371,7 +398,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-blend.html">Blend</a></code>
+                <code><a href="http://localhost:8901/reference/nu-blend.html">Blend</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -449,7 +476,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -457,7 +484,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -465,7 +492,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -473,7 +500,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -489,7 +516,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -497,7 +524,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -505,7 +532,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -513,7 +540,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -526,7 +553,7 @@
                 <p>
                   <a id="Color">
                     <a href="#Color">
-                      <code><span>Color&#32;<a href="/Nu/reference/nu-color-0.html">Color</a></span></code>
+                      <code><span>Color&#32;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -534,7 +561,7 @@
               <div class="fsdocs-tip" id="7861">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Color&#32;<a href="/Nu/reference/nu-color-0.html">Color</a></span></code>
+                  <code><span>Color&#32;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -544,7 +571,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -560,7 +587,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
+                <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -591,7 +618,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -599,7 +626,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -607,7 +634,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -615,7 +642,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -631,7 +658,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -639,7 +666,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -647,7 +674,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -655,7 +682,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -733,7 +760,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -741,7 +768,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -749,7 +776,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -757,7 +784,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -773,7 +800,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -781,7 +808,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -789,7 +816,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -797,7 +824,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -875,7 +902,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -883,7 +910,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -891,7 +918,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -899,7 +926,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -915,7 +942,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -923,7 +950,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -931,7 +958,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -939,7 +966,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -952,7 +979,7 @@
                 <p>
                   <a id="Emission">
                     <a href="#Emission">
-                      <code><span>Emission&#32;<a href="/Nu/reference/nu-color-0.html">Color</a></span></code>
+                      <code><span>Emission&#32;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -960,7 +987,7 @@
               <div class="fsdocs-tip" id="7867">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Emission&#32;<a href="/Nu/reference/nu-color-0.html">Color</a></span></code>
+                  <code><span>Emission&#32;<a href="http://localhost:8901/reference/nu-color-0.html">Color</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -970,7 +997,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -986,7 +1013,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-color-0.html">Color</a></code>
+                <code><a href="http://localhost:8901/reference/nu-color-0.html">Color</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1017,7 +1044,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1025,7 +1052,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1033,7 +1060,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1041,7 +1068,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1057,7 +1084,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1065,7 +1092,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1073,7 +1100,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1081,7 +1108,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenckeyframe.html">TweenCKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1159,7 +1186,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1167,7 +1194,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1175,7 +1202,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1191,7 +1218,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1199,7 +1226,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1207,7 +1234,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1246,7 +1273,7 @@
                         Args
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-argument.html">Argument</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-argument.html">Argument</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1270,7 +1297,7 @@
                   Args
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-argument.html">Argument</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-argument.html">Argument</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1283,7 +1310,7 @@
                 <p>
                   <a id="Flip">
                     <a href="#Flip">
-                      <code><span>Flip&#32;<a href="/Nu/reference/nu-flip.html">Flip</a></span></code>
+                      <code><span>Flip&#32;<a href="http://localhost:8901/reference/nu-flip.html">Flip</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1291,7 +1318,7 @@
               <div class="fsdocs-tip" id="7872">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Flip&#32;<a href="/Nu/reference/nu-flip.html">Flip</a></span></code>
+                  <code><span>Flip&#32;<a href="http://localhost:8901/reference/nu-flip.html">Flip</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1301,7 +1328,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-flip.html">Flip</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-flip.html">Flip</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1317,7 +1344,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-flip.html">Flip</a></code>
+                <code><a href="http://localhost:8901/reference/nu-flip.html">Flip</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1395,7 +1422,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1403,7 +1430,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1411,7 +1438,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1419,7 +1446,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1435,7 +1462,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1443,7 +1470,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1451,7 +1478,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1459,7 +1486,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1537,7 +1564,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1545,7 +1572,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1553,7 +1580,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1569,7 +1596,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-logicapplicator.html">LogicApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1577,7 +1604,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1585,7 +1612,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-logickeyframe.html">LogicKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1598,7 +1625,7 @@
                 <p>
                   <a id="Inset">
                     <a href="#Inset">
-                      <code><span>Inset&#32;<a href="/Nu/reference/nu-box2-0.html">Box2</a></span></code>
+                      <code><span>Inset&#32;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1606,7 +1633,7 @@
               <div class="fsdocs-tip" id="7877">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Inset&#32;<a href="/Nu/reference/nu-box2-0.html">Box2</a></span></code>
+                  <code><span>Inset&#32;<a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1616,7 +1643,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1632,7 +1659,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1663,7 +1690,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1671,7 +1698,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1679,7 +1706,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1687,7 +1714,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenbox2keyframe.html">TweenBox2KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenbox2keyframe.html">TweenBox2KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1703,7 +1730,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1711,7 +1738,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1719,7 +1746,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1727,7 +1754,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenbox2keyframe.html">TweenBox2KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenbox2keyframe.html">TweenBox2KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1805,7 +1832,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1813,7 +1840,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1821,7 +1848,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1829,7 +1856,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1845,7 +1872,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1853,7 +1880,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1861,7 +1888,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1869,7 +1896,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1947,7 +1974,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1955,7 +1982,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1963,7 +1990,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1971,7 +1998,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1987,7 +2014,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1995,7 +2022,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2003,7 +2030,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2011,7 +2038,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2183,7 +2210,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2191,7 +2218,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2199,7 +2226,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2207,7 +2234,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2223,7 +2250,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2231,7 +2258,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2239,7 +2266,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2247,7 +2274,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2278,7 +2305,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2286,7 +2313,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2294,7 +2321,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2302,7 +2329,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2318,7 +2345,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2326,7 +2353,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2334,7 +2361,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2342,7 +2369,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2420,7 +2447,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2428,7 +2455,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2436,7 +2463,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2444,7 +2471,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2460,7 +2487,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2468,7 +2495,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2476,7 +2503,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2484,7 +2511,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2562,7 +2589,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2570,7 +2597,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2578,7 +2605,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2586,7 +2613,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2602,7 +2629,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2610,7 +2637,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2618,7 +2645,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2626,7 +2653,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tween3keyframe.html">Tween3KeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2704,7 +2731,7 @@
                         Applicator
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2712,7 +2739,7 @@
                         Algorithm
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2720,7 +2747,7 @@
                         Playback
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2728,7 +2755,7 @@
                         KeyFrames
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2744,7 +2771,7 @@
                   Applicator
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenapplicator.html">TweenApplicator</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2752,7 +2779,7 @@
                   Algorithm
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
+                <code><a href="http://localhost:8901/reference/nu-effects-tweenalgorithm.html">TweenAlgorithm</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2760,7 +2787,7 @@
                   Playback
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                <code><a href="http://localhost:8901/reference/nu-playback.html">Playback</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2768,7 +2795,7 @@
                   KeyFrames
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-effects-tweenkeyframe.html">TweenKeyFrame</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -4336,10 +4363,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

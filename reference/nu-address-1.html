@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="'a Address (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="'a Address (Nu)">
     
     <title>'a Address (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,13 +137,13 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="/Nu/reference/nu-address.html">Address</a></code>
+      <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span>&gt;</span></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span>&gt;</span></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -323,6 +350,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Length\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the length of an address by its names.
                   </p>
@@ -384,7 +414,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -392,14 +422,14 @@
                         address2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -416,6 +446,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.op_MinusMinusGreater``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L176-176" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Concatenate two addresses, taking the type of first address.
                   </p>
@@ -427,7 +460,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -435,7 +468,7 @@
                     address2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -444,7 +477,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -476,7 +509,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -484,14 +517,14 @@
                         address2
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -508,6 +541,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.op_MinusBarMinus\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Concatenate two addresses of the same type.
                   </p>
@@ -519,7 +555,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -527,7 +563,7 @@
                     address2
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -536,7 +572,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -568,7 +604,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -576,14 +612,14 @@
                         address2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -600,6 +636,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.op_LessMinusMinus``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Concatenate two addresses, taking the type of second address.
                   </p>
@@ -611,7 +650,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -619,7 +658,7 @@
                     address2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -628,7 +667,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -655,7 +694,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -672,6 +711,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Ellipsis\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L169-169" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      The ellipsis address.
                   </p>
@@ -682,7 +724,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -709,7 +751,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -726,6 +768,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Wildcard\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L165-165" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      The wildcard address.
                   </p>
@@ -736,7 +781,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -768,7 +813,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -776,14 +821,14 @@
                         address2
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -800,6 +845,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.acat``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L153-153" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Concatenate two addresses of the same type.
                   </p>
@@ -811,7 +859,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -819,7 +867,7 @@
                     address2
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -828,7 +876,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -860,7 +908,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -868,14 +916,14 @@
                         address2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -892,6 +940,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.acatf``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L157-157" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Concatenate two addresses, taking the type of first address.
                   </p>
@@ -903,7 +954,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -911,7 +962,7 @@
                     address2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -920,7 +971,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -952,7 +1003,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -960,14 +1011,14 @@
                         address2
                       </b>
                       :
-                      <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -984,6 +1035,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.acats``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L161-161" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Concatenate two addresses, taking the type of second address.
                   </p>
@@ -995,7 +1049,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1003,7 +1057,7 @@
                     address2
                   </span>
                   :
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1012,7 +1066,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1044,14 +1098,14 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1068,6 +1122,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.atoa``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L145-145" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert an address of type 'a to an address of type 'b.
                   </p>
@@ -1079,7 +1136,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1088,7 +1145,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'b&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'b&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1120,14 +1177,14 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1144,6 +1201,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.atooa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L149-149" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert any address to an obj Address.
                   </p>
@@ -1155,7 +1215,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1164,7 +1224,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1196,7 +1256,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1220,6 +1280,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.atos``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L141-141" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a string into an address.
                   </p>
@@ -1231,7 +1294,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1272,7 +1335,7 @@
                         left
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1280,7 +1343,7 @@
                         right
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1304,6 +1367,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.compare``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L101-101" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Compare Addresses.
                   </p>
@@ -1315,7 +1381,7 @@
                     left
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1323,7 +1389,7 @@
                     right
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1364,7 +1430,7 @@
                         left
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1372,7 +1438,7 @@
                         right
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1396,6 +1462,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.equals``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L95-95" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Equate Addresses.
                   </p>
@@ -1407,7 +1476,7 @@
                     left
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1415,7 +1484,7 @@
                     right
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1456,14 +1525,14 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1480,6 +1549,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.generalize``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L108-108" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert any address to an obj Address.
                   </p>
@@ -1491,7 +1563,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1500,7 +1572,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1532,7 +1604,7 @@
                         address
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1559,6 +1631,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.hash\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L91-91" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Hash an Address.
                   </p>
@@ -1570,7 +1645,7 @@
                     address
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1611,14 +1686,14 @@
                         address
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-address.html">Address</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1635,6 +1710,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.itoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L137-137" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a weakly-typed Address interface into a strongly-typed address.
                   </p>
@@ -1646,7 +1724,7 @@
                     address
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-address.html">Address</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-address.html">Address</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1655,7 +1733,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1694,7 +1772,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1711,6 +1789,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.ltoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L129-129" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a names list into an address.
                   </p>
@@ -1731,7 +1812,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1770,7 +1851,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1787,6 +1868,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.makeFromString``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L86-86" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Make an address from a '/' delimited string.
  NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
@@ -1808,7 +1892,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1847,7 +1931,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1864,6 +1948,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.ntoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L133-133" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a single name into an address.
                   </p>
@@ -1884,7 +1971,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1923,7 +2010,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1940,6 +2027,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.qtoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a names sequence into an address.
                   </p>
@@ -1960,7 +2050,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1999,7 +2089,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2016,6 +2106,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.rtoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L125-125" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a names array into an address.
                   </p>
@@ -2036,7 +2129,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2068,14 +2161,14 @@
                         address
                       </b>
                       :
-                      <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2092,6 +2185,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.specialize``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert an obj address to any Address.
                   </p>
@@ -2103,7 +2199,7 @@
                     address
                   </span>
                   :
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2112,7 +2208,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2151,7 +2247,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2168,6 +2264,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.stoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert a string into an address.
                   </p>
@@ -2188,7 +2287,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2213,10 +2312,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

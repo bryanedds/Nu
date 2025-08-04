@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Vector4i (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Vector4i (Nu)">
     
     <title>Vector4i (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,9 +137,9 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
     </dt>
@@ -204,7 +231,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a> struct.
+            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a> struct.
             
                   </p>
                 </div>
@@ -304,7 +331,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Initializes a new instance of the <a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a> struct.
+            Initializes a new instance of the <a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a> struct.
             
                   </p>
                 </div>
@@ -406,7 +433,7 @@
                         other
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -430,7 +457,7 @@
                   other
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -626,7 +653,7 @@
                         other
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       A vector to compare with this vector.
                     </span>
@@ -667,7 +694,7 @@
                     other
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -909,7 +936,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The instance.
                     </span>
@@ -928,7 +955,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -959,7 +986,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -984,7 +1011,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1030,7 +1057,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The instance.
                     </span>
@@ -1039,7 +1066,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1082,7 +1109,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1095,7 +1122,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1131,7 +1158,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Right operand.
                     </span>
@@ -1141,7 +1168,7 @@
                         scale
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Left operand.
                     </span>
@@ -1150,7 +1177,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of multiplication.
                   <br/>
@@ -1181,7 +1208,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1193,7 +1220,7 @@
                     scale
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1206,7 +1233,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1242,7 +1269,7 @@
                         left
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The first instance.
                     </span>
@@ -1252,7 +1279,7 @@
                         right
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The second instance.
                     </span>
@@ -1261,7 +1288,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1292,7 +1319,7 @@
                     left
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1304,7 +1331,7 @@
                     right
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1317,7 +1344,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1353,7 +1380,7 @@
                         left
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The first instance.
                     </span>
@@ -1363,7 +1390,7 @@
                         right
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The second instance.
                     </span>
@@ -1372,7 +1399,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1403,7 +1430,7 @@
                     left
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1415,7 +1442,7 @@
                     right
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1428,7 +1455,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1464,7 +1491,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The instance.
                     </span>
@@ -1483,7 +1510,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1514,7 +1541,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1539,7 +1566,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1575,7 +1602,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The instance.
                     </span>
@@ -1585,7 +1612,7 @@
                         vec2
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The divisor.
                     </span>
@@ -1594,7 +1621,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1625,7 +1652,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1637,7 +1664,7 @@
                     vec2
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1650,7 +1677,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1686,7 +1713,7 @@
                         left
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The first instance.
                     </span>
@@ -1696,7 +1723,7 @@
                         right
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The second instance.
                     </span>
@@ -1736,7 +1763,7 @@
                     left
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1748,7 +1775,7 @@
                     right
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1797,7 +1824,7 @@
                         left
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The first instance.
                     </span>
@@ -1807,7 +1834,7 @@
                         right
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The second instance.
                     </span>
@@ -1847,7 +1874,7 @@
                     left
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1859,7 +1886,7 @@
                     right
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1908,7 +1935,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       The instance.
                     </span>
@@ -1917,7 +1944,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The result of the calculation.
                   <br/>
@@ -1948,7 +1975,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1961,7 +1988,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -1997,7 +2024,7 @@
                         a
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Left operand.
                     </span>
@@ -2007,7 +2034,7 @@
                         b
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Right operand.
                     </span>
@@ -2016,7 +2043,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of operation.
                   <br/>
@@ -2047,7 +2074,7 @@
                     a
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2059,7 +2086,7 @@
                     b
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2072,7 +2099,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2108,7 +2135,7 @@
                         a
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Left operand.
                     </span>
@@ -2118,7 +2145,7 @@
                         b
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Right operand.
                     </span>
@@ -2128,7 +2155,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Result of operation.
                     </span>
@@ -2162,7 +2189,7 @@
                     a
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2174,7 +2201,7 @@
                     b
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2186,7 +2213,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2222,7 +2249,7 @@
                         vec
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Input vector.
                     </span>
@@ -2232,7 +2259,7 @@
                         min
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Minimum vector.
                     </span>
@@ -2242,7 +2269,7 @@
                         max
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Maximum vector.
                     </span>
@@ -2251,7 +2278,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The clamped vector.
                   <br/>
@@ -2282,7 +2309,7 @@
                     vec
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2294,7 +2321,7 @@
                     min
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2306,7 +2333,7 @@
                     max
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2319,7 +2346,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2355,7 +2382,7 @@
                         vec
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Input vector.
                     </span>
@@ -2365,7 +2392,7 @@
                         min
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Minimum vector.
                     </span>
@@ -2375,7 +2402,7 @@
                         max
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Maximum vector.
                     </span>
@@ -2385,7 +2412,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       The clamped vector.
                     </span>
@@ -2419,7 +2446,7 @@
                     vec
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2431,7 +2458,7 @@
                     min
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2443,7 +2470,7 @@
                     max
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2455,7 +2482,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2491,7 +2518,7 @@
                         a
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       First operand.
                     </span>
@@ -2501,7 +2528,7 @@
                         b
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Second operand.
                     </span>
@@ -2510,7 +2537,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The component-wise maximum.
                   <br/>
@@ -2541,7 +2568,7 @@
                     a
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2553,7 +2580,7 @@
                     b
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2566,7 +2593,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2602,7 +2629,7 @@
                         a
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       First operand.
                     </span>
@@ -2612,7 +2639,7 @@
                         b
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Second operand.
                     </span>
@@ -2622,7 +2649,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       The component-wise maximum.
                     </span>
@@ -2656,7 +2683,7 @@
                     a
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2668,7 +2695,7 @@
                     b
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2680,7 +2707,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2716,7 +2743,7 @@
                         a
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       First operand.
                     </span>
@@ -2726,7 +2753,7 @@
                         b
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Second operand.
                     </span>
@@ -2735,7 +2762,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   The component-wise minimum.
                   <br/>
@@ -2766,7 +2793,7 @@
                     a
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2778,7 +2805,7 @@
                     b
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2791,7 +2818,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2827,7 +2854,7 @@
                         a
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       First operand.
                     </span>
@@ -2837,7 +2864,7 @@
                         b
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Second operand.
                     </span>
@@ -2847,7 +2874,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       The component-wise minimum.
                     </span>
@@ -2881,7 +2908,7 @@
                     a
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2893,7 +2920,7 @@
                     b
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2905,7 +2932,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2941,7 +2968,7 @@
                         vector
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Left operand.
                     </span>
@@ -2960,7 +2987,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of the operation.
                   <br/>
@@ -2991,7 +3018,7 @@
                     vector
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3016,7 +3043,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -3052,7 +3079,7 @@
                         vector
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Left operand.
                     </span>
@@ -3072,7 +3099,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Result of the operation.
                     </span>
@@ -3106,7 +3133,7 @@
                     vector
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3130,7 +3157,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3166,7 +3193,7 @@
                         vector
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Left operand.
                     </span>
@@ -3176,7 +3203,7 @@
                         scale
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Right operand.
                     </span>
@@ -3185,7 +3212,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of the operation.
                   <br/>
@@ -3216,7 +3243,7 @@
                     vector
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3228,7 +3255,7 @@
                     scale
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3241,7 +3268,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -3277,7 +3304,7 @@
                         vector
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Left operand.
                     </span>
@@ -3287,7 +3314,7 @@
                         scale
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Right operand.
                     </span>
@@ -3297,7 +3324,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Result of the operation.
                     </span>
@@ -3331,7 +3358,7 @@
                     vector
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3343,7 +3370,7 @@
                     scale
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3355,7 +3382,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3391,7 +3418,7 @@
                         vector
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Left operand.
                     </span>
@@ -3410,7 +3437,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of the operation.
                   <br/>
@@ -3441,7 +3468,7 @@
                     vector
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3466,7 +3493,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -3502,7 +3529,7 @@
                         vector
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Left operand.
                     </span>
@@ -3522,7 +3549,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Result of the operation.
                     </span>
@@ -3556,7 +3583,7 @@
                     vector
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3580,7 +3607,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3616,7 +3643,7 @@
                         vector
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Left operand.
                     </span>
@@ -3626,7 +3653,7 @@
                         scale
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Right operand.
                     </span>
@@ -3635,7 +3662,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of the operation.
                   <br/>
@@ -3666,7 +3693,7 @@
                     vector
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3678,7 +3705,7 @@
                     scale
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3691,7 +3718,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -3727,7 +3754,7 @@
                         vector
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Left operand.
                     </span>
@@ -3737,7 +3764,7 @@
                         scale
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Right operand.
                     </span>
@@ -3747,7 +3774,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Result of the operation.
                     </span>
@@ -3781,7 +3808,7 @@
                     vector
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3793,7 +3820,7 @@
                     scale
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3805,7 +3832,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3841,7 +3868,7 @@
                         a
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       First operand.
                     </span>
@@ -3851,7 +3878,7 @@
                         b
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                        - 
                       Second operand.
                     </span>
@@ -3860,7 +3887,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                   </span>
                   Result of subtraction.
                   <br/>
@@ -3891,7 +3918,7 @@
                     a
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3903,7 +3930,7 @@
                     b
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3916,7 +3943,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -3952,7 +3979,7 @@
                         a
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       First operand.
                     </span>
@@ -3962,7 +3989,7 @@
                         b
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Second operand.
                     </span>
@@ -3972,7 +3999,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                        - 
                       Result of subtraction.
                     </span>
@@ -4006,7 +4033,7 @@
                     a
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -4018,7 +4045,7 @@
                     b
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -4030,7 +4057,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-vector4i-0.html">Vector4i</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -4059,10 +4086,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

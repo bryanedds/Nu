@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Plane3 (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Plane3 (Nu)">
     
     <title>Plane3 (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,7 +137,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
     </dt>
     <dt>
       Kind: Struct
@@ -194,7 +221,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Create a <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the first three components of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>
+            Create a <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the first three components of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a>
             as the normal and the last component as the distance to the origin.
             
                   </p>
@@ -275,7 +302,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Create a <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified normal and distance to the origin.
+            Create a <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified normal and distance to the origin.
             
                   </p>
                 </div>
@@ -336,7 +363,7 @@
                       :
                       <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                        - 
-                      A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                      A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                     </span>
                     <br/>
                     <span>
@@ -346,7 +373,7 @@
                       :
                       <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                        - 
-                      A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                      A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                     </span>
                     <br/>
                     <span>
@@ -356,7 +383,7 @@
                       :
                       <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                        - 
-                      A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                      A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                     </span>
                     <br/>
                   </ul>
@@ -377,7 +404,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Create the <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> that contains the three specified points.
+            Create the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> that contains the three specified points.
             
                   </p>
                 </div>
@@ -392,7 +419,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                    A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -404,7 +431,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                    A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -416,7 +443,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                    A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                   </p>
                 </dd>
               </dl>
@@ -501,7 +528,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Create a <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the first three values as the X, Y and Z
+            Create a <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the first three values as the X, Y and Z
             components of the normal and the last value as the distance to the origin.
             
                   </p>
@@ -587,7 +614,7 @@
                       :
                       <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                        - 
-                      A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                      A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                     </span>
                     <br/>
                     <span>
@@ -618,7 +645,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Create a <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> that contains the specified point and has the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3.Normal</a> vector.
+            Create a <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> that contains the specified point and has the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.Normal</a> vector.
             
                   </p>
                 </div>
@@ -633,7 +660,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A point the created <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> should contain.
+                    A point the created <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> should contain.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -707,7 +734,7 @@
                     Returns: 
                     <code>float32</code>
                   </span>
-                  The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                  The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   <br/>
                 </div>
               </div>
@@ -725,7 +752,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> with this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> with this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -753,7 +780,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -798,7 +825,7 @@
                       <code><span>byref&lt;float32&gt;</span></code>
                        - 
                       
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                     </span>
                     <br/>
@@ -820,7 +847,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> with this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> with this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -848,7 +875,7 @@
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector4">Vector4</a> and this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </dd>
@@ -893,8 +920,8 @@
                     <code>float32</code>
                   </span>
                   
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>
-            plus the <a href="/Nu/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>
+            plus the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   <br/>
                 </div>
@@ -914,8 +941,8 @@
                   <p class="fsdocs-summary">
                     
             Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> with
-            the <a href="/Nu/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>
-            plus the <a href="/Nu/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>
+            plus the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -944,8 +971,8 @@
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>
-            plus the <a href="/Nu/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>
+            plus the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </dd>
@@ -991,8 +1018,8 @@
                       <code><span>byref&lt;float32&gt;</span></code>
                        - 
                       
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>
-            plus the <a href="/Nu/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>
+            plus the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                     </span>
                     <br/>
@@ -1015,8 +1042,8 @@
                   <p class="fsdocs-summary">
                     
             Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> with
-            the <a href="/Nu/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>
-            plus the <a href="/Nu/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>
+            plus the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -1044,8 +1071,8 @@
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>
-            plus the <a href="/Nu/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>
+            plus the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.D</a> value of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </dd>
@@ -1090,7 +1117,7 @@
                     <code>float32</code>
                   </span>
                   
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   <br/>
                 </div>
@@ -1110,7 +1137,7 @@
                   <p class="fsdocs-summary">
                     
             Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> with
-            the <a href="/Nu/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -1139,7 +1166,7 @@
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </dd>
@@ -1185,7 +1212,7 @@
                       <code><span>byref&lt;float32&gt;</span></code>
                        - 
                       
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                     </span>
                     <br/>
@@ -1208,7 +1235,7 @@
                   <p class="fsdocs-summary">
                     
             Get the dot product of a <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> with
-            the <a href="/Nu/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            the <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3.Normal</a> vector of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -1236,7 +1263,7 @@
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            The dot product of the specified <a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a> and the normal of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </dd>
@@ -1271,7 +1298,7 @@
                       :
                       <code>obj</code>
                        - 
-                      An <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to check for equality with this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                      An <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to check for equality with this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                     </span>
                     <br/>
                   </ul>
@@ -1283,7 +1310,7 @@
                   <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>,
+ if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1309,7 +1336,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> is equal to another <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> is equal to another <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -1324,7 +1351,7 @@
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    An <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to check for equality with this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    An <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> to check for equality with this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -1340,7 +1367,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>,
+ if the specified <a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a> is equal to this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1377,9 +1404,9 @@
                         other
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for equality with this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for equality with this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                     </span>
                     <br/>
                   </ul>
@@ -1391,7 +1418,7 @@
                   <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> is equal to this one,
+ if the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> is equal to this one,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1417,7 +1444,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> is equal to another <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> is equal to another <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -1428,11 +1455,11 @@
                     other
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for equality with this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for equality with this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -1448,7 +1475,7 @@
                     <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">true</span>
 </code></pre>
 
- if the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> is equal to this one,
+ if the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> is equal to this one,
             <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">false</span>
 </code></pre>
 
@@ -1482,7 +1509,7 @@
                     Returns: 
                     <code>int</code>
                   </span>
-                  A hash code for this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                  A hash code for this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -1503,7 +1530,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get a hash code for this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            Get a hash code for this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -1517,7 +1544,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    A hash code for this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    A hash code for this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -1549,19 +1576,19 @@
                         box
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                        - 
-                      The <a href="/Nu/reference/nu-box3-0.html">Box3</a> to test for intersection.
+                      The <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> to test for intersection.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                   </span>
                   
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
             
                   <br/>
                 </div>
@@ -1580,7 +1607,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects a <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects a <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </div>
@@ -1591,11 +1618,11 @@
                     box
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="/Nu/reference/nu-box3-0.html">Box3</a> to test for intersection.
+                    The <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> to test for intersection.
                   </p>
                 </dd>
               </dl>
@@ -1604,12 +1631,12 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </dd>
@@ -1642,9 +1669,9 @@
                         box
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                        - 
-                      The <a href="/Nu/reference/nu-box3-0.html">Box3</a> to test for intersection.
+                      The <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> to test for intersection.
                     </span>
                     <br/>
                     <span>
@@ -1652,10 +1679,10 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                        - 
                       
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
             
                     </span>
                     <br/>
@@ -1677,7 +1704,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects a <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects a <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </div>
@@ -1688,11 +1715,11 @@
                     box
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="/Nu/reference/nu-box3-0.html">Box3</a> to test for intersection.
+                    The <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a> to test for intersection.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -1700,12 +1727,12 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="/Nu/reference/nu-box3-0.html">Box3</a>.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified <a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>.
             
                   </p>
                 </dd>
@@ -1738,7 +1765,7 @@
                         frustum
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                        - 
                       The !:BoundingFrustum to test for intersection.
                     </span>
@@ -1747,10 +1774,10 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                   </span>
                   
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingFrustum.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingFrustum.
             
                   <br/>
                 </div>
@@ -1769,7 +1796,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects a !:BoundingFrustum.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects a !:BoundingFrustum.
             
                   </p>
                 </div>
@@ -1780,7 +1807,7 @@
                     frustum
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1793,12 +1820,12 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingFrustum.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingFrustum.
             
                   </p>
                 </dd>
@@ -1831,7 +1858,7 @@
                         sphere
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
                        - 
                       The !:BoundingSphere to test for intersection.
                     </span>
@@ -1840,10 +1867,10 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                   </span>
                   
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
             
                   <br/>
                 </div>
@@ -1862,7 +1889,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects a !:BoundingSphere.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects a !:BoundingSphere.
             
                   </p>
                 </div>
@@ -1873,7 +1900,7 @@
                     sphere
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-sphere.html">Sphere</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1886,12 +1913,12 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
                     
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
             
                   </p>
                 </dd>
@@ -1924,7 +1951,7 @@
                         sphere
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                        - 
                       The !:BoundingSphere to test for intersection.
                     </span>
@@ -1934,10 +1961,10 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                        - 
                       
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
             
                     </span>
                     <br/>
@@ -1959,7 +1986,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Check if this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> intersects a !:BoundingSphere.
+            Check if this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> intersects a !:BoundingSphere.
             
                   </p>
                 </div>
@@ -1970,7 +1997,7 @@
                     sphere
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-sphere.html">Sphere</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -1982,12 +2009,12 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-planeintersectiontype.html">PlaneIntersectionType</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
                     
-            The type of intersection of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
+            The type of intersection of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> with the specified !:BoundingSphere.
             
                   </p>
                 </dd>
@@ -2020,7 +2047,7 @@
                         ray
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2055,7 +2082,7 @@
                     ray
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2096,7 +2123,7 @@
                         ray
                       </b>
                       :
-                      <code><span>inref&lt;<a href="/Nu/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
+                      <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2134,7 +2161,7 @@
                     ray
                   </span>
                   :
-                  <code><span>inref&lt;<a href="/Nu/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
+                  <code><span>inref&lt;<a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2207,7 +2234,7 @@
                     Returns: 
                     <code>string</code>
                   </span>
-                  A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                  A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   <br/>
                   Modifiers: 
                   abstract
@@ -2228,7 +2255,7 @@
                   </div>
                   <p class="fsdocs-summary">
                     
-            Get a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+            Get a <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
             
                   </p>
                 </div>
@@ -2242,7 +2269,7 @@
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    A <a href="https://learn.microsoft.com/dotnet/api/system.string">String</a> representation of this <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -2293,9 +2320,9 @@
                         plane1
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
+                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
                     </span>
                     <br/>
                     <span>
@@ -2303,9 +2330,9 @@
                         plane2
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
+                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
                     </span>
                     <br/>
                   </ul>
@@ -2349,11 +2376,11 @@
                     plane1
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
+                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2361,11 +2388,11 @@
                     plane2
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
+                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for inequality.
                   </p>
                 </dd>
               </dl>
@@ -2416,9 +2443,9 @@
                         plane1
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for equality.
+                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for equality.
                     </span>
                     <br/>
                     <span>
@@ -2426,9 +2453,9 @@
                         plane2
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for equality.
+                      A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for equality.
                     </span>
                     <br/>
                   </ul>
@@ -2472,11 +2499,11 @@
                     plane1
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for equality.
+                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for equality.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2484,11 +2511,11 @@
                     plane2
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to check for equality.
+                    A <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to check for equality.
                   </p>
                 </dd>
               </dl>
@@ -2539,18 +2566,18 @@
                         value
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
-                      The <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to normalize.
+                      The <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to normalize.
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
-                  A normalized version of the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                  A normalized version of the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   <br/>
                 </div>
               </div>
@@ -2579,11 +2606,11 @@
                     value
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to normalize.
+                    The <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to normalize.
                   </p>
                 </dd>
               </dl>
@@ -2592,11 +2619,11 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
-                    A normalized version of the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    A normalized version of the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -2628,9 +2655,9 @@
                         value
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
-                      The <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to normalize.
+                      The <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to normalize.
                     </span>
                     <br/>
                     <span>
@@ -2638,9 +2665,9 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
-                      A normalized version of the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                      A normalized version of the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                     </span>
                     <br/>
                   </ul>
@@ -2672,11 +2699,11 @@
                     value
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    The <a href="/Nu/reference/nu-plane3-0.html">Plane3</a> to normalize.
+                    The <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a> to normalize.
                   </p>
                 </dd>
                 <dt class="fsdocs-param">
@@ -2684,11 +2711,11 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
-                    A normalized version of the specified <a href="/Nu/reference/nu-plane3-0.html">Plane3</a>.
+                    A normalized version of the specified <a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>.
                   </p>
                 </dd>
               </dl>
@@ -2720,7 +2747,7 @@
                         plane
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
                       The normalized plane to transform.
                     </span>
@@ -2739,7 +2766,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   The transformed plane.
                   <br/>
@@ -2770,7 +2797,7 @@
                     plane
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2795,7 +2822,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -2831,7 +2858,7 @@
                         plane
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
                       The normalized plane to transform.
                     </span>
@@ -2851,7 +2878,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
                       The transformed plane.
                     </span>
@@ -2885,7 +2912,7 @@
                     plane
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2909,7 +2936,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -2945,7 +2972,7 @@
                         plane
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                        - 
                       The normalized plane to transform.
                     </span>
@@ -2964,7 +2991,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                   </span>
                   The transformed plane.
                   <br/>
@@ -2995,7 +3022,7 @@
                     plane
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3020,7 +3047,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-plane3-0.html">Plane3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs">
                   <p>
@@ -3056,7 +3083,7 @@
                         plane
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
                       The normalized plane to transform.
                     </span>
@@ -3076,7 +3103,7 @@
                         result
                       </b>
                       :
-                      <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                      <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                        - 
                       The transformed plane.
                     </span>
@@ -3110,7 +3137,7 @@
                     plane
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3134,7 +3161,7 @@
                     result
                   </span>
                   :
-                  <code><span>byref&lt;<a href="/Nu/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
+                  <code><span>byref&lt;<a href="http://localhost:8901/reference/nu-plane3-0.html">Plane3</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs">
                   <p>
@@ -3163,10 +3190,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

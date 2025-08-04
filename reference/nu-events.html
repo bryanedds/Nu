@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Events (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Events (Nu)">
     
     <title>Events (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -148,7 +175,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -165,6 +192,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.AssetsReloadEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L335-335" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when game assets are reloaded.
                   </p>
@@ -175,7 +205,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -202,7 +232,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -219,6 +249,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodyAddingEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L191-191" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a body is added to a physics system.
                   </p>
@@ -229,7 +262,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -256,7 +289,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -273,6 +306,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodyJointBreakEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L209-209" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a physics joint is broken.
                   </p>
@@ -283,7 +319,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyjointbreakdata.html">BodyJointBreakData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -310,7 +346,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -327,6 +363,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodyPenetrationEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L197-197" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a physics body is penetrated.
                   </p>
@@ -337,7 +376,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodypenetrationdata.html">BodyPenetrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -364,7 +403,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -381,6 +420,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodyRemovingEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L194-194" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a body is removed from a physics system.
                   </p>
@@ -391,7 +433,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -418,7 +460,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -435,6 +477,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodySeparationExplicitEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L200-200" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a physics body is separated explicitly by a physics engine itegration.
                   </p>
@@ -445,7 +490,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyseparationexplicitdata.html">BodySeparationExplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -472,7 +517,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -489,6 +534,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodySeparationImplicitEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L203-203" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a physics body is separated implicitly, such as by its containing entity being destroyed.
                   </p>
@@ -499,7 +547,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyseparationimplicitdata.html">BodySeparationImplicitData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -526,7 +574,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -543,6 +591,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.BodyTransformEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a physics body is transformed in space.
                   </p>
@@ -553,7 +604,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodytransformdata.html">BodyTransformData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -592,7 +643,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-changedata.html">ChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-changedata.html">ChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -609,6 +660,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.ChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L143-143" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a simulant's property is changed.
                   </p>
@@ -629,7 +683,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-changedata.html">ChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-changedata.html">ChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -656,7 +710,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -673,6 +727,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.ClickEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L215-215" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a button is clicked.
                   </p>
@@ -683,7 +740,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -710,7 +767,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -727,6 +784,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.CodeReloadEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L338-338" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when game code is reloaded.
                   </p>
@@ -737,7 +797,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -764,7 +824,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -781,6 +841,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.DeselectingEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L167-167" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a screen is deselected.
                   </p>
@@ -791,7 +854,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -818,7 +881,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -835,6 +898,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.DialEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L233-233" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a radio button is dialed.
                   </p>
@@ -845,7 +911,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -872,7 +938,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -889,6 +955,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.DialedEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L236-236" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a dial is pressed.
                   </p>
@@ -899,7 +968,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -926,7 +995,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -943,6 +1012,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.DownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L218-218" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a button is pressed.
                   </p>
@@ -953,7 +1025,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -980,7 +1052,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -997,6 +1069,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.ExitRequestEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L341-341" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the OS issues an exit request to the application.
                   </p>
@@ -1007,7 +1082,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1034,7 +1109,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1051,6 +1126,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.FocusEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L254-254" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a text gui gains focus.
                   </p>
@@ -1061,7 +1139,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1100,7 +1178,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1117,6 +1195,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.GamepadButtonChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L323-323" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a gamepad button is pressed or released.
                   </p>
@@ -1137,7 +1218,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1176,7 +1257,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1193,6 +1274,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.GamepadButtonDownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L326-326" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a gamepad direction is pressed.
                   </p>
@@ -1213,7 +1297,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1252,7 +1336,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1269,6 +1353,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.GamepadButtonUpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L329-329" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a gamepad direction is released.
                   </p>
@@ -1289,7 +1376,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-gamepadbuttondata.html">GamepadButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1328,7 +1415,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1345,6 +1432,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.GamepadDirectionChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L320-320" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a gamepad direction is changed.
                   </p>
@@ -1365,7 +1455,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-gamepaddirectiondata.html">GamepadDirectionData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1392,7 +1482,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1409,6 +1499,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.IncomingFinishEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a screen has just finished transitioning in.
                   </p>
@@ -1419,7 +1512,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1446,7 +1539,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1463,6 +1556,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.IncomingStartEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L170-170" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a screen has just started transitioning in.
                   </p>
@@ -1473,7 +1569,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1500,7 +1596,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1517,6 +1613,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.IntegrationEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L188-188" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when physics integration occurs, which is when a physics engine processes its messages.
                   </p>
@@ -1527,7 +1626,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-integrationdata.html">IntegrationData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1554,7 +1653,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1571,6 +1670,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.KeyboardKeyChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L311-311" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a keyboard key is pressed or released.
                   </p>
@@ -1581,7 +1683,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1608,7 +1710,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1625,6 +1727,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.KeyboardKeyDownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L314-314" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a keyboard key is pressed.
                   </p>
@@ -1635,7 +1740,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1662,7 +1767,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1679,6 +1784,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.KeyboardKeyUpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L317-317" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a keyboard key is released.
                   </p>
@@ -1689,7 +1797,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-keyboardkeydata.html">KeyboardKeyData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1728,7 +1836,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1745,6 +1853,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.KeyedValueChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L161-161" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a key-value pair is changed in the world.
                   </p>
@@ -1765,7 +1876,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-keyedvaluechangedata.html">KeyedValueChangeData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1804,7 +1915,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1821,6 +1932,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Events.LifeCycleEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L146-146" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a simulant is registered, unregistered, or has its mounting state changed.
                   </p>
@@ -1841,7 +1955,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-lifecycleeventdata.html">LifeCycleEventData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1868,7 +1982,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1885,6 +1999,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MountEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L182-182" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when an entity is mounted.
                   </p>
@@ -1895,7 +2012,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1922,7 +2039,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1939,6 +2056,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseDragEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when mouse movement occurs while a mouse button is down.
                   </p>
@@ -1949,7 +2069,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1976,7 +2096,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1993,6 +2113,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseLeftChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L266-266" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the left mouse button is pressed or released.
                   </p>
@@ -2003,7 +2126,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2030,7 +2153,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2047,6 +2170,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseLeftDownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L269-269" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the left mouse button is pressed.
                   </p>
@@ -2057,7 +2183,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2084,7 +2210,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2101,6 +2227,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseLeftUpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L272-272" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the left mouse button is released.
                   </p>
@@ -2111,7 +2240,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2138,7 +2267,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2155,6 +2284,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseMiddleChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L275-275" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the middle mouse button is pressed or released.
                   </p>
@@ -2165,7 +2297,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2192,7 +2324,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2209,6 +2341,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseMiddleDownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L278-278" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the middle mouse button is pressed.
                   </p>
@@ -2219,7 +2354,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2246,7 +2381,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2263,6 +2398,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseMiddleUpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L281-281" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the middle mouse button is released.
                   </p>
@@ -2273,7 +2411,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2300,7 +2438,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2317,6 +2455,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseMoveEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L257-257" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when mouse movement occurs.
                   </p>
@@ -2327,7 +2468,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousemovedata.html">MouseMoveData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2354,7 +2495,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2371,6 +2512,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseRightChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L284-284" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the right mouse button is pressed or released.
                   </p>
@@ -2381,7 +2525,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2408,7 +2552,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2425,6 +2569,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseRightDownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L287-287" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the right mouse button is pressed.
                   </p>
@@ -2435,7 +2582,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2462,7 +2609,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2479,6 +2626,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseRightUpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L290-290" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the right mouse button is released.
                   </p>
@@ -2489,7 +2639,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2516,7 +2666,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2533,6 +2683,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseWheelEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L263-263" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the mouse wheel is scrolled.
                   </p>
@@ -2543,7 +2696,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousewheeldata.html">MouseWheelData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2570,7 +2723,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2587,6 +2740,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseX1ChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L293-293" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the X1 mouse button is pressed or released.
                   </p>
@@ -2597,7 +2753,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2624,7 +2780,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2641,6 +2797,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseX1DownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L296-296" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the X1 mouse button is pressed.
                   </p>
@@ -2651,7 +2810,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2678,7 +2837,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2695,6 +2854,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseX1UpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L299-299" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the X1 mouse button is released.
                   </p>
@@ -2705,7 +2867,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2732,7 +2894,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2749,6 +2911,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseX2ChangeEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L302-302" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the X2 mouse button is pressed or released.
                   </p>
@@ -2759,7 +2924,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2786,7 +2951,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2803,6 +2968,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseX2DownEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L305-305" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the X2 mouse button is pressed.
                   </p>
@@ -2813,7 +2981,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2840,7 +3008,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2857,6 +3025,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.MouseX2UpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L308-308" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the X2 mouse button is released.
                   </p>
@@ -2867,7 +3038,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mousebuttondata.html">MouseButtonData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2894,7 +3065,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2911,6 +3082,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.OutgoingFinishEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a screen has just finished transitioning out.
                   </p>
@@ -2921,7 +3095,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2948,7 +3122,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2965,6 +3139,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.OutgoingStartEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L176-176" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a screen has just started transitioning out.
                   </p>
@@ -2975,7 +3152,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3002,7 +3179,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3019,6 +3196,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.PostUpdateEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L155-155" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when post-update processing on a simulant occurs (except on entities for efficiency).
                   </p>
@@ -3029,7 +3209,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3056,7 +3236,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3073,6 +3253,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.PreUpdateEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L149-149" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when pre-update processing on a simulant occurs (except on entities for efficiency).
                   </p>
@@ -3083,7 +3266,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3110,7 +3293,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3127,6 +3310,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.RegisterEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L137-137" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a simulant is registered.
                   </p>
@@ -3137,7 +3323,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3164,7 +3350,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3181,6 +3367,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.SelectEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L164-164" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a screen is selected.
                   </p>
@@ -3191,7 +3380,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3218,7 +3407,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3235,6 +3424,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.SpineSkeletonAnimationTriggerEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a Spine skeleton animation event is triggered.
                   </p>
@@ -3245,7 +3437,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-spineskeletonanimationtriggerdata.html">SpineSkeletonAnimationTriggerData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3272,7 +3464,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3289,6 +3481,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.TextEditEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L251-251" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the content of a text gui is edited.
                   </p>
@@ -3299,7 +3494,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-texteditdata.html">TextEditData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3326,7 +3521,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3343,6 +3538,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.TextInputEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L332-332" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when text input is received from the OS.
                   </p>
@@ -3353,7 +3551,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-textinputdata.html">TextInputData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3380,7 +3578,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3397,6 +3595,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.TimeUpdateEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L158-158" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when the engine's representation of current time changes.
                   </p>
@@ -3407,7 +3608,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3434,7 +3635,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3451,6 +3652,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.ToggleEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L224-224" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a button is toggled.
                   </p>
@@ -3461,7 +3665,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>bool&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3488,7 +3692,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3505,6 +3709,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.ToggledEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L227-227" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a button is pressed.
                   </p>
@@ -3515,7 +3722,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3542,7 +3749,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3559,6 +3766,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.TouchEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L242-242" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised while a feeler is touched.
                   </p>
@@ -3569,7 +3779,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3596,7 +3806,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3613,6 +3823,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.TouchingEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L245-245" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a feeler is initially touched.
                   </p>
@@ -3623,7 +3836,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3650,7 +3863,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3667,6 +3880,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UndialedEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L239-239" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a dial is released.
                   </p>
@@ -3677,7 +3893,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3704,7 +3920,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3721,6 +3937,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UnmountEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L185-185" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when an entity is unmounted.
                   </p>
@@ -3731,7 +3950,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-mountdata.html">MountData</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-mountdata.html">MountData</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3758,7 +3977,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3775,6 +3994,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UnregisteringEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L140-140" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a simulant is unregistered.
                   </p>
@@ -3785,7 +4007,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3812,7 +4034,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3829,6 +4051,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UntoggledEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L230-230" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a button is released.
                   </p>
@@ -3839,7 +4064,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3866,7 +4091,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3883,6 +4108,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UntouchEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L248-248" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a feeler is no longer touched.
                   </p>
@@ -3893,7 +4121,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3920,7 +4148,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3937,6 +4165,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UpEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L221-221" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when a button is released.
                   </p>
@@ -3947,7 +4178,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3974,7 +4205,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                    <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3991,6 +4222,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Events.UpdateEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldEvents.fs#L152-152" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Raised when update processing on a simulant occurs (except on entities for efficiency).
                   </p>
@@ -4001,7 +4235,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>unit&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>unit&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4034,10 +4268,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

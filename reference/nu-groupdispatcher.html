@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="GroupDispatcher (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="GroupDispatcher (Nu)">
     
     <title>GroupDispatcher (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -106,13 +133,13 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="/Nu/reference/nu-simulantdispatcher.html">SimulantDispatcher</a></code>
+      <code><a href="http://localhost:8901/reference/nu-simulantdispatcher.html">SimulantDispatcher</a></code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="/Nu/reference/nu-dispatcher.html">Dispatcher</a></code>
+      <code><a href="http://localhost:8901/reference/nu-dispatcher.html">Dispatcher</a></code>
       , 
-      <code><a href="/Nu/reference/nu-latebindings.html">LateBindings</a></code>
+      <code><a href="http://localhost:8901/reference/nu-latebindings.html">LateBindings</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -164,7 +191,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-groupdispatcher.html">GroupDispatcher</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-groupdispatcher.html">GroupDispatcher</a></code>
                   </span>
                   <br/>
                 </div>
@@ -177,7 +204,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="/Nu/reference/nu-groupdispatcher.html">GroupDispatcher</a></code>
+                <code><a href="http://localhost:8901/reference/nu-groupdispatcher.html">GroupDispatcher</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -227,7 +254,7 @@
                         op
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-editoperation.html">EditOperation</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-editoperation.html">EditOperation</a></code>
                     </span>
                     <br/>
                     <span>
@@ -235,7 +262,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -243,7 +270,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -265,6 +292,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.Edit\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L586-586" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Participate in defining additional editing behavior for an entity via the ImGui API.
                   </p>
@@ -276,7 +306,7 @@
                     op
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-editoperation.html">EditOperation</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-editoperation.html">EditOperation</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -284,7 +314,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -292,7 +322,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -324,7 +354,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -332,7 +362,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -354,6 +384,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.PostUpdate\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L566-566" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Post-update a group.
                   </p>
@@ -365,7 +398,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -373,7 +406,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -405,7 +438,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -413,7 +446,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -435,6 +468,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.PreUpdate\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L558-558" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Pre-update a group.
                   </p>
@@ -446,7 +482,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -454,7 +490,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -486,7 +522,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -494,7 +530,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -516,6 +552,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.Register\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L546-546" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Register a group when adding it to a screen.
                   </p>
@@ -527,7 +566,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -535,7 +574,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -567,7 +606,7 @@
                         renderPass
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
                     </span>
                     <br/>
                     <span>
@@ -575,7 +614,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -583,7 +622,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -605,6 +644,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.Render\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L570-570" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Render a group.
                   </p>
@@ -616,7 +658,7 @@
                     renderPass
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-renderpass.html">RenderPass</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -624,7 +666,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -632,7 +674,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -672,7 +714,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -680,7 +722,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -702,6 +744,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.Signal\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L574-574" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a signal to a group.
                   </p>
@@ -721,7 +766,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -729,7 +774,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -769,7 +814,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -777,7 +822,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -806,6 +851,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.TryGetFallbackModel``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L578-578" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the fallback model value if the dispatcher defines one.
                   </p>
@@ -825,7 +873,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -833,7 +881,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -882,7 +930,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -890,7 +938,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -912,6 +960,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.TryProcess\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L554-554" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to ImSim process a group.
                   </p>
@@ -931,7 +982,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -939,7 +990,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -979,7 +1030,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -987,7 +1038,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1009,6 +1060,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.TrySynchronize\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L582-582" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to synchronize the content of a group.
                   </p>
@@ -1028,7 +1082,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1036,7 +1090,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1097,6 +1151,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.TryTruncateModel``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L590-590" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to truncate a group model.
                   </p>
@@ -1157,7 +1214,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1165,7 +1222,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1194,6 +1251,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.TryUntruncateModel``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L594-594" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to untruncate a group model.
                   </p>
@@ -1213,7 +1273,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1221,7 +1281,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1262,7 +1322,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1270,7 +1330,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1292,6 +1352,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.Unregister\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L550-550" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Unregister a group when removing it from a screen.
                   </p>
@@ -1303,7 +1366,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1311,7 +1374,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1343,7 +1406,7 @@
                         group
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1351,7 +1414,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1373,6 +1436,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.GroupDispatcher.Update\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L562-562" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Update a group.
                   </p>
@@ -1384,7 +1450,7 @@
                     group
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-group.html">Group</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-group.html">Group</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1392,7 +1458,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1418,10 +1484,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

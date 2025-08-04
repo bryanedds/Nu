@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="PhysicsEngine (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="PhysicsEngine (Nu)">
     
     <title>PhysicsEngine (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,7 +137,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="/Nu/reference/nu-physicsengine.html">PhysicsEngine</a></code>
+      <code><a href="http://localhost:8901/reference/nu-physicsengine.html">PhysicsEngine</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -178,6 +205,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.CleanUp\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L591-591" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  Handle physics clean up by freeing all created resources.
               </p>
@@ -217,6 +247,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.ClearInternal\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L589-589" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
               </p>
@@ -248,7 +281,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -275,6 +308,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyAngularVelocity\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L563-563" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the angular velocity of the body with the given body id.
                   </p>
@@ -286,7 +322,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -327,7 +363,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -354,6 +390,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyContactNormals\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L559-559" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the contact normals of the body with the given body id.
                   </p>
@@ -365,7 +404,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -406,7 +445,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -433,6 +472,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyExists\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L557-557" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the physics engine contain the body with the given body id.
                   </p>
@@ -444,7 +486,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -485,7 +527,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -512,6 +554,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyGrounded\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L571-571" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the body with the given body id is on the ground.
                   </p>
@@ -523,7 +568,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -564,7 +609,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -591,6 +636,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyLinearVelocity\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L561-561" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the linear velocity of the body with the given body id.
                   </p>
@@ -602,7 +650,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -643,7 +691,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -670,6 +718,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodySensor\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L573-573" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the body with the given body id is a sensor.
                   </p>
@@ -681,7 +732,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -722,7 +773,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -749,6 +800,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyToGroundContactNormalOpt\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L567-567" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get a contact normal where the body with the given body id is touching the ground (if one exists).
                   </p>
@@ -760,7 +814,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -801,7 +855,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -828,6 +882,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyToGroundContactNormals\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L565-565" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the contact normals where the body with the given body id is touching the ground.
                   </p>
@@ -839,7 +896,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -880,7 +937,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -907,6 +964,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetBodyToGroundContactTangentOpt\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L569-569" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get a contact tangent where the body with the given body id is touching the ground (if one exists).
                   </p>
@@ -918,7 +978,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -967,7 +1027,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -994,6 +1054,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetWheelAngularVelocity\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L579-579" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the given wheel's angular velocity (0.0f if not a wheeled vehicle or invalid wheel).
                   </p>
@@ -1013,7 +1076,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1078,7 +1141,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1105,6 +1168,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetWheelModelMatrix\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L577-577" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the given wheel's model matrix (identity if not a wheeled vehicle or invalid wheel).
                   </p>
@@ -1140,7 +1206,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1181,7 +1247,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1208,6 +1274,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.GetWheelSpeedAtClutch\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L575-575" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the wheel speed framed in terms of the clutch (0.0f if not a wheeled vehicle).
                   </p>
@@ -1219,7 +1288,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1260,7 +1329,7 @@
                         message
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1282,6 +1351,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.HandleMessage\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L583-583" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Handle a physics message from an external source.
                   </p>
@@ -1293,7 +1365,7 @@
                     message
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1325,7 +1397,7 @@
                         ray
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1348,7 +1420,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1368,6 +1440,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.RayCast\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L581-581" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Cast a ray into the physics bodies.
                   </p>
@@ -1379,7 +1454,7 @@
                     ray
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1404,7 +1479,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1436,14 +1511,14 @@
                         delta
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span><a href="/Nu/reference/nu-integrationmessage.html">IntegrationMessage</a>&#32;SArray</span>&#32;option</span></code>
+                    <code><span><span><a href="http://localhost:8901/reference/nu-integrationmessage.html">IntegrationMessage</a>&#32;SArray</span>&#32;option</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1463,6 +1538,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.TryIntegrate\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L585-585" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to integrate the physics system one step.
                   </p>
@@ -1474,7 +1552,7 @@
                     delta
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-gametime.html">GameTime</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1483,7 +1561,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span><a href="/Nu/reference/nu-integrationmessage.html">IntegrationMessage</a>&#32;SArray</span>&#32;option</span></code>
+                  <code><span><span><a href="http://localhost:8901/reference/nu-integrationmessage.html">IntegrationMessage</a>&#32;SArray</span>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1523,7 +1601,7 @@
                         eyeFrustum
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1561,6 +1639,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PhysicsEngine.TryRender\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L587-587" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt torender physics with the given settings and renderer objects.
                   </p>
@@ -1580,7 +1661,7 @@
                     eyeFrustum
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1622,10 +1703,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

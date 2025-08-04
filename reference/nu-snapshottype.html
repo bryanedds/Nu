@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="SnapshotType (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="SnapshotType (Nu)">
     
     <title>SnapshotType (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,11 +137,11 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-snapshottype.html">SnapshotType</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-snapshottype.html">SnapshotType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-snapshottype.html">SnapshotType</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="http://localhost:8901/reference/nu-snapshottype.html">SnapshotType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
@@ -171,6 +198,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L374-374" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -201,6 +231,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L342-342" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -231,6 +264,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L348-348" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -324,6 +360,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L359-359" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -354,6 +393,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L350-350" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -384,6 +426,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L356-356" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -414,6 +459,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L352-352" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -444,6 +492,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L351-351" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -474,6 +525,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L355-355" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -551,6 +605,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L367-367" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -581,6 +638,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L375-375" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -611,6 +671,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L354-354" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -641,6 +704,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L343-343" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -671,6 +737,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L363-363" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -701,6 +770,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L358-358" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -731,6 +803,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L353-353" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -761,6 +836,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L369-369" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -791,6 +869,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L344-344" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -821,6 +902,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L373-373" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -851,6 +935,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L349-349" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -881,6 +968,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L357-357" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -911,6 +1001,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L364-364" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -941,6 +1034,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L345-345" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -971,6 +1067,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L370-370" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1001,6 +1100,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L365-365" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1031,6 +1133,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L362-362" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1061,6 +1166,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L340-340" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1091,6 +1199,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L341-341" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1262,6 +1373,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L371-371" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1292,6 +1406,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L368-368" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1322,6 +1439,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L339-339" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1335,7 +1455,7 @@
                 <p>
                   <a id="UserDefinedSnapshot">
                     <a href="#UserDefinedSnapshot">
-                      <code><span>UserDefinedSnapshot(<span><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>,&#32;string</span>)</span></code>
+                      <code><span>UserDefinedSnapshot(<span><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>,&#32;string</span>)</span></code>
                     </a>
                   </a>
                 </p>
@@ -1343,7 +1463,7 @@
               <div class="fsdocs-tip" id="6592">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>UserDefinedSnapshot(<span><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>,&#32;string</span>)</span></code>
+                  <code><span>UserDefinedSnapshot(<span><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>,&#32;string</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1353,7 +1473,7 @@
                         Item1
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1377,7 +1497,7 @@
                   Item1
                 </span>
                 :
-                <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1462,6 +1582,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L338-338" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -3069,10 +3192,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

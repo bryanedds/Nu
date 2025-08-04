@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="EntityState (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="EntityState (Nu)">
     
     <title>EntityState (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,7 +137,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="/Nu/reference/nu-simulantstate.html">SimulantState</a></code>
+      <code><a href="http://localhost:8901/reference/nu-simulantstate.html">SimulantState</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -202,7 +229,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-entitycontent.html">EntityContent</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitycontent.html">EntityContent</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -218,7 +245,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-entitycontent.html">EntityContent</a></code>
+                <code><a href="http://localhost:8901/reference/nu-entitycontent.html">EntityContent</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -244,7 +271,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -260,7 +287,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
+                <code><a href="http://localhost:8901/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -370,7 +397,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="/Nu/reference/nu-facet.html">Facet</a>&#32;array</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-facet.html">Facet</a>&#32;array</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -386,7 +413,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="/Nu/reference/nu-facet.html">Facet</a>&#32;array</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-facet.html">Facet</a>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -493,7 +520,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;<a href="/Nu/reference/nu-relation-1.html">Relation</a></span>&#32;option</span></code>
+                    <code><span><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;<a href="http://localhost:8901/reference/nu-relation-1.html">Relation</a></span>&#32;option</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -509,7 +536,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;<a href="/Nu/reference/nu-relation-1.html">Relation</a></span>&#32;option</span></code>
+                <code><span><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;<a href="http://localhost:8901/reference/nu-relation-1.html">Relation</a></span>&#32;option</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -661,7 +688,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="/Nu/reference/nu-entitydescriptor.html">EntityDescriptor</a>&#32;option</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entitydescriptor.html">EntityDescriptor</a>&#32;option</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -677,7 +704,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="/Nu/reference/nu-entitydescriptor.html">EntityDescriptor</a>&#32;option</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-entitydescriptor.html">EntityDescriptor</a>&#32;option</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -703,7 +730,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;option</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;option</span></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -719,7 +746,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;option</span></code>
+                <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;option</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -868,7 +895,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-transform.html">Transform</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-transform.html">Transform</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -884,7 +911,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-transform.html">Transform</a></code>
+                <code><a href="http://localhost:8901/reference/nu-transform.html">Transform</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -910,7 +937,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-xtension.html">Xtension</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-xtension.html">Xtension</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -926,7 +953,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-xtension.html">Xtension</a></code>
+                <code><a href="http://localhost:8901/reference/nu-xtension.html">Xtension</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -983,6 +1010,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Absolute\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1183-1183" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1058,6 +1088,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.AlwaysRender\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1192-1192" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1094,6 +1127,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.AlwaysUpdate\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1191-1191" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1130,6 +1166,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Angles\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1169-1169" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1156,7 +1195,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1169,7 +1208,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1205,6 +1244,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.CastShadow\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1189-1189" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1241,6 +1283,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Degrees\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1170-1170" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1277,6 +1322,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.DegreesLocal\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1171-1171" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1313,6 +1361,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Elevation\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1174-1174" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1349,6 +1400,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Enabled\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1185-1185" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1385,6 +1439,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.EnabledLocal\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1186-1186" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1577,6 +1634,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Mounted\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1196-1196" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1613,6 +1673,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Offset\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1168-1168" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1710,6 +1773,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Overflow\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1175-1175" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1746,6 +1812,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Perimeter\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1178-1178" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1782,6 +1851,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PerimeterBottom\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1156-1156" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1818,6 +1890,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PerimeterBottomLeft\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1157-1157" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -1932,6 +2007,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PerimeterCenter\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1155-1155" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2007,6 +2085,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PerimeterMax\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1159-1159" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2082,6 +2163,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PerimeterMin\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1158-1158" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2157,6 +2241,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PerimeterUnscaled\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1177-1177" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2193,6 +2280,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Persistent\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1195-1195" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2268,6 +2358,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Pickable\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1190-1190" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2304,6 +2397,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Position\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1165-1165" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2340,6 +2436,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Presence\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1207-1207" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2376,6 +2475,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PresenceOverride\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1211-1211" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2412,6 +2514,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Protected\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1194-1194" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2448,6 +2553,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PublishChangeEvents\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1184-1184" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2484,6 +2592,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.PublishUpdates\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1193-1193" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2520,6 +2631,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Rotation\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1166-1166" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2595,6 +2709,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Scale\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1167-1167" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2631,6 +2748,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Size\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1172-1172" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2667,6 +2787,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Static\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1202-1202" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2703,6 +2826,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.Visible\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1187-1187" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2739,6 +2865,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.EntityState.VisibleLocal\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1188-1188" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -2805,14 +2934,14 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2829,6 +2958,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.attachProperty\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1256-1256" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attach an xtension property.
                   </p>
@@ -2856,7 +2988,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2865,7 +2997,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2897,7 +3029,7 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2924,6 +3056,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.containsRuntimeProperties\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1228-1228" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that there exists an xtenstion property that is a runtime property.
                   </p>
@@ -2935,7 +3070,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2976,14 +3111,14 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -3003,6 +3138,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.copy\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1222-1222" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Copy an entity state, invalidating the incoming reference.
  This is used when we want to retain an old version of an entity state in face of mutation.
@@ -3015,7 +3153,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3024,7 +3162,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3064,14 +3202,14 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3088,6 +3226,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.detachProperty\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1263-1263" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Detach an xtension property.
                   </p>
@@ -3107,7 +3248,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3116,7 +3257,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3156,7 +3297,7 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3180,6 +3321,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.getProperty\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1236-1236" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get an xtension property and its type information.
                   </p>
@@ -3199,7 +3343,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3264,14 +3408,14 @@
                         dispatcher
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3288,6 +3432,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.make\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1270-1270" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Make an entity state value.
                   </p>
@@ -3323,7 +3470,7 @@
                     dispatcher
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitydispatcher.html">EntityDispatcher</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3332,7 +3479,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3380,14 +3527,14 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3404,6 +3551,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.setProperty\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1249-1249" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set an xtension property with explicit type information.
                   </p>
@@ -3431,7 +3581,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3440,7 +3590,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3480,7 +3630,7 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3512,6 +3662,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.tryGetProperty\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1232-1232" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Try to get an xtension property and its type information.
                   </p>
@@ -3531,7 +3684,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3596,14 +3749,14 @@
                         entityState
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;*&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span></code>
+                    <code><span>bool&#32;*&#32;<a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3620,6 +3773,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityState.trySetProperty\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1240-1240" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Try to set an xtension property with explicit type information.
                   </p>
@@ -3647,7 +3803,7 @@
                     entityState
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-entitystate.html">EntityState</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3656,7 +3812,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;*&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span></code>
+                  <code><span>bool&#32;*&#32;<a href="http://localhost:8901/reference/nu-entitystate.html">EntityState</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3681,10 +3837,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Metadata (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Metadata (Nu)">
     
     <title>Metadata (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -153,14 +180,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
+                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
                   </span>
                   <br/>
                 </div>
@@ -177,6 +204,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getAnimatedModelMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L828-828" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the metadata of the given animated model (throwing on failure).
  Thread-safe.
@@ -189,7 +219,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -198,7 +228,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -230,7 +260,7 @@
                         assetTag
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -254,6 +284,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getMetadataExists\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L296-296" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Determine that a given asset's metadata exists.
  Thread-safe.
@@ -266,7 +299,7 @@
                     assetTag
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -314,7 +347,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="/Nu/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span>[]</span></span>&gt;</span>&#32;array</span></code>
+                    <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="http://localhost:8901/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span>[]</span></span>&gt;</span>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -331,6 +364,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getMetadataPackagesLoaded\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L290-290" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the metadate packages that have been loaded.
  NOTE: this is a potentially expensive call as the tree of ConcurrentDictionaries must be copied to avoid
@@ -354,7 +390,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="/Nu/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span>[]</span></span>&gt;</span>&#32;array</span></code>
+                  <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="http://localhost:8901/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span>[]</span></span>&gt;</span>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -386,14 +422,14 @@
                         spineSkeleton
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a></code>
                   </span>
                   <br/>
                 </div>
@@ -410,6 +446,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getSpineSkeletonMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L390-390" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the metadata of the given Spine skeleton (throwing on failure).
  Thread-safe.
@@ -422,7 +461,7 @@
                     spineSkeleton
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -431,7 +470,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -463,14 +502,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
+                    <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
                   </span>
                   <br/>
                 </div>
@@ -487,6 +526,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getStaticModelMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L751-751" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the metadata of the given static model (throwing on failure).
  Thread-safe.
@@ -499,7 +541,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -508,7 +550,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -540,14 +582,14 @@
                         image
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/opengl-texture-texturemetadata.html">TextureMetadata</a></code>
+                    <code><a href="http://localhost:8901/reference/opengl-texture-texturemetadata.html">TextureMetadata</a></code>
                   </span>
                   <br/>
                 </div>
@@ -564,6 +606,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getTextureMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L335-335" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the texture metadata of the given image (throwing on failure).
  Thread-safe.
@@ -576,7 +621,7 @@
                     image
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -585,7 +630,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/opengl-texture-texturemetadata.html">TextureMetadata</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texturemetadata.html">TextureMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -617,14 +662,14 @@
                         image
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
                   </span>
                   <br/>
                 </div>
@@ -641,6 +686,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getTextureSize\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L347-347" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the texture size of the given image (throwing on failure).
  Thread-safe.
@@ -653,7 +701,7 @@
                     image
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -662,7 +710,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -694,7 +742,7 @@
                         image
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -718,6 +766,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getTextureSizeF\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L359-359" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the texture size of the given image (throwing on failure).
  Thread-safe.
@@ -730,7 +781,7 @@
                     image
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -771,14 +822,14 @@
                         tileMap
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-tilemap.html">TileMap</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-tilemap.html">TileMap</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-tilemapmetadata.html">TileMapMetadata</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-tilemapmetadata.html">TileMapMetadata</a></code>
                   </span>
                   <br/>
                 </div>
@@ -795,6 +846,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.getTileMapMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L371-371" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Forcibly get the metadata of the given tile map (throwing on failure).
  Thread-safe.
@@ -807,7 +861,7 @@
                     tileMap
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-tilemap.html">TileMap</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-tilemap.html">TileMap</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -816,7 +870,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-tilemapmetadata.html">TileMapMetadata</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-tilemapmetadata.html">TileMapMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -848,7 +902,7 @@
                         assetGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-assetgraph.html">AssetGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-assetgraph.html">AssetGraph</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -867,6 +921,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.init\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L892-892" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Initialize metadata to use the given imperative value and asset graph.
                   </p>
@@ -878,7 +935,7 @@
                     assetGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-assetgraph.html">AssetGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-assetgraph.html">AssetGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -929,6 +986,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.loadMetadataPackage\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L200-200" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to load the given metadata package.
  Thread-safe.
@@ -992,6 +1052,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.reloadMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L216-216" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Reload metadata.
  Thread-safe.
@@ -1044,14 +1107,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1068,6 +1131,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelAlbedoImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L833-833" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the albedo image asset for the given material index and animated model.
  Thread-safe.
@@ -1088,7 +1154,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1097,7 +1163,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1137,14 +1203,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1161,6 +1227,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelAmbientOcclusionImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L848-848" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the ambient occlusion image asset for the given material index and animated model.
  Thread-safe.
@@ -1181,7 +1250,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1190,7 +1259,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1230,14 +1299,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1254,6 +1323,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelEmissionImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L853-853" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the emission image asset for the given material index and animated model.
  Thread-safe.
@@ -1274,7 +1346,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1283,7 +1355,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1323,14 +1395,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1347,6 +1419,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelFinenessImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L873-873" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the fineness image asset for the given material index and animated model.
  Thread-safe.
@@ -1367,7 +1442,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1376,7 +1451,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1416,14 +1491,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1440,6 +1515,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelHeightImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L863-863" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the height image asset for the given material index and animated model.
  Thread-safe.
@@ -1460,7 +1538,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1469,7 +1547,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1501,14 +1579,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1525,6 +1603,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L821-821" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metadata of the given animated model.
  Thread-safe.
@@ -1537,7 +1618,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1546,7 +1627,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1586,14 +1667,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1610,6 +1691,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelMetallicImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L843-843" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metallic image asset for the given material index and animated model.
  Thread-safe.
@@ -1630,7 +1714,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1639,7 +1723,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1679,14 +1763,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1703,6 +1787,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelNavShape\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L888-888" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the 3d navigation shape property for the given material index and animated model.
  Thread-safe.
@@ -1723,7 +1810,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1732,7 +1819,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1772,14 +1859,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1796,6 +1883,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelNormalImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L858-858" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the normal image asset for the given material index and animated model.
  Thread-safe.
@@ -1816,7 +1906,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1825,7 +1915,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1865,14 +1955,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1889,6 +1979,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelRoughnessImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L838-838" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the roughness image asset for the given material index and animated model.
  Thread-safe.
@@ -1909,7 +2002,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1918,7 +2011,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1958,14 +2051,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1982,6 +2075,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelScatterImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L878-878" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the scatter image asset for the given material index and animated model.
  Thread-safe.
@@ -2002,7 +2098,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2011,7 +2107,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2051,14 +2147,14 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2075,6 +2171,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelSubdermalImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L868-868" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the subdermal image asset for the given material index and animated model.
  Thread-safe.
@@ -2095,7 +2194,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2104,7 +2203,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2144,7 +2243,7 @@
                         animatedModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2168,6 +2267,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetAnimatedModelTwoSided\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L883-883" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the two-sided property for the given material index and animated model.
  Thread-safe.
@@ -2188,7 +2290,7 @@
                     animatedModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-animatedmodel.html">AnimatedModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2229,7 +2331,7 @@
                         assetTag
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2253,6 +2355,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetFilePath\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L306-306" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the file path of the given asset.
  Thread-safe.
@@ -2265,7 +2370,7 @@
                     assetTag
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2306,14 +2411,14 @@
                         assetTag
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-metadata.html">Metadata</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-metadata.html">Metadata</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2330,6 +2435,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L316-316" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metadata of the given asset.
  Thread-safe.
@@ -2342,7 +2450,7 @@
                     assetTag
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-assettag.html">AssetTag</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-assettag.html">AssetTag</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2351,7 +2459,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-metadata.html">Metadata</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-metadata.html">Metadata</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2383,14 +2491,14 @@
                         spineSkeleton
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2407,6 +2515,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetSpineSkeletonMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L376-376" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metadata of the given Spine skeleton.
  Thread-safe.
@@ -2419,7 +2530,7 @@
                     spineSkeleton
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-spineskeleton.html">SpineSkeleton</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2428,7 +2539,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-spineskeletonmetadata.html">SpineSkeletonMetadata</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2468,14 +2579,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2492,6 +2603,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelAlbedoImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L756-756" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the albedo image asset for the given material index and static model.
  Thread-safe.
@@ -2512,7 +2626,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2521,7 +2635,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2561,14 +2675,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2585,6 +2699,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelAmbientOcclusionImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L771-771" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the ambient occlusion image asset for the given material index and static model.
  Thread-safe.
@@ -2605,7 +2722,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2614,7 +2731,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2654,7 +2771,7 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -2678,6 +2795,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelClipped\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L811-811" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the clipped property for the given material index and static model.
  Thread-safe.
@@ -2698,7 +2818,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2747,14 +2867,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2771,6 +2891,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelEmissionImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L776-776" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the emission image asset for the given material index and static model.
  Thread-safe.
@@ -2791,7 +2914,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2800,7 +2923,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2840,14 +2963,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2864,6 +2987,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelFinenessImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L796-796" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the fineness image asset for the given material index and static model.
  Thread-safe.
@@ -2884,7 +3010,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2893,7 +3019,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2933,14 +3059,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2957,6 +3083,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelHeightImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L786-786" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the height image asset for the given material index and static model.
  Thread-safe.
@@ -2977,7 +3106,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2986,7 +3115,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3018,14 +3147,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3042,6 +3171,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L743-743" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metadata of the given static model.
  Thread-safe.
@@ -3054,7 +3186,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3063,7 +3195,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/opengl-physicallybased-physicallybasedmodel.html">PhysicallyBasedModel</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3103,14 +3235,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3127,6 +3259,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelMetallicImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L766-766" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metallic image asset for the given material index and static model.
  Thread-safe.
@@ -3147,7 +3282,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3156,7 +3291,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3196,14 +3331,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3220,6 +3355,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelNavShape\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L816-816" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the 3d navigation shape for the given material index and static model.
  Thread-safe.
@@ -3240,7 +3378,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3249,7 +3387,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-navshape.html">NavShape</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3289,14 +3427,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3313,6 +3451,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelNormalImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L781-781" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the normal image asset for the given material index and static model.
  Thread-safe.
@@ -3333,7 +3474,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3342,7 +3483,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3382,14 +3523,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3406,6 +3547,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelRoughnessImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L761-761" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the roughness image asset for the given material index and static model.
  Thread-safe.
@@ -3426,7 +3570,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3435,7 +3579,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3475,14 +3619,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3499,6 +3643,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelScatterImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L801-801" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the scatter image asset for the given material index and static model.
  Thread-safe.
@@ -3519,7 +3666,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3528,7 +3675,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3568,14 +3715,14 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3592,6 +3739,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelSubdermalImage``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L791-791" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the subsurface image asset for the given material index and static model.
  Thread-safe.
@@ -3612,7 +3762,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3621,7 +3771,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3661,7 +3811,7 @@
                         staticModel
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -3685,6 +3835,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetStaticModelTwoSided\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L806-806" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the two-sided property for the given material index and static model.
  Thread-safe.
@@ -3705,7 +3858,7 @@
                     staticModel
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-staticmodel.html">StaticModel</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3746,14 +3899,14 @@
                         image
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/opengl-texture-texturemetadata.html">TextureMetadata</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/opengl-texture-texturemetadata.html">TextureMetadata</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3770,6 +3923,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetTextureMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L327-327" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the texture metadata of the given image.
  Thread-safe.
@@ -3782,7 +3938,7 @@
                     image
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3791,7 +3947,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/opengl-texture-texturemetadata.html">TextureMetadata</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/opengl-texture-texturemetadata.html">TextureMetadata</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3823,14 +3979,14 @@
                         image
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3847,6 +4003,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetTextureSize\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L340-340" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the texture size of the given image.
  Thread-safe.
@@ -3859,7 +4018,7 @@
                     image
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3868,7 +4027,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3900,7 +4059,7 @@
                         image
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -3924,6 +4083,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetTextureSizeF\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L352-352" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the texture size of the given image.
  Thread-safe.
@@ -3936,7 +4098,7 @@
                     image
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-image.html">Image</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-image.html">Image</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3977,14 +4139,14 @@
                         tileMap
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-tilemap.html">TileMap</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-tilemap.html">TileMap</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-tilemapmetadata.html">TileMapMetadata</a>&#32;voption</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-tilemapmetadata.html">TileMapMetadata</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -4001,6 +4163,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.tryGetTileMapMetadata\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L364-364" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to get the metadata of the given tile map.
  Thread-safe.
@@ -4013,7 +4178,7 @@
                     tileMap
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-tilemap.html">TileMap</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-tilemap.html">TileMap</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4022,7 +4187,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-tilemapmetadata.html">TileMapMetadata</a>&#32;voption</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-tilemapmetadata.html">TileMapMetadata</a>&#32;voption</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4061,7 +4226,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>bool&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="/Nu/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span></span></code>
+                    <code><span>bool&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="http://localhost:8901/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span></span></code>
                   </span>
                   <br/>
                 </div>
@@ -4078,6 +4243,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.MetadataModule.unloadMetadataPackage\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Metadata/Metadata.fs#L211-211" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to unload the given metadata package.
  Thread-safe.
@@ -4099,7 +4267,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>bool&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="/Nu/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span></span></code>
+                  <code><span>bool&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.datetimeoffset">DateTimeOffset</a>&#32;*&#32;string&#32;*&#32;<a href="http://localhost:8901/reference/nu-metadata.html">Metadata</a></span>)</span></span>&gt;</span></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4132,10 +4300,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

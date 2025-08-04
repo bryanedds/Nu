@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="WorldModule4 (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="WorldModule4 (Nu)">
     
     <title>WorldModule4 (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -154,7 +181,7 @@
                         sdlDeps
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-sdldepsmodule-sdldeps.html">SdlDeps</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-sdldepsmodule-sdldeps.html">SdlDeps</a></code>
                     </span>
                     <br/>
                     <span>
@@ -162,7 +189,7 @@
                         config
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                     </span>
                     <br/>
                     <span>
@@ -170,7 +197,7 @@
                         geometryViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -178,7 +205,7 @@
                         rasterViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -186,7 +213,7 @@
                         outerViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -194,14 +221,14 @@
                         plugin
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                   </span>
                   <br/>
                 </div>
@@ -218,6 +245,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModule4.World.make.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/World.fs#L399-399" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Make the world with the given dependencies.
                   </p>
@@ -225,7 +255,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -233,7 +263,7 @@
                     sdlDeps
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-sdldepsmodule-sdldeps.html">SdlDeps</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-sdldepsmodule-sdldeps.html">SdlDeps</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -241,7 +271,7 @@
                     config
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -249,7 +279,7 @@
                     geometryViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -257,7 +287,7 @@
                     rasterViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -265,7 +295,7 @@
                     outerViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -273,7 +303,7 @@
                     plugin
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -282,7 +312,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -314,7 +344,7 @@
                         plugin
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                     </span>
                     <br/>
                     <span>
@@ -322,7 +352,7 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                     <span>
@@ -330,7 +360,7 @@
                         jobGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-jobgraph.html">JobGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-jobgraph.html">JobGraph</a></code>
                     </span>
                     <br/>
                     <span>
@@ -338,7 +368,7 @@
                         geometryViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -346,7 +376,7 @@
                         rasterViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -354,7 +384,7 @@
                         outerViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -362,7 +392,7 @@
                         dispatchers
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-dispatchers.html">Dispatchers</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-dispatchers.html">Dispatchers</a></code>
                     </span>
                     <br/>
                     <span>
@@ -370,7 +400,7 @@
                         quadtree
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-quadtree-1.html">Quadtree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-quadtree-1.html">Quadtree</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -378,7 +408,7 @@
                         octree
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-octree-1.html">Octree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-octree-1.html">Octree</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -386,7 +416,7 @@
                         worldConfig
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                     </span>
                     <br/>
                     <span>
@@ -394,7 +424,7 @@
                         sdlDepsOpt
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-sdldeps.html">SdlDeps</a>&#32;option</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-sdldeps.html">SdlDeps</a>&#32;option</span></code>
                     </span>
                     <br/>
                     <span>
@@ -402,7 +432,7 @@
                         imGui
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-imgui.html">ImGui</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-imgui.html">ImGui</a></code>
                     </span>
                     <br/>
                     <span>
@@ -410,7 +440,7 @@
                         physicsEngine2d
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-physicsengine.html">PhysicsEngine</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-physicsengine.html">PhysicsEngine</a></code>
                     </span>
                     <br/>
                     <span>
@@ -418,7 +448,7 @@
                         physicsEngine3d
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-physicsengine.html">PhysicsEngine</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-physicsengine.html">PhysicsEngine</a></code>
                     </span>
                     <br/>
                     <span>
@@ -434,7 +464,7 @@
                         rendererProcess
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-rendererprocess.html">RendererProcess</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-rendererprocess.html">RendererProcess</a></code>
                     </span>
                     <br/>
                     <span>
@@ -442,7 +472,7 @@
                         audioPlayer
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-audioplayer.html">AudioPlayer</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-audioplayer.html">AudioPlayer</a></code>
                     </span>
                     <br/>
                     <span>
@@ -450,14 +480,14 @@
                         activeGameDispatcher
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-gamedispatcher.html">GameDispatcher</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-gamedispatcher.html">GameDispatcher</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                   </span>
                   <br/>
                 </div>
@@ -474,6 +504,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModule4.World.makePlus.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/World.fs#L289-289" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Make the world.
                   </p>
@@ -481,7 +514,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -489,7 +522,7 @@
                     plugin
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -497,7 +530,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -505,7 +538,7 @@
                     jobGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-jobgraph.html">JobGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-jobgraph.html">JobGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -513,7 +546,7 @@
                     geometryViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -521,7 +554,7 @@
                     rasterViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -529,7 +562,7 @@
                     outerViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -537,7 +570,7 @@
                     dispatchers
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-dispatchers.html">Dispatchers</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-dispatchers.html">Dispatchers</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -545,7 +578,7 @@
                     quadtree
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-quadtree-1.html">Quadtree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-quadtree-1.html">Quadtree</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -553,7 +586,7 @@
                     octree
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-octree-1.html">Octree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-octree-1.html">Octree</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -561,7 +594,7 @@
                     worldConfig
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -569,7 +602,7 @@
                     sdlDepsOpt
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-sdldeps.html">SdlDeps</a>&#32;option</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-sdldeps.html">SdlDeps</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -577,7 +610,7 @@
                     imGui
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-imgui.html">ImGui</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-imgui.html">ImGui</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -585,7 +618,7 @@
                     physicsEngine2d
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-physicsengine.html">PhysicsEngine</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-physicsengine.html">PhysicsEngine</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -593,7 +626,7 @@
                     physicsEngine3d
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-physicsengine.html">PhysicsEngine</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-physicsengine.html">PhysicsEngine</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -609,7 +642,7 @@
                     rendererProcess
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-rendererprocess.html">RendererProcess</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-rendererprocess.html">RendererProcess</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -617,7 +650,7 @@
                     audioPlayer
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-audioplayer.html">AudioPlayer</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-audioplayer.html">AudioPlayer</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -625,7 +658,7 @@
                     activeGameDispatcher
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-gamedispatcher.html">GameDispatcher</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-gamedispatcher.html">GameDispatcher</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -634,7 +667,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -666,7 +699,7 @@
                         worldConfig
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                     </span>
                     <br/>
                     <span>
@@ -674,14 +707,14 @@
                         plugin
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                   </span>
                   <br/>
                 </div>
@@ -698,6 +731,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModule4.World.makeStub.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/World.fs#L346-346" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Make a world with stub dependencies.
                   </p>
@@ -705,7 +741,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -713,7 +749,7 @@
                     worldConfig
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -721,7 +757,7 @@
                     plugin
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -730,7 +766,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -762,7 +798,7 @@
                         worldConfig
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                     </span>
                     <br/>
                     <span>
@@ -770,7 +806,7 @@
                         plugin
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -794,6 +830,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModule4.World.run.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/World.fs#L502-502" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
  termination.
@@ -802,7 +841,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -810,7 +849,7 @@
                     worldConfig
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -818,7 +857,7 @@
                     plugin
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -859,7 +898,7 @@
                         runWhile
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
                     </span>
                     <br/>
                     <span>
@@ -867,7 +906,7 @@
                         preProcess
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -875,7 +914,7 @@
                         perProcess
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -883,7 +922,7 @@
                         postProcess
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -891,7 +930,7 @@
                         imGuiProcess
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -899,7 +938,7 @@
                         imGuiPostProcess
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -907,7 +946,7 @@
                         worldConfig
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                     </span>
                     <br/>
                     <span>
@@ -915,7 +954,7 @@
                         windowSize
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
                     </span>
                     <br/>
                     <span>
@@ -923,7 +962,7 @@
                         geometryViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -931,7 +970,7 @@
                         rasterViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -939,7 +978,7 @@
                         outerViewport
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                     </span>
                     <br/>
                     <span>
@@ -947,7 +986,7 @@
                         plugin
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -971,6 +1010,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModule4.World.runPlus.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/World.fs#L492-492" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
  termination.
@@ -979,7 +1021,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -987,7 +1029,7 @@
                     runWhile
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;bool</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -995,7 +1037,7 @@
                     preProcess
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1003,7 +1045,7 @@
                     perProcess
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1011,7 +1053,7 @@
                     postProcess
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1019,7 +1061,7 @@
                     imGuiProcess
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1027,7 +1069,7 @@
                     imGuiPostProcess
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-world.html">World</a>&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1035,7 +1077,7 @@
                     worldConfig
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-worldconfig.html">WorldConfig</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-worldconfig.html">WorldConfig</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1043,7 +1085,7 @@
                     windowSize
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-vector2i-0.html">Vector2i</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-vector2i-0.html">Vector2i</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1051,7 +1093,7 @@
                     geometryViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1059,7 +1101,7 @@
                     rasterViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1067,7 +1109,7 @@
                     outerViewport
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-viewport.html">Viewport</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1075,7 +1117,7 @@
                     plugin
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-nuplugin.html">NuPlugin</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-nuplugin.html">NuPlugin</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1124,7 +1166,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1143,6 +1185,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModule4.World.updateLateBindings.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/World.fs#L227-227" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Update late bindings internally stored by the engine from types found in the given assemblies.
                   </p>
@@ -1150,7 +1195,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1166,7 +1211,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1198,10 +1243,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

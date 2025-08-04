@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="WorldModuleGame (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="WorldModuleGame (Nu)">
     
     <title>WorldModuleGame (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -154,7 +181,7 @@
                         assetTag
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -162,7 +189,7 @@
                         metadata
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                     </span>
                     <br/>
                     <span>
@@ -170,7 +197,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -194,6 +221,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.assetTagToValueOpt.Static``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L582-582" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Fetch an asset with the given tag and convert it to a value of type 'a.
                   </p>
@@ -201,7 +231,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -209,7 +239,7 @@
                     assetTag
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -217,7 +247,7 @@
                     metadata
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -225,7 +255,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -266,7 +296,7 @@
                         assetTags
                       </b>
                       :
-                      <code><span><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;list</span></code>
+                      <code><span><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;list</span></code>
                     </span>
                     <br/>
                     <span>
@@ -274,7 +304,7 @@
                         metadata
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                     </span>
                     <br/>
                     <span>
@@ -282,7 +312,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -306,6 +336,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.assetTagsToValueOpts.Static``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L590-590" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Fetch assets with the given tags and convert it to values of type 'a.
                   </p>
@@ -313,7 +346,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -321,7 +354,7 @@
                     assetTags
                   </span>
                   :
-                  <code><span><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="/Nu/reference/nu-assettag-1.html">AssetTag</a></span>&#32;list</span></code>
+                  <code><span><span><a href="https://learn.microsoft.com/dotnet/api/prime.symbol">Symbol</a>&#32;<a href="http://localhost:8901/reference/nu-assettag-1.html">AssetTag</a></span>&#32;list</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -329,7 +362,7 @@
                     metadata
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-symbolloadmetadata.html">SymbolLoadMetadata</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -337,7 +370,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -378,7 +411,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -386,7 +419,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -410,6 +443,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.boundsInPlay3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L469-469" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the given bounds is within the 3d eye's play bounds.
                   </p>
@@ -417,7 +453,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -425,7 +461,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -433,7 +469,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -482,7 +518,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                     </span>
                     <br/>
                     <span>
@@ -490,7 +526,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -514,6 +550,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.boundsInView2d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L300-300" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the given bounds is within view.
                   </p>
@@ -521,7 +560,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -537,7 +576,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -545,7 +584,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -586,7 +625,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                     </span>
                     <br/>
                     <span>
@@ -594,7 +633,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -618,6 +657,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.boundsInView2dAbsolute.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L295-295" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the given bounds is within the 2d eye's sight irrespective of eye center.
                   </p>
@@ -625,7 +667,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -633,7 +675,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -641,7 +683,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -682,7 +724,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                     </span>
                     <br/>
                     <span>
@@ -690,7 +732,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -714,6 +756,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.boundsInView2dRelative.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L306-306" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the given bounds is within the 2d eye's sight relative to eye center.
                   </p>
@@ -721,7 +766,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -729,7 +774,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -737,7 +782,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -794,7 +839,7 @@
                         presence
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
                     </span>
                     <br/>
                     <span>
@@ -802,7 +847,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -810,7 +855,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -834,6 +879,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.boundsInView3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L460-460" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
                   </p>
@@ -841,7 +889,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -865,7 +913,7 @@
                     presence
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-presence.html">Presence</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -873,7 +921,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -881,7 +929,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -922,7 +970,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                     </span>
                     <br/>
                     <span>
@@ -930,7 +978,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -949,6 +997,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.constrainEye2dBounds.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Constrain the eye to the given 2d bounds.
                   </p>
@@ -956,7 +1007,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -964,7 +1015,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -972,7 +1023,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1004,14 +1055,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-desiredscreen.html">DesiredScreen</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-desiredscreen.html">DesiredScreen</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1028,6 +1079,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getDesiredScreen.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L186-186" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the desired screen, if applicable.
                   </p>
@@ -1035,7 +1089,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1043,7 +1097,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1052,7 +1106,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-desiredscreen.html">DesiredScreen</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-desiredscreen.html">DesiredScreen</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1084,7 +1138,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1092,14 +1146,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1116,6 +1170,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities2d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L499-499" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 2d entities in the current selected screen, including all uncullable entities.
                   </p>
@@ -1123,7 +1180,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1131,7 +1188,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1139,7 +1196,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1148,7 +1205,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1188,7 +1245,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1196,14 +1253,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1220,6 +1277,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities2dAtPoint.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L494-494" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 2d entities at the given point, including all uncullable entities.
                   </p>
@@ -1227,7 +1287,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1243,7 +1303,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1251,7 +1311,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1260,7 +1320,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1292,7 +1352,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1300,7 +1360,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1308,14 +1368,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1332,6 +1392,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities2dInBounds.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L489-489" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 2d entities in the given bounds, including all uncullable entities.
                   </p>
@@ -1339,7 +1402,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1347,7 +1410,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1355,7 +1418,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1363,7 +1426,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1372,7 +1435,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1404,7 +1467,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1412,14 +1475,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1436,6 +1499,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities2dInPlay.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L510-510" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
                   </p>
@@ -1443,7 +1509,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1451,7 +1517,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1459,7 +1525,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1468,7 +1534,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1500,7 +1566,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1508,14 +1574,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1532,6 +1598,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities2dInView.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L504-504" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 2d entities in the current 2d view, including all uncullable entities.
                   </p>
@@ -1539,7 +1608,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1547,7 +1616,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-quadelement-1.html">Quadelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1555,7 +1624,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1564,7 +1633,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1596,7 +1665,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1604,14 +1673,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1628,6 +1697,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L540-540" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d entities in the current selected screen, including all uncullable entities.
                   </p>
@@ -1635,7 +1707,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1643,7 +1715,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1651,7 +1723,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1660,7 +1732,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1700,7 +1772,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1708,14 +1780,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1732,6 +1804,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities3dAtPoint.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L535-535" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d entities at the given point, including all uncullable entities.
                   </p>
@@ -1739,7 +1814,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1755,7 +1830,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1763,7 +1838,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1772,7 +1847,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1804,7 +1879,7 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1812,7 +1887,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1820,14 +1895,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1844,6 +1919,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities3dInBounds.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L530-530" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d entities in the given bounds, including all uncullable entities.
                   </p>
@@ -1851,7 +1929,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1859,7 +1937,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1867,7 +1945,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1875,7 +1953,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1884,7 +1962,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1916,7 +1994,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1924,14 +2002,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1948,6 +2026,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities3dInPlay.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L576-576" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d entities in the current 3d play zone, including all uncullable entities.
                   </p>
@@ -1955,7 +2036,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1963,7 +2044,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1971,7 +2052,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1980,7 +2061,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2012,7 +2093,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2020,14 +2101,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2044,6 +2125,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEntities3dInView.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L545-545" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d entities in the current 3d view, including all uncullable entities.
                   </p>
@@ -2051,7 +2135,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2059,7 +2143,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2067,7 +2151,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2076,7 +2160,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2108,14 +2192,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2132,6 +2216,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye2dBounds.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L254-254" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 2d eye bounds.
                   </p>
@@ -2139,7 +2226,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2147,7 +2234,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2156,7 +2243,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2188,7 +2275,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2212,6 +2299,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye2dCenter.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L226-226" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 2d eye center.
                   </p>
@@ -2219,7 +2309,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2227,7 +2317,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2268,7 +2358,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2292,6 +2382,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye2dSize.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L246-246" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 2d eye size.
                   </p>
@@ -2299,7 +2392,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2307,7 +2400,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2348,7 +2441,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2372,6 +2465,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dCenter.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L332-332" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 3d eye center.
                   </p>
@@ -2379,7 +2475,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2387,7 +2483,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2428,7 +2524,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2452,6 +2548,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dFieldOfView.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L390-390" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 3d eye field of view.
                   </p>
@@ -2459,7 +2558,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2467,7 +2566,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2508,14 +2607,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2532,6 +2631,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dFrustumExterior.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L417-417" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current exterior 3d eye frustum.
                   </p>
@@ -2539,7 +2641,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2547,7 +2649,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2556,7 +2658,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2588,14 +2690,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2612,6 +2714,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dFrustumImposter.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L421-421" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current imposter 3d eye frustum.
                   </p>
@@ -2619,7 +2724,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2627,7 +2732,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2636,7 +2741,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2668,14 +2773,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2692,6 +2797,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dFrustumInterior.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L413-413" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current interior 3d eye frustum.
                   </p>
@@ -2699,7 +2807,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2707,7 +2815,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2716,7 +2824,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2748,14 +2856,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2772,6 +2880,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dFrustumView.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L425-425" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 3d eye view frustum.
                   </p>
@@ -2779,7 +2890,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2787,7 +2898,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2796,7 +2907,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2828,7 +2939,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2852,6 +2963,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getEye3dRotation.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L361-361" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 3d eye rotation.
                   </p>
@@ -2859,7 +2973,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2867,7 +2981,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2908,14 +3022,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2932,6 +3046,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getLight3dViewBox.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L448-448" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current 3d light box.
                   </p>
@@ -2939,7 +3056,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2947,7 +3064,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2956,7 +3073,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2988,7 +3105,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2996,14 +3113,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3020,6 +3137,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getLightProbes3dInView.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L561-561" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
                   </p>
@@ -3027,7 +3147,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3035,7 +3155,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3043,7 +3163,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3052,7 +3172,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3084,7 +3204,7 @@
                         box
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3092,7 +3212,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -3100,14 +3220,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3124,6 +3244,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getLightProbes3dInViewBox.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L556-556" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
                   </p>
@@ -3131,7 +3254,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3139,7 +3262,7 @@
                     box
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3147,7 +3270,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3155,7 +3278,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3164,7 +3287,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3196,7 +3319,7 @@
                         frustum
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3204,7 +3327,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -3212,14 +3335,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3236,6 +3359,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getLightProbes3dInViewFrustum.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L551-551" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
                   </p>
@@ -3243,7 +3369,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3251,7 +3377,7 @@
                     frustum
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3259,7 +3385,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3267,7 +3393,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3276,7 +3402,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3308,7 +3434,7 @@
                         box
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3316,7 +3442,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -3324,14 +3450,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3348,6 +3474,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getLights3dInViewBox.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L571-571" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d light entities in the current 3d light box, including all uncullable lights.
                   </p>
@@ -3355,7 +3484,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3363,7 +3492,7 @@
                     box
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3371,7 +3500,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3379,7 +3508,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3388,7 +3517,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3420,7 +3549,7 @@
                         frustum
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3428,7 +3557,7 @@
                         set
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -3436,14 +3565,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3460,6 +3589,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getLights3dInViewFrustum.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L566-566" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get all 3d light entities in the current 3d light box, including all uncullable lights.
                   </p>
@@ -3467,7 +3599,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3475,7 +3607,7 @@
                     frustum
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-frustum.html">Frustum</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3483,7 +3615,7 @@
                     set
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="/Nu/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet</a>&lt;<span><a href="http://localhost:8901/reference/nu-octelement-1.html">Octelement</a>&lt;<a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&gt;</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3491,7 +3623,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3500,7 +3632,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-entity.html">Entity</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3532,14 +3664,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3556,6 +3688,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getPlayBounds2dAbsolute.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L287-287" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the bounds of the 2d play zone irrespective of eye center.
                   </p>
@@ -3563,7 +3698,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3571,7 +3706,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3580,7 +3715,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3612,14 +3747,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3636,6 +3771,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getPlayBounds2dRelative.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L291-291" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the bounds of the 2d play zone relative to eye center.
                   </p>
@@ -3643,7 +3781,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3651,7 +3789,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3660,7 +3798,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3692,14 +3830,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-box3-0.html">Box3</a>&#32;*&#32;<a href="/Nu/reference/nu-frustum.html">Frustum</a></span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -3716,6 +3854,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getPlayBounds3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L453-453" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the bounds of the 3d play zone.
                   </p>
@@ -3723,7 +3864,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3731,7 +3872,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3740,7 +3881,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-box3-0.html">Box3</a>&#32;*&#32;<a href="/Nu/reference/nu-frustum.html">Frustum</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a>&#32;*&#32;<a href="http://localhost:8901/reference/nu-frustum.html">Frustum</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3772,14 +3913,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3796,6 +3937,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getScreenTransitionDestinationOpt.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the current destination screen if a screen transition is currently underway.
                   </p>
@@ -3803,7 +3947,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3811,7 +3955,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3820,7 +3964,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3852,14 +3996,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
                   </span>
                   <br/>
                 </div>
@@ -3876,6 +4020,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getSelectedScreen.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L166-166" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the currently selected screen.
                   </p>
@@ -3883,7 +4030,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3891,7 +4038,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3900,7 +4047,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3932,14 +4079,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3956,6 +4103,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getSelectedScreenOpt.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L152-152" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the currently selected screen, if any.
                   </p>
@@ -3963,7 +4113,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3971,7 +4121,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3980,7 +4130,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4012,14 +4162,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4036,6 +4186,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getViewBounds2dAbsolute.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L274-274" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the bounds of the 2d eye's sight irrespective of its position.
                   </p>
@@ -4043,7 +4196,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4051,7 +4204,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4060,7 +4213,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4092,14 +4245,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4116,6 +4269,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.getViewBounds2dRelative.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L281-281" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the bounds of the 2d eye's sight relative to its position.
                   </p>
@@ -4123,7 +4279,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4131,7 +4287,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4140,7 +4296,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-box2-0.html">Box2</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box2-0.html">Box2</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4172,7 +4328,7 @@
                         game
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-game.html">Game</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-game.html">Game</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4180,7 +4336,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4192,7 +4348,7 @@
           <td class="fsdocs-member-xmldoc">
             <p>
               Extended Type: 
-              <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
             </p>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
@@ -4200,7 +4356,7 @@
                   game
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-game.html">Game</a></code>
+                <code><a href="http://localhost:8901/reference/nu-game.html">Game</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -4208,7 +4364,7 @@
                   world
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -4247,14 +4403,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -4271,6 +4427,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.position2dToRay3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L440-440" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert the given absolute 2d position to the relative 3d ray.
  TODO: also implement position2dToPosition3d.
@@ -4279,7 +4438,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4295,7 +4454,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4304,7 +4463,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -4344,7 +4503,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4368,6 +4527,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.position3dToPosition2d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L431-431" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Convert the given relative 3d position to the absolute 2d position.
  Useful for gui entities that track 3d entities.
@@ -4377,7 +4539,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4393,7 +4555,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4434,7 +4596,7 @@
                         value
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-desiredscreen.html">DesiredScreen</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-desiredscreen.html">DesiredScreen</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4442,7 +4604,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4461,6 +4623,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setDesiredScreen.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L190-190" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the desired screen, if applicable.
                   </p>
@@ -4468,7 +4633,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4476,7 +4641,7 @@
                     value
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-desiredscreen.html">DesiredScreen</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-desiredscreen.html">DesiredScreen</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4484,7 +4649,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4524,7 +4689,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4543,6 +4708,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setEye2dCenter.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L230-230" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the current 2d eye center.
                   </p>
@@ -4550,7 +4718,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4566,7 +4734,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4606,7 +4774,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4625,6 +4793,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setEye2dSize.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L250-250" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the current 2d eye size.
                   </p>
@@ -4632,7 +4803,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4648,7 +4819,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4688,7 +4859,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4707,6 +4878,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setEye3dCenter.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L336-336" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the current 3d eye center.
                   </p>
@@ -4714,7 +4888,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4730,7 +4904,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4770,7 +4944,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4789,6 +4963,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setEye3dFieldOfView.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L394-394" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the current 3d eye field of view.
                   </p>
@@ -4796,7 +4973,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4812,7 +4989,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4852,7 +5029,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4871,6 +5048,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setEye3dRotation.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L365-365" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the current 3d eye rotation.
                   </p>
@@ -4878,7 +5058,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4894,7 +5074,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4926,7 +5106,7 @@
                         value
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                     </span>
                     <br/>
                     <span>
@@ -4934,7 +5114,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4953,6 +5133,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setScreenTransitionDestinationOpt.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L210-210" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the current destination screen or None.
                   </p>
@@ -4960,7 +5143,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4968,7 +5151,7 @@
                     value
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4976,7 +5159,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5008,7 +5191,7 @@
                         value
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
                     </span>
                     <br/>
                     <span>
@@ -5016,7 +5199,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5035,6 +5218,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setSelectedScreen.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L170-170" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the currently selected screen.
                   </p>
@@ -5042,7 +5228,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5050,7 +5236,7 @@
                     value
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-screen.html">Screen</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5058,7 +5244,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5090,7 +5276,7 @@
                         value
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                     </span>
                     <br/>
                     <span>
@@ -5098,7 +5284,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -5117,6 +5303,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleGame.World.setSelectedScreenOpt.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModuleGame.fs#L156-156" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the currently selected screen or None.
                   </p>
@@ -5124,7 +5313,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -5132,7 +5321,7 @@
                     value
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-screen.html">Screen</a>&#32;option</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-screen.html">Screen</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -5140,7 +5329,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -5172,10 +5361,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

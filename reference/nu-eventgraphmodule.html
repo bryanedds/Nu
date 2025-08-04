@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="EventGraph (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="EventGraph (Nu)">
     
     <title>EventGraph (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -132,7 +159,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="EventGraph">
-                <a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">
+                <a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">
                   EventGraph
                 </a>
               </a>
@@ -146,6 +173,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EventGraphModule.EventGraph\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L50-50" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  A functional publisher-neutral mechanism for handling simulation events in Nu.
  Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
@@ -214,14 +244,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                   </span>
                   <br/>
                 </div>
@@ -238,6 +268,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.addEventState``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Add event state.
                   </p>
@@ -265,7 +298,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -274,7 +307,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -306,7 +339,7 @@
                         eventTarget
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -325,6 +358,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.cleanEventAddressCache``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L110-110" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Remove from the event address cache all addresses belonging to the given target.
                   </p>
@@ -336,7 +372,7 @@
                     eventTarget
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -368,14 +404,14 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -389,7 +425,7 @@
                   eventAddress
                 </span>
                 :
-                <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -398,7 +434,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
+                <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -429,7 +465,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -437,14 +473,14 @@
                         arg1
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
+                    <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -461,6 +497,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getEventAddresses2``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L177-177" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the wild-carded addresses of an event address.
                   </p>
@@ -472,7 +511,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -480,7 +519,7 @@
                     arg1
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -489,7 +528,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
+                  <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -521,14 +560,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
                   </span>
                   <br/>
                 </div>
@@ -545,6 +584,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getEventFilter\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L102-102" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the state of the event filter.
                   </p>
@@ -556,7 +598,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -565,7 +607,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -605,7 +647,7 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -629,6 +671,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getEventState``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get event state.
                   </p>
@@ -648,7 +693,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -689,7 +734,7 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -713,6 +758,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getEventTracerOpt\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L94-94" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get how events are being traced.
                   </p>
@@ -724,7 +772,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -765,14 +813,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
                   </span>
                   <br/>
                 </div>
@@ -789,6 +837,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getGlobalSimulantGeneralized\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the generalized global simulant of the event system.
                   </p>
@@ -800,7 +851,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -809,7 +860,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -841,7 +892,7 @@
                         getSortPriority
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -849,7 +900,7 @@
                         subscriptionEntries
                       </b>
                       :
-                      <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                      <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                     </span>
                     <br/>
                     <span>
@@ -864,7 +915,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a>&#32;*&#32;uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                    <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a>&#32;*&#32;uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -881,6 +932,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getSortableSubscriptions``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L228-228" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the subscriptions with the given sorting criteria.
                   </p>
@@ -892,7 +946,7 @@
                     getSortPriority
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -900,7 +954,7 @@
                     subscriptionEntries
                   </span>
                   :
-                  <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                  <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -917,7 +971,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a>&#32;*&#32;uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                  <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a>&#32;*&#32;uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -949,14 +1003,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-subscriptionentries.html">SubscriptionEntries</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-subscriptionentries.html">SubscriptionEntries</a></code>
                   </span>
                   <br/>
                 </div>
@@ -973,6 +1027,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getSubscriptions\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get subscriptions.
                   </p>
@@ -984,7 +1041,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -993,7 +1050,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-subscriptionentries.html">SubscriptionEntries</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-subscriptionentries.html">SubscriptionEntries</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1025,7 +1082,7 @@
                         publishSorter
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-subscriptionsorter.html">SubscriptionSorter</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-subscriptionsorter.html">SubscriptionSorter</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1033,7 +1090,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1041,7 +1098,7 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1056,7 +1113,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                    <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1073,6 +1130,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getSubscriptionsSorted``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L200-200" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get subscriptions for eventAddress sorted by publishSorter.
                   </p>
@@ -1084,7 +1144,7 @@
                     publishSorter
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-subscriptionsorter.html">SubscriptionSorter</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-subscriptionsorter.html">SubscriptionSorter</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1092,7 +1152,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1100,7 +1160,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1117,7 +1177,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                  <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1149,14 +1209,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-unsubscriptionentries.html">UnsubscriptionEntries</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-unsubscriptionentries.html">UnsubscriptionEntries</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1173,6 +1233,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.getUnsubscriptions\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L82-82" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get unsubscriptions.
                   </p>
@@ -1184,7 +1247,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1193,7 +1256,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-unsubscriptionentries.html">UnsubscriptionEntries</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-unsubscriptionentries.html">UnsubscriptionEntries</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1225,7 +1288,7 @@
                         address
                       </b>
                       :
-                      <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1233,7 +1296,7 @@
                         trace
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventtrace.html">EventTrace</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventtrace.html">EventTrace</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1241,7 +1304,7 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1260,6 +1323,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.logEvent\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L208-208" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Log an event.
                   </p>
@@ -1271,7 +1337,7 @@
                     address
                   </span>
                   :
-                  <code><span>obj&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>obj&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1279,7 +1345,7 @@
                     trace
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventtrace.html">EventTrace</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventtrace.html">EventTrace</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1287,7 +1353,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1327,7 +1393,7 @@
                         eventFilter
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1335,7 +1401,7 @@
                         globalSimulantGeneralized
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1350,7 +1416,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1367,6 +1433,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.make\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L217-217" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Make an event delegate.
                   </p>
@@ -1386,7 +1455,7 @@
                     eventFilter
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1394,7 +1463,7 @@
                     globalSimulantGeneralized
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-globalsimulantgeneralized.html">GlobalSimulantGeneralized</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1411,7 +1480,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1443,7 +1512,7 @@
                         subscriber
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1467,7 +1536,7 @@
                         eventAddress
                       </b>
                       :
-                      <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                      <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1475,7 +1544,7 @@
                         eventTrace
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventtrace.html">EventTrace</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventtrace.html">EventTrace</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1498,7 +1567,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
                   </span>
                   <br/>
                   Modifiers: 
@@ -1520,6 +1589,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.publishEvent``4\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L241-241" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Publish an event.
                   </p>
@@ -1531,7 +1603,7 @@
                     subscriber
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1555,7 +1627,7 @@
                     eventAddress
                   </span>
                   :
-                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  <code><span>'a&#32;<a href="http://localhost:8901/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1563,7 +1635,7 @@
                     eventTrace
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventtrace.html">EventTrace</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventtrace.html">EventTrace</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1588,7 +1660,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-handling.html">Handling</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-handling.html">Handling</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1628,14 +1700,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1652,6 +1724,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.removeEventState\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Remove event state.
                   </p>
@@ -1671,7 +1746,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1680,7 +1755,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1712,7 +1787,7 @@
                         filter
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1720,14 +1795,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1744,6 +1819,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.setEventFilter\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L106-106" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set the state of the event filter.
                   </p>
@@ -1755,7 +1833,7 @@
                     filter
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventfilter.html">EventFilter</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventfilter.html">EventFilter</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1763,7 +1841,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1772,7 +1850,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1812,14 +1890,14 @@
                         eventGraph
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1836,6 +1914,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.setEventTracerOpt\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L98-98" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Set how events are being traced.
                   </p>
@@ -1855,7 +1936,7 @@
                     eventGraph
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1864,7 +1945,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-eventgraphmodule-eventgraph.html">EventGraph</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1896,7 +1977,7 @@
                         by
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
                     </span>
                     <br/>
                     <span>
@@ -1904,7 +1985,7 @@
                         subscriptions
                       </b>
                       :
-                      <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                      <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1919,7 +2000,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                    <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1936,6 +2017,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.sortSubscriptionsBy``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L248-248" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Sort subscriptions using categorization via the 'by' procedure.
                   </p>
@@ -1947,7 +2031,7 @@
                     by
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a>&#32;->&#32;'w&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1955,7 +2039,7 @@
                     subscriptions
                   </span>
                   :
-                  <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                  <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1972,7 +2056,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>(<span>uint64&#32;*&#32;<a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
+                  <code><span><span>(<span>uint64&#32;*&#32;<a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2004,7 +2088,7 @@
                         subscriptions
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2019,7 +2103,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2036,6 +2120,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EventGraphModule.sortSubscriptionsNone``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/EventGraph/EventGraph.fs#L256-256" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      A 'no-op' for subscription sorting - that is, performs no sorting at all.
                   </p>
@@ -2047,7 +2134,7 @@
                     subscriptions
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2064,7 +2151,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-subscriptionentry.html">SubscriptionEntry</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2097,10 +2184,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="CubeMap (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="CubeMap (Nu)">
     
     <title>CubeMap (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/opengl.html">
+      <a href="http://localhost:8901/reference/opengl.html">
         OpenGL
       </a>
     </dt>
@@ -132,7 +159,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="CubeMapClient">
-                <a href="/Nu/reference/opengl-cubemap-cubemapclient.html">
+                <a href="http://localhost:8901/reference/opengl-cubemap-cubemapclient.html">
                   CubeMapClient
                 </a>
               </a>
@@ -146,6 +173,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:OpenGL.CubeMap.CubeMapClient\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L322-322" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  Memoizes cube map loads (and may at some point potentially thread them).
               </p>
@@ -156,7 +186,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="CubeMapGeometry">
-                <a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">
+                <a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">
                   CubeMapGeometry
                 </a>
               </a>
@@ -170,6 +200,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:OpenGL.CubeMap.CubeMapGeometry\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L72-72" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  Describes some cube map geometry that's loaded into VRAM.
               </p>
@@ -180,7 +213,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="CubeMapKey">
-                <a href="/Nu/reference/opengl-cubemap-cubemapkey.html">
+                <a href="http://localhost:8901/reference/opengl-cubemap-cubemapkey.html">
                   CubeMapKey
                 </a>
               </a>
@@ -194,6 +227,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:OpenGL.CubeMap.CubeMapKey\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L318-318" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  The key identifying a cube map.
               </p>
@@ -204,7 +240,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="CubeMapShader">
-                <a href="/Nu/reference/opengl-cubemap-cubemapshader.html">
+                <a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">
                   CubeMapShader
                 </a>
               </a>
@@ -218,6 +254,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:OpenGL.CubeMap.CubeMapShader\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L239-239" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  Describes a cube map shader that's loaded into GPU.
               </p>
@@ -228,7 +267,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="CubeMapSurface">
-                <a href="/Nu/reference/opengl-cubemap-cubemapsurface.html">
+                <a href="http://localhost:8901/reference/opengl-cubemap-cubemapsurface.html">
                   CubeMapSurface
                 </a>
               </a>
@@ -242,6 +281,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:OpenGL.CubeMap.CubeMapSurface\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  Describes a renderable cube map surface.
               </p>
@@ -299,7 +341,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                    <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -316,6 +358,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.CreateCubeMapGeometry\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L229-229" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create cube map geometry.
                   </p>
@@ -336,7 +381,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -392,14 +437,14 @@
                         bounds
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                    <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                   </span>
                   <br/>
                 </div>
@@ -416,6 +461,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.CreateCubeMapGeometryFromMesh\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L174-174" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create cube map geometry from a mesh.
                   </p>
@@ -451,7 +499,7 @@
                     bounds
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-box3-0.html">Box3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -460,7 +508,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -499,7 +547,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
+                    <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -516,6 +564,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.CreateCubeMapMesh\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L90-90" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create a mesh for a cube map.
                   </p>
@@ -536,7 +587,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="/Nu/reference/nu-box3-0.html">Box3</a></span></code>
+                  <code><span><span>float32[]</span>&#32;*&#32;<span>int&#32;array</span>&#32;*&#32;<a href="http://localhost:8901/reference/nu-box3-0.html">Box3</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -575,7 +626,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
+                    <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
                   </span>
                   <br/>
                 </div>
@@ -592,6 +643,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.CreateCubeMapShader\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L247-247" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create a cube map shader.
                   </p>
@@ -612,7 +666,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -705,7 +759,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -724,6 +778,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.DestroyCubeMapGeometry\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L234-234" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy cube map geometry.
                   </p>
@@ -735,7 +792,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -791,7 +848,7 @@
                         cubeMap
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -799,7 +856,7 @@
                         geometry
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                     </span>
                     <br/>
                     <span>
@@ -807,7 +864,7 @@
                         shader
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
                     </span>
                     <br/>
                     <span>
@@ -834,6 +891,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.DrawCubeMap\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L267-267" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Draw a cube map.
                   </p>
@@ -869,7 +929,7 @@
                     cubeMap
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -877,7 +937,7 @@
                     geometry
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapgeometry.html">CubeMapGeometry</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -885,7 +945,7 @@
                     shader
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-cubemap-cubemapshader.html">CubeMapShader</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -972,7 +1032,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -989,6 +1049,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.CubeMap.TryCreateCubeMap\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.CubeMap.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to create a cube map from 6 files.
  Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the included
@@ -1051,7 +1114,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1123,10 +1186,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="EntityDispatcherModule2 (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="EntityDispatcherModule2 (Nu)">
     
     <title>EntityDispatcherModule2 (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -132,7 +159,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="Entity2dDispatcher<'model, 'message, 'command>">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-entity2ddispatcher-3.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-entity2ddispatcher-3.html">
                   Entity2dDispatcher<'model, 'message, 'command>
                 </a>
               </a>
@@ -146,6 +173,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.Entity2dDispatcher`3\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2174-2174" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  A 2d entity dispatcher.
               </p>
@@ -156,7 +186,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="Entity2dDispatcherImSim">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-entity2ddispatcherimsim.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-entity2ddispatcherimsim.html">
                   Entity2dDispatcherImSim
                 </a>
               </a>
@@ -170,6 +200,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.Entity2dDispatcherImSim\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L1986-1986" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  An ImSim 2d entity dispatcher.
               </p>
@@ -180,7 +213,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="Entity3dDispatcher<'model, 'message, 'command>">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-entity3ddispatcher-3.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-entity3ddispatcher-3.html">
                   Entity3dDispatcher<'model, 'message, 'command>
                 </a>
               </a>
@@ -194,6 +227,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.Entity3dDispatcher`3\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2205-2205" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  A 3d entity dispatcher.
               </p>
@@ -204,7 +240,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="Entity3dDispatcherImSim">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-entity3ddispatcherimsim.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-entity3ddispatcherimsim.html">
                   Entity3dDispatcherImSim
                 </a>
               </a>
@@ -218,6 +254,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.Entity3dDispatcherImSim\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2011-2011" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  An ImSim 3d entity dispatcher.
               </p>
@@ -228,7 +267,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="EntityDispatcher<'model, 'message, 'command>">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-entitydispatcher-3.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-entitydispatcher-3.html">
                   EntityDispatcher<'model, 'message, 'command>
                 </a>
               </a>
@@ -242,6 +281,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.EntityDispatcher`3\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2040-2040" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  The MMCC dispatcher for entities.
               </p>
@@ -252,7 +294,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="EntityDispatcherImSim">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-entitydispatcherimsim.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-entitydispatcherimsim.html">
                   EntityDispatcherImSim
                 </a>
               </a>
@@ -266,6 +308,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.EntityDispatcherImSim\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L1953-1953" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  The ImSim dispatcher for entities.
               </p>
@@ -276,7 +321,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="GuiDispatcher<'model, 'message, 'command>">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-guidispatcher-3.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-guidispatcher-3.html">
                   GuiDispatcher<'model, 'message, 'command>
                 </a>
               </a>
@@ -290,6 +335,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.GuiDispatcher`3\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2184-2184" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  A gui entity dispatcher.
               </p>
@@ -300,7 +348,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="GuiDispatcherImSim">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-guidispatcherimsim.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-guidispatcherimsim.html">
                   GuiDispatcherImSim
                 </a>
               </a>
@@ -314,6 +362,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.GuiDispatcherImSim\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L1993-1993" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  An ImSim gui entity dispatcher.
               </p>
@@ -324,7 +375,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="VuiDispatcher<'model, 'message, 'command>">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-vuidispatcher-3.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-vuidispatcher-3.html">
                   VuiDispatcher<'model, 'message, 'command>
                 </a>
               </a>
@@ -338,6 +389,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.VuiDispatcher`3\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2215-2215" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  A vui dispatcher (gui in 3d).
               </p>
@@ -348,7 +402,7 @@
           <td class="fsdocs-entity-name">
             <p>
               <a name="VuiDispatcherImSim">
-                <a href="/Nu/reference/nu-entitydispatchermodule2-vuidispatcherimsim.html">
+                <a href="http://localhost:8901/reference/nu-entitydispatchermodule2-vuidispatcherimsim.html">
                   VuiDispatcherImSim
                 </a>
               </a>
@@ -362,6 +416,9 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.EntityDispatcherModule2.VuiDispatcherImSim\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2018-2018" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                  An ImSim vui dispatcher (gui in 3d).
               </p>
@@ -413,7 +470,7 @@
                         signal
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-signal.html">Signal</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-signal.html">Signal</a></code>
                     </span>
                     <br/>
                     <span>
@@ -421,7 +478,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -440,6 +497,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.EntityDispatcherModule2.Entity.SignalPlus``3\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2036-2036" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a signal to the entity, explicitly specifing MMCC types.
                   </p>
@@ -447,7 +507,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-entity.html">Entity</a></code>
+                <code><a href="http://localhost:8901/reference/nu-entity.html">Entity</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -455,7 +515,7 @@
                     signal
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-signal.html">Signal</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-signal.html">Signal</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -463,7 +523,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -495,10 +555,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

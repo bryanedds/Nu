@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Nu.Constants" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Nu.Constants">
     
     <title>Nu.Constants | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -111,7 +138,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Address">
-              <a href="/Nu/reference/nu-constants-address.html">
+              <a href="http://localhost:8901/reference/nu-constants-address.html">
                 Address
               </a>
             </a>
@@ -125,6 +152,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Address\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L9-9" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -135,7 +165,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Assimp">
-              <a href="/Nu/reference/nu-constants-assimp.html">
+              <a href="http://localhost:8901/reference/nu-constants-assimp.html">
                 Assimp
               </a>
             </a>
@@ -149,6 +179,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Assimp\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L15-15" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -159,7 +192,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Associations">
-              <a href="/Nu/reference/nu-constants-associations.html">
+              <a href="http://localhost:8901/reference/nu-constants-associations.html">
                 Associations
               </a>
             </a>
@@ -173,6 +206,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Associations\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L358-358" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -183,7 +219,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Audio">
-              <a href="/Nu/reference/nu-constants-audio.html">
+              <a href="http://localhost:8901/reference/nu-constants-audio.html">
                 Audio
               </a>
             </a>
@@ -197,6 +233,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Audio\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L284-284" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -207,7 +246,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Dissolve">
-              <a href="/Nu/reference/nu-constants-dissolve.html">
+              <a href="http://localhost:8901/reference/nu-constants-dissolve.html">
                 Dissolve
               </a>
             </a>
@@ -221,6 +260,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Dissolve\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldConstants.fs#L10-10" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -231,7 +273,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Effects">
-              <a href="/Nu/reference/nu-constants-effects.html">
+              <a href="http://localhost:8901/reference/nu-constants-effects.html">
                 Effects
               </a>
             </a>
@@ -245,6 +287,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Effects\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L386-386" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -255,7 +300,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Engine">
-              <a href="/Nu/reference/nu-constants-engine.html">
+              <a href="http://localhost:8901/reference/nu-constants-engine.html">
                 Engine
               </a>
             </a>
@@ -269,6 +314,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Engine\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L48-48" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -279,7 +327,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="GameTime">
-              <a href="/Nu/reference/nu-constants-gametime.html">
+              <a href="http://localhost:8901/reference/nu-constants-gametime.html">
                 GameTime
               </a>
             </a>
@@ -293,6 +341,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.GameTime\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/GameTime.fs#L23-23" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -303,7 +354,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Gui">
-              <a href="/Nu/reference/nu-constants-gui.html">
+              <a href="http://localhost:8901/reference/nu-constants-gui.html">
                 Gui
               </a>
             </a>
@@ -317,6 +368,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Gui\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L366-366" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -327,7 +381,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="ImGui">
-              <a href="/Nu/reference/nu-constants-imgui.html">
+              <a href="http://localhost:8901/reference/nu-constants-imgui.html">
                 ImGui
               </a>
             </a>
@@ -341,6 +395,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.ImGui\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L43-43" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -351,7 +408,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Lens">
-              <a href="/Nu/reference/nu-constants-lens.html">
+              <a href="http://localhost:8901/reference/nu-constants-lens.html">
                 Lens
               </a>
             </a>
@@ -365,6 +422,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Lens\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L350-350" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -375,7 +435,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Nav">
-              <a href="/Nu/reference/nu-constants-nav.html">
+              <a href="http://localhost:8901/reference/nu-constants-nav.html">
                 Nav
               </a>
             </a>
@@ -389,6 +449,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Nav\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L345-345" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -399,7 +462,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="OpenGL">
-              <a href="/Nu/reference/nu-constants-opengl.html">
+              <a href="http://localhost:8901/reference/nu-constants-opengl.html">
                 OpenGL
               </a>
             </a>
@@ -413,6 +476,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.OpenGL\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L31-31" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -423,7 +489,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Particles">
-              <a href="/Nu/reference/nu-constants-particles.html">
+              <a href="http://localhost:8901/reference/nu-constants-particles.html">
                 Particles
               </a>
             </a>
@@ -437,6 +503,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Particles\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L381-381" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -447,7 +516,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Paths">
-              <a href="/Nu/reference/nu-constants-paths.html">
+              <a href="http://localhost:8901/reference/nu-constants-paths.html">
                 Paths
               </a>
             </a>
@@ -461,6 +530,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Paths\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L391-391" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -471,7 +543,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Physics">
-              <a href="/Nu/reference/nu-constants-physics.html">
+              <a href="http://localhost:8901/reference/nu-constants-physics.html">
                 Physics
               </a>
             </a>
@@ -485,6 +557,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Physics\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L298-298" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -495,7 +570,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Relation">
-              <a href="/Nu/reference/nu-constants-relation.html">
+              <a href="http://localhost:8901/reference/nu-constants-relation.html">
                 Relation
               </a>
             </a>
@@ -509,6 +584,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Relation\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Relation.fs#L9-9" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -519,7 +597,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Render">
-              <a href="/Nu/reference/nu-constants-render.html">
+              <a href="http://localhost:8901/reference/nu-constants-render.html">
                 Render
               </a>
             </a>
@@ -533,6 +611,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Render\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L160-160" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -543,7 +624,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="Slide">
-              <a href="/Nu/reference/nu-constants-slide.html">
+              <a href="http://localhost:8901/reference/nu-constants-slide.html">
                 Slide
               </a>
             </a>
@@ -557,6 +638,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.Slide\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldConstants.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -567,7 +651,7 @@
         <td class="fsdocs-entity-name">
           <p>
             <a name="TileMap">
-              <a href="/Nu/reference/nu-constants-tilemap.html">
+              <a href="http://localhost:8901/reference/nu-constants-tilemap.html">
                 TileMap
               </a>
             </a>
@@ -581,6 +665,9 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Constants.TileMap\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Constants.fs#L373-373" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
             <p class="fsdocs-summary">
               
             </p>
@@ -604,10 +691,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

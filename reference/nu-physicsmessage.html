@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="PhysicsMessage (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="PhysicsMessage (Nu)">
     
     <title>PhysicsMessage (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -142,7 +169,7 @@
                 <p>
                   <a id="ApplyBodyAngularImpulseMessage">
                     <a href="#ApplyBodyAngularImpulseMessage">
-                      <code><span>ApplyBodyAngularImpulseMessage&#32;<a href="/Nu/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></span></code>
+                      <code><span>ApplyBodyAngularImpulseMessage&#32;<a href="http://localhost:8901/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -150,7 +177,7 @@
               <div class="fsdocs-tip" id="5994">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ApplyBodyAngularImpulseMessage&#32;<a href="/Nu/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></span></code>
+                  <code><span>ApplyBodyAngularImpulseMessage&#32;<a href="http://localhost:8901/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -160,7 +187,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -176,7 +203,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-applybodyangularimpulsemessage.html">ApplyBodyAngularImpulseMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -189,7 +216,7 @@
                 <p>
                   <a id="ApplyBodyForceMessage">
                     <a href="#ApplyBodyForceMessage">
-                      <code><span>ApplyBodyForceMessage&#32;<a href="/Nu/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></span></code>
+                      <code><span>ApplyBodyForceMessage&#32;<a href="http://localhost:8901/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -197,7 +224,7 @@
               <div class="fsdocs-tip" id="5995">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ApplyBodyForceMessage&#32;<a href="/Nu/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></span></code>
+                  <code><span>ApplyBodyForceMessage&#32;<a href="http://localhost:8901/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -207,7 +234,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -223,7 +250,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-applybodyforcemessage.html">ApplyBodyForceMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -236,7 +263,7 @@
                 <p>
                   <a id="ApplyBodyLinearImpulseMessage">
                     <a href="#ApplyBodyLinearImpulseMessage">
-                      <code><span>ApplyBodyLinearImpulseMessage&#32;<a href="/Nu/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></span></code>
+                      <code><span>ApplyBodyLinearImpulseMessage&#32;<a href="http://localhost:8901/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -244,7 +271,7 @@
               <div class="fsdocs-tip" id="5996">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ApplyBodyLinearImpulseMessage&#32;<a href="/Nu/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></span></code>
+                  <code><span>ApplyBodyLinearImpulseMessage&#32;<a href="http://localhost:8901/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -254,7 +281,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -270,7 +297,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-applybodylinearimpulsemessage.html">ApplyBodyLinearImpulseMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -283,7 +310,7 @@
                 <p>
                   <a id="ApplyBodyTorqueMessage">
                     <a href="#ApplyBodyTorqueMessage">
-                      <code><span>ApplyBodyTorqueMessage&#32;<a href="/Nu/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></span></code>
+                      <code><span>ApplyBodyTorqueMessage&#32;<a href="http://localhost:8901/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -291,7 +318,7 @@
               <div class="fsdocs-tip" id="5997">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ApplyBodyTorqueMessage&#32;<a href="/Nu/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></span></code>
+                  <code><span>ApplyBodyTorqueMessage&#32;<a href="http://localhost:8901/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -301,7 +328,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -317,7 +344,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-applybodytorquemessage.html">ApplyBodyTorqueMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -330,7 +357,7 @@
                 <p>
                   <a id="CreateBodiesMessage">
                     <a href="#CreateBodiesMessage">
-                      <code><span>CreateBodiesMessage&#32;<a href="/Nu/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></span></code>
+                      <code><span>CreateBodiesMessage&#32;<a href="http://localhost:8901/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -338,7 +365,7 @@
               <div class="fsdocs-tip" id="5998">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CreateBodiesMessage&#32;<a href="/Nu/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></span></code>
+                  <code><span>CreateBodiesMessage&#32;<a href="http://localhost:8901/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -348,7 +375,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -364,7 +391,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-createbodiesmessage.html">CreateBodiesMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -377,7 +404,7 @@
                 <p>
                   <a id="CreateBodyJointMessage">
                     <a href="#CreateBodyJointMessage">
-                      <code><span>CreateBodyJointMessage&#32;<a href="/Nu/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></span></code>
+                      <code><span>CreateBodyJointMessage&#32;<a href="http://localhost:8901/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -385,7 +412,7 @@
               <div class="fsdocs-tip" id="5999">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CreateBodyJointMessage&#32;<a href="/Nu/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></span></code>
+                  <code><span>CreateBodyJointMessage&#32;<a href="http://localhost:8901/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -395,7 +422,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -411,7 +438,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-createbodyjointmessage.html">CreateBodyJointMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -424,7 +451,7 @@
                 <p>
                   <a id="CreateBodyMessage">
                     <a href="#CreateBodyMessage">
-                      <code><span>CreateBodyMessage&#32;<a href="/Nu/reference/nu-createbodymessage.html">CreateBodyMessage</a></span></code>
+                      <code><span>CreateBodyMessage&#32;<a href="http://localhost:8901/reference/nu-createbodymessage.html">CreateBodyMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -432,7 +459,7 @@
               <div class="fsdocs-tip" id="6000">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CreateBodyMessage&#32;<a href="/Nu/reference/nu-createbodymessage.html">CreateBodyMessage</a></span></code>
+                  <code><span>CreateBodyMessage&#32;<a href="http://localhost:8901/reference/nu-createbodymessage.html">CreateBodyMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -442,7 +469,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-createbodymessage.html">CreateBodyMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-createbodymessage.html">CreateBodyMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -458,7 +485,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-createbodymessage.html">CreateBodyMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-createbodymessage.html">CreateBodyMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -471,7 +498,7 @@
                 <p>
                   <a id="DestroyBodiesMessage">
                     <a href="#DestroyBodiesMessage">
-                      <code><span>DestroyBodiesMessage&#32;<a href="/Nu/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></span></code>
+                      <code><span>DestroyBodiesMessage&#32;<a href="http://localhost:8901/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -479,7 +506,7 @@
               <div class="fsdocs-tip" id="6001">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>DestroyBodiesMessage&#32;<a href="/Nu/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></span></code>
+                  <code><span>DestroyBodiesMessage&#32;<a href="http://localhost:8901/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -489,7 +516,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -505,7 +532,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-destroybodiesmessage.html">DestroyBodiesMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -518,7 +545,7 @@
                 <p>
                   <a id="DestroyBodyJointMessage">
                     <a href="#DestroyBodyJointMessage">
-                      <code><span>DestroyBodyJointMessage&#32;<a href="/Nu/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></span></code>
+                      <code><span>DestroyBodyJointMessage&#32;<a href="http://localhost:8901/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -526,7 +553,7 @@
               <div class="fsdocs-tip" id="6002">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>DestroyBodyJointMessage&#32;<a href="/Nu/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></span></code>
+                  <code><span>DestroyBodyJointMessage&#32;<a href="http://localhost:8901/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -536,7 +563,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -552,7 +579,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-destroybodyjointmessage.html">DestroyBodyJointMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -565,7 +592,7 @@
                 <p>
                   <a id="DestroyBodyMessage">
                     <a href="#DestroyBodyMessage">
-                      <code><span>DestroyBodyMessage&#32;<a href="/Nu/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></span></code>
+                      <code><span>DestroyBodyMessage&#32;<a href="http://localhost:8901/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -573,7 +600,7 @@
               <div class="fsdocs-tip" id="6003">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>DestroyBodyMessage&#32;<a href="/Nu/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></span></code>
+                  <code><span>DestroyBodyMessage&#32;<a href="http://localhost:8901/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -583,7 +610,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -599,7 +626,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-destroybodymessage.html">DestroyBodyMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -612,7 +639,7 @@
                 <p>
                   <a id="JumpBodyMessage">
                     <a href="#JumpBodyMessage">
-                      <code><span>JumpBodyMessage&#32;<a href="/Nu/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></span></code>
+                      <code><span>JumpBodyMessage&#32;<a href="http://localhost:8901/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -620,7 +647,7 @@
               <div class="fsdocs-tip" id="6004">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>JumpBodyMessage&#32;<a href="/Nu/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></span></code>
+                  <code><span>JumpBodyMessage&#32;<a href="http://localhost:8901/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -630,7 +657,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -646,7 +673,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-jumpbodymessage.html">JumpBodyMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -659,7 +686,7 @@
                 <p>
                   <a id="SetBodyAngularVelocityMessage">
                     <a href="#SetBodyAngularVelocityMessage">
-                      <code><span>SetBodyAngularVelocityMessage&#32;<a href="/Nu/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></span></code>
+                      <code><span>SetBodyAngularVelocityMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -667,7 +694,7 @@
               <div class="fsdocs-tip" id="6005">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyAngularVelocityMessage&#32;<a href="/Nu/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></span></code>
+                  <code><span>SetBodyAngularVelocityMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -677,7 +704,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -693,7 +720,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyangularvelocitymessage.html">SetBodyAngularVelocityMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -706,7 +733,7 @@
                 <p>
                   <a id="SetBodyCenterMessage">
                     <a href="#SetBodyCenterMessage">
-                      <code><span>SetBodyCenterMessage&#32;<a href="/Nu/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></span></code>
+                      <code><span>SetBodyCenterMessage&#32;<a href="http://localhost:8901/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -714,7 +741,7 @@
               <div class="fsdocs-tip" id="6006">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyCenterMessage&#32;<a href="/Nu/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></span></code>
+                  <code><span>SetBodyCenterMessage&#32;<a href="http://localhost:8901/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -724,7 +751,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -740,7 +767,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodycentermessage.html">SetBodyCenterMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -753,7 +780,7 @@
                 <p>
                   <a id="SetBodyEnabledMessage">
                     <a href="#SetBodyEnabledMessage">
-                      <code><span>SetBodyEnabledMessage&#32;<a href="/Nu/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></span></code>
+                      <code><span>SetBodyEnabledMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -761,7 +788,7 @@
               <div class="fsdocs-tip" id="6007">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyEnabledMessage&#32;<a href="/Nu/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></span></code>
+                  <code><span>SetBodyEnabledMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -771,7 +798,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -787,7 +814,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyenabledmessage.html">SetBodyEnabledMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -800,7 +827,7 @@
                 <p>
                   <a id="SetBodyLinearVelocityMessage">
                     <a href="#SetBodyLinearVelocityMessage">
-                      <code><span>SetBodyLinearVelocityMessage&#32;<a href="/Nu/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></span></code>
+                      <code><span>SetBodyLinearVelocityMessage&#32;<a href="http://localhost:8901/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -808,7 +835,7 @@
               <div class="fsdocs-tip" id="6008">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyLinearVelocityMessage&#32;<a href="/Nu/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></span></code>
+                  <code><span>SetBodyLinearVelocityMessage&#32;<a href="http://localhost:8901/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -818,7 +845,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -834,7 +861,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodylinearvelocitymessage.html">SetBodyLinearVelocityMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -847,7 +874,7 @@
                 <p>
                   <a id="SetBodyRotationMessage">
                     <a href="#SetBodyRotationMessage">
-                      <code><span>SetBodyRotationMessage&#32;<a href="/Nu/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></span></code>
+                      <code><span>SetBodyRotationMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -855,7 +882,7 @@
               <div class="fsdocs-tip" id="6009">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyRotationMessage&#32;<a href="/Nu/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></span></code>
+                  <code><span>SetBodyRotationMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -865,7 +892,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -881,7 +908,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyrotationmessage.html">SetBodyRotationMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -894,7 +921,7 @@
                 <p>
                   <a id="SetBodyVehicleBrakeInputMessage">
                     <a href="#SetBodyVehicleBrakeInputMessage">
-                      <code><span>SetBodyVehicleBrakeInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></span></code>
+                      <code><span>SetBodyVehicleBrakeInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -902,7 +929,7 @@
               <div class="fsdocs-tip" id="6010">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyVehicleBrakeInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></span></code>
+                  <code><span>SetBodyVehicleBrakeInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -912,7 +939,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -928,7 +955,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyvehiclebrakeinputmessage.html">SetBodyVehicleBrakeInputMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -941,7 +968,7 @@
                 <p>
                   <a id="SetBodyVehicleForwardInputMessage">
                     <a href="#SetBodyVehicleForwardInputMessage">
-                      <code><span>SetBodyVehicleForwardInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></span></code>
+                      <code><span>SetBodyVehicleForwardInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -949,7 +976,7 @@
               <div class="fsdocs-tip" id="6011">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyVehicleForwardInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></span></code>
+                  <code><span>SetBodyVehicleForwardInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -959,7 +986,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -975,7 +1002,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyvehicleforwardinputmessage.html">SetBodyVehicleForwardInputMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -988,7 +1015,7 @@
                 <p>
                   <a id="SetBodyVehicleHandBrakeInputMessage">
                     <a href="#SetBodyVehicleHandBrakeInputMessage">
-                      <code><span>SetBodyVehicleHandBrakeInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></span></code>
+                      <code><span>SetBodyVehicleHandBrakeInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -996,7 +1023,7 @@
               <div class="fsdocs-tip" id="6012">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyVehicleHandBrakeInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></span></code>
+                  <code><span>SetBodyVehicleHandBrakeInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1006,7 +1033,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1022,7 +1049,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyvehiclehandbrakeinputmessage.html">SetBodyVehicleHandBrakeInputMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1035,7 +1062,7 @@
                 <p>
                   <a id="SetBodyVehicleRightInputMessage">
                     <a href="#SetBodyVehicleRightInputMessage">
-                      <code><span>SetBodyVehicleRightInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></span></code>
+                      <code><span>SetBodyVehicleRightInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1043,7 +1070,7 @@
               <div class="fsdocs-tip" id="6013">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SetBodyVehicleRightInputMessage&#32;<a href="/Nu/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></span></code>
+                  <code><span>SetBodyVehicleRightInputMessage&#32;<a href="http://localhost:8901/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1053,7 +1080,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1069,7 +1096,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-setbodyvehiclerightinputmessage.html">SetBodyVehicleRightInputMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1982,10 +2009,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

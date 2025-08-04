@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Modifier<'a, 'b> (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Modifier<'a, 'b> (Nu)">
     
     <title>Modifier<'a, 'b> (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu-behaviors.html">
+      <a href="http://localhost:8901/reference/nu-behaviors.html">
         Nu.Behaviors
       </a>
     </dt>
@@ -143,7 +170,7 @@
                 <p>
                   <a id="Modifier">
                     <a href="#Modifier">
-                      <code><span>Modifier&#32;<span><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></span></code>
+                      <code><span>Modifier&#32;<span><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></span></code>
                     </a>
                   </a>
                 </p>
@@ -151,7 +178,7 @@
               <div class="fsdocs-tip" id="7834">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Modifier&#32;<span><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></span></code>
+                  <code><span>Modifier&#32;<span><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -161,7 +188,7 @@
                         Item
                       </b>
                       :
-                      <code><span><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
+                      <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
                     </span>
                     <br/>
                   </ul>
@@ -177,7 +204,7 @@
                   Item
                 </span>
                 :
-                <code><span><span>'a&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="/Nu/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
+                <code><span><span>'a&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span>&#32;->&#32;<span>'b&#32;<a href="http://localhost:8901/reference/nu-behaviors-behavior-1.html">Behavior</a></span></span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -231,7 +258,7 @@
                         left
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -239,14 +266,14 @@
                         right
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a2,&#32;'b2</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a2,&#32;'b2</span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span><span>(<span>'a&#32;*&#32;'a2</span>)</span>,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span><span>(<span>'a&#32;*&#32;'a2</span>)</span>,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -263,6 +290,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_MultiplyMultiplyMultiplyMultiply``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Splits the input into two behaviors and runs the left and right modifiers on each part independently.
                   </p>
@@ -274,7 +304,7 @@
                     left
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -282,7 +312,7 @@
                     right
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a2,&#32;'b2</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a2,&#32;'b2</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -291,7 +321,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span><span>(<span>'a&#32;*&#32;'a2</span>)</span>,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span><span>(<span>'a&#32;*&#32;'a2</span>)</span>,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -323,7 +353,7 @@
                         left
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -331,14 +361,14 @@
                         right
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b2</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b2</span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -355,6 +385,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_AmpAmpAmpAmp``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Fan-out composition of two modifiers. It runs both modifiers on the same input behavior and produces a pair of results.
                   </p>
@@ -366,7 +399,7 @@
                     left
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -374,7 +407,7 @@
                     right
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b2</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b2</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -383,7 +416,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;<span>(<span>'b&#32;*&#32;'b2</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -415,7 +448,7 @@
                         left
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -423,14 +456,14 @@
                         right
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -447,6 +480,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_LessLessLessLess``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L55-55" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Composes two modifiers, applying the right modifier first and then the left one.
                   </p>
@@ -458,7 +494,7 @@
                     left
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -466,7 +502,7 @@
                     right
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -475,7 +511,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -515,14 +551,14 @@
                         right
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -539,6 +575,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_LessLessLessHat``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L73-73" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Left-to-right behavior composition of a function with a modifier.
                   </p>
@@ -558,7 +597,7 @@
                     right
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -567,7 +606,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -599,7 +638,7 @@
                         left
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -607,14 +646,14 @@
                         right
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -631,6 +670,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_GreaterGreaterGreaterGreater``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L52-52" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Composes two modifiers, applying the left modifier first and then the right one.
                   </p>
@@ -642,7 +684,7 @@
                     left
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -650,7 +692,7 @@
                     right
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'b,&#32;'c</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -659,7 +701,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -691,7 +733,7 @@
                         left
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -706,7 +748,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -723,6 +765,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_GreaterGreaterGreaterHat``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Right-to-left behavior composition of a modifier with a function.
                   </p>
@@ -734,7 +779,7 @@
                     left
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -751,7 +796,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'c,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -791,14 +836,14 @@
                         right
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -815,6 +860,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_HatLessLessLess``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L67-67" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Right-to-left function composition of a function with a modifier.
                   </p>
@@ -834,7 +882,7 @@
                     right
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -843,7 +891,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -875,7 +923,7 @@
                         left
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -890,7 +938,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -907,6 +955,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Behaviors.Modifier`2.op_HatGreaterGreaterGreater``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Modifier.fs#L64-64" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Left-to-right function composition of a modifier with a function.
                   </p>
@@ -918,7 +969,7 @@
                     left
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -935,7 +986,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-behaviors-modifier-2.html">Modifier</a>&lt;<span>'a,&#32;'c</span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -960,10 +1011,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

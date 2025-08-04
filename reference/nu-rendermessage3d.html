@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="RenderMessage3d (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="RenderMessage3d (Nu)">
     
     <title>RenderMessage3d (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -110,7 +137,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="http://localhost:8901/reference/nu-rendermessage3d.html">RenderMessage3d</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
@@ -148,7 +175,7 @@
                 <p>
                   <a id="ConfigureLighting3d">
                     <a href="#ConfigureLighting3d">
-                      <code><span>ConfigureLighting3d&#32;<a href="/Nu/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></span></code>
+                      <code><span>ConfigureLighting3d&#32;<a href="http://localhost:8901/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -156,7 +183,7 @@
               <div class="fsdocs-tip" id="6202">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ConfigureLighting3d&#32;<a href="/Nu/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></span></code>
+                  <code><span>ConfigureLighting3d&#32;<a href="http://localhost:8901/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -166,7 +193,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -182,7 +209,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
+                <code><a href="http://localhost:8901/reference/nu-lighting3dconfig.html">Lighting3dConfig</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -195,7 +222,7 @@
                 <p>
                   <a id="ConfigureRenderer3d">
                     <a href="#ConfigureRenderer3d">
-                      <code><span>ConfigureRenderer3d&#32;<a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></span></code>
+                      <code><span>ConfigureRenderer3d&#32;<a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -203,7 +230,7 @@
               <div class="fsdocs-tip" id="6203">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ConfigureRenderer3d&#32;<a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></span></code>
+                  <code><span>ConfigureRenderer3d&#32;<a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -213,7 +240,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -229,7 +256,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderer3dconfig.html">Renderer3dConfig</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -242,7 +269,7 @@
                 <p>
                   <a id="CreateUserDefinedStaticModel">
                     <a href="#CreateUserDefinedStaticModel">
-                      <code><span>CreateUserDefinedStaticModel&#32;<a href="/Nu/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></span></code>
+                      <code><span>CreateUserDefinedStaticModel&#32;<a href="http://localhost:8901/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -250,7 +277,7 @@
               <div class="fsdocs-tip" id="6204">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CreateUserDefinedStaticModel&#32;<a href="/Nu/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></span></code>
+                  <code><span>CreateUserDefinedStaticModel&#32;<a href="http://localhost:8901/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -260,7 +287,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -276,7 +303,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></code>
+                <code><a href="http://localhost:8901/reference/nu-createuserdefinedstaticmodel.html">CreateUserDefinedStaticModel</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -289,7 +316,7 @@
                 <p>
                   <a id="DestroyUserDefinedStaticModel">
                     <a href="#DestroyUserDefinedStaticModel">
-                      <code><span>DestroyUserDefinedStaticModel&#32;<a href="/Nu/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></span></code>
+                      <code><span>DestroyUserDefinedStaticModel&#32;<a href="http://localhost:8901/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -297,7 +324,7 @@
               <div class="fsdocs-tip" id="6205">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>DestroyUserDefinedStaticModel&#32;<a href="/Nu/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></span></code>
+                  <code><span>DestroyUserDefinedStaticModel&#32;<a href="http://localhost:8901/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -307,7 +334,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -323,7 +350,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></code>
+                <code><a href="http://localhost:8901/reference/nu-destroyuserdefinedstaticmodel.html">DestroyUserDefinedStaticModel</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -400,6 +427,9 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L695-695" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
               <p class="fsdocs-summary">
                 
               </p>
@@ -413,7 +443,7 @@
                 <p>
                   <a id="RenderAnimatedModel">
                     <a href="#RenderAnimatedModel">
-                      <code><span>RenderAnimatedModel&#32;<a href="/Nu/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></span></code>
+                      <code><span>RenderAnimatedModel&#32;<a href="http://localhost:8901/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -421,7 +451,7 @@
               <div class="fsdocs-tip" id="6208">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderAnimatedModel&#32;<a href="/Nu/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></span></code>
+                  <code><span>RenderAnimatedModel&#32;<a href="http://localhost:8901/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -431,7 +461,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -447,7 +477,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderanimatedmodel.html">RenderAnimatedModel</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -460,7 +490,7 @@
                 <p>
                   <a id="RenderAnimatedModels">
                     <a href="#RenderAnimatedModels">
-                      <code><span>RenderAnimatedModels&#32;<a href="/Nu/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></span></code>
+                      <code><span>RenderAnimatedModels&#32;<a href="http://localhost:8901/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -468,7 +498,7 @@
               <div class="fsdocs-tip" id="6209">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderAnimatedModels&#32;<a href="/Nu/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></span></code>
+                  <code><span>RenderAnimatedModels&#32;<a href="http://localhost:8901/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -478,7 +508,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -494,7 +524,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderanimatedmodels.html">RenderAnimatedModels</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -507,7 +537,7 @@
                 <p>
                   <a id="RenderBillboard">
                     <a href="#RenderBillboard">
-                      <code><span>RenderBillboard&#32;<a href="/Nu/reference/nu-renderbillboard.html">RenderBillboard</a></span></code>
+                      <code><span>RenderBillboard&#32;<a href="http://localhost:8901/reference/nu-renderbillboard.html">RenderBillboard</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -515,7 +545,7 @@
               <div class="fsdocs-tip" id="6210">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderBillboard&#32;<a href="/Nu/reference/nu-renderbillboard.html">RenderBillboard</a></span></code>
+                  <code><span>RenderBillboard&#32;<a href="http://localhost:8901/reference/nu-renderbillboard.html">RenderBillboard</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -525,7 +555,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderbillboard.html">RenderBillboard</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderbillboard.html">RenderBillboard</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -541,7 +571,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderbillboard.html">RenderBillboard</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderbillboard.html">RenderBillboard</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -554,7 +584,7 @@
                 <p>
                   <a id="RenderBillboardParticles">
                     <a href="#RenderBillboardParticles">
-                      <code><span>RenderBillboardParticles&#32;<a href="/Nu/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></span></code>
+                      <code><span>RenderBillboardParticles&#32;<a href="http://localhost:8901/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -562,7 +592,7 @@
               <div class="fsdocs-tip" id="6211">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderBillboardParticles&#32;<a href="/Nu/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></span></code>
+                  <code><span>RenderBillboardParticles&#32;<a href="http://localhost:8901/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -572,7 +602,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -588,7 +618,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderbillboardparticles.html">RenderBillboardParticles</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -601,7 +631,7 @@
                 <p>
                   <a id="RenderBillboards">
                     <a href="#RenderBillboards">
-                      <code><span>RenderBillboards&#32;<a href="/Nu/reference/nu-renderbillboards.html">RenderBillboards</a></span></code>
+                      <code><span>RenderBillboards&#32;<a href="http://localhost:8901/reference/nu-renderbillboards.html">RenderBillboards</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -609,7 +639,7 @@
               <div class="fsdocs-tip" id="6212">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderBillboards&#32;<a href="/Nu/reference/nu-renderbillboards.html">RenderBillboards</a></span></code>
+                  <code><span>RenderBillboards&#32;<a href="http://localhost:8901/reference/nu-renderbillboards.html">RenderBillboards</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -619,7 +649,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderbillboards.html">RenderBillboards</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderbillboards.html">RenderBillboards</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -635,7 +665,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderbillboards.html">RenderBillboards</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderbillboards.html">RenderBillboards</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -648,7 +678,7 @@
                 <p>
                   <a id="RenderCachedAnimatedModel">
                     <a href="#RenderCachedAnimatedModel">
-                      <code><span>RenderCachedAnimatedModel&#32;<a href="/Nu/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></span></code>
+                      <code><span>RenderCachedAnimatedModel&#32;<a href="http://localhost:8901/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -656,7 +686,7 @@
               <div class="fsdocs-tip" id="6213">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderCachedAnimatedModel&#32;<a href="/Nu/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></span></code>
+                  <code><span>RenderCachedAnimatedModel&#32;<a href="http://localhost:8901/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -666,7 +696,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -682,7 +712,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-cachedanimatedmodelmessage.html">CachedAnimatedModelMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -695,7 +725,7 @@
                 <p>
                   <a id="RenderCachedStaticModel">
                     <a href="#RenderCachedStaticModel">
-                      <code><span>RenderCachedStaticModel&#32;<a href="/Nu/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></span></code>
+                      <code><span>RenderCachedStaticModel&#32;<a href="http://localhost:8901/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -703,7 +733,7 @@
               <div class="fsdocs-tip" id="6214">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderCachedStaticModel&#32;<a href="/Nu/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></span></code>
+                  <code><span>RenderCachedStaticModel&#32;<a href="http://localhost:8901/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -713,7 +743,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -729,7 +759,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-cachedstaticmodelmessage.html">CachedStaticModelMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -742,7 +772,7 @@
                 <p>
                   <a id="RenderCachedStaticModelSurface">
                     <a href="#RenderCachedStaticModelSurface">
-                      <code><span>RenderCachedStaticModelSurface&#32;<a href="/Nu/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></span></code>
+                      <code><span>RenderCachedStaticModelSurface&#32;<a href="http://localhost:8901/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -750,7 +780,7 @@
               <div class="fsdocs-tip" id="6215">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderCachedStaticModelSurface&#32;<a href="/Nu/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></span></code>
+                  <code><span>RenderCachedStaticModelSurface&#32;<a href="http://localhost:8901/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -760,7 +790,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -776,7 +806,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></code>
+                <code><a href="http://localhost:8901/reference/nu-cachedstaticmodelsurfacemessage.html">CachedStaticModelSurfaceMessage</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -789,7 +819,7 @@
                 <p>
                   <a id="RenderLight3d">
                     <a href="#RenderLight3d">
-                      <code><span>RenderLight3d&#32;<a href="/Nu/reference/nu-renderlight3d.html">RenderLight3d</a></span></code>
+                      <code><span>RenderLight3d&#32;<a href="http://localhost:8901/reference/nu-renderlight3d.html">RenderLight3d</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -797,7 +827,7 @@
               <div class="fsdocs-tip" id="6216">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderLight3d&#32;<a href="/Nu/reference/nu-renderlight3d.html">RenderLight3d</a></span></code>
+                  <code><span>RenderLight3d&#32;<a href="http://localhost:8901/reference/nu-renderlight3d.html">RenderLight3d</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -807,7 +837,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderlight3d.html">RenderLight3d</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderlight3d.html">RenderLight3d</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -823,7 +853,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderlight3d.html">RenderLight3d</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderlight3d.html">RenderLight3d</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -836,7 +866,7 @@
                 <p>
                   <a id="RenderLightMap3d">
                     <a href="#RenderLightMap3d">
-                      <code><span>RenderLightMap3d&#32;<a href="/Nu/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></span></code>
+                      <code><span>RenderLightMap3d&#32;<a href="http://localhost:8901/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -844,7 +874,7 @@
               <div class="fsdocs-tip" id="6217">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderLightMap3d&#32;<a href="/Nu/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></span></code>
+                  <code><span>RenderLightMap3d&#32;<a href="http://localhost:8901/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -854,7 +884,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -870,7 +900,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderlightmap3d.html">RenderLightMap3d</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -883,7 +913,7 @@
                 <p>
                   <a id="RenderLightProbe3d">
                     <a href="#RenderLightProbe3d">
-                      <code><span>RenderLightProbe3d&#32;<a href="/Nu/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></span></code>
+                      <code><span>RenderLightProbe3d&#32;<a href="http://localhost:8901/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -891,7 +921,7 @@
               <div class="fsdocs-tip" id="6218">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderLightProbe3d&#32;<a href="/Nu/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></span></code>
+                  <code><span>RenderLightProbe3d&#32;<a href="http://localhost:8901/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -901,7 +931,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -917,7 +947,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -930,7 +960,7 @@
                 <p>
                   <a id="RenderSkyBox">
                     <a href="#RenderSkyBox">
-                      <code><span>RenderSkyBox&#32;<a href="/Nu/reference/nu-renderskybox.html">RenderSkyBox</a></span></code>
+                      <code><span>RenderSkyBox&#32;<a href="http://localhost:8901/reference/nu-renderskybox.html">RenderSkyBox</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -938,7 +968,7 @@
               <div class="fsdocs-tip" id="6219">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderSkyBox&#32;<a href="/Nu/reference/nu-renderskybox.html">RenderSkyBox</a></span></code>
+                  <code><span>RenderSkyBox&#32;<a href="http://localhost:8901/reference/nu-renderskybox.html">RenderSkyBox</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -948,7 +978,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderskybox.html">RenderSkyBox</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderskybox.html">RenderSkyBox</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -964,7 +994,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderskybox.html">RenderSkyBox</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderskybox.html">RenderSkyBox</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -977,7 +1007,7 @@
                 <p>
                   <a id="RenderStaticModel">
                     <a href="#RenderStaticModel">
-                      <code><span>RenderStaticModel&#32;<a href="/Nu/reference/nu-renderstaticmodel.html">RenderStaticModel</a></span></code>
+                      <code><span>RenderStaticModel&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodel.html">RenderStaticModel</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -985,7 +1015,7 @@
               <div class="fsdocs-tip" id="6220">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderStaticModel&#32;<a href="/Nu/reference/nu-renderstaticmodel.html">RenderStaticModel</a></span></code>
+                  <code><span>RenderStaticModel&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodel.html">RenderStaticModel</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -995,7 +1025,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderstaticmodel.html">RenderStaticModel</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderstaticmodel.html">RenderStaticModel</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1011,7 +1041,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderstaticmodel.html">RenderStaticModel</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderstaticmodel.html">RenderStaticModel</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1024,7 +1054,7 @@
                 <p>
                   <a id="RenderStaticModelSurface">
                     <a href="#RenderStaticModelSurface">
-                      <code><span>RenderStaticModelSurface&#32;<a href="/Nu/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></span></code>
+                      <code><span>RenderStaticModelSurface&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1032,7 +1062,7 @@
               <div class="fsdocs-tip" id="6221">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderStaticModelSurface&#32;<a href="/Nu/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></span></code>
+                  <code><span>RenderStaticModelSurface&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1042,7 +1072,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1058,7 +1088,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderstaticmodelsurface.html">RenderStaticModelSurface</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1071,7 +1101,7 @@
                 <p>
                   <a id="RenderStaticModelSurfaceBundle">
                     <a href="#RenderStaticModelSurfaceBundle">
-                      <code><span>RenderStaticModelSurfaceBundle&#32;<a href="/Nu/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></span></code>
+                      <code><span>RenderStaticModelSurfaceBundle&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1079,7 +1109,7 @@
               <div class="fsdocs-tip" id="6222">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderStaticModelSurfaceBundle&#32;<a href="/Nu/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></span></code>
+                  <code><span>RenderStaticModelSurfaceBundle&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1089,7 +1119,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1105,7 +1135,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundle.html">RenderStaticModelSurfaceBundle</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1118,7 +1148,7 @@
                 <p>
                   <a id="RenderStaticModelSurfaceBundles">
                     <a href="#RenderStaticModelSurfaceBundles">
-                      <code><span>RenderStaticModelSurfaceBundles&#32;<a href="/Nu/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></span></code>
+                      <code><span>RenderStaticModelSurfaceBundles&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1126,7 +1156,7 @@
               <div class="fsdocs-tip" id="6223">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderStaticModelSurfaceBundles&#32;<a href="/Nu/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></span></code>
+                  <code><span>RenderStaticModelSurfaceBundles&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1136,7 +1166,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1152,7 +1182,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderstaticmodelsurfacebundles.html">RenderStaticModelSurfaceBundles</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1165,7 +1195,7 @@
                 <p>
                   <a id="RenderStaticModels">
                     <a href="#RenderStaticModels">
-                      <code><span>RenderStaticModels&#32;<a href="/Nu/reference/nu-renderstaticmodels.html">RenderStaticModels</a></span></code>
+                      <code><span>RenderStaticModels&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodels.html">RenderStaticModels</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1173,7 +1203,7 @@
               <div class="fsdocs-tip" id="6224">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderStaticModels&#32;<a href="/Nu/reference/nu-renderstaticmodels.html">RenderStaticModels</a></span></code>
+                  <code><span>RenderStaticModels&#32;<a href="http://localhost:8901/reference/nu-renderstaticmodels.html">RenderStaticModels</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1183,7 +1213,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderstaticmodels.html">RenderStaticModels</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderstaticmodels.html">RenderStaticModels</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1199,7 +1229,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderstaticmodels.html">RenderStaticModels</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderstaticmodels.html">RenderStaticModels</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1212,7 +1242,7 @@
                 <p>
                   <a id="RenderTerrain">
                     <a href="#RenderTerrain">
-                      <code><span>RenderTerrain&#32;<a href="/Nu/reference/nu-renderterrain.html">RenderTerrain</a></span></code>
+                      <code><span>RenderTerrain&#32;<a href="http://localhost:8901/reference/nu-renderterrain.html">RenderTerrain</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1220,7 +1250,7 @@
               <div class="fsdocs-tip" id="6225">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderTerrain&#32;<a href="/Nu/reference/nu-renderterrain.html">RenderTerrain</a></span></code>
+                  <code><span>RenderTerrain&#32;<a href="http://localhost:8901/reference/nu-renderterrain.html">RenderTerrain</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1230,7 +1260,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderterrain.html">RenderTerrain</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderterrain.html">RenderTerrain</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1246,7 +1276,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderterrain.html">RenderTerrain</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderterrain.html">RenderTerrain</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1259,7 +1289,7 @@
                 <p>
                   <a id="RenderUserDefinedStaticModel">
                     <a href="#RenderUserDefinedStaticModel">
-                      <code><span>RenderUserDefinedStaticModel&#32;<a href="/Nu/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></span></code>
+                      <code><span>RenderUserDefinedStaticModel&#32;<a href="http://localhost:8901/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></span></code>
                     </a>
                   </a>
                 </p>
@@ -1267,7 +1297,7 @@
               <div class="fsdocs-tip" id="6226">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RenderUserDefinedStaticModel&#32;<a href="/Nu/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></span></code>
+                  <code><span>RenderUserDefinedStaticModel&#32;<a href="http://localhost:8901/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1277,7 +1307,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1293,7 +1323,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></code>
+                <code><a href="http://localhost:8901/reference/nu-renderuserdefinedstaticmodel.html">RenderUserDefinedStaticModel</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2401,10 +2431,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

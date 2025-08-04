@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="Framebuffer (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="Framebuffer (Nu)">
     
     <title>Framebuffer (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/opengl.html">
+      <a href="http://localhost:8901/reference/opengl.html">
         OpenGL
       </a>
     </dt>
@@ -153,7 +180,7 @@
                         color
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -188,6 +215,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyColorBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy color buffers.
                   </p>
@@ -199,7 +229,7 @@
                     color
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -247,7 +277,7 @@
                         color
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -255,7 +285,7 @@
                         depth
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -290,6 +320,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyColoringBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L747-747" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy coloring buffers.
                   </p>
@@ -301,7 +334,7 @@
                     color
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -309,7 +342,7 @@
                     depth
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -357,7 +390,7 @@
                         environmentFilter
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -392,6 +425,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L601-601" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy environment filter buffers.
                   </p>
@@ -403,7 +439,7 @@
                     environmentFilter
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -451,7 +487,7 @@
                         downSample
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -459,7 +495,7 @@
                         upSample
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -494,6 +530,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L219-219" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy filter bilateral down-sample buffers.
                   </p>
@@ -505,7 +544,7 @@
                     downSample
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -513,7 +552,7 @@
                     upSample
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -561,7 +600,7 @@
                         filterBoxBlurTexture
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -596,6 +635,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterBox1dBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy filter box 1d buffers.
                   </p>
@@ -607,7 +649,7 @@
                     filterBoxBlurTexture
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -655,7 +697,7 @@
                         filter
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -690,6 +732,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L261-261" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy filter buffers.
                   </p>
@@ -701,7 +746,7 @@
                     filter
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -749,7 +794,7 @@
                         filterGaussianTexture
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -784,6 +829,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterGaussian2dBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L163-163" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy filter gaussian 2d buffers.
                   </p>
@@ -795,7 +843,7 @@
                     filterGaussianTexture
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -843,7 +891,7 @@
                         position
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -851,7 +899,7 @@
                         albedo
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -859,7 +907,7 @@
                         material
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -867,7 +915,7 @@
                         normalPlus
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -875,7 +923,7 @@
                         subdermalPlus
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -883,7 +931,7 @@
                         scatterPlus
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -918,6 +966,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyGeometryBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L473-473" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy geometry buffers.
                   </p>
@@ -929,7 +980,7 @@
                     position
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -937,7 +988,7 @@
                     albedo
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -945,7 +996,7 @@
                     material
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -953,7 +1004,7 @@
                     normalPlus
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -961,7 +1012,7 @@
                     subdermalPlus
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -969,7 +1020,7 @@
                     scatterPlus
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1017,7 +1068,7 @@
                         irradiance
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1052,6 +1103,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyIrradianceBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L560-560" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy irradiance buffers.
                   </p>
@@ -1063,7 +1117,7 @@
                     irradiance
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1111,7 +1165,7 @@
                         lightMapping
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1146,6 +1200,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyLightMappingBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L519-519" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy light mapping buffers.
                   </p>
@@ -1157,7 +1214,7 @@
                     lightMapping
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1205,7 +1262,7 @@
                         lightAccum
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1213,7 +1270,7 @@
                         fogAccum
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1248,6 +1305,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyLightingBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L694-694" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy lighting buffers.
                   </p>
@@ -1259,7 +1319,7 @@
                     lightAccum
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1267,7 +1327,7 @@
                     fogAccum
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1315,7 +1375,7 @@
                         shadowMap
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1350,6 +1410,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyShadowMapBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L359-359" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy shadow map buffers.
                   </p>
@@ -1361,7 +1424,7 @@
                     shadowMap
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1409,7 +1472,7 @@
                         shadowTexture
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1444,6 +1507,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyShadowTextureBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L304-304" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy shadow texture buffers.
                   </p>
@@ -1455,7 +1521,7 @@
                     shadowTexture
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1503,7 +1569,7 @@
                         ssao
                       </b>
                       :
-                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                      <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1538,6 +1604,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroySsaoBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L642-642" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Destroy ssao buffers.
                   </p>
@@ -1549,7 +1618,7 @@
                     ssao
                   </span>
                   :
-                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                  <code><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1612,7 +1681,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1629,6 +1698,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateColorBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L13-13" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to create color buffers.
                   </p>
@@ -1657,7 +1729,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1704,7 +1776,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1721,6 +1793,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L46-46" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to create color buffers.
                   </p>
@@ -1749,7 +1824,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1796,7 +1871,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1813,6 +1888,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateColoringBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L701-701" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to create coloring buffers.
                   </p>
@@ -1841,7 +1919,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1888,7 +1966,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1905,6 +1983,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L566-566" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create environment filter buffers.
                   </p>
@@ -1933,7 +2014,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1980,7 +2061,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1997,6 +2078,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L169-169" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create filter bilateral down-sample buffers.
                   </p>
@@ -2025,7 +2109,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2072,7 +2156,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2089,6 +2173,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterBox1dBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L87-87" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create filter box 1d buffers.
                   </p>
@@ -2117,7 +2204,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2164,7 +2251,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2181,6 +2268,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L226-226" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create filter buffers.
                   </p>
@@ -2209,7 +2299,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2256,7 +2346,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2273,6 +2363,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterGaussian2dBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L128-128" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create filter gaussian 2d buffers.
                   </p>
@@ -2301,7 +2394,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2348,7 +2441,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2365,6 +2458,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateGeometryBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L365-365" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create a geometry buffers.
                   </p>
@@ -2393,7 +2489,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2440,7 +2536,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2457,6 +2553,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateIrradianceBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L525-525" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create irradiance buffers.
                   </p>
@@ -2485,7 +2584,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2532,7 +2631,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2549,6 +2648,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateLightMappingBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L484-484" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create light mapping buffers.
                   </p>
@@ -2577,7 +2679,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2624,7 +2726,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2641,6 +2743,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateLightingBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L648-648" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Attempt to create lighting buffers.
                   </p>
@@ -2669,7 +2774,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2716,7 +2821,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2747,7 +2852,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2793,7 +2898,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2810,6 +2915,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateShadowTextureBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L267-267" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create shadow texture buffers.
                   </p>
@@ -2838,7 +2946,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2885,7 +2993,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2902,6 +3010,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateSsaoBuffers\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/OpenGL/OpenGL.Framebuffer.fs#L607-607" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Create ssao buffers.
                   </p>
@@ -2930,7 +3041,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="http://localhost:8901/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2963,10 +3074,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>

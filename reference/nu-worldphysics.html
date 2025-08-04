@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-root="/Nu/">
+<html lang="en" data-root="http://localhost:8901/">
 <head>
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
@@ -8,11 +8,11 @@
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
     <meta property="og:title" content="WorldPhysics (Nu)" />
-    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:url" content="http://localhost:8901/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:site" content="http://localhost:8901/">
     <meta name="twitter:title" content="WorldPhysics (Nu)">
     
     <title>WorldPhysics (Nu) | Nu</title>
@@ -20,12 +20,39 @@
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
-    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
-    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
-    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="http://localhost:8901/content/fsdocs-theme-set-dark.js"></script>
+    <link href="http://localhost:8901/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="http://localhost:8901/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
     
     
+<script type="text/javascript">
+    var wsUri = "ws://localhost:8901/websocket";
+    function init()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onmessage = function(evt) {
+            const data = evt.data;
+            if (data.endsWith(".css")) {
+                console.log(`Trying to reload ${data}`);
+                const link = document.querySelector(`link[href*='${data}']`);
+                if (link) {
+                    const href = new URL(link.href);
+                    const ticks = new Date().getTime();
+                    href.searchParams.set("v", ticks);
+                    link.href = href.toString();
+                }
+            }
+            else {
+                console.log('closing');
+                websocket.close();
+                document.location.reload();
+            }
+        }
+    }
+    window.addEventListener("load", init, false);
+</script>
+
 </head>
 <body class="api-docs">
 <header>
@@ -36,31 +63,31 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
                 </li>
                 <li class="nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
                     Notes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
                     Repository</a></li>
                 
                 <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
             </ul>
         </div>
-        <a href="/Nu/">
-            <img alt="Header menu logo" src="/Nu/img/logo.png">
+        <a href="http://localhost:8901/">
+            <img alt="Header menu logo" src="http://localhost:8901/img/logo.png">
             <strong>Nu</strong>
         </a>
     </div>
     <div class="end">
-        <a href="{{fsdocs-repository-link}}" target="_blank">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
             <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
         </a>
         <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
@@ -70,19 +97,19 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
         </li>
         <li class="nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
             Notes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
             Repository</a></li>
         
         <li class="nav-header">
   API Reference
 </li>             
 <li class="nav-item">
-  <a class="nav-link" href="/Nu/reference/index.html">
+  <a class="nav-link" href="http://localhost:8901/reference/index.html">
     All Namespaces
   </a>
 </li>
@@ -97,7 +124,7 @@
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
+      <a href="http://localhost:8901/reference/nu.html">
         Nu
       </a>
     </dt>
@@ -162,7 +189,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -170,7 +197,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -189,6 +216,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.applyBodyAngularImpulse.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L318-318" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to apply angular impulse to a body with the given body id.
                   </p>
@@ -196,7 +226,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -212,7 +242,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -220,7 +250,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -268,7 +298,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -276,7 +306,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -295,6 +325,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.applyBodyForce.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L324-324" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to apply force to a body with the given body id.
                   </p>
@@ -302,7 +335,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -326,7 +359,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -334,7 +367,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -382,7 +415,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -390,7 +423,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -409,6 +442,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.applyBodyLinearImpulse.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L312-312" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to apply linear impulse to a body with the given body id.
                   </p>
@@ -416,7 +452,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -440,7 +476,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -448,7 +484,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -488,7 +524,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -496,7 +532,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -515,6 +551,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.applyBodyTorque.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L330-330" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to apply torque to a body with the given body id.
                   </p>
@@ -522,7 +561,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -538,7 +577,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -546,7 +585,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -586,7 +625,7 @@
                         bodySource
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                     <span>
@@ -594,7 +633,7 @@
                         bodiesProperties
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-bodyproperties.html">BodyProperties</a>&#32;list</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-bodyproperties.html">BodyProperties</a>&#32;list</span></code>
                     </span>
                     <br/>
                     <span>
@@ -602,7 +641,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -621,6 +660,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.createBodies.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L223-223" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to create several physics bodies.
                   </p>
@@ -628,7 +670,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -644,7 +686,7 @@
                     bodySource
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -652,7 +694,7 @@
                     bodiesProperties
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-bodyproperties.html">BodyProperties</a>&#32;list</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyproperties.html">BodyProperties</a>&#32;list</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -660,7 +702,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -700,7 +742,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -708,7 +750,7 @@
                         bodyProperties
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyproperties.html">BodyProperties</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyproperties.html">BodyProperties</a></code>
                     </span>
                     <br/>
                     <span>
@@ -716,7 +758,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -735,6 +777,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.createBody.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L216-216" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to create a physics body.
                   </p>
@@ -742,7 +787,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -758,7 +803,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -766,7 +811,7 @@
                     bodyProperties
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyproperties.html">BodyProperties</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyproperties.html">BodyProperties</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -774,7 +819,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -814,7 +859,7 @@
                         bodyJointSource
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                     <span>
@@ -822,7 +867,7 @@
                         bodyJointProperties
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyjointproperties.html">BodyJointProperties</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyjointproperties.html">BodyJointProperties</a></code>
                     </span>
                     <br/>
                     <span>
@@ -830,7 +875,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -849,6 +894,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.createBodyJoint.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L244-244" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to create a physics joint.
                   </p>
@@ -856,7 +904,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -872,7 +920,7 @@
                     bodyJointSource
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -880,7 +928,7 @@
                     bodyJointProperties
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyjointproperties.html">BodyJointProperties</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyjointproperties.html">BodyJointProperties</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -888,7 +936,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -928,7 +976,7 @@
                         bodyIds
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;list</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;list</span></code>
                     </span>
                     <br/>
                     <span>
@@ -936,7 +984,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -955,6 +1003,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.destroyBodies.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L237-237" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to destroy several physics bodies.
                   </p>
@@ -962,7 +1013,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -978,7 +1029,7 @@
                     bodyIds
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;list</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;list</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -986,7 +1037,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1026,7 +1077,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1034,7 +1085,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1053,6 +1104,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.destroyBody.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L230-230" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to destroy a physics body.
                   </p>
@@ -1060,7 +1114,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1076,7 +1130,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1084,7 +1138,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1124,7 +1178,7 @@
                         bodyJointTarget
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1132,7 +1186,7 @@
                         bodyJointTarget2Opt
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;option</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;option</span></code>
                     </span>
                     <br/>
                     <span>
@@ -1140,7 +1194,7 @@
                         bodyJointId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyjointid.html">BodyJointId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyjointid.html">BodyJointId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1148,7 +1202,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1167,6 +1221,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.destroyBodyJoint.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L251-251" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to destroy a physics joint.
                   </p>
@@ -1174,7 +1231,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1190,7 +1247,7 @@
                     bodyJointTarget
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1198,7 +1255,7 @@
                     bodyJointTarget2Opt
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-bodyid.html">BodyId</a>&#32;option</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1206,7 +1263,7 @@
                     bodyJointId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyjointid.html">BodyJointId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyjointid.html">BodyJointId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1214,7 +1271,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1246,7 +1303,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1254,7 +1311,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1278,6 +1335,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyAngularVelocity.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L121-121" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the angular velocity of the body with the given body id.
                   </p>
@@ -1285,7 +1345,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1293,7 +1353,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1301,7 +1361,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1342,7 +1402,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1350,7 +1410,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1374,6 +1434,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyContactNormals.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L101-101" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the contact normals of the body with the given body id.
                   </p>
@@ -1381,7 +1444,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1389,7 +1452,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1397,7 +1460,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1438,7 +1501,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1446,7 +1509,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1470,6 +1533,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyExists.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L96-96" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the world contains a body with the given body id.
                   </p>
@@ -1477,7 +1543,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1485,7 +1551,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1493,7 +1559,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1534,7 +1600,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1542,7 +1608,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1566,6 +1632,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyGrounded.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L161-161" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the body with the given body id is on the ground.
                   </p>
@@ -1573,7 +1642,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1581,7 +1650,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1589,7 +1658,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1630,7 +1699,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1638,7 +1707,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1662,6 +1731,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyLinearVelocity.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the linear velocity of the body with the given body id.
                   </p>
@@ -1669,7 +1741,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1677,7 +1749,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1685,7 +1757,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1726,7 +1798,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1734,7 +1806,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1758,6 +1830,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodySensor.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L171-171" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Check that the body with the given body id is a sensor.
                   </p>
@@ -1765,7 +1840,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1773,7 +1848,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1781,7 +1856,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1822,7 +1897,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1830,7 +1905,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1854,6 +1929,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyToGroundContactNormalOpt.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L141-141" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get a contact normal where the body with the given body id is touching the ground (if one exists).
                   </p>
@@ -1861,7 +1939,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1869,7 +1947,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1877,7 +1955,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -1918,7 +1996,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1926,7 +2004,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1950,6 +2028,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyToGroundContactNormals.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L131-131" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get the contact normals where the body with the given body id is touching the ground.
                   </p>
@@ -1957,7 +2038,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -1965,7 +2046,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -1973,7 +2054,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2014,7 +2095,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2022,7 +2103,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2046,6 +2127,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.getBodyToGroundContactTangentOpt.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L151-151" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Get a contact tangent where the body with the given body id is touching the ground (if one exists).
                   </p>
@@ -2053,7 +2137,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2061,7 +2145,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2069,7 +2153,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2118,7 +2202,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2126,7 +2210,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2143,7 +2227,7 @@
           <td class="fsdocs-member-xmldoc">
             <p>
               Extended Type: 
-              <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
             </p>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
@@ -2159,7 +2243,7 @@
                   bodyId
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2167,7 +2251,7 @@
                   world
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2231,7 +2315,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2239,7 +2323,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2256,7 +2340,7 @@
           <td class="fsdocs-member-xmldoc">
             <p>
               Extended Type: 
-              <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
             </p>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
@@ -2288,7 +2372,7 @@
                   bodyId
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2296,7 +2380,7 @@
                   world
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2336,7 +2420,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2344,7 +2428,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2361,7 +2445,7 @@
           <td class="fsdocs-member-xmldoc">
             <p>
               Extended Type: 
-              <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
             </p>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
@@ -2369,7 +2453,7 @@
                   bodyId
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -2377,7 +2461,7 @@
                   world
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2417,7 +2501,7 @@
                         message
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2425,7 +2509,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2444,6 +2528,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.handlePhysicsMessage2d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L29-29" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Handle a 2d physics message in the world.
                   </p>
@@ -2451,7 +2538,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2459,7 +2546,7 @@
                     message
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2467,7 +2554,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2499,7 +2586,7 @@
                         message
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2507,7 +2594,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2526,6 +2613,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.handlePhysicsMessage3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a 3d physics message in the world.
                   </p>
@@ -2533,7 +2623,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2541,7 +2631,7 @@
                     message
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2549,7 +2639,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2581,7 +2671,7 @@
                         messages
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2589,7 +2679,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2608,6 +2698,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.handlePhysicsMessages2d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L56-56" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send multiple 2d physics messages to the world.
                   </p>
@@ -2615,7 +2708,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2623,7 +2716,7 @@
                     messages
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2631,7 +2724,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2663,7 +2756,7 @@
                         messages
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
+                      <code><span><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
                     </span>
                     <br/>
                     <span>
@@ -2671,7 +2764,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2690,6 +2783,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.handlePhysicsMessages3d.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L91-91" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send multiple 3d physics messages to the world.
                   </p>
@@ -2697,7 +2793,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2705,7 +2801,7 @@
                     messages
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-physicsmessage.html">PhysicsMessage</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2713,7 +2809,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2761,7 +2857,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2769,7 +2865,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2788,6 +2884,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.jumpBody.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L336-336" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to jump to a body with the given body id (KinematicCharacter only).
                   </p>
@@ -2795,7 +2894,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2819,7 +2918,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -2827,7 +2926,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2867,14 +2966,14 @@
                         bodyShape
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a></code>
+                    <code><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a></code>
                   </span>
                   <br/>
                 </div>
@@ -2891,6 +2990,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.localizePrimitiveBodyShape.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Localize a primitive body shape to a specific size; non-primitive body shapes are unaffected.
                   </p>
@@ -2898,7 +3000,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -2914,7 +3016,7 @@
                     bodyShape
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -2923,7 +3025,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-bodyshape.html">BodyShape</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyshape.html">BodyShape</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -2955,7 +3057,7 @@
                         ray
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -2979,14 +3081,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3003,6 +3105,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.rayCast2dBodies.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Ray cast against 2d physics bodies.
                   </p>
@@ -3010,7 +3115,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3018,7 +3123,7 @@
                     ray
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3042,7 +3147,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3051,7 +3156,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3083,7 +3188,7 @@
                         ray
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3107,14 +3212,14 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
+                    <code><span><a href="http://localhost:8901/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -3131,6 +3236,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.rayCast3dBodies.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L208-208" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Ray cast against 3d physics bodies.
                   </p>
@@ -3138,7 +3246,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3146,7 +3254,7 @@
                     ray
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-ray3-0.html">Ray3</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-ray3-0.html">Ray3</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3170,7 +3278,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3179,7 +3287,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
+                  <code><span><a href="http://localhost:8901/reference/nu-bodyintersection.html">BodyIntersection</a>&#32;array</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -3211,7 +3319,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3230,6 +3338,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.reloadPhysicsAssets.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L350-350" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Reload all currently selected physics assets.
                   </p>
@@ -3237,7 +3348,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3245,7 +3356,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3277,7 +3388,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3296,6 +3407,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.reregisterPhysics.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L342-342" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Reregister all currently selected 3d physics.
                   </p>
@@ -3303,7 +3417,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3311,7 +3425,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3351,7 +3465,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3359,7 +3473,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3378,6 +3492,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyAngularVelocity.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L282-282" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the angular velocity of a body with the given body id.
                   </p>
@@ -3385,7 +3502,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3401,7 +3518,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3409,7 +3526,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3449,7 +3566,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3457,7 +3574,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3476,6 +3593,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyCenter.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L264-264" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the position of a body with the given body id.
                   </p>
@@ -3483,7 +3603,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3499,7 +3619,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3507,7 +3627,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3547,7 +3667,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3555,7 +3675,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3574,6 +3694,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyEnabled.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L258-258" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the enabled-ness of a body with the given body id.
                   </p>
@@ -3581,7 +3704,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3597,7 +3720,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3605,7 +3728,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3645,7 +3768,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3653,7 +3776,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3672,6 +3795,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyLinearVelocity.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L276-276" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the linear velocity of a body with the given body id.
                   </p>
@@ -3679,7 +3805,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3695,7 +3821,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3703,7 +3829,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3743,7 +3869,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3751,7 +3877,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3770,6 +3896,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyRotation.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L270-270" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the rotation of a body with the given body id.
                   </p>
@@ -3777,7 +3906,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3793,7 +3922,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3801,7 +3930,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3841,7 +3970,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3849,7 +3978,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3868,6 +3997,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyVehicleBrakeInput.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L300-300" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the brake input of a vehicle body with the given body id.
                   </p>
@@ -3875,7 +4007,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3891,7 +4023,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3899,7 +4031,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -3939,7 +4071,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -3947,7 +4079,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -3966,6 +4098,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyVehicleForwardInput.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L288-288" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the forward input of a vehicle body with the given body id.
                   </p>
@@ -3973,7 +4108,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -3989,7 +4124,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -3997,7 +4132,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4037,7 +4172,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4045,7 +4180,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4064,6 +4199,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyVehicleHandBrakeInput.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L306-306" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the hand brake input of a vehicle body with the given body id.
                   </p>
@@ -4071,7 +4209,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4087,7 +4225,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4095,7 +4233,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4135,7 +4273,7 @@
                         bodyId
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                     </span>
                     <br/>
                     <span>
@@ -4143,7 +4281,7 @@
                         world
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                      <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -4162,6 +4300,9 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldPhysics.World.setBodyVehicleRightInput.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPhysics.fs#L294-294" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
                   <p class="fsdocs-summary">
                      Send a physics message to set the right input of a vehicle body with the given body id.
                   </p>
@@ -4169,7 +4310,7 @@
               </summary>
               <p>
                 Extended Type: 
-                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
               </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
@@ -4185,7 +4326,7 @@
                     bodyId
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-bodyid.html">BodyId</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-bodyid.html">BodyId</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -4193,7 +4334,7 @@
                     world
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                  <code><a href="http://localhost:8901/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -4225,10 +4366,10 @@
         <p class="empty">Type something to start searching.</p>
     </div>
 </dialog>
-<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
-<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
-<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-tips.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-theme.js"></script>
+<script type="module" src="http://localhost:8901/content/fsdocs-search.js"></script>
 
 </body>
 </html>
