@@ -4,6 +4,9 @@
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<ProjectGuid>{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}</ProjectGuid>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
+        <RepositoryBranch>master</RepositoryBranch>
+        <RepositoryType>git</RepositoryType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
