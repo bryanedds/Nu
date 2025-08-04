@@ -238,50 +238,8 @@ module VulkanMemory =
             uploadStrided16 bufferInternal._UploadEnabled offset typeSize count data bufferInternal._Mapping
             Vma.vmaFlushAllocation (vkc.VmaAllocator, bufferInternal._Allocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
         
-        // TODO: DJL: fix up the rest of these.
-        
-        /// Upload an array to buffer if upload is enabled.
-        static member uploadArray offset (array : 'a array) buffer vkc =
-            let size = array.Length * sizeof<'a>
-            use arrayPin = new ArrayPin<_> (array)
-            Buffer.upload offset size arrayPin.NativeInt buffer vkc
-
-        /// Create an allocated staging buffer and stage the data.
-        static member stageData size data vkc =
-            let buffer = Buffer.createStaging size vkc
-            Buffer.upload 0 size data buffer vkc
-            buffer
-
-        /// Create an allocated vertex buffer with data uploaded via staging buffer.
-        static member createVertexStaged size data vkc =
-            let stagingBuffer = Buffer.stageData size data vkc
-            let vertexBuffer = Buffer.createVertex false size vkc
-            copyData size stagingBuffer.VkBuffer vertexBuffer.VkBuffer vkc
-            Buffer.destroy stagingBuffer vkc
-            vertexBuffer
-
-        /// Create an allocated index buffer with data uploaded via staging buffer.
-        static member createIndexStaged size data vkc =
-            let stagingBuffer = Buffer.stageData size data vkc
-            let indexBuffer = Buffer.createIndex false size vkc
-            copyData size stagingBuffer.VkBuffer indexBuffer.VkBuffer vkc
-            Buffer.destroy stagingBuffer vkc
-            indexBuffer
-
-        /// Create an allocated vertex buffer with data uploaded via staging buffer from an array.
-        static member createVertexStagedFromArray (array : 'a array) vkc =
-            let size = array.Length * sizeof<'a>
-            use arrayPin = new ArrayPin<_> (array)
-            Buffer.createVertexStaged size arrayPin.NativeInt vkc
-
-        /// Create an allocated index buffer with data uploaded via staging buffer from an array.
-        static member createIndexStagedFromArray (array : 'a array) vkc =
-            let size = array.Length * sizeof<'a>
-            use arrayPin = new ArrayPin<_> (array)
-            Buffer.createIndexStaged size arrayPin.NativeInt vkc
-        
         /// Destroy buffer and allocation.
-        static member destroy bufferInternal vkc =
+        static member destroy (bufferInternal : BufferInternal) (vkc : Hl.VulkanContext) =
             Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, bufferInternal._Allocation)
 
     /// Abstraction for vma allocated image.
@@ -314,11 +272,12 @@ module VulkanMemory =
               BufferType : BufferType }
 
         member private this.IsParallel = this.BufferType.IsParallel
-        
-        member private this.Current = if this.IsParallel then this.BufferInternals.[Hl.CurrentFrame] else this.BufferInternals.[0]
+        member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
+        member private this.BufferInternal = this.BufferInternals.[this.CurrentIndex]
+        member private this.BufferSize = this.BufferSizes.[this.CurrentIndex]
         
         /// The currently needed VkBuffer.
-        member this.VkBuffer = this.Current.VkBuffer
+        member this.VkBuffer = this.BufferInternal.VkBuffer
 
         /// All VkBuffers as parallelized.
         member this.VkBuffers = Array.map (fun (bufferInternal : BufferInternal) -> bufferInternal.VkBuffer) this.BufferInternals
@@ -354,48 +313,85 @@ module VulkanMemory =
             // fin
             buffer
         
-        // TODO: DJL: fix up the rest of these.
-        
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-        static member updateSize size fifBuffer vkc =
-            if size > fifBuffer.BufferSizes.[Hl.CurrentFrame] then
-                BufferInternal.destroy fifBuffer.Current vkc
-                fifBuffer.Buffers.[Hl.CurrentFrame] <- FifBuffer.createBuffer size fifBuffer.BufferType vkc
-                fifBuffer.BufferSizes.[Hl.CurrentFrame] <- size
+        static member updateSize size (buffer : Buffer) vkc =
+            if size > buffer.BufferSize then
+                BufferInternal.destroy buffer.BufferInternal vkc
+                buffer.BufferInternals.[buffer.CurrentIndex] <- Buffer.createBufferInternal size buffer.BufferType vkc
+                buffer.BufferSizes.[buffer.CurrentIndex] <- size
 
-        /// Upload data to FifBuffer.
-        static member upload offset size data (fifBuffer : FifBuffer) vkc =
-            BufferInternal.upload offset size data fifBuffer.Current vkc
+        /// Upload data to Buffer.
+        static member upload offset size data (buffer : Buffer) vkc =
+            BufferInternal.upload offset size data buffer.BufferInternal vkc
 
-        /// Upload data to FifBuffer with a stride of 16.
-        static member uploadStrided16 offset typeSize count data (fifBuffer : FifBuffer) vkc =
-            BufferInternal.uploadStrided16 offset typeSize count data fifBuffer.Current vkc
+        /// Upload data to Buffer with a stride of 16.
+        static member uploadStrided16 offset typeSize count data (buffer : Buffer) vkc =
+            BufferInternal.uploadStrided16 offset typeSize count data buffer.BufferInternal vkc
         
-        
-        /// Upload an array to FifBuffer.
-        static member uploadArray offset array (fifBuffer : FifBuffer) vkc =
-            Buffer.uploadArray offset array fifBuffer.Current vkc
+        /// Upload an array to Buffer.
+        static member uploadArray offset (array : 'a array) (buffer : Buffer) vkc =
+            let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
+            Buffer.upload offset size arrayPin.NativeInt buffer vkc
 
-        /// Create a staging FifBuffer.
+        /// Create a staging Buffer.
         static member createStaging size vkc =
-            FifBuffer.createInternal size (Staging false) vkc
+            Buffer.createInternal size (Staging false) vkc
         
-        /// Create a vertex FifBuffer.
-        static member createVertex size vkc =
-            FifBuffer.createInternal size (Vertex true) vkc
+        /// Create a staging Buffer for use in frame.
+        static member createStagingInFrame size vkc =
+            Buffer.createInternal size (Staging true) vkc
+        
+        /// Create a vertex Buffer.
+        static member createVertex uploadEnabled size vkc =
+            Buffer.createInternal size (Vertex uploadEnabled) vkc
 
-        /// Create an index FifBuffer.
-        static member createIndex size vkc =
-            FifBuffer.createInternal size (Index true) vkc
+        /// Create an index Buffer.
+        static member createIndex uploadEnabled size vkc =
+            Buffer.createInternal size (Index uploadEnabled) vkc
 
-        /// Create a uniform FifBuffer.
+        /// Create a uniform Buffer.
         static member createUniform size vkc =
-            FifBuffer.createInternal size Uniform vkc
+            Buffer.createInternal size Uniform vkc
 
-        /// Create a uniform FifBuffer for a stride of 16.
+        /// Create a uniform Buffer for a stride of 16.
         static member createUniformStrided16 length vkc =
-            FifBuffer.createUniform (length * 16) vkc
+            Buffer.createUniform (length * 16) vkc
 
-        /// Destroy FifBuffer.
-        static member destroy fifBuffer vkc =
-            for i in 0 .. dec fifBuffer.Buffers.Length do BufferInternal.destroy fifBuffer.Buffers.[i] vkc
+        /// Create a staging buffer and stage the data.
+        static member stageData size data vkc =
+            let buffer = Buffer.createStaging size vkc
+            Buffer.upload 0 size data buffer vkc
+            buffer
+
+        /// Create a vertex buffer with data uploaded via staging buffer.
+        static member createVertexStaged size data vkc =
+            let stagingBuffer = Buffer.stageData size data vkc
+            let vertexBuffer = Buffer.createVertex false size vkc
+            copyData size stagingBuffer.VkBuffer vertexBuffer.VkBuffer vkc
+            Buffer.destroy stagingBuffer vkc
+            vertexBuffer
+
+        /// Create an index buffer with data uploaded via staging buffer.
+        static member createIndexStaged size data vkc =
+            let stagingBuffer = Buffer.stageData size data vkc
+            let indexBuffer = Buffer.createIndex false size vkc
+            copyData size stagingBuffer.VkBuffer indexBuffer.VkBuffer vkc
+            Buffer.destroy stagingBuffer vkc
+            indexBuffer
+
+        /// Create a vertex buffer with data uploaded via staging buffer from an array.
+        static member createVertexStagedFromArray (array : 'a array) vkc =
+            let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
+            Buffer.createVertexStaged size arrayPin.NativeInt vkc
+
+        /// Create an index buffer with data uploaded via staging buffer from an array.
+        static member createIndexStagedFromArray (array : 'a array) vkc =
+            let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
+            Buffer.createIndexStaged size arrayPin.NativeInt vkc
+        
+        /// Destroy Buffer.
+        static member destroy buffer vkc =
+            for i in 0 .. dec buffer.BufferInternals.Length do BufferInternal.destroy buffer.BufferInternals.[i] vkc
