@@ -191,19 +191,47 @@ module Behavior =
             bhvr
 
     (* Product Combinators *)
+
+    /// The identity behavior.
     let id bhvr = returnB bhvr
+
+    /// Map over two behaviors.
     let map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
+
+    /// Map over a pair of behaviors.
     let mapProduct mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
+
+    /// Map over two behaviors, producing a pair.
     let product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : Behavior<'a * 'b> = Behavior (fun a -> (run a bhvr, run a bhvr2))
+
+    /// Map over the first element of a pair of behaviors.
     let fst bhvr = map fst bhvr
+
+    /// Map over the second element of a pair of behaviors.
     let snd bhvr = map snd bhvr
+
+    /// Duplicate a behavior.
     let dup bhvr = map dup bhvr
+
+    /// Prepend an element to construct a pair behavior.
     let prepend a bhvr = map (fun b -> (a, b)) bhvr
+
+    /// Append an element to construct a pair behavior.
     let append b bhvr = map (fun a -> (a, b)) bhvr
+
+    /// Substitute the first element of a pair behavior.
     let withFst a bhvr = map (fun (_, b) -> (a, b)) bhvr
+
+    /// Substitute the second element of a pair behavior.
     let withSnd b bhvr = map (fun (a, _) -> (a, b)) bhvr
+
+    /// Map over the first element of a pair behavior.
     let mapFst mapper bhvr = map (fun (a, b) -> (mapper a, b)) bhvr
+
+    /// Map over the second element of a pair behavior.
     let mapSnd mapper bhvr = map (fun (a, b) -> (a, mapper b)) bhvr
+
+    /// Swap the elements of a pair behavior.
     let swap bhvr = map (fun (a, b) -> (b, a)) bhvr
 
     (* Boot-Strapping Combinators *)
@@ -243,44 +271,120 @@ module Behavior =
     let timeSlice start length = let bhvr = timeSliceRaw start length in normalize length bhvr
 
     (* Advanced Combinators *)
+
+    /// A behavior that checks for equality with a value.
     let inline eq b bhvr = map (fun a -> a = b) bhvr
+
+    /// A behavior that checks for inequality with a value.
     let inline neq b bhvr = map (fun a -> a <> b) bhvr
+
+    /// A negation behavior.
     let inline not bhvr = map not bhvr
+
+    /// A logical or behavior.
     let inline or_ b bhvr = map (fun a -> a || b) bhvr
+
+    /// A logical nor behavior.
     let inline nor b bhvr = map (fun a -> Operators.not a && Operators.not b) bhvr
+
+    /// A logical xor behavior.
     let inline xor (b : bool) bhvr = map (fun a -> a <> b) bhvr
+
+    /// A logical and behavior.
     let inline and_ b bhvr = map (fun a -> a && b) bhvr
+
+    /// A logical nand behavior.
     let inline nand b bhvr = map (fun a -> Operators.not (a && b)) bhvr
+
+    /// An isZero behavior.
     let inline isZero bhvr = map Generic.isZero bhvr
+
+    /// A notZero behavior.
     let inline notZero bhvr = map Generic.notZero bhvr
+
+    /// A behavior that checks for non-positive values.
     let inline isNeg bhvr = map (fun a -> a < Generic.zero ()) bhvr
-    let inline isPositive bhvr = map (fun a -> a < Generic.zero ()) bhvr
+
+    /// A behavior that checks for positive values.
+    let inline isPos bhvr = map (fun a -> a >= Generic.zero ()) bhvr
+
+    /// A negation behavior.
     let inline negate bhvr = map (fun a -> Generic.negate a) bhvr
+
+    /// An increment behavior.
     let inline inc bhvr = map inc bhvr
+
+    /// A decrement behavior.
     let inline dec bhvr = map dec bhvr
+
+    /// A min behavior.
     let inline min b bhvr = map (fun a -> min a b) bhvr
+
+    /// A max behavior.
     let inline max b bhvr = map (fun a -> max a b) bhvr
+
+    /// A random behavior.
     let inline random bhvr = map (fun a -> Random(hash a)) bhvr
+    
+    /// A random behavior (boolean).
     let inline randomb bhvr = map (fun a -> Random(hash a).Next() <= Int32.MaxValue / 2) bhvr
+
+    /// A random behavior (integer).
     let inline randomi bhvr = map (fun a -> Random(hash a).Next()) bhvr
+
+    /// A random behavior (int64).
     let inline randoml bhvr = map (fun a -> Random(hash a).NextInt64()) bhvr
+
+    /// A random behavior (single).
     let inline randomf bhvr = map (fun a -> Random(hash a).NextDouble() |> single) bhvr
+
+    /// A random behavior (double).
     let inline randomd bhvr = map (fun a -> Random(hash a).NextDouble()) bhvr
+
+    /// A behavior that adds a constant value.
     let inline sum summand bhvr = map (fun a -> a + summand) bhvr
+
+    /// A behavior that subtracts a constant value.
     let inline delta difference bhvr = map (fun a -> a - difference) bhvr
+
+    /// A behavior that multiplies by a constant value.
     let inline scale scalar bhvr = map (fun a -> a * scalar) bhvr
+
+    /// A behavior that divides by a constant value.
     let inline ratio divisor bhvr = map (fun a -> a / divisor) bhvr
+
+    /// A behavior that computes the remainder of a division by a constant value.
     let inline modulo divisor bhvr = map (fun a -> a % divisor) bhvr
-    let inline powf n bhvr = map (fun a -> single (Math.Pow (double a, double n))) bhvr
-    let inline powd n bhvr = map (fun a -> Math.Pow (a, n)) bhvr
-    let inline pow2 n bhvr = map (fun a -> Vector2.Pow (a, n)) bhvr
-    let inline pow3 n bhvr = map (fun a -> Vector3.Pow (a, n)) bhvr
-    let inline pow4 n bhvr = map (fun a -> Vector4.Pow (a, n)) bhvr
-    let inline pow2i n bhvr = map (fun a -> Vector2i.Pow (a, n)) bhvr
-    let inline pow3i n bhvr = map (fun a -> Vector3i.Pow (a, n)) bhvr
-    let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
-    let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power.
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
+
+    /// A behavior that raises to the given power (single).
+    let inline powf n bhvr = map (fun a -> single (Math.Pow (double a, double n))) bhvr
+
+    /// A behavior that raises to the given power (double).
+    let inline powd n bhvr = map (fun a -> Math.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Vector2).
+    let inline pow2 n bhvr = map (fun a -> Vector2.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Vector3).
+    let inline pow3 n bhvr = map (fun a -> Vector3.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Vector4).
+    let inline pow4 n bhvr = map (fun a -> Vector4.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Vector2i).
+    let inline pow2i n bhvr = map (fun a -> Vector2i.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Vector3i).
+    let inline pow3i n bhvr = map (fun a -> Vector3i.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Vector4i).
+    let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
+
+    /// A behavior that raises to the given power (Color).
+    let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
 
     /// A behavior that produces an integer value based on the input behavior's value divided by the given constant
     /// value 'stride'.
@@ -440,5 +544,7 @@ module BehaviorBuilder =
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
     type GameTime with
+
+        /// Run a behavior at the current game time.
         member this.Run (behavior : 'a Behavior) =
             Behavior.run this behavior
