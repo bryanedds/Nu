@@ -110,8 +110,9 @@ type Nu () =
     static member init () =
         Nu.initPlus (fun () -> ())
 
+/// Universal function definitions for the world (4/4).
 [<AutoOpen>]
-module WorldModule3 =
+module WorldModule4 =
 
     type World with
 

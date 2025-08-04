@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open Prime
 
+/// MMCC content declaration API.
 [<RequireQualifiedAccess>]
 module Content =
 

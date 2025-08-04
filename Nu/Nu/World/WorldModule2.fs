@@ -12,6 +12,7 @@ open SDL2
 open ImGuiNET
 open Prime
 
+/// Universal function definitions for the world (2/4).
 [<AutoOpen>]
 module WorldModule2 =
 
@@ -3023,8 +3024,9 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.trySetValue value propertyDescriptor game world
         | _ -> failwithumf ()
 
+/// Universal function definitions for the world (3/4).
 [<AutoOpen>]
-module WorldModule2' =
+module WorldModule3 =
 
     type World with
 
