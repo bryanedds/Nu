@@ -323,7 +323,7 @@ type OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
-/// A tasklet to be completed at the scheduled update time.
+/// A tasklet to be completed at the scheduled time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
       ScheduledOp : 'w -> unit }

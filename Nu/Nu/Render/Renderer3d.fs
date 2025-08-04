@@ -395,14 +395,17 @@ type StaticModelSurfaceDescriptor =
       TwoSided : bool
       Clipped : bool }
 
+/// Describes how to create a user-defined static model.
 type CreateUserDefinedStaticModel =
     { StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
       Bounds : Box3
       StaticModel : StaticModel AssetTag }
 
+/// Describes how to destroy a user-defined static model.
 type DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
+/// Describes how to render a sky box.
 type RenderSkyBox =
     { AmbientColor : Color
       AmbientBrightness : single
@@ -411,6 +414,7 @@ type RenderSkyBox =
       CubeMap : CubeMap AssetTag
       RenderPass : RenderPass }
 
+/// Describes how to render a 3D light probe.
 type RenderLightProbe3d =
     { LightProbeId : uint64
       Enabled : bool
@@ -420,10 +424,12 @@ type RenderLightProbe3d =
       Bounds : Box3
       RenderPass : RenderPass }
 
+/// Describes how to render a 3D light map.
 type RenderLightMap3d =
     { LightProbeId : uint64
       RenderPass : RenderPass }
 
+/// Describes how to render a 3D light.
 type RenderLight3d =
     { LightId : uint64
       Origin : Vector3
@@ -440,6 +446,7 @@ type RenderLight3d =
       Bounds : Box3
       RenderPass : RenderPass }
 
+/// Describes how to render a billboard.
 type RenderBillboard =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
@@ -454,6 +461,7 @@ type RenderBillboard =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render multiple billboards with shared attributes.
 type RenderBillboards =
     { Billboards : (Matrix4x4 * bool * Presence * Box2 option * bool * bool) SList
       MaterialProperties : MaterialProperties
@@ -463,6 +471,7 @@ type RenderBillboards =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render billboard particles.
 type RenderBillboardParticles =
     { CastShadow : bool
       Presence : Presence
@@ -474,6 +483,7 @@ type RenderBillboardParticles =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render a static model surface.
 type RenderStaticModelSurface =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
@@ -487,6 +497,7 @@ type RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes a static model surface bundle, which is a collection of static model surfaces.
 type StaticModelSurfaceBundle =
     { BundleId : Guid
       StaticModelSurfaces : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array
@@ -497,14 +508,17 @@ type StaticModelSurfaceBundle =
       DepthTest : DepthTest
       RenderType : RenderType }
 
+/// Describes how to render a static model surface bundle.
 type RenderStaticModelSurfaceBundle =
     { StaticModelSurfaceBundle : StaticModelSurfaceBundle
       RenderPass : RenderPass }
 
+/// Describes how to render multiple static model surface bundles with shared attributes.
 type RenderStaticModelSurfaceBundles =
     { StaticModelSurfaceBundles : StaticModelSurfaceBundle array
       RenderPass : RenderPass }
 
+/// Describes how to render a static model.
 type RenderStaticModel =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
@@ -517,6 +531,7 @@ type RenderStaticModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render multiple static model with shared attributes.
 type RenderStaticModels =
     { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
       StaticModel : StaticModel AssetTag
@@ -525,6 +540,7 @@ type RenderStaticModels =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render an animated model.
 type RenderAnimatedModel =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
@@ -539,6 +555,7 @@ type RenderAnimatedModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render multiple animated models with shared attributes.
 type RenderAnimatedModels =
     { BoneTransforms : Matrix4x4 array
       AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
@@ -549,6 +566,7 @@ type RenderAnimatedModels =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render a user-defined static model.
 type RenderUserDefinedStaticModel =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
@@ -562,6 +580,7 @@ type RenderUserDefinedStaticModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
+/// Describes how to render terrain.
 type RenderTerrain =
     { Visible : bool
       TerrainDescriptor : TerrainDescriptor
