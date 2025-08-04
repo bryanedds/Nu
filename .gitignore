@@ -56,6 +56,12 @@ packages/
 ##########
 .vscode
 
+################
+# FsDocs Files #
+################
+/.fsdocs
+/output
+
 #######################
 # Nu Local Test Items #
 #######################
