@@ -1,0 +1,69 @@
+######################
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+######################
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+#######################
+# IDE generated files #
+#######################
+*.suo
+*.tws
+
+#####################
+# Build Directories #
+#####################
+bin/
+obj/
+refinement/
+.vs/
+
+#########
+# Nuget #
+#########
+packages/
+!packages/repositories.config
+
+##########################
+# LibreOffice Temp Files #
+##########################
+*.*#
+
+####################
+# Tiled Temp Files #
+####################
+*.tiled-session
+
+#################
+# Blender Files #
+#################
+*.blend1
+
+##########
+# VSCode #
+##########
+.vscode
+
+################
+# FsDocs Files #
+################
+/.fsdocs
+/output
+
+#######################
+# Nu Local Test Items #
+#######################
+/Nu/Nu.Gaia/TestGroups
+/Nu/Nu.Gaia/Assets/Default/TestAssets

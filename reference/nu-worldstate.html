@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" data-root="/Nu/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Nu" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="Nu">
+    <meta property="og:title" content="WorldState (Nu)" />
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:title" content="WorldState (Nu)">
+    
+    <title>WorldState (Nu) | Nu</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="{{fsdocs-release-notes-link}}">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                    Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
+            <strong>Nu</strong>
+        </a>
+    </div>
+    <div class="end">
+        <a href="{{fsdocs-repository-link}}" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Links</li>
+        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="{{fsdocs-release-notes-link}}">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    WorldState Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="/Nu/reference/nu.html">
+        Nu
+      </a>
+    </dt>
+    <dt>
+      Assembly: Nu.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+         The world state, in a functional programming sense. This type is immutable enough to allows efficient snapshots and
+ later restoration, such as for undo and redo, with very little additional code.
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Record fields
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Record Field
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7161', 7161)" onmouseover="showTip(event, '7161', 7161)">
+                <p>
+                  <a id="AmbientState">
+                    <a href="#AmbientState">
+                      <code>AmbientState</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7161">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>AmbientState</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-ambientstate-ambientstate-1.html">AmbientState</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;<a href="/Nu/reference/nu-ambientstate-ambientstate-1.html">AmbientState</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7162', 7162)" onmouseover="showTip(event, '7162', 7162)">
+                <p>
+                  <a id="EntitiesIndexed">
+                    <a href="#EntitiesIndexed">
+                      <code>EntitiesIndexed</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7162">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>EntitiesIndexed</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>UMap&lt;<span><span>(<span><a href="/Nu/reference/nu-group.html">Group</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span>)</span>,&#32;<span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;USet</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>UMap&lt;<span><span>(<span><a href="/Nu/reference/nu-group.html">Group</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span>)</span>,&#32;<span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;USet</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7163', 7163)" onmouseover="showTip(event, '7163', 7163)">
+                <p>
+                  <a id="EntityCachedOpt">
+                    <a href="#EntityCachedOpt">
+                      <code>EntityCachedOpt</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7163">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>EntityCachedOpt</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>KeyedCache&lt;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<span>SUMap&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span>&gt;</span></span>&gt;</span>,&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>KeyedCache&lt;<span><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<span>SUMap&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span>&gt;</span></span>&gt;</span>,&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7164', 7164)" onmouseover="showTip(event, '7164', 7164)">
+                <p>
+                  <a id="EntityMounts">
+                    <a href="#EntityMounts">
+                      <code>EntityMounts</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7164">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>EntityMounts</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>UMap&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;USet</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>UMap&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<span><a href="/Nu/reference/nu-entity.html">Entity</a>&#32;USet</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7165', 7165)" onmouseover="showTip(event, '7165', 7165)">
+                <p>
+                  <a id="EntityStates">
+                    <a href="#EntityStates">
+                      <code>EntityStates</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7165">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>EntityStates</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>SUMap&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>SUMap&lt;<span><a href="/Nu/reference/nu-entity.html">Entity</a>,&#32;<a href="/Nu/reference/nu-entitystate.html">EntityState</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7166', 7166)" onmouseover="showTip(event, '7166', 7166)">
+                <p>
+                  <a id="EventGraph">
+                    <a href="#EventGraph">
+                      <code>EventGraph</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7166">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>EventGraph</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/nu-eventgraph.html">EventGraph</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/nu-eventgraph.html">EventGraph</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7167', 7167)" onmouseover="showTip(event, '7167', 7167)">
+                <p>
+                  <a id="GameState">
+                    <a href="#GameState">
+                      <code>GameState</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7167">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>GameState</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/nu-gamestate.html">GameState</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/nu-gamestate.html">GameState</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7168', 7168)" onmouseover="showTip(event, '7168', 7168)">
+                <p>
+                  <a id="GroupStates">
+                    <a href="#GroupStates">
+                      <code>GroupStates</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7168">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>GroupStates</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>UMap&lt;<span><a href="/Nu/reference/nu-group.html">Group</a>,&#32;<a href="/Nu/reference/nu-groupstate.html">GroupState</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>UMap&lt;<span><a href="/Nu/reference/nu-group.html">Group</a>,&#32;<a href="/Nu/reference/nu-groupstate.html">GroupState</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7169', 7169)" onmouseover="showTip(event, '7169', 7169)">
+                <p>
+                  <a id="Octree">
+                    <a href="#Octree">
+                      <code>Octree</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7169">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Octree</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="/Nu/reference/nu-octree-1.html">Octree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="/Nu/reference/nu-octree-1.html">Octree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7170', 7170)" onmouseover="showTip(event, '7170', 7170)">
+                <p>
+                  <a id="Quadtree">
+                    <a href="#Quadtree">
+                      <code>Quadtree</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7170">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Quadtree</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="/Nu/reference/nu-quadtree-1.html">Quadtree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="/Nu/reference/nu-quadtree-1.html">Quadtree</a>&lt;<a href="/Nu/reference/nu-entity.html">Entity</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7171', 7171)" onmouseover="showTip(event, '7171', 7171)">
+                <p>
+                  <a id="ScreenStates">
+                    <a href="#ScreenStates">
+                      <code>ScreenStates</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7171">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ScreenStates</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>UMap&lt;<span><a href="/Nu/reference/nu-screen.html">Screen</a>,&#32;<a href="/Nu/reference/nu-screenstate.html">ScreenState</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>UMap&lt;<span><a href="/Nu/reference/nu-screen.html">Screen</a>,&#32;<a href="/Nu/reference/nu-screenstate.html">ScreenState</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7172', 7172)" onmouseover="showTip(event, '7172', 7172)">
+                <p>
+                  <a id="Simulants">
+                    <a href="#Simulants">
+                      <code>Simulants</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7172">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Simulants</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>UMap&lt;<span><a href="/Nu/reference/nu-simulant.html">Simulant</a>,&#32;<span><span><a href="/Nu/reference/nu-simulant.html">Simulant</a>&#32;USet</span>&#32;option</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>UMap&lt;<span><a href="/Nu/reference/nu-simulant.html">Simulant</a>,&#32;<span><span><a href="/Nu/reference/nu-simulant.html">Simulant</a>&#32;USet</span>&#32;option</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7173', 7173)" onmouseover="showTip(event, '7173', 7173)">
+                <p>
+                  <a id="Subsystems">
+                    <a href="#Subsystems">
+                      <code>Subsystems</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7173">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Subsystems</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/nu-subsystems.html">Subsystems</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/nu-subsystems.html">Subsystems</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7174', 7174)" onmouseover="showTip(event, '7174', 7174)">
+                <p>
+                  <a id="WorldExtension">
+                    <a href="#WorldExtension">
+                      <code>WorldExtension</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7174">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>WorldExtension</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/nu-worldextension.html">WorldExtension</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/nu-worldextension.html">WorldExtension</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+
+</body>
+</html>

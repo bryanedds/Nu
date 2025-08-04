@@ -1,0 +1,2972 @@
+<!DOCTYPE html>
+<html lang="en" data-root="/Nu/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Nu" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="Nu">
+    <meta property="og:title" content="Framebuffer (Nu)" />
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:title" content="Framebuffer (Nu)">
+    
+    <title>Framebuffer (Nu) | Nu</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="{{fsdocs-release-notes-link}}">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+                    Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
+            <strong>Nu</strong>
+        </a>
+    </div>
+    <div class="end">
+        <a href="{{fsdocs-repository-link}}" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Links</li>
+        <li class="nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="{{fsdocs-release-notes-link}}">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    Framebuffer Module
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="/Nu/reference/opengl.html">
+        OpenGL
+      </a>
+    </dt>
+    <dt>
+      Assembly: Nu.dll
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div>
+    <h3>
+      Functions and values
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Function or value
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3777', 3777)" onmouseover="showTip(event, '3777', 3777)">
+                <p>
+                  <a id="DestroyColorBuffers">
+                    <a href="#DestroyColorBuffers">
+                      <code><span>Framebuffer.DestroyColorBuffers&#32;<span><span>(<span>color,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3777">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyColorBuffers&#32;<span><span>(<span>color,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        color
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyColorBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyColorBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy color buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    color
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3778', 3778)" onmouseover="showTip(event, '3778', 3778)">
+                <p>
+                  <a id="DestroyColoringBuffers">
+                    <a href="#DestroyColoringBuffers">
+                      <code><span>Framebuffer.DestroyColoringBuffers&#32;<span><span>(<span>color,&#32;depth,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3778">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyColoringBuffers&#32;<span><span>(<span>color,&#32;depth,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        color
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        depth
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyColoringBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyColoringBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy coloring buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    color
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    depth
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3779', 3779)" onmouseover="showTip(event, '3779', 3779)">
+                <p>
+                  <a id="DestroyEnvironmentFilterBuffers">
+                    <a href="#DestroyEnvironmentFilterBuffers">
+                      <code><span>Framebuffer.DestroyEnvironmentFilterBuffers&#32;<span><span>(<span>environmentFilter,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3779">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyEnvironmentFilterBuffers&#32;<span><span>(<span>environmentFilter,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        environmentFilter
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy environment filter buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    environmentFilter
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3780', 3780)" onmouseover="showTip(event, '3780', 3780)">
+                <p>
+                  <a id="DestroyFilterBilateralDownSampleBuffers">
+                    <a href="#DestroyFilterBilateralDownSampleBuffers">
+                      <code><span>Framebuffer.DestroyFilterBilateralDownSampleBuffers&#32;<span><span>(<span>downSample,&#32;upSample,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3780">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyFilterBilateralDownSampleBuffers&#32;<span><span>(<span>downSample,&#32;upSample,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        downSample
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        upSample
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy filter bilateral down-sample buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    downSample
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    upSample
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3781', 3781)" onmouseover="showTip(event, '3781', 3781)">
+                <p>
+                  <a id="DestroyFilterBox1dBuffers">
+                    <a href="#DestroyFilterBox1dBuffers">
+                      <code><span>Framebuffer.DestroyFilterBox1dBuffers&#32;<span><span>(<span>filterBoxBlurTexture,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3781">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyFilterBox1dBuffers&#32;<span><span>(<span>filterBoxBlurTexture,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        filterBoxBlurTexture
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyFilterBox1dBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterBox1dBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy filter box 1d buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    filterBoxBlurTexture
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3782', 3782)" onmouseover="showTip(event, '3782', 3782)">
+                <p>
+                  <a id="DestroyFilterBuffers">
+                    <a href="#DestroyFilterBuffers">
+                      <code><span>Framebuffer.DestroyFilterBuffers&#32;<span><span>(<span>filter,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3782">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyFilterBuffers&#32;<span><span>(<span>filter,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        filter
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyFilterBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy filter buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    filter
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3783', 3783)" onmouseover="showTip(event, '3783', 3783)">
+                <p>
+                  <a id="DestroyFilterGaussian2dBuffers">
+                    <a href="#DestroyFilterGaussian2dBuffers">
+                      <code><span>Framebuffer.DestroyFilterGaussian2dBuffers&#32;<span><span>(<span>filterGaussianTexture,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3783">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyFilterGaussian2dBuffers&#32;<span><span>(<span>filterGaussianTexture,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        filterGaussianTexture
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyFilterGaussian2dBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyFilterGaussian2dBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy filter gaussian 2d buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    filterGaussianTexture
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3784', 3784)" onmouseover="showTip(event, '3784', 3784)">
+                <p>
+                  <a id="DestroyGeometryBuffers">
+                    <a href="#DestroyGeometryBuffers">
+                      <code><span>Framebuffer.DestroyGeometryBuffers&#32;<span><span>(<span>position,&#32;albedo,&#32;material,&#32;normalPlus,&#32;subdermalPlus,&#32;scatterPlus,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3784">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyGeometryBuffers&#32;<span><span>(<span>position,&#32;albedo,&#32;material,&#32;normalPlus,&#32;subdermalPlus,&#32;scatterPlus,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        position
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        albedo
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        material
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        normalPlus
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        subdermalPlus
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scatterPlus
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyGeometryBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyGeometryBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy geometry buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    position
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    albedo
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    material
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    normalPlus
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    subdermalPlus
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scatterPlus
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3785', 3785)" onmouseover="showTip(event, '3785', 3785)">
+                <p>
+                  <a id="DestroyIrradianceBuffers">
+                    <a href="#DestroyIrradianceBuffers">
+                      <code><span>Framebuffer.DestroyIrradianceBuffers&#32;<span><span>(<span>irradiance,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3785">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyIrradianceBuffers&#32;<span><span>(<span>irradiance,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        irradiance
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyIrradianceBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyIrradianceBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy irradiance buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    irradiance
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3786', 3786)" onmouseover="showTip(event, '3786', 3786)">
+                <p>
+                  <a id="DestroyLightMappingBuffers">
+                    <a href="#DestroyLightMappingBuffers">
+                      <code><span>Framebuffer.DestroyLightMappingBuffers&#32;<span><span>(<span>lightMapping,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3786">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyLightMappingBuffers&#32;<span><span>(<span>lightMapping,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lightMapping
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyLightMappingBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyLightMappingBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy light mapping buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightMapping
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3787', 3787)" onmouseover="showTip(event, '3787', 3787)">
+                <p>
+                  <a id="DestroyLightingBuffers">
+                    <a href="#DestroyLightingBuffers">
+                      <code><span>Framebuffer.DestroyLightingBuffers&#32;<span><span>(<span>lightAccum,&#32;fogAccum,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3787">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyLightingBuffers&#32;<span><span>(<span>lightAccum,&#32;fogAccum,&#32;framebuffer,&#32;renderbuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lightAccum
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fogAccum
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyLightingBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyLightingBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy lighting buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightAccum
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    fogAccum
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3788', 3788)" onmouseover="showTip(event, '3788', 3788)">
+                <p>
+                  <a id="DestroyShadowMapBuffers">
+                    <a href="#DestroyShadowMapBuffers">
+                      <code><span>Framebuffer.DestroyShadowMapBuffers&#32;<span><span>(<span>shadowMap,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3788">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyShadowMapBuffers&#32;<span><span>(<span>shadowMap,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        shadowMap
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyShadowMapBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyShadowMapBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy shadow map buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    shadowMap
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3789', 3789)" onmouseover="showTip(event, '3789', 3789)">
+                <p>
+                  <a id="DestroyShadowTextureBuffers">
+                    <a href="#DestroyShadowTextureBuffers">
+                      <code><span>Framebuffer.DestroyShadowTextureBuffers&#32;<span><span>(<span>shadowTexture,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3789">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroyShadowTextureBuffers&#32;<span><span>(<span>shadowTexture,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        shadowTexture
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroyShadowTextureBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroyShadowTextureBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy shadow texture buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    shadowTexture
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3790', 3790)" onmouseover="showTip(event, '3790', 3790)">
+                <p>
+                  <a id="DestroySsaoBuffers">
+                    <a href="#DestroySsaoBuffers">
+                      <code><span>Framebuffer.DestroySsaoBuffers&#32;<span><span>(<span>ssao,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3790">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.DestroySsaoBuffers&#32;<span><span>(<span>ssao,&#32;renderbuffer,&#32;framebuffer</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ssao
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        renderbuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        framebuffer
+                      </b>
+                      :
+                      <code>uint32</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.DestroySsaoBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.DestroySsaoBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Destroy ssao buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    ssao
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/opengl-texture-texture.html">Texture</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderbuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    framebuffer
+                  </span>
+                  :
+                  <code>uint32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3791', 3791)" onmouseover="showTip(event, '3791', 3791)">
+                <p>
+                  <a id="TryCreateColorBuffers">
+                    <a href="#TryCreateColorBuffers">
+                      <code><span>Framebuffer.TryCreateColorBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3791">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateColorBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateColorBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateColorBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Attempt to create color buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3792', 3792)" onmouseover="showTip(event, '3792', 3792)">
+                <p>
+                  <a id="TryCreateColorDepthStencilBuffers">
+                    <a href="#TryCreateColorDepthStencilBuffers">
+                      <code><span>Framebuffer.TryCreateColorDepthStencilBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3792">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateColorDepthStencilBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Attempt to create color buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3793', 3793)" onmouseover="showTip(event, '3793', 3793)">
+                <p>
+                  <a id="TryCreateColoringBuffers">
+                    <a href="#TryCreateColoringBuffers">
+                      <code><span>Framebuffer.TryCreateColoringBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3793">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateColoringBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateColoringBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateColoringBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Attempt to create coloring buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3794', 3794)" onmouseover="showTip(event, '3794', 3794)">
+                <p>
+                  <a id="TryCreateEnvironmentFilterBuffers">
+                    <a href="#TryCreateEnvironmentFilterBuffers">
+                      <code><span>Framebuffer.TryCreateEnvironmentFilterBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3794">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateEnvironmentFilterBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create environment filter buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3795', 3795)" onmouseover="showTip(event, '3795', 3795)">
+                <p>
+                  <a id="TryCreateFilterBilateralDownSampleBuffers">
+                    <a href="#TryCreateFilterBilateralDownSampleBuffers">
+                      <code><span>Framebuffer.TryCreateFilterBilateralDownSampleBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3795">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateFilterBilateralDownSampleBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create filter bilateral down-sample buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3796', 3796)" onmouseover="showTip(event, '3796', 3796)">
+                <p>
+                  <a id="TryCreateFilterBox1dBuffers">
+                    <a href="#TryCreateFilterBox1dBuffers">
+                      <code><span>Framebuffer.TryCreateFilterBox1dBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3796">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateFilterBox1dBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateFilterBox1dBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterBox1dBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create filter box 1d buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3797', 3797)" onmouseover="showTip(event, '3797', 3797)">
+                <p>
+                  <a id="TryCreateFilterBuffers">
+                    <a href="#TryCreateFilterBuffers">
+                      <code><span>Framebuffer.TryCreateFilterBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3797">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateFilterBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateFilterBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create filter buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3798', 3798)" onmouseover="showTip(event, '3798', 3798)">
+                <p>
+                  <a id="TryCreateFilterGaussian2dBuffers">
+                    <a href="#TryCreateFilterGaussian2dBuffers">
+                      <code><span>Framebuffer.TryCreateFilterGaussian2dBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3798">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateFilterGaussian2dBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateFilterGaussian2dBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateFilterGaussian2dBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create filter gaussian 2d buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3799', 3799)" onmouseover="showTip(event, '3799', 3799)">
+                <p>
+                  <a id="TryCreateGeometryBuffers">
+                    <a href="#TryCreateGeometryBuffers">
+                      <code><span>Framebuffer.TryCreateGeometryBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3799">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateGeometryBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateGeometryBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateGeometryBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create a geometry buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3800', 3800)" onmouseover="showTip(event, '3800', 3800)">
+                <p>
+                  <a id="TryCreateIrradianceBuffers">
+                    <a href="#TryCreateIrradianceBuffers">
+                      <code><span>Framebuffer.TryCreateIrradianceBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3800">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateIrradianceBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateIrradianceBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateIrradianceBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create irradiance buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3801', 3801)" onmouseover="showTip(event, '3801', 3801)">
+                <p>
+                  <a id="TryCreateLightMappingBuffers">
+                    <a href="#TryCreateLightMappingBuffers">
+                      <code><span>Framebuffer.TryCreateLightMappingBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3801">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateLightMappingBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateLightMappingBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateLightMappingBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create light mapping buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3802', 3802)" onmouseover="showTip(event, '3802', 3802)">
+                <p>
+                  <a id="TryCreateLightingBuffers">
+                    <a href="#TryCreateLightingBuffers">
+                      <code><span>Framebuffer.TryCreateLightingBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3802">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateLightingBuffers&#32;<span><span>(<span>resolutionX,&#32;resolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        resolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        resolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateLightingBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateLightingBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Attempt to create lighting buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    resolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;<a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3803', 3803)" onmouseover="showTip(event, '3803', 3803)">
+                <p>
+                  <a id="TryCreateShadowMapBuffers">
+                    <a href="#TryCreateShadowMapBuffers">
+                      <code><span>Framebuffer.TryCreateShadowMapBuffers&#32;<span><span>(<span>shadowResolutionX,&#32;shadowResolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3803">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateShadowMapBuffers&#32;<span><span>(<span>shadowResolutionX,&#32;shadowResolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        shadowResolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        shadowResolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  shadowResolutionX
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  shadowResolutionY
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3804', 3804)" onmouseover="showTip(event, '3804', 3804)">
+                <p>
+                  <a id="TryCreateShadowTextureBuffers">
+                    <a href="#TryCreateShadowTextureBuffers">
+                      <code><span>Framebuffer.TryCreateShadowTextureBuffers&#32;<span><span>(<span>shadowResolutionX,&#32;shadowResolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3804">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateShadowTextureBuffers&#32;<span><span>(<span>shadowResolutionX,&#32;shadowResolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        shadowResolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        shadowResolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateShadowTextureBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateShadowTextureBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create shadow texture buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    shadowResolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    shadowResolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3805', 3805)" onmouseover="showTip(event, '3805', 3805)">
+                <p>
+                  <a id="TryCreateSsaoBuffers">
+                    <a href="#TryCreateSsaoBuffers">
+                      <code><span>Framebuffer.TryCreateSsaoBuffers&#32;<span><span>(<span>ssaoResolutionX,&#32;ssaoResolutionY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3805">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Framebuffer.TryCreateSsaoBuffers&#32;<span><span>(<span>ssaoResolutionX,&#32;ssaoResolutionY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ssaoResolutionX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ssaoResolutionY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:OpenGL.Framebuffer.TryCreateSsaoBuffers`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:OpenGL.Framebuffer.TryCreateSsaoBuffers\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                     Create ssao buffers.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    ssaoResolutionX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    ssaoResolutionY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<span>(<span><a href="/Nu/reference/opengl-texture-texture.html">Texture</a>&#32;*&#32;uint32&#32;*&#32;uint32</span>)</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+
+</body>
+</html>
