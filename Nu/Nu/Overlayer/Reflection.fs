@@ -564,22 +564,3 @@ module ReflectionOperators =
                         value
                     | None -> failconv "Could not promote or automatically construct a default value to the required type."
             else value
-
-namespace Prime
-open Nu
-    
-/// In tandem with the define literal, grants a nice syntax to define value properties.
-type [<NoEquality; NoComparison>] ValueDescription =
-    { NonPersistentDescription : unit }
-        
-    /// Some magic syntax for composing value properties.
-    static member (?) (_ : 'a, propertyName) =
-        fun (value : 'a) ->
-            Reflection.initPropertyNonPersistent true propertyName
-            Define? propertyName value
-
-[<AutoOpen>]
-module ReflectionSyntax =
-
-    /// In tandem with the ValueDescription type, grants a nice syntax to define value properties.
-    let NonPersistent = { NonPersistentDescription = () }
