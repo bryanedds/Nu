@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 
+/// Physics functions for the world.
 [<AutoOpen>]
 module WorldPhysics =
 

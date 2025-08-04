@@ -6,6 +6,7 @@ open System
 open System.Collections.Frozen
 open Prime
 
+/// Screen functions for the world (1/2).
 [<AutoOpen>]
 module WorldModuleScreen =
 

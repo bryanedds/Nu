@@ -7,6 +7,7 @@ open System.Collections.Frozen
 open System.Numerics
 open Prime
 
+/// Game functions for the world (1/2).
 [<AutoOpen>]
 module WorldModuleGame =
 

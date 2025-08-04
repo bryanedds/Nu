@@ -10,6 +10,9 @@ open System.Threading
 open SDL2
 open Prime
 
+/// Nu initialization functions.
+/// NOTE: this is a type in order to avoid creating a module name that may clash with the namespace name in an
+/// interactive environment.
 [<AbstractClass; Sealed>]
 type Nu () =
 

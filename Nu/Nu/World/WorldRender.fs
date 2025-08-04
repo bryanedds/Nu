@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 
+/// Rendering functions for the world.
 [<AutoOpen>]
 module WorldRender =
 

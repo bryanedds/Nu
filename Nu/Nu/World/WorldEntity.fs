@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+/// Entity functions for the world (2/2).
 [<AutoOpen>]
 module WorldEntityModule =
 

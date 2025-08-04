@@ -5,6 +5,7 @@ namespace Nu
 open System
 open Prime
 
+/// Data token processing functions for the world.
 [<AutoOpen>]
 module WorldDataToken =
 

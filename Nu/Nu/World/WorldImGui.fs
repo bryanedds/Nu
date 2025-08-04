@@ -13,6 +13,7 @@ open ImGuiNET
 open JoltPhysicsSharp
 open Prime
 
+/// ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui =
 
@@ -1003,6 +1004,7 @@ type RendererPhysics3d () =
             segmentList.Clear ()
         this.NextFrame ()
 
+/// More ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui2 =
     

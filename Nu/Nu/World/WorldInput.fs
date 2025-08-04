@@ -6,6 +6,7 @@ open System
 open ImGuiNET
 open Prime
 
+/// HID input functions for the world.
 [<AutoOpen>]
 module WorldInputModule =
 

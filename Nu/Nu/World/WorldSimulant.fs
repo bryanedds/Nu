@@ -7,6 +7,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
 
+/// Generalized simulant functions for the world.
 [<AutoOpen>]
 module WorldSimulantModule =
 

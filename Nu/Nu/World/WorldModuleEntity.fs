@@ -9,6 +9,7 @@ open System.IO
 open System.Numerics
 open Prime
 
+/// Entity functions for the world (1/2).
 [<AutoOpen>]
 module WorldModuleEntity =
 

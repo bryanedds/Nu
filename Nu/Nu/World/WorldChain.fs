@@ -140,6 +140,7 @@ module Chain =
     let [<DebuggerHidden; DebuggerStepThrough>] advance (c : 'e -> Chain<'e, 'a>) (e : 'e) (world : World) : Either<'e -> Chain<'e, 'a>, 'a> =
         step (c e) world
 
+/// Chain functions for the world.
 [<AutoOpen>]
 module WorldChain =
 

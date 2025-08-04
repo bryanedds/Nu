@@ -11,6 +11,7 @@ open System.Xml.Linq
 open TiledSharp
 open Prime
 
+/// TmxMap functions for the world.
 [<RequireQualifiedAccess>]
 module TmxMap =
 
