@@ -28,14 +28,14 @@ module Sprite =
                 [||] vkc.RenderPass vkc.Device
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 16) vkc
-        let texCoords4Uniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkc
-        let colorUniform = VulkanMemory.FifBuffer.createUniform (sizeof<single> * 4) vkc
+        let modelViewProjectionUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 16) vkc
+        let texCoords4Uniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 4) vkc
+        let colorUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 4) vkc
 
         // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.PerFrameBuffers pipeline vkc.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.PerFrameBuffers pipeline vkc.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.PerFrameBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.VkBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.VkBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.VkBuffers pipeline vkc.Device
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -80,9 +80,9 @@ module Sprite =
          textureHeight,
          texture : Texture.VulkanTexture,
          viewport : Viewport,
-         modelViewProjectionUniform : VulkanMemory.FifBuffer,
-         texCoords4Uniform : VulkanMemory.FifBuffer,
-         colorUniform : VulkanMemory.FifBuffer,
+         modelViewProjectionUniform : VulkanMemory.Buffer,
+         texCoords4Uniform : VulkanMemory.Buffer,
+         colorUniform : VulkanMemory.Buffer,
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
@@ -125,9 +125,9 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        VulkanMemory.FifBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkc
-        VulkanMemory.FifBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
-        VulkanMemory.FifBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
+        VulkanMemory.Buffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkc
+        VulkanMemory.Buffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
+        VulkanMemory.Buffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // write texture to descriptor set
         Pipeline.Pipeline.writeDescriptorTextureSingleFrame 2 0 texture pipeline vkc.Device

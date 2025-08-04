@@ -233,6 +233,7 @@ module Texture =
             sampler
         
         /// Record commands to copy from buffer to image.
+        /// TODO: DJL: move this out of VulkanTexture.
         static member recordBufferToImageCopy cb extent vkBuffer vkImage =
             
             // transition image layout for data transfer
@@ -356,7 +357,7 @@ module Texture =
     type DynamicTexture =
         private
             { VulkanTextures : VulkanTexture array
-              StagingBuffers : VulkanMemory.FifBuffer array
+              StagingBuffers : VulkanMemory.Buffer array
               mutable Extent : VkExtent3D
               mutable StagingBufferSize : int
               mutable TextureIndex : int }
@@ -375,10 +376,10 @@ module Texture =
             // enlarge staging buffer size if needed
             dynamicTexture.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             while dynamicTexture.ImageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
-            VulkanMemory.FifBuffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkc
+            VulkanMemory.Buffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkc
 
             // stage pixels
-            VulkanMemory.FifBuffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkc
+            VulkanMemory.Buffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkc
 
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkc
@@ -418,7 +419,7 @@ module Texture =
             let extent = VkExtent3D (32, 32, 1)
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let vulkanTextures = [|VulkanTexture.createEmpty vkc; VulkanTexture.createEmpty vkc|]
-            let stagingBuffers = [|VulkanMemory.FifBuffer.createStaging sbSize vkc; VulkanMemory.FifBuffer.createStaging sbSize vkc|]
+            let stagingBuffers = [|VulkanMemory.Buffer.createStagingInFrame sbSize vkc; VulkanMemory.Buffer.createStagingInFrame sbSize vkc|]
 
             // make DynamicTexture
             let dynamicTexture =
@@ -435,8 +436,8 @@ module Texture =
         static member destroy dynamicTexture vkc =
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[0] vkc
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[1] vkc
-            VulkanMemory.FifBuffer.destroy dynamicTexture.StagingBuffers.[0] vkc
-            VulkanMemory.FifBuffer.destroy dynamicTexture.StagingBuffers.[1] vkc
+            VulkanMemory.Buffer.destroy dynamicTexture.StagingBuffers.[0] vkc
+            VulkanMemory.Buffer.destroy dynamicTexture.StagingBuffers.[1] vkc
     
     /// Describes data loaded from a texture.
     type TextureData =

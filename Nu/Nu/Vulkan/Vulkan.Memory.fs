@@ -342,13 +342,13 @@ module VulkanMemory =
         static member createStagingInFrame size vkc =
             Buffer.createInternal size (Staging true) vkc
         
-        /// Create a vertex Buffer.
-        static member createVertex uploadEnabled size vkc =
-            Buffer.createInternal size (Vertex uploadEnabled) vkc
+        /// Create an uploadable vertex Buffer.
+        static member createVertex size vkc =
+            Buffer.createInternal size (Vertex true) vkc
 
-        /// Create an index Buffer.
-        static member createIndex uploadEnabled size vkc =
-            Buffer.createInternal size (Index uploadEnabled) vkc
+        /// Create an uploadable index Buffer.
+        static member createIndex size vkc =
+            Buffer.createInternal size (Index true) vkc
 
         /// Create a uniform Buffer.
         static member createUniform size vkc =
@@ -367,7 +367,7 @@ module VulkanMemory =
         /// Create a vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
-            let vertexBuffer = Buffer.createVertex false size vkc
+            let vertexBuffer = Buffer.createInternal size (Vertex false) vkc
             copyData size stagingBuffer.VkBuffer vertexBuffer.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             vertexBuffer
@@ -375,7 +375,7 @@ module VulkanMemory =
         /// Create an index buffer with data uploaded via staging buffer.
         static member createIndexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
-            let indexBuffer = Buffer.createIndex false size vkc
+            let indexBuffer = Buffer.createInternal size (Index false) vkc
             copyData size stagingBuffer.VkBuffer indexBuffer.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             indexBuffer
