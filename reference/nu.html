@@ -347,7 +347,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               An animated model. Currently just used as a phantom type.
+               An animated model. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -721,7 +721,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.AssetModule\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L56-56" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -748,22 +748,17 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Asset\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L36-36" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L31-31" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               Describes a game asset, such as a texture, sound, or model in detail.
+               Describes a game asset, such as an image, sound, or model in detail.
 
  All assets must belong to an asset Package, which is a unit of asset loading.
 
- In order for the renderer to render a single texture, that texture, along with all the other
- assets in the corresponding package, must be loaded. Also, the only way to unload any of those
- assets is to send an AssetPackageUnload message to the relevent subsystem, which unloads them all.
- There is an AssetPackageLoad message to load a package when convenient.
-
- The use of a message system for the subsystem should enable streamed loading, optionally with
- smooth fading-in of late-loaded assets (IE - render assets that are already in the view frustum
- but are still being loaded).
+ In order for the renderer to render a single texture, that texture, along with all the other assets in the
+ corresponding package, must be loaded. Also, the only way to unload any of those assets is to send a package unload
+ message to the relevent subsystem.
             </p>
           </div>
         </td>
@@ -786,7 +781,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Asset`1\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L49-49" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L44-44" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -794,9 +789,9 @@
 
  All assets must belong to an asset Package, which is a unit of asset loading.
 
- In order for the renderer to render a single texture, that texture, along with all the other
- assets in the corresponding package, must be loaded. Also, the only way to unload any of those
- assets is to send a package unload message to the relevent subsystem.
+ In order for the renderer to render a single texture, that texture, along with all the other assets in the
+ corresponding package, must be loaded. Also, the only way to unload any of those assets is to send a package unload
+ message to the relevent subsystem.
             </p>
           </div>
         </td>
@@ -846,7 +841,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.AssetDescriptor\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L79-79" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -873,7 +868,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.AssetGraphModule\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L87-87" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L82-82" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -900,7 +895,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.AssetGraph\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L331-331" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L326-326" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -4007,11 +4002,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.CreateUserDefinedStaticModel\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L398-398" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L399-399" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to create a user-defined static model.
             </p>
           </div>
         </td>
@@ -4038,7 +4033,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A cube map. Currently just used as a phantom type.
+               A cube map. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -4306,11 +4301,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.DestroyUserDefinedStaticModel\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L403-403" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L405-405" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to destroy a user-defined static model.
             </p>
           </div>
         </td>
@@ -5642,7 +5637,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A font. Currently just used as a phantom type.
+               A font. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -6397,7 +6392,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.GlRenderer3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L1040-1040" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L1059-1059" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -6834,7 +6829,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               An image. Currently just used as a phantom type.
+               An image. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -7808,7 +7803,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Lighting3dConfig\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L571-571" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L590-590" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -9383,7 +9378,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Package`2\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L71-71" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L66-66" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -9410,7 +9405,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.PackageDescriptor\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L84-84" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L79-79" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -9437,7 +9432,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Packages`2\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L76-76" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/AssetGraph/AssetGraph.fs#L71-71" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -10368,7 +10363,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A raw data asset. Currently just used as a phantom type.
+               A blob of raw data. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -10780,11 +10775,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderAnimatedModel\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L528-528" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L544-544" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render an animated model.
             </p>
           </div>
         </td>
@@ -10807,11 +10802,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderAnimatedModels\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L542-542" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L559-559" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render multiple animated models with shared attributes.
             </p>
           </div>
         </td>
@@ -10861,11 +10856,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderBillboard\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L443-443" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L450-450" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a billboard.
             </p>
           </div>
         </td>
@@ -10888,11 +10883,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderBillboardParticles\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L466-466" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L475-475" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render billboard particles.
             </p>
           </div>
         </td>
@@ -10915,11 +10910,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderBillboards\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L457-457" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L465-465" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render multiple billboards with shared attributes.
             </p>
           </div>
         </td>
@@ -10969,7 +10964,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Renderer3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L1005-1005" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L1024-1024" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -10996,7 +10991,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Renderer3dConfig\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L652-652" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L671-671" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -11160,11 +11155,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderLight3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L427-427" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L433-433" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a 3D light.
             </p>
           </div>
         </td>
@@ -11187,11 +11182,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderLightMap3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L423-423" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L428-428" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a 3D light map.
             </p>
           </div>
         </td>
@@ -11214,11 +11209,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderLightProbe3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L414-414" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L418-418" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a 3D light probe.
             </p>
           </div>
         </td>
@@ -11268,7 +11263,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderMessage3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L669-669" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L688-688" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -11376,11 +11371,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderSkyBox\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L406-406" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L409-409" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a sky box.
             </p>
           </div>
         </td>
@@ -11403,11 +11398,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderStaticModel\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L508-508" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L522-522" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a static model.
             </p>
           </div>
         </td>
@@ -11430,11 +11425,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderStaticModels\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L520-520" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L535-535" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render multiple static model with shared attributes.
             </p>
           </div>
         </td>
@@ -11457,11 +11452,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderStaticModelSurface\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L477-477" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L487-487" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a static model surface.
             </p>
           </div>
         </td>
@@ -11484,11 +11479,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderStaticModelSurfaceBundle\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L500-500" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L512-512" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a static model surface bundle.
             </p>
           </div>
         </td>
@@ -11511,11 +11506,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderStaticModelSurfaceBundles\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L504-504" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L517-517" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render multiple static model surface bundles with shared attributes.
             </p>
           </div>
         </td>
@@ -11565,11 +11560,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderTerrain\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L565-565" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L584-584" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render terrain.
             </p>
           </div>
         </td>
@@ -11619,11 +11614,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.RenderUserDefinedStaticModel\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L552-552" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L570-570" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes how to render a user-defined static model.
             </p>
           </div>
         </td>
@@ -13304,7 +13299,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               Song. Currently just used as a phantom type.
+               Song. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -13387,7 +13382,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               Sound. Currently just used as a phantom type.
+               Sound. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -13577,7 +13572,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A spine skeleton. Currently just used as a phantom type.
+               A spine skeleton. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -14013,7 +14008,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A static model. Currently just used as a phantom type.
+               A static model. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
@@ -14171,11 +14166,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.StaticModelSurfaceBundle\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L490-490" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L501-501" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Describes a static model surface bundle, which is a collection of static model surfaces.
             </p>
           </div>
         </td>
@@ -14716,7 +14711,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.StubRenderer3d\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L1027-1027" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/Renderer3d.fs#L1046-1046" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -14992,7 +14987,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A tasklet to be completed at the scheduled update time.
+               A tasklet to be completed at the scheduled time.
             </p>
           </div>
         </td>
@@ -15613,7 +15608,7 @@
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-               A tile map. Currently just used as a phantom type.
+               A tile map. Used as a phantom type to denote the type of an asset.
             </p>
           </div>
         </td>
