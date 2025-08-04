@@ -87,6 +87,7 @@ let generateBindingsCode codesStr =
     "namespace Nu\n" +
     "open System\n" +
     "\n" +
+    "/// Denotes a key on the keyboard.\n" +
     "type KeyboardKey =\n" +
     codesStr +
     "\n"

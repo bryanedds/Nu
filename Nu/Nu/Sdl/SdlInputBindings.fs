@@ -11,6 +11,7 @@
 namespace Nu
 open System
 
+/// Denotes a key on the keyboard.
 type KeyboardKey =
     | Unknown = 0
     | A = 4
