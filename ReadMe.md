@@ -23,7 +23,9 @@ Getting Started with Nu
 
 Look here to get started with your own project in Nu -
 
-[https://github.com/bryanedds/Nu/wiki/Getting-Started-with-Nu](https://github.com/bryanedds/Nu/wiki#introductory-material-starting-from-the-beginning)
+[Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material) - start here first!
+
+[API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
 
 Some Media on the Nu Game Engine
 ================================
