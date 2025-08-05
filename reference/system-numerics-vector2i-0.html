@@ -1,0 +1,4301 @@
+<!DOCTYPE html>
+<html lang="en" data-root="/Nu/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Nu.Math" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="Nu">
+    <meta property="og:title" content="Vector2i (Nu)" />
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:title" content="Vector2i (Nu)">
+    
+    <title>Vector2i (Nu) | Nu</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+                    Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
+            <strong>Nu</strong>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Links</li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    Vector2i Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="/Nu/reference/system-numerics.html">
+        System.Numerics
+      </a>
+    </dt>
+    <dt>
+      Assembly: Nu.Math.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+    </dt>
+    <dt>
+      Kind: Struct
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+            Represents a 2D vector using two 32-bit integer numbers.
+            
+      </p>
+    </div>
+    <p class="fsdocs-remarks">
+      
+            The Vector2i structure is suitable for interoperation with unmanaged code requiring two consecutive integers.
+            
+    </p>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8642', 8642)" onmouseover="showTip(event, '8642', 8642)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>Vector2i<span><span>(<span>value</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8642">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i<span><span>(<span>value</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        value
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      The value that will initialize this instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.#ctor`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.#ctor\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Initializes a new instance of the <a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a> struct.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    value
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The value that will initialize this instance.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8643', 8643)" onmouseover="showTip(event, '8643', 8643)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>Vector2i<span><span>(<span>x,&#32;y</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8643">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i<span><span>(<span>x,&#32;y</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        x
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      The x component of the Vector3.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        y
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      The y component of the Vector3.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.#ctor`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.#ctor\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Initializes a new instance of the <a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a> struct.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    x
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The x component of the Vector3.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    y
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The y component of the Vector3.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8644', 8644)" onmouseover="showTip(event, '8644', 8644)">
+                <p>
+                  <a id="CompareTo">
+                    <a href="#CompareTo">
+                      <code><span>this.CompareTo</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8644">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.CompareTo</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        other
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  other
+                </span>
+                :
+                <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8645', 8645)" onmouseover="showTip(event, '8645', 8645)">
+                <p>
+                  <a id="CompareTo">
+                    <a href="#CompareTo">
+                      <code><span>this.CompareTo</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8645">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.CompareTo</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        obj
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  obj
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8646', 8646)" onmouseover="showTip(event, '8646', 8646)">
+                <p>
+                  <a id="Equals">
+                    <a href="#Equals">
+                      <code><span>this.Equals</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8646">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Equals</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        obj
+                      </b>
+                      :
+                      <code>obj</code>
+                       - 
+                      The object to compare to.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  True if the instances are equal; false otherwise.
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Equals`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Equals\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Indicates whether this instance and a specified object are equal.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    obj
+                  </span>
+                  :
+                  <code>obj</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The object to compare to.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    True if the instances are equal; false otherwise.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8647', 8647)" onmouseover="showTip(event, '8647', 8647)">
+                <p>
+                  <a id="Equals">
+                    <a href="#Equals">
+                      <code><span>this.Equals</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8647">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Equals</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        other
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      A vector to compare with this vector.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  true if the current vector is equal to the vector parameter; otherwise, false.
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Equals`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Equals\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    Indicates whether the current vector is equal to another vector.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    other
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    A vector to compare with this vector.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    true if the current vector is equal to the vector parameter; otherwise, false.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8648', 8648)" onmouseover="showTip(event, '8648', 8648)">
+                <p>
+                  <a id="GetHashCode">
+                    <a href="#GetHashCode">
+                      <code><span>this.GetHashCode</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8648">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.GetHashCode</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  A System.Int32 containing the unique hashcode for this instance.
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.GetHashCode`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.GetHashCode\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Returns the hashcode for this instance.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    A System.Int32 containing the unique hashcode for this instance.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8649', 8649)" onmouseover="showTip(event, '8649', 8649)">
+                <p>
+                  <a id="Item">
+                    <a href="#Item">
+                      <code><span>this[<span>arg1</span>]</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8649">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this[<span>arg1</span>]</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.Vector2i.Item`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Vector2i.Item\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Gets or sets the value at the index of the vector.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+              <table class="fsdocs-exception-list">
+                <tr>
+                  <td>
+                    <a href="https://learn.microsoft.com/dotnet/api/system.indexoutofrangeexception">
+                      IndexOutOfRangeException
+                    </a>
+                  </td>
+                  <td>
+                    Thrown if the index is less than 0 or greater than 2.
+                  </td>
+                </tr>
+              </table>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8650', 8650)" onmouseover="showTip(event, '8650', 8650)">
+                <p>
+                  <a id="ToString">
+                    <a href="#ToString">
+                      <code><span>this.ToString</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8650">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ToString</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8651', 8651)" onmouseover="showTip(event, '8651', 8651)">
+                <p>
+                  <a id="(*)">
+                    <a href="#(*)">
+                      <code><span>vec&#32;*&#32;scale</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8651">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>vec&#32;*&#32;scale</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      The scalar.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Multiplies an instance by an integer scalar.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The scalar.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8652', 8652)" onmouseover="showTip(event, '8652', 8652)">
+                <p>
+                  <a id="(*)">
+                    <a href="#(*)">
+                      <code><span>scale&#32;*&#32;vec</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8652">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>scale&#32;*&#32;vec</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      The scalar.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Multiplies an instance by an integer scalar.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The scalar.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The instance.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8653', 8653)" onmouseover="showTip(event, '8653', 8653)">
+                <p>
+                  <a id="(*)">
+                    <a href="#(*)">
+                      <code><span>vec&#32;*&#32;scale</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8653">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>vec&#32;*&#32;scale</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of multiplication.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Component-wise multiplication between the specified instance by a scale vector.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of multiplication.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8654', 8654)" onmouseover="showTip(event, '8654', 8654)">
+                <p>
+                  <a id="(+)">
+                    <a href="#(+)">
+                      <code><span>left&#32;+&#32;right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8654">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>left&#32;+&#32;right</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        left
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The first instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        right
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The second instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Addition`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Addition\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Adds two instances.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    left
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The first instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    right
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The second instance.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8655', 8655)" onmouseover="showTip(event, '8655', 8655)">
+                <p>
+                  <a id="(-)">
+                    <a href="#(-)">
+                      <code><span>left&#32;-&#32;right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8655">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>left&#32;-&#32;right</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        left
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The first instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        right
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The second instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Subtraction`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Subtraction\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Subtracts two instances.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    left
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The first instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    right
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The second instance.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8656', 8656)" onmouseover="showTip(event, '8656', 8656)">
+                <p>
+                  <a id="(/)">
+                    <a href="#(/)">
+                      <code><span>vec&#32;/&#32;scale</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8656">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>vec&#32;/&#32;scale</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      The scalar.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Division`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Division\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Divides the instance by a scalar using integer division, floor(a/b).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The scalar.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8657', 8657)" onmouseover="showTip(event, '8657', 8657)">
+                <p>
+                  <a id="(/)">
+                    <a href="#(/)">
+                      <code><span>vec&#32;/&#32;vec2</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8657">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>vec&#32;/&#32;vec2</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        vec2
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The divisor.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Division`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Division\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Divides the instance by another Vector2i using integer division, floor(a/b).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec2
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The divisor.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8658', 8658)" onmouseover="showTip(event, '8658', 8658)">
+                <p>
+                  <a id="(<>)">
+                    <a href="#(<>)">
+                      <code><span>left&#32;&lt;&gt;&#32;right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8658">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>left&#32;&lt;&gt;&#32;right</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        left
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The first instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        right
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The second instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  True, if left does not equal right; false otherwise.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Inequality`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Inequality\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Compares two instances for inequality.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    left
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The first instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    right
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The second instance.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    True, if left does not equal right; false otherwise.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8659', 8659)" onmouseover="showTip(event, '8659', 8659)">
+                <p>
+                  <a id="(=)">
+                    <a href="#(=)">
+                      <code><span>left&#32;=&#32;right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8659">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>left&#32;=&#32;right</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        left
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The first instance.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        right
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The second instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  True, if left equals right; false otherwise.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_Equality`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_Equality\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Compares two instances for equality.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    left
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The first instance.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    right
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The second instance.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    True, if left equals right; false otherwise.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8660', 8660)" onmouseover="showTip(event, '8660', 8660)">
+                <p>
+                  <a id="(~-)">
+                    <a href="#(~-)">
+                      <code><span>~-vec</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8660">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>~-vec</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      The instance.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The result of the calculation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.op_UnaryNegation`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.op_UnaryNegation\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Negates an instance.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The instance.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The result of the calculation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8661', 8661)" onmouseover="showTip(event, '8661', 8661)">
+                <p>
+                  <a id="Add">
+                    <a href="#Add">
+                      <code><span>Vector2i.Add<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8661">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Add<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of operation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Add`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Add\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Adds two vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8662', 8662)" onmouseover="showTip(event, '8662', 8662)">
+                <p>
+                  <a id="Add">
+                    <a href="#Add">
+                      <code><span>Vector2i.Add<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8662">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Add<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Result of operation.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Add`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Add\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Adds two vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Result of operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8663', 8663)" onmouseover="showTip(event, '8663', 8663)">
+                <p>
+                  <a id="Clamp">
+                    <a href="#Clamp">
+                      <code><span>Vector2i.Clamp<span><span>(<span>vec,&#32;min,&#32;max</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8663">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Clamp<span><span>(<span>vec,&#32;min,&#32;max</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Input vector.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        min
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Minimum vector.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        max
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Maximum vector.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The clamped vector.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Clamp`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Clamp\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Clamp a vector to the given minimum and maximum vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Input vector.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    min
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Minimum vector.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    max
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Maximum vector.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The clamped vector.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8664', 8664)" onmouseover="showTip(event, '8664', 8664)">
+                <p>
+                  <a id="Clamp">
+                    <a href="#Clamp">
+                      <code><span>Vector2i.Clamp<span><span>(<span>vec,&#32;min,&#32;max,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8664">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Clamp<span><span>(<span>vec,&#32;min,&#32;max,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vec
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Input vector.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        min
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Minimum vector.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        max
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Maximum vector.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      The clamped vector.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Clamp`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Clamp\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Clamp a vector to the given minimum and maximum vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vec
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Input vector.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    min
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Minimum vector.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    max
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Maximum vector.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The clamped vector.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8665', 8665)" onmouseover="showTip(event, '8665', 8665)">
+                <p>
+                  <a id="ComponentMax">
+                    <a href="#ComponentMax">
+                      <code><span>Vector2i.ComponentMax<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8665">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.ComponentMax<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      First operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Second operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The component-wise maximum.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.ComponentMax`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.ComponentMax\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Returns a vector created from the largest of the corresponding components of the given vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    First operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Second operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The component-wise maximum.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8666', 8666)" onmouseover="showTip(event, '8666', 8666)">
+                <p>
+                  <a id="ComponentMax">
+                    <a href="#ComponentMax">
+                      <code><span>Vector2i.ComponentMax<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8666">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.ComponentMax<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      First operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Second operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      The component-wise maximum.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.ComponentMax`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.ComponentMax\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Returns a vector created from the largest of the corresponding components of the given vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    First operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Second operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The component-wise maximum.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8667', 8667)" onmouseover="showTip(event, '8667', 8667)">
+                <p>
+                  <a id="ComponentMin">
+                    <a href="#ComponentMin">
+                      <code><span>Vector2i.ComponentMin<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8667">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.ComponentMin<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      First operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Second operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  The component-wise minimum.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.ComponentMin`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.ComponentMin\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Returns a vector created from the smallest of the corresponding components of the given vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    First operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Second operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    The component-wise minimum.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8668', 8668)" onmouseover="showTip(event, '8668', 8668)">
+                <p>
+                  <a id="ComponentMin">
+                    <a href="#ComponentMin">
+                      <code><span>Vector2i.ComponentMin<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8668">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.ComponentMin<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      First operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Second operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      The component-wise minimum.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.ComponentMin`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.ComponentMin\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Returns a vector created from the smallest of the corresponding components of the given vectors.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    First operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Second operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The component-wise minimum.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8669', 8669)" onmouseover="showTip(event, '8669', 8669)">
+                <p>
+                  <a id="Divide">
+                    <a href="#Divide">
+                      <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8669">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of the operation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Divide`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Divide\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Divides a vector by a scalar using integer division, floor(a/b).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8670', 8670)" onmouseover="showTip(event, '8670', 8670)">
+                <p>
+                  <a id="Divide">
+                    <a href="#Divide">
+                      <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8670">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Result of the operation.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Divide`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Divide\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Divides a vector by a scalar using integer division, floor(a/b).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8671', 8671)" onmouseover="showTip(event, '8671', 8671)">
+                <p>
+                  <a id="Divide">
+                    <a href="#Divide">
+                      <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8671">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of the operation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Divide`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Divide\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Divides a vector by the components of a vector using integer division, floor(a/b).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8672', 8672)" onmouseover="showTip(event, '8672', 8672)">
+                <p>
+                  <a id="Divide">
+                    <a href="#Divide">
+                      <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8672">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Divide<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Result of the operation.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Divide`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Divide\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Divides a vector by the components of a vector using integer division, floor(a/b).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8673', 8673)" onmouseover="showTip(event, '8673', 8673)">
+                <p>
+                  <a id="Down">
+                    <a href="#Down">
+                      <code><span>Vector2i.Down</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8673">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Down</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.Vector2i.Down`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Vector2i.Down\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                                Defines the integer 2d down vector.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8674', 8674)" onmouseover="showTip(event, '8674', 8674)">
+                <p>
+                  <a id="Left">
+                    <a href="#Left">
+                      <code><span>Vector2i.Left</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8674">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Left</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.Vector2i.Left`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Vector2i.Left\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                                Defines the integer 2d left vector.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8675', 8675)" onmouseover="showTip(event, '8675', 8675)">
+                <p>
+                  <a id="Multiply">
+                    <a href="#Multiply">
+                      <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8675">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of the operation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Multiplies a vector by a scalar.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8676', 8676)" onmouseover="showTip(event, '8676', 8676)">
+                <p>
+                  <a id="Multiply">
+                    <a href="#Multiply">
+                      <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8676">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code>int</code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Result of the operation.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Multiplies a vector by a scalar.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8677', 8677)" onmouseover="showTip(event, '8677', 8677)">
+                <p>
+                  <a id="Multiply">
+                    <a href="#Multiply">
+                      <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8677">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of the operation.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Multiplies a vector by the components a vector (scale).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8678', 8678)" onmouseover="showTip(event, '8678', 8678)">
+                <p>
+                  <a id="Multiply">
+                    <a href="#Multiply">
+                      <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8678">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Multiply<span><span>(<span>vector,&#32;scale,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        vector
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        scale
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Right operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Result of the operation.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Multiply`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Multiply\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Multiplies a vector by the components of a vector (scale).
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    vector
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    scale
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Right operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Result of the operation.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8679', 8679)" onmouseover="showTip(event, '8679', 8679)">
+                <p>
+                  <a id="Right">
+                    <a href="#Right">
+                      <code><span>Vector2i.Right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8679">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Right</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.Vector2i.Right`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Vector2i.Right\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                                Defines the integer 2d right vector.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8680', 8680)" onmouseover="showTip(event, '8680', 8680)">
+                <p>
+                  <a id="Subtract">
+                    <a href="#Subtract">
+                      <code><span>Vector2i.Subtract<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8680">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Subtract<span><span>(<span>a,&#32;b</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      First operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                       - 
+                      Second operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  Result of subtraction.
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Subtract`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Subtract\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Subtract one vector from another.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    First operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Second operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    Result of subtraction.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8681', 8681)" onmouseover="showTip(event, '8681', 8681)">
+                <p>
+                  <a id="Subtract">
+                    <a href="#Subtract">
+                      <code><span>Vector2i.Subtract<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8681">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Subtract<span><span>(<span>a,&#32;b,&#32;result</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        a
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      First operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        b
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Second operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                       - 
+                      Result of subtraction.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Vector2i.Subtract`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Vector2i.Subtract\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Subtract one vector from another.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    First operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Second operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    Result of subtraction.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8682', 8682)" onmouseover="showTip(event, '8682', 8682)">
+                <p>
+                  <a id="Up">
+                    <a href="#Up">
+                      <code><span>Vector2i.Up</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8682">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.Up</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.Vector2i.Up`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Vector2i.Up\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                                Defines the integer 2d up vector.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8683', 8683)" onmouseover="showTip(event, '8683', 8683)">
+                <p>
+                  <a id="op_Implicit">
+                    <a href="#op_Implicit">
+                      <code><span>Vector2i.op_Implicit&#32;<span>values</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8683">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Vector2i.op_Implicit&#32;<span>values</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        values
+                      </b>
+                      :
+                      <code><span>int&#32;*&#32;int</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  values
+                </span>
+                :
+                <code><span>int&#32;*&#32;int</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+
+</body>
+</html>

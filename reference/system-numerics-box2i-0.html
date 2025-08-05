@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en" data-root="/Nu/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Nu.Math" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="Nu">
+    <meta property="og:title" content="Box2i (Nu)" />
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:title" content="Box2i (Nu)">
+    
+    <title>Box2i (Nu) | Nu</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+                    Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
+            <strong>Nu</strong>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Links</li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    Box2i Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="/Nu/reference/system-numerics.html">
+        System.Numerics
+      </a>
+    </dt>
+    <dt>
+      Assembly: Nu.Math.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a>&gt;</span></code>
+    </dt>
+    <dt>
+      Kind: Struct
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+                    Defines an axis-aligned 2D box (rectangle) in integers.
+            Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Geometry/Box2.cs
+            Heavily modified by BGE to more closely conform to System.Numerics and use a size-preserving representation
+            ([min, size] instead of [min, max]), as well as using integers.
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8193', 8193)" onmouseover="showTip(event, '8193', 8193)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>Box2i<span><span>(<span>min,&#32;size</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8193">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Box2i<span><span>(<span>min,&#32;size</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        min
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        size
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.#ctor`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.#ctor\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Initializes a new instance of the <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> struct.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    min
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    size
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8194', 8194)" onmouseover="showTip(event, '8194', 8194)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>Box2i<span><span>(<span>minX,&#32;minY,&#32;sizeX,&#32;sizeY</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8194">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Box2i<span><span>(<span>minX,&#32;minY,&#32;sizeX,&#32;sizeY</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        minX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        minY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sizeX
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sizeY
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.#ctor`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.#ctor\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Initializes a new instance of the <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> struct.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    minX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    minY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sizeX
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sizeY
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8195', 8195)" onmouseover="showTip(event, '8195', 8195)">
+                <p>
+                  <a id="Contains">
+                    <a href="#Contains">
+                      <code><span>this.Contains</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8195">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Contains</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        box
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                       - 
+                      The <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> to test for overlap.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a></code>
+                  </span>
+                  
+              A value indicating if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains,
+              intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
+            
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.Contains`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.Contains\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+              Check if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains another <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a>.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    box
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> to test for overlap.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    
+              A value indicating if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains,
+              intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
+            
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8196', 8196)" onmouseover="showTip(event, '8196', 8196)">
+                <p>
+                  <a id="Contains">
+                    <a href="#Contains">
+                      <code><span>this.Contains</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8196">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Contains</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        box
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a>&gt;</span></code>
+                       - 
+                      The <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> to test for overlap.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                       - 
+                      
+              A value indicating if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains,
+              intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
+            
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.Contains`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.Contains\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+              Check if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains another <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a>.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    box
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> to test for overlap.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    
+              A value indicating if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains,
+              intersects with or is disjoint with <span class="fsdocs-param-name">box</span>.
+            
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8197', 8197)" onmouseover="showTip(event, '8197', 8197)">
+                <p>
+                  <a id="Contains">
+                    <a href="#Contains">
+                      <code><span>this.Contains</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8197">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Contains</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        point
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a></code>
+                       - 
+                      The <a href="/Nu/reference/system-numerics-vector3.html">Vector3</a> to test.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a></code>
+                  </span>
+                  <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+            
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.Contains`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.Contains\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+              Check if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains a point.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    point
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The <a href="/Nu/reference/system-numerics-vector3.html">Vector3</a> to test.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs">
+                  <p>
+                    <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+            
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8198', 8198)" onmouseover="showTip(event, '8198', 8198)">
+                <p>
+                  <a id="Contains">
+                    <a href="#Contains">
+                      <code><span>this.Contains</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8198">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Contains</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        point
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&gt;</span></code>
+                       - 
+                      The <a href="/Nu/reference/system-numerics-vector2.html">Vector2</a> to test.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        result
+                      </b>
+                      :
+                      <code><span>byref&lt;<a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                       - 
+                      <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+            
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.Contains`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.Contains\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+              Check if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains a point.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    point
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2">Vector2</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The <a href="/Nu/reference/system-numerics-vector2.html">Vector2</a> to test.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    result
+                  </span>
+                  :
+                  <code><span>byref&lt;<a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Contains</a> if this <a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a> contains
+              <span class="fsdocs-param-name">point</span> or <a href="/Nu/reference/system-numerics-containmenttype.html">ContainmentType.Disjoint</a> if it does not.
+            
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8199', 8199)" onmouseover="showTip(event, '8199', 8199)">
+                <p>
+                  <a id="Equals">
+                    <a href="#Equals">
+                      <code><span>this.Equals</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8199">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Equals</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        obj
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  obj
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8200', 8200)" onmouseover="showTip(event, '8200', 8200)">
+                <p>
+                  <a id="Equals">
+                    <a href="#Equals">
+                      <code><span>this.Equals</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8200">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Equals</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        other
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  other
+                </span>
+                :
+                <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8201', 8201)" onmouseover="showTip(event, '8201', 8201)">
+                <p>
+                  <a id="GetHashCode">
+                    <a href="#GetHashCode">
+                      <code><span>this.GetHashCode</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8201">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.GetHashCode</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8202', 8202)" onmouseover="showTip(event, '8202', 8202)">
+                <p>
+                  <a id="ToString">
+                    <a href="#ToString">
+                      <code><span>this.ToString</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8202">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ToString</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8203', 8203)" onmouseover="showTip(event, '8203', 8203)">
+                <p>
+                  <a id="(<>)">
+                    <a href="#(<>)">
+                      <code><span>left&#32;&lt;&gt;&#32;right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8203">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>left&#32;&lt;&gt;&#32;right</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        left
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                       - 
+                      The left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        right
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                       - 
+                      The right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.op_Inequality`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.op_Inequality\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Inequality comparator.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    left
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    right
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8204', 8204)" onmouseover="showTip(event, '8204', 8204)">
+                <p>
+                  <a id="(=)">
+                    <a href="#(=)">
+                      <code><span>left&#32;=&#32;right</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8204">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>left&#32;=&#32;right</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        left
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                       - 
+                      The left operand.
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        right
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                       - 
+                      The right operand.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.op_Equality`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.op_Equality\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Equality comparator.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    left
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The left operand.
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    right
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The right operand.
+                  </p>
+                </dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8205', 8205)" onmouseover="showTip(event, '8205', 8205)">
+                <p>
+                  <a id="Enclose">
+                    <a href="#Enclose">
+                      <code><span>Box2i.Enclose<span><span>(<span>point,&#32;point2</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8205">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Box2i.Enclose<span><span>(<span>point,&#32;point2</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        point
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        point2
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Box2i.Enclose`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Box2i.Enclose\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                                Create a bounding box by enclosing two points.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    point
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    point2
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-box2i-0.html">Box2i</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+
+</body>
+</html>
