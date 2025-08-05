@@ -240,36 +240,72 @@ type [<SymbolicExpansion>] NavBuilderResultData =
 
 /// The manner in which a gui entity may be docked by a parent entity.
 type DockType =
+
+    /// Dock in the available center space of the parent entity.
     | DockCenter
+
+    /// Dock in the available top side of the parent entity.
     | DockTop
+
+    /// Dock in the available right side of the parent entity.
     | DockRight
+
+    /// Dock in the available bottom side of the parent entity.
     | DockBottom
+
+    /// Dock in the available left side of the parent entity.
     | DockLeft
 
 /// The manner in which a layout limits the flow its children.
 type FlowLimit =
+
+    /// Flow within the parent's bounds.
     | FlowParent
+
+    /// Flow without limit.
     | FlowUnlimited
+
+    /// Flow to a specific distance.
     | FlowTo of single
 
 /// The direction in which a layout flows its children.
 type FlowDirection =
+
+    /// Flow to the right.
     | FlowRightward
+
+    /// Flow downward.
     | FlowDownward
+
+    /// Flow to the left.
     | FlowLeftward
+
+    /// Flow upward.
     | FlowUpward
 
 /// A gui layout.
 type Layout =
+
+    /// Flow children in the given direcion up to the given limit.
     | Flow of FlowDirection : FlowDirection * FlowLimit : FlowLimit
+
+    /// Dock children in the given bounds
     | Dock of Bounds : Vector4 * PercentageBased : bool * ResizeChildren : bool
+
+    /// Arrange children in a grid with the given dimensions, optional flow direction, and with optional resizing behavior.
     | Grid of Dims : Vector2i * FlowDirectionOpt : FlowDirection option * ResizeChildren : bool
+
+    /// Utilize no layout, allowing children to be placed freely.
     | Manual
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =
+
+    /// A transition that occurs when a screen has been selected.
     | Incoming
+
+    /// A transition that occurs when a screen is being deselected.
     | Outgoing
 
 /// The state of a screen's transition.
