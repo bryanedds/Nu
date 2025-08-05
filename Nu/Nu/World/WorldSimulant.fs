@@ -283,6 +283,7 @@ module WorldSimulantModule =
             let state = World.getState simulant world
             Reflection.getReflectivePropertyDefinitions state
 
+/// PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 

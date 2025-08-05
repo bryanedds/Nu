@@ -2218,6 +2218,7 @@ module EntityDispatcherModule =
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
+/// Entity PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
@@ -2499,6 +2500,7 @@ module GroupDispatcherModule =
         abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+/// Group PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
 
@@ -2714,6 +2716,7 @@ module ScreenDispatcherModule =
         abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+/// Screen PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
@@ -2929,6 +2932,7 @@ module GameDispatcherModule =
         abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+/// Game PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =
 
