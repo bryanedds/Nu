@@ -7,14 +7,18 @@
 		<ApplicationIcon />
 		<OutputType>Library</OutputType>
 		<StartupObject />
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
+        <RepositoryBranch>master</RepositoryBranch>
+        <RepositoryType>git</RepositoryType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <NoWarn>1701;1702;CA2022</NoWarn>
+	  <NoWarn>1701;1702;CA2022;CS1570;CS1572;CS1573;CS1574;CS1580;CS1587;CS1591</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-	  <NoWarn>1701;1702;CA2022</NoWarn>
+	  <NoWarn>1701;1702;CA2022;CS1570;CS1572;CS1573;CS1574;CS1580;CS1587;CS1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
