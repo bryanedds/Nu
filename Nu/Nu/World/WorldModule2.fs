@@ -1947,7 +1947,7 @@ module WorldModule2 =
                 Constants.Engine.ExitCodeFailure
 
 [<AutoOpen>]
-module EntityDispatcherModule2 =
+module EntityDispatcherModule =
 
     /// The ImSim dispatcher for entities.
     type [<AbstractClass>] EntityDispatcherImSim (is2d, physical, lightProbe, light) =

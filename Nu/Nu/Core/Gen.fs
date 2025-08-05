@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open Prime
 
+/// Provides engine-specific value generation functionality.
 [<RequireQualifiedAccess>]
 module Gen =
 

@@ -10,6 +10,7 @@ open System.Reflection
 open FSharp.Reflection
 open Prime
 
+/// Provides engine-specific reflection functionality.
 [<RequireQualifiedAccess>]
 module Reflection =
 

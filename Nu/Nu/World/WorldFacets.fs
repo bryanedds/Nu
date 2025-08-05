@@ -3801,6 +3801,7 @@ module FollowerFacetExtensions =
         member this.SetFollowTargetOpt (value : Entity option) world = this.Set (nameof this.FollowTargetOpt) value world
         member this.FollowTargetOpt = lens (nameof this.FollowTargetOpt) this this.GetFollowTargetOpt this.SetFollowTargetOpt
 
+/// Enables an entity to follow another entity (currently for 3D entities only).
 type FollowerFacet () =
     inherit Facet (false, false, false)
 

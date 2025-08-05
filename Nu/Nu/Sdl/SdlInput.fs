@@ -58,6 +58,7 @@ type GamepadButton =
     | ButtonSelect
     | ButtonStart
 
+/// Exposes the ongoing state of the mouse.
 [<RequireQualifiedAccess>]
 module internal MouseState =
 
@@ -118,6 +119,7 @@ module internal MouseState =
         (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask = 0u)
 
+/// Exposes the ongoing state of the keyboard.
 [<RequireQualifiedAccess>]
 module internal KeyboardState =
 
@@ -192,6 +194,7 @@ module internal KeyboardState =
     let internal isShiftUp () =
         not (isShiftDown ())
 
+/// Exposes the ongoing state of gamepads.
 [<RequireQualifiedAccess>]        
 module GamepadState =
 
