@@ -373,10 +373,10 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                     [|Hl.makeDescriptorBindingFragment 0 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
                     [|Hl.makePushConstantRange Vulkan.VK_SHADER_STAGE_VERTEX_BIT 0 (sizeof<Single> * 4)|]
                     vkc.RenderPass
-                    vkc.Device
+                    vkc
 
             // load font atlas texture to descriptor set
-            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkc.Device
+            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkc
 
             // store identifier
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
@@ -526,7 +526,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             VulkanMemory.Buffer.destroy indexBuffer vkc
             VulkanMemory.Buffer.destroy vertexBuffer vkc
             Texture.VulkanTexture.destroy fontTexture vkc
-            Pipeline.Pipeline.destroy pipeline vkc.Device
+            Pipeline.Pipeline.destroy pipeline vkc
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =

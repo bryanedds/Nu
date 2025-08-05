@@ -933,7 +933,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
             Texture.DynamicTexture.destroy renderer.TextTexture vkc
-            Pipeline.Pipeline.destroy pipeline vkc.Device
+            Pipeline.Pipeline.destroy pipeline vkc
             VulkanMemory.Buffer.destroy modelViewProjectionUniform vkc
             VulkanMemory.Buffer.destroy texCoords4Uniform vkc
             VulkanMemory.Buffer.destroy colorUniform vkc

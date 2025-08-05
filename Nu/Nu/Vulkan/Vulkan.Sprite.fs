@@ -25,7 +25,7 @@ module Sprite =
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
                   Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
-                [||] vkc.RenderPass vkc.Device
+                [||] vkc.RenderPass vkc
         
         // create sprite uniform buffers
         let modelViewProjectionUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 16) vkc
@@ -33,9 +33,9 @@ module Sprite =
         let colorUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 4) vkc
 
         // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform.VkBuffers pipeline vkc.Device
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform.VkBuffers pipeline vkc.Device
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform.VkBuffers pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vkc
+        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vkc
+        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform pipeline vkc
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -130,7 +130,7 @@ module Sprite =
         VulkanMemory.Buffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // write texture to descriptor set
-        Pipeline.Pipeline.writeDescriptorTextureSingleFrame 2 0 texture pipeline vkc.Device
+        Pipeline.Pipeline.writeDescriptorTextureInFrame 2 0 texture pipeline vkc
         
         // bind pipeline
         let cb = vkc.RenderCommandBuffer
