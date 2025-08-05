@@ -10,7 +10,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    // TODO: DJL: find out what's slowing batch down to a crawl!
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
           ClipOpt : Box2 voption
