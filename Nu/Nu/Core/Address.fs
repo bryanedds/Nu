@@ -208,6 +208,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         member this.HashCode = this.HashCode
         member this.Anonymous = this.Anonymous
 
+/// Address functions.
 [<RequireQualifiedAccess>]
 module Address =
 
@@ -320,6 +321,7 @@ module Address =
         not (name.Contains "/") &&
         not (name.Contains "\"")
 
+/// Address operators.
 [<AutoOpen>]
 module AddressOperators =
 

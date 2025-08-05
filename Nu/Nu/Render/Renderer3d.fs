@@ -50,6 +50,7 @@ type [<SymbolicExpansion>] TerrainMaterialProperties =
       HeightOpt : single option
       IgnoreLightMapsOpt : bool option }
 
+/// TerrainMaterialProperties functions.
 [<RequireQualifiedAccess>]
 module TerrainMaterialProperties =
 
@@ -94,6 +95,7 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
     member this.SpecularScalar = ValueOption.defaultValue Constants.Render.SpecularScalarDefault this.SpecularScalarOpt
 
+/// MaterialProperties functions.
 [<RequireQualifiedAccess>]
 module MaterialProperties =
 
@@ -196,6 +198,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         member this.Equals that =
             Material.equals this that
 
+/// Material functions.
 [<RequireQualifiedAccess>]
 module Material =
 

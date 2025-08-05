@@ -1,4 +1,5 @@
 ﻿namespace Nelmish
+open System.Numerics
 open Nu
 
 // this is our MMCC model type

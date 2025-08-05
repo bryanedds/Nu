@@ -47,6 +47,7 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
             | Interior | Exterior | Imposter -> match lightBoxOpt with ValueSome lightBox -> lightBox.Intersects bounds | ValueNone -> false
             | Omnipresent -> true
 
+/// Presence operators.
 [<AutoOpen>]
 module PresenceOperators =
     

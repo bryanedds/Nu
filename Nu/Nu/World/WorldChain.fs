@@ -48,6 +48,7 @@ type ChainBuilder () =
             | Left c -> Left (fun e -> this.Bind (c e, cont))
             | Right v -> match cont v with Chain f -> f world)
 
+/// ChainBuilder operators.
 [<AutoOpen>]
 module ChainBuilder =
 

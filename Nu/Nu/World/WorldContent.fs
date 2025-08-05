@@ -580,6 +580,7 @@ module Content =
     let wipe () =
         ContentsCached.Clear ()
 
+/// MMCC content operators.
 [<AutoOpen>]
 module ContentOperators =
 

@@ -2230,6 +2230,7 @@ and [<AbstractClass>] NuPlugin () =
 
     interface LateBindings
 
+/// Lens functions.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Lens =
 
@@ -2280,6 +2281,7 @@ module Lens =
     let makeReadOnly<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) : Lens<'a, 's> =
         { Name = name; This = this; Get = get; SetOpt = ValueNone }
 
+/// Lens operators.
 [<AutoOpen>]
 module LensOperators =
 
@@ -2317,6 +2319,7 @@ module LensOperators =
                  | None -> None)
         PropertyDefinition.makeValidated lens.Name typeof<ComputedProperty> (ComputedExpr computedProperty)
 
+/// Signal functions.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Signal =
 
@@ -2345,6 +2348,7 @@ module Signal =
         for signal in signals do
             processSignal processMessage processCommand modelLens signal simulant world
 
+/// Signal operators.
 [<AutoOpen>]
 module SignalOperators =
 

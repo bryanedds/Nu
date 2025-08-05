@@ -114,6 +114,7 @@ type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
     member this.Run (coroutine : 'w Coroutine) =
         launcher coroutine
 
+/// CoroutineBuilder operators.
 [<AutoOpen>]
 module CoroutineBuilder =
 

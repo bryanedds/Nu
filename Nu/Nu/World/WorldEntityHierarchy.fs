@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldEntityHierarchy =
+module WorldEntityHierarchyExtensions =
 
     type Entity with
 
@@ -308,7 +308,7 @@ module WorldEntityHierarchy =
             parent.SetOffset v3Zero world
 
 [<AutoOpen>]
-module Freezer3dFacetModule =
+module Freezer3dFacetExtensions =
 
     type Entity with
         member this.GetFrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.FrozenBundles) world
@@ -415,168 +415,168 @@ module Freezer3dFacetModule =
                 if descendent.GetExists world && descendent.GetSurfaceFreezable world then
                     World.destroyEntityImmediate descendent world
 
-    /// Gives an entity the ability to freeze hierarchies of 3D entities.
-    type Freezer3dFacet () =
-        inherit Facet (false, false, false)
+/// Gives an entity the ability to freeze hierarchies of 3D entities.
+type Freezer3dFacet () =
+    inherit Facet (false, false, false)
 
-        static let handleUpdateFrozenHierarchy evt world =
-            let entity = evt.Subscriber : Entity
-            entity.UpdateFrozenHierarchy world
-            Cascade
+    static let handleUpdateFrozenHierarchy evt world =
+        let entity = evt.Subscriber : Entity
+        entity.UpdateFrozenHierarchy world
+        Cascade
 
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             nonPersistent Entity.FrozenBundles [||]
-             nonPersistent Entity.FrozenShapes [||]
-             define Entity.Frozen false
-             define Entity.PresenceConferred Exterior
-             define Entity.SurfaceMaterialsPopulated false]
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel
+         nonPersistent Entity.FrozenBundles [||]
+         nonPersistent Entity.FrozenShapes [||]
+         define Entity.Frozen false
+         define Entity.PresenceConferred Exterior
+         define Entity.SurfaceMaterialsPopulated false]
 
-        override this.Register (entity, world) =
-            entity.SetOffset v3Zero world
-            World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
-            World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
+    override this.Register (entity, world) =
+        entity.SetOffset v3Zero world
+        World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
+        World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
 
-        override this.Render (renderPass, entity, world) =
+    override this.Render (renderPass, entity, world) =
 
-            // compute intersection function based on render pass
-            let intersects =
-                let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
-                let exterior = World.getGameEye3dFrustumExterior Game world
-                let imposter = World.getGameEye3dFrustumImposter Game world
-                let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
-                fun probe light presence (bounds : Box3) ->
-                    match renderPass with
-                    | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
-                    | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
-                    | ReflectionPass (_, _) -> false
-                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
+        // compute intersection function based on render pass
+        let intersects =
+            let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
+            let exterior = World.getGameEye3dFrustumExterior Game world
+            let imposter = World.getGameEye3dFrustumImposter Game world
+            let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
+            fun probe light presence (bounds : Box3) ->
+                match renderPass with
+                | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
+                | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
+                | ReflectionPass (_, _) -> false
+                | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
 
-            // render unculled surfaces
-            let bounds = entity.GetBounds world
-            let presenceConferred = entity.GetPresenceConferred world
-            if intersects false false presenceConferred bounds then
-                let bundles = entity.GetFrozenBundles world
-                let message = RenderStaticModelSurfaceBundles { StaticModelSurfaceBundles = bundles; RenderPass = renderPass }
-                World.enqueueRenderMessage3d message world
+        // render unculled surfaces
+        let bounds = entity.GetBounds world
+        let presenceConferred = entity.GetPresenceConferred world
+        if intersects false false presenceConferred bounds then
+            let bundles = entity.GetFrozenBundles world
+            let message = RenderStaticModelSurfaceBundles { StaticModelSurfaceBundles = bundles; RenderPass = renderPass }
+            World.enqueueRenderMessage3d message world
 
-        override this.RegisterPhysics (entity, world) =
-            entity.RegisterFrozenShapesPhysics world
+    override this.RegisterPhysics (entity, world) =
+        entity.RegisterFrozenShapesPhysics world
 
-        override this.UnregisterPhysics (entity, world) =
-            entity.UnregisterFrozenShapesPhysics world
+    override this.UnregisterPhysics (entity, world) =
+        entity.UnregisterFrozenShapesPhysics world
 
-        override this.RayCast (ray, entity, world) =
-            if entity.GetPickable world then
-                let intersectionOpt = ray.Intersects (entity.GetBounds world)
-                [|Intersection.ofNullable intersectionOpt|]
-            else [|Miss|]
+    override this.RayCast (ray, entity, world) =
+        if entity.GetPickable world then
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            [|Intersection.ofNullable intersectionOpt|]
+        else [|Miss|]
 
-        override this.Edit (op, entity, world) =
-            match op with
-            | AppendProperties append ->
-                if ImGui.Button "Permafreeze" then
-                    append.EditContext.Snapshot Permafreeze world
-                    entity.Permafreeze world
-            | _ -> ()
+    override this.Edit (op, entity, world) =
+        match op with
+        | AppendProperties append ->
+            if ImGui.Button "Permafreeze" then
+                append.EditContext.Snapshot Permafreeze world
+                entity.Permafreeze world
+        | _ -> ()
 
 [<AutoOpen>]
-module StaticModelHierarchyDispatcherModule =
+module StaticModelHierarchyDispatcherExtensions =
 
     type Entity with
         member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
 
-    /// Gives an entity the base behavior of hierarchy of indexed static models.
-    type StaticModelHierarchyDispatcher () =
-        inherit Entity3dDispatcher (false, false, false)
+/// Gives an entity the base behavior of hierarchy of indexed static models.
+type StaticModelHierarchyDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
 
-        static let updateLoadedHierarchy (entity : Entity) world =
-            for child in entity.GetChildren world do
-                World.destroyEntityImmediate child world
-            World.tryImportEntityHierarchy
-                (entity.GetPresenceConferred world)
-                (entity.GetStaticModel world)
-                (entity.GetSurfaceMaterialsPopulated world)
-                Convex false (Right entity) world
-            entity.UpdateFrozenHierarchy world
+    static let updateLoadedHierarchy (entity : Entity) world =
+        for child in entity.GetChildren world do
+            World.destroyEntityImmediate child world
+        World.tryImportEntityHierarchy
+            (entity.GetPresenceConferred world)
+            (entity.GetStaticModel world)
+            (entity.GetSurfaceMaterialsPopulated world)
+            Convex false (Right entity) world
+        entity.UpdateFrozenHierarchy world
 
-        static let handleUpdateLoadedHierarchy evt world =
-            let entity = evt.Subscriber : Entity
+    static let handleUpdateLoadedHierarchy evt world =
+        let entity = evt.Subscriber : Entity
+        updateLoadedHierarchy entity world
+        Cascade
+
+    static member Facets =
+        [typeof<Freezer3dFacet>]
+
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel
+         define Entity.Loaded false]
+
+    override this.Register (entity, world) =
+        if not (entity.GetLoaded world) then
             updateLoadedHierarchy entity world
-            Cascade
+            entity.SetLoaded true world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
 
-        static member Facets =
-            [typeof<Freezer3dFacet>]
-
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.Loaded false]
-
-        override this.Register (entity, world) =
-            if not (entity.GetLoaded world) then
-                updateLoadedHierarchy entity world
-                entity.SetLoaded true world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
-
-        override this.Edit (op, _, _) =
-            match op with
-            | ReplaceProperty replace ->
-                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
-                    replace.IndicateReplaced ()
-            | _ -> ()
+    override this.Edit (op, _, _) =
+        match op with
+        | ReplaceProperty replace ->
+            if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
+                replace.IndicateReplaced ()
+        | _ -> ()
 
 [<AutoOpen>]
-module RigidModelHierarchyDispatcherModule =
+module RigidModelHierarchyDispatcherExtensions =
 
     type Entity with
         member this.GetProfile world : Profile = this.Get (nameof this.Profile) world
         member this.SetProfile (value : Profile) world = this.Set (nameof this.Profile) value world
         member this.Profile = lens (nameof this.Profile) this this.GetProfile this.SetProfile
 
-    /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
-    type RigidModelHierarchyDispatcher () =
-        inherit Entity3dDispatcher (true, false, false)
+/// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
+type RigidModelHierarchyDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
 
-        static let updateLoadedHierarchy (entity : Entity) world =
-            for child in entity.GetChildren world do
-                World.destroyEntityImmediate child world
-            World.tryImportEntityHierarchy
-                (entity.GetPresenceConferred world)
-                (entity.GetStaticModel world)
-                (entity.GetSurfaceMaterialsPopulated world)
-                (entity.GetProfile world)
-                true (Right entity) world
-            entity.UpdateFrozenHierarchy world
+    static let updateLoadedHierarchy (entity : Entity) world =
+        for child in entity.GetChildren world do
+            World.destroyEntityImmediate child world
+        World.tryImportEntityHierarchy
+            (entity.GetPresenceConferred world)
+            (entity.GetStaticModel world)
+            (entity.GetSurfaceMaterialsPopulated world)
+            (entity.GetProfile world)
+            true (Right entity) world
+        entity.UpdateFrozenHierarchy world
 
-        static let handleUpdateLoadedHierarchy evt world =
-            let entity = evt.Subscriber : Entity
+    static let handleUpdateLoadedHierarchy evt world =
+        let entity = evt.Subscriber : Entity
+        updateLoadedHierarchy entity world
+        Cascade
+
+    static member Facets =
+        [typeof<Freezer3dFacet>]
+
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel
+         define Entity.Profile Convex
+         define Entity.Loaded false]
+
+    override this.Register (entity, world) =
+        if not (entity.GetLoaded world) then
             updateLoadedHierarchy entity world
-            Cascade
+            entity.SetLoaded true world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.Profile)) entity world
 
-        static member Facets =
-            [typeof<Freezer3dFacet>]
-
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.Profile Convex
-             define Entity.Loaded false]
-
-        override this.Register (entity, world) =
-            if not (entity.GetLoaded world) then
-                updateLoadedHierarchy entity world
-                entity.SetLoaded true world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.Profile)) entity world
-
-        override this.Edit (op, _, _) =
-            match op with
-            | ReplaceProperty replace ->
-                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
-                    replace.IndicateReplaced ()
-            | _ -> ()
+    override this.Edit (op, _, _) =
+        match op with
+        | ReplaceProperty replace ->
+            if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
+                replace.IndicateReplaced ()
+        | _ -> ()

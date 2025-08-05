@@ -205,5 +205,6 @@ module Effect =
     /// The empty effect.
     let empty =
         make GameTime.zero v3Zero (Transform.makeEmpty ()) 0.0f DeferredRenderType EffectDescriptor.empty
-
+        
+/// A time-based effect.
 type Effect = Effect.Effect

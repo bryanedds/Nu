@@ -33,6 +33,7 @@ type Metadata =
     | SoundMetadata
     | SongMetadata
 
+/// Metadata functions.
 [<RequireQualifiedAccess>]
 module Metadata =
 

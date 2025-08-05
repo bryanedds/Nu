@@ -543,6 +543,7 @@ module Reflection =
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
                 AssembliesLoaded.[assembly.FullName] <- assembly
 
+/// Reflection operators.
 [<AutoOpen>]
 module ReflectionOperators =
 

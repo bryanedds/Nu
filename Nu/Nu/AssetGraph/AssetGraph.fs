@@ -52,6 +52,7 @@ type [<ReferenceEquality>] 'a Asset =
         member this.Refinements = this.Refinements
         member this.Associations = this.Associations
 
+/// Asset functions.
 [<RequireQualifiedAccess>]
 module Asset =
 
