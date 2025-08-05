@@ -1,0 +1,2272 @@
+<!DOCTYPE html>
+<html lang="en" data-root="/Nu/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Nu.Spine" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="Nu">
+    <meta property="og:title" content="TrackEntry (Nu)" />
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:title" content="TrackEntry (Nu)">
+    
+    <title>TrackEntry (Nu) | Nu</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+                    Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
+            <strong>Nu</strong>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Links</li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/LICENSE.md">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/bryanedds/Nu/blob/master/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    TrackEntry Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="/Nu/reference/spine.html">
+        Spine
+      </a>
+    </dt>
+    <dt>
+      Assembly: Nu.Spine.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="/Nu/reference/spine-pool-1-ipoolable.html">IPoolable</a>&lt;<a href="/Nu/reference/spine-trackentry.html">TrackEntry</a>&gt;</span></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        <p class='fsdocs-para'>
+            Stores settings and other state for the playback of an animation on an <a href="/Nu/reference/spine-animationstate.html">AnimationState</a> track.</p><p class='fsdocs-para'>
+            References to a track entry must not be kept after the !:AnimationStateListener.Dispose(TrackEntry) event occurs.</p>
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9125', 9125)" onmouseover="showTip(event, '9125', 9125)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>TrackEntry<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9125">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TrackEntry<span>()</span></span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Spine.TrackEntry.#ctor`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Spine.TrackEntry.#ctor\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9126', 9126)" onmouseover="showTip(event, '9126', 9126)">
+                <p>
+                  <a id="AllowImmediateQueue">
+                    <a href="#AllowImmediateQueue">
+                      <code><span>this.AllowImmediateQueue</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9126">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AllowImmediateQueue</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Spine.TrackEntry.AllowImmediateQueue`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Spine.TrackEntry.AllowImmediateQueue\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9127', 9127)" onmouseover="showTip(event, '9127', 9127)">
+                <p>
+                  <a id="Alpha">
+                    <a href="#Alpha">
+                      <code><span>this.Alpha</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9127">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Alpha</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Alpha`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Alpha\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Values < 1 mix this animation with the skeleton's current pose (usually the pose resulting from lower tracks). Defaults
+            to 1, which overwrites the skeleton's current pose with this animation.</p><p class='fsdocs-para'>
+            Typically track 0 is used to completely pose the skeleton, then alpha is used on higher tracks. It doesn't make sense to
+            use alpha on track 0 if the skeleton pose is from the last frame render.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9128', 9128)" onmouseover="showTip(event, '9128', 9128)">
+                <p>
+                  <a id="AlphaAttachmentThreshold">
+                    <a href="#AlphaAttachmentThreshold">
+                      <code><span>this.AlphaAttachmentThreshold</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9128">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AlphaAttachmentThreshold</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.AlphaAttachmentThreshold`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.AlphaAttachmentThreshold\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            When <a href="/Nu/reference/spine-trackentry.html#Alpha">TrackEntry.Alpha</a> is greater than <code>AlphaAttachmentThreshold</code>, attachment timelines are applied.
+            Defaults to 0, so attachment timelines are always applied.
+            
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9129', 9129)" onmouseover="showTip(event, '9129', 9129)">
+                <p>
+                  <a id="Animation">
+                    <a href="#Animation">
+                      <code><span>this.Animation</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9129">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Animation</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animation.html">Animation</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Animation`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Animation\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    The animation to apply for this track entry.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-animation.html">Animation</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9130', 9130)" onmouseover="showTip(event, '9130', 9130)">
+                <p>
+                  <a id="AnimationEnd">
+                    <a href="#AnimationEnd">
+                      <code><span>this.AnimationEnd</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9130">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AnimationEnd</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.AnimationEnd`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.AnimationEnd\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            Seconds for the last frame of this animation. Non-looping animations won't play past this time. Looping animations will
+            loop back to <a href="/Nu/reference/spine-trackentry.html#AnimationStart">TrackEntry.AnimationStart</a> at this time. Defaults to the animation <a href="/Nu/reference/spine-animation.html#Duration">Animation.Duration</a>.
+            
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9131', 9131)" onmouseover="showTip(event, '9131', 9131)">
+                <p>
+                  <a id="AnimationLast">
+                    <a href="#AnimationLast">
+                      <code><span>this.AnimationLast</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9131">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AnimationLast</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.AnimationLast`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.AnimationLast\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            The time in seconds this animation was last applied. Some timelines use this for one-time triggers. Eg, when this
+            animation is applied, event timelines will fire all events between the <code>AnimationLast</code> time (exclusive) and
+            <code>AnimationTime</code> (inclusive). Defaults to -1 to ensure triggers on frame 0 happen the first time this animation
+            is applied.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9132', 9132)" onmouseover="showTip(event, '9132', 9132)">
+                <p>
+                  <a id="AnimationStart">
+                    <a href="#AnimationStart">
+                      <code><span>this.AnimationStart</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9132">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AnimationStart</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.AnimationStart`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.AnimationStart\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Seconds when this animation starts, both initially and after looping. Defaults to 0.</p><p class='fsdocs-para'>
+            When changing the <code>AnimationStart</code> time, it often makes sense to set <a href="/Nu/reference/spine-trackentry.html#AnimationLast">TrackEntry.AnimationLast</a> to the same
+            value to prevent timeline keys before the start time from triggering.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9133', 9133)" onmouseover="showTip(event, '9133', 9133)">
+                <p>
+                  <a id="AnimationTime">
+                    <a href="#AnimationTime">
+                      <code><span>this.AnimationTime</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9133">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AnimationTime</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>float32</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.AnimationTime`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.AnimationTime\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Uses <a href="/Nu/reference/spine-trackentry.html#TrackTime">TrackEntry.TrackTime</a> to compute the <code>AnimationTime</code>. When the <code>TrackTime</code> is 0, the
+            <code>AnimationTime</code> is equal to the <code>AnimationStart</code> time.
+            <p class='fsdocs-para'>
+            The <code>animationTime</code> is between <a href="/Nu/reference/spine-trackentry.html#AnimationStart">TrackEntry.AnimationStart</a> and <a href="/Nu/reference/spine-trackentry.html#AnimationEnd">TrackEntry.AnimationEnd</a>, except if this
+            track entry is non-looping and <a href="/Nu/reference/spine-trackentry.html#AnimationEnd">TrackEntry.AnimationEnd</a> is >= to the animation <a href="/Nu/reference/spine-animation.html#Duration">Animation.Duration</a>, then
+            <code>animationTime</code> continues to increase past <a href="/Nu/reference/spine-trackentry.html#AnimationEnd">TrackEntry.AnimationEnd</a>.</p>
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9134', 9134)" onmouseover="showTip(event, '9134', 9134)">
+                <p>
+                  <a id="Complete">
+                    <a href="#Complete">
+                      <code><span>this.Complete</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9134">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Complete</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:E:Spine.TrackEntry.Complete`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'E:Spine.TrackEntry.Complete\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    See  for details. Usage in C# and spine-unity is explained
+            
+            on the spine-unity documentation pages.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9135', 9135)" onmouseover="showTip(event, '9135', 9135)">
+                <p>
+                  <a id="Delay">
+                    <a href="#Delay">
+                      <code><span>this.Delay</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9135">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Delay</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Delay`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Delay\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Seconds to postpone playing the animation. When this track entry is the current track entry, <code>Delay</code>
+            postpones incrementing the <a href="/Nu/reference/spine-trackentry.html#TrackTime">TrackEntry.TrackTime</a>. When this track entry is queued, <code>Delay</code> is the time from
+            the start of the previous animation to when this track entry will become the current track entry (ie when the previous
+            track entry <a href="/Nu/reference/spine-trackentry.html#TrackTime">TrackEntry.TrackTime</a> >= this track entry's <code>Delay</code>).</p><p class='fsdocs-para'><a href="/Nu/reference/spine-trackentry.html#TimeScale">TrackEntry.TimeScale</a> affects the delay.</p><p class='fsdocs-para'>
+            When using <a href="/Nu/reference/spine-animationstate.html#AddAnimation">AnimationState.AddAnimation</a> with a <code>delay</code> <= 0, the delay
+            is set using the mix duration from the <a href="/Nu/reference/spine-animationstatedata.html">AnimationStateData</a>. If <a href="/Nu/reference/spine-trackentry.html">TrackEntry.mixDuration</a> is set afterward, the delay
+            may need to be adjusted.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9136', 9136)" onmouseover="showTip(event, '9136', 9136)">
+                <p>
+                  <a id="Dispose">
+                    <a href="#Dispose">
+                      <code><span>this.Dispose</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9136">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Dispose</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:E:Spine.TrackEntry.Dispose`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'E:Spine.TrackEntry.Dispose\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    See  for details. Usage in C# and spine-unity is explained
+            
+            on the spine-unity documentation pages.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9137', 9137)" onmouseover="showTip(event, '9137', 9137)">
+                <p>
+                  <a id="End">
+                    <a href="#End">
+                      <code><span>this.End</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9137">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.End</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:E:Spine.TrackEntry.End`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'E:Spine.TrackEntry.End\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    See  for details. Usage in C# and spine-unity is explained
+            
+            on the spine-unity documentation pages.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9138', 9138)" onmouseover="showTip(event, '9138', 9138)">
+                <p>
+                  <a id="Event">
+                    <a href="#Event">
+                      <code><span>this.Event</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9138">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Event</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animationstate-trackentryeventdelegate.html">TrackEntryEventDelegate</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="/Nu/reference/spine-animationstate-trackentryeventdelegate.html">TrackEntryEventDelegate</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9139', 9139)" onmouseover="showTip(event, '9139', 9139)">
+                <p>
+                  <a id="EventThreshold">
+                    <a href="#EventThreshold">
+                      <code><span>this.EventThreshold</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9139">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.EventThreshold</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.EventThreshold`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.EventThreshold\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            When the mix percentage (<a href="/Nu/reference/spine-trackentry.html#MixTime">TrackEntry.MixTime</a> / <a href="/Nu/reference/spine-trackentry.html#MixDuration">TrackEntry.MixDuration</a>) is less than the
+            <code>EventThreshold</code>, event timelines are applied while this animation is being mixed out. Defaults to 0, so event
+            timelines are not applied while this animation is being mixed out.
+            
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9140', 9140)" onmouseover="showTip(event, '9140', 9140)">
+                <p>
+                  <a id="HoldPrevious">
+                    <a href="#HoldPrevious">
+                      <code><span>this.HoldPrevious</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9140">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.HoldPrevious</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.HoldPrevious`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.HoldPrevious\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            If true, when mixing from the previous animation to this animation, the previous animation is applied as normal instead
+            of being mixed out.</p><p class='fsdocs-para'>
+            When mixing between animations that key the same property, if a lower track also keys that property then the value will
+            briefly dip toward the lower track value during the mix. This happens because the first animation mixes from 100% to 0%
+            while the second animation mixes from 0% to 100%. Setting <code>HoldPrevious</code> to true applies the first animation
+            at 100% during the mix so the lower track value is overwritten. Such dipping does not occur on the lowest track which
+            keys the property, only when a higher track also keys the property.</p><p class='fsdocs-para'>
+            Snapping will occur if <code>HoldPrevious</code> is true and this animation does not key all the same properties as the
+            previous animation.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9141', 9141)" onmouseover="showTip(event, '9141', 9141)">
+                <p>
+                  <a id="Interrupt">
+                    <a href="#Interrupt">
+                      <code><span>this.Interrupt</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9141">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Interrupt</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:E:Spine.TrackEntry.Interrupt`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'E:Spine.TrackEntry.Interrupt\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    See  for details. Usage in C# and spine-unity is explained
+            
+            on the spine-unity documentation pages.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9142', 9142)" onmouseover="showTip(event, '9142', 9142)">
+                <p>
+                  <a id="InterruptAlpha">
+                    <a href="#InterruptAlpha">
+                      <code><span>this.InterruptAlpha</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9142">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.InterruptAlpha</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>float32</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>float32</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9143', 9143)" onmouseover="showTip(event, '9143', 9143)">
+                <p>
+                  <a id="IsComplete">
+                    <a href="#IsComplete">
+                      <code><span>this.IsComplete</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9143">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsComplete</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.IsComplete`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.IsComplete\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            Returns true if at least one loop has been completed.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9144', 9144)" onmouseover="showTip(event, '9144', 9144)">
+                <p>
+                  <a id="IsEmptyAnimation">
+                    <a href="#IsEmptyAnimation">
+                      <code><span>this.IsEmptyAnimation</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9144">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsEmptyAnimation</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.IsEmptyAnimation`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.IsEmptyAnimation\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    Returns true if this entry is for the empty animation. See <a href="/Nu/reference/spine-animationstate.html#SetEmptyAnimation">AnimationState.SetEmptyAnimation</a>,
+            <a href="/Nu/reference/spine-animationstate.html#AddEmptyAnimation">AnimationState.AddEmptyAnimation</a>, and <a href="/Nu/reference/spine-animationstate.html#SetEmptyAnimations">AnimationState.SetEmptyAnimations</a>.
+            
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9145', 9145)" onmouseover="showTip(event, '9145', 9145)">
+                <p>
+                  <a id="IsNextReady">
+                    <a href="#IsNextReady">
+                      <code><span>this.IsNextReady</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9145">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsNextReady</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.IsNextReady`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.IsNextReady\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    Returns true if there is a <a href="/Nu/reference/spine-trackentry.html#Next">TrackEntry.Next</a> track entry that will become the current track entry during the
+            next <a href="/Nu/reference/spine-animationstate.html#Update">AnimationState.Update</a>.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9146', 9146)" onmouseover="showTip(event, '9146', 9146)">
+                <p>
+                  <a id="Loop">
+                    <a href="#Loop">
+                      <code><span>this.Loop</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9146">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Loop</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Loop`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Loop\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                            If true, the animation will repeat. If false it will not, instead its last frame is applied if played beyond its
+            duration.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9147', 9147)" onmouseover="showTip(event, '9147', 9147)">
+                <p>
+                  <a id="MixAttachmentThreshold">
+                    <a href="#MixAttachmentThreshold">
+                      <code><span>this.MixAttachmentThreshold</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9147">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixAttachmentThreshold</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixAttachmentThreshold`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixAttachmentThreshold\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            When the mix percentage (<a href="/Nu/reference/spine-trackentry.html#MixTime">TrackEntry.MixTime</a> / <a href="/Nu/reference/spine-trackentry.html#MixDuration">TrackEntry.MixDuration</a>) is less than the
+            <code>MixAttachmentThreshold</code>, attachment timelines are applied while this animation is being mixed out. Defaults
+            to 0, so attachment timelines are not applied while this animation is being mixed out.
+            
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9148', 9148)" onmouseover="showTip(event, '9148', 9148)">
+                <p>
+                  <a id="MixBlend">
+                    <a href="#MixBlend">
+                      <code><span>this.MixBlend</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9148">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixBlend</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixBlend`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixBlend\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Controls how properties keyed in the animation are mixed with lower tracks. Defaults to <a href="/Nu/reference/spine-mixblend.html">MixBlend.Replace</a>.
+            </p><p class='fsdocs-para'>
+            Track entries on track 0 ignore this setting and always use <a href="/Nu/reference/spine-mixblend.html">MixBlend.First</a>.
+            </p><p class='fsdocs-para'>
+             The <code>MixBlend</code> can be set for a new track entry only before <a href="/Nu/reference/spine-animationstate.html#Apply">AnimationState.Apply</a> is first
+             called.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9149', 9149)" onmouseover="showTip(event, '9149', 9149)">
+                <p>
+                  <a id="MixDrawOrderThreshold">
+                    <a href="#MixDrawOrderThreshold">
+                      <code><span>this.MixDrawOrderThreshold</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9149">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixDrawOrderThreshold</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixDrawOrderThreshold`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixDrawOrderThreshold\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            When the mix percentage (<a href="/Nu/reference/spine-trackentry.html#MixTime">TrackEntry.MixTime</a> / <a href="/Nu/reference/spine-trackentry.html#MixDuration">TrackEntry.MixDuration</a>) is less than the
+            <code>MixDrawOrderThreshold</code>, draw order timelines are applied while this animation is being mixed out. Defaults to
+            0, so draw order timelines are not applied while this animation is being mixed out.
+            
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9150', 9150)" onmouseover="showTip(event, '9150', 9150)">
+                <p>
+                  <a id="MixDuration">
+                    <a href="#MixDuration">
+                      <code><span>this.MixDuration</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9150">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixDuration</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixDuration`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixDuration\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Seconds for mixing from the previous animation to this animation. Defaults to the value provided by AnimationStateData
+            <a href="/Nu/reference/spine-animationstatedata.html#GetMix">AnimationStateData.GetMix</a> based on the animation before this animation (if any).</p><p class='fsdocs-para'>
+            The <code>MixDuration</code> can be set manually rather than use the value from
+            <a href="/Nu/reference/spine-animationstatedata.html#GetMix">AnimationStateData.GetMix</a>. In that case, the <code>MixDuration</code> can be set for a new
+            track entry only before <a href="/Nu/reference/spine-animationstate.html#Update">AnimationState.Update</a> is first called.</p><p class='fsdocs-para'>
+            When using <a href="/Nu/reference/spine-animationstate.html#AddAnimation">AnimationState.AddAnimation</a> with a <code>Delay</code> <= 0, the
+            <a href="/Nu/reference/spine-trackentry.html#Delay">TrackEntry.Delay</a> is set using the mix duration from the <a href="/Nu/reference/spine-animationstatedata.html">AnimationStateData</a>. If <code>mixDuration</code> is set
+            afterward, the delay may need to be adjusted. For example:</p><p class='fsdocs-para'><code>entry.Delay = entry.previous.TrackComplete - entry.MixDuration;</code></p><p class='fsdocs-para'>Alternatively, <a href="/Nu/reference/spine-trackentry.html#SetMixDuration">TrackEntry.SetMixDuration</a> can be used to recompute the delay:</p><p class='fsdocs-para'><code>entry.SetMixDuration(0.25f, 0);</code></p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9151', 9151)" onmouseover="showTip(event, '9151', 9151)">
+                <p>
+                  <a id="MixTime">
+                    <a href="#MixTime">
+                      <code><span>this.MixTime</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9151">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixTime</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixTime`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixTime\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            Seconds from 0 to the <a href="/Nu/reference/spine-trackentry.html#MixDuration">TrackEntry.MixDuration</a> when mixing from the previous animation to this animation. May be
+            slightly more than <code>MixDuration</code> when the mix is complete.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9152', 9152)" onmouseover="showTip(event, '9152', 9152)">
+                <p>
+                  <a id="MixingFrom">
+                    <a href="#MixingFrom">
+                      <code><span>this.MixingFrom</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9152">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixingFrom</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixingFrom`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixingFrom\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            The track entry for the previous animation when mixing from the previous animation to this animation, or null if no
+            mixing is currently occurring. When mixing from multiple animations, <code>MixingFrom</code> makes up a linked list.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9153', 9153)" onmouseover="showTip(event, '9153', 9153)">
+                <p>
+                  <a id="MixingTo">
+                    <a href="#MixingTo">
+                      <code><span>this.MixingTo</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9153">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MixingTo</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.MixingTo`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.MixingTo\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            The track entry for the next animation when mixing from this animation to the next animation, or null if no mixing is
+            currently occurring. When mixing to multiple animations, <code>MixingTo</code> makes up a linked list.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9154', 9154)" onmouseover="showTip(event, '9154', 9154)">
+                <p>
+                  <a id="Next">
+                    <a href="#Next">
+                      <code><span>this.Next</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9154">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Next</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Next`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Next\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            The animation queued to start after this animation, or null if there is none. <code>next</code> makes up a doubly linked
+            list.
+            <p class='fsdocs-para'>
+            See <a href="/Nu/reference/spine-animationstate.html#ClearNext">AnimationState.ClearNext</a> to truncate the list.</p>
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9155', 9155)" onmouseover="showTip(event, '9155', 9155)">
+                <p>
+                  <a id="Previous">
+                    <a href="#Previous">
+                      <code><span>this.Previous</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9155">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Previous</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Previous`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Previous\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            The animation queued to play before this animation, or null. <code>previous</code> makes up a doubly linked list.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-trackentry.html">TrackEntry</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9156', 9156)" onmouseover="showTip(event, '9156', 9156)">
+                <p>
+                  <a id="Reset">
+                    <a href="#Reset">
+                      <code><span>this.Reset</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9156">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Reset</span></code>
+                  <br/>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Spine.TrackEntry.Reset`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Spine.TrackEntry.Reset\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9157', 9157)" onmouseover="showTip(event, '9157', 9157)">
+                <p>
+                  <a id="ResetRotationDirections">
+                    <a href="#ResetRotationDirections">
+                      <code><span>this.ResetRotationDirections</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9157">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ResetRotationDirections</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Spine.TrackEntry.ResetRotationDirections`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Spine.TrackEntry.ResetRotationDirections\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Resets the rotation directions for mixing this entry's rotate timelines. This can be useful to avoid bones rotating the
+            long way around when using <a href="/Nu/reference/spine-trackentry.html">TrackEntry.alpha</a> and starting animations on other tracks.</p><p class='fsdocs-para'>
+            Mixing with <a href="/Nu/reference/spine-mixblend.html">MixBlend.Replace</a> involves finding a rotation between two others, which has two possible solutions:
+            the short way or the long way around. The two rotations likely change over time, so which direction is the short or long
+            way also changes. If the short way was always chosen, bones would flip to the other side when that direction became the
+            long way. TrackEntry chooses the short way the first time it is applied and remembers that direction.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9158', 9158)" onmouseover="showTip(event, '9158', 9158)">
+                <p>
+                  <a id="Reverse">
+                    <a href="#Reverse">
+                      <code><span>this.Reverse</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9158">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Reverse</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.Reverse`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.Reverse\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                            If true, the animation will be applied in reverse. Events are not fired when an animation is applied in reverse.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9159', 9159)" onmouseover="showTip(event, '9159', 9159)">
+                <p>
+                  <a id="SetMixDuration">
+                    <a href="#SetMixDuration">
+                      <code><span>this.SetMixDuration</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9159">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.SetMixDuration</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        mixDuration
+                      </b>
+                      :
+                      <code>float32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        delay
+                      </b>
+                      :
+                      <code>float32</code>
+                       - 
+                      If > 0, sets <a href="/Nu/reference/spine-trackentry.html#Delay">TrackEntry.Delay</a>. If <= 0, the delay set is the duration of the previous track
+            	entry minus the specified mix duration plus the specified<code> delay</code> (ie the mix ends at
+            	(<code>delay</code> = 0) or before (<code>delay</code> < 0) the previous track entry duration). If the previous
+            	entry is looping, its next loop completion is used instead of its duration.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Spine.TrackEntry.SetMixDuration`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Spine.TrackEntry.SetMixDuration\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    Sets both <a href="/Nu/reference/spine-trackentry.html#MixDuration">TrackEntry.MixDuration</a> and <a href="/Nu/reference/spine-trackentry.html#Delay">TrackEntry.Delay</a>.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    mixDuration
+                  </span>
+                  :
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    delay
+                  </span>
+                  :
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    If > 0, sets <a href="/Nu/reference/spine-trackentry.html#Delay">TrackEntry.Delay</a>. If <= 0, the delay set is the duration of the previous track
+            	entry minus the specified mix duration plus the specified<code> delay</code> (ie the mix ends at
+            	(<code>delay</code> = 0) or before (<code>delay</code> < 0) the previous track entry duration). If the previous
+            	entry is looping, its next loop completion is used instead of its duration.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9160', 9160)" onmouseover="showTip(event, '9160', 9160)">
+                <p>
+                  <a id="ShortestRotation">
+                    <a href="#ShortestRotation">
+                      <code><span>this.ShortestRotation</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9160">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ShortestRotation</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.ShortestRotation`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.ShortestRotation\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            If true, mixing rotation between tracks always uses the shortest rotation direction. If the rotation is animated, the
+            shortest rotation direction may change during the mix.
+            </p><p class='fsdocs-para'>
+            If false, the shortest rotation direction is remembered when the mix starts and the same direction is used for the rest
+            of the mix. Defaults to false.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9161', 9161)" onmouseover="showTip(event, '9161', 9161)">
+                <p>
+                  <a id="Start">
+                    <a href="#Start">
+                      <code><span>this.Start</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9161">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Start</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:E:Spine.TrackEntry.Start`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'E:Spine.TrackEntry.Start\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    See  for details. Usage in C# and spine-unity is explained
+            
+            on the spine-unity documentation pages.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/spine-animationstate-trackentrydelegate.html">TrackEntryDelegate</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9162', 9162)" onmouseover="showTip(event, '9162', 9162)">
+                <p>
+                  <a id="TimeScale">
+                    <a href="#TimeScale">
+                      <code><span>this.TimeScale</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9162">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TimeScale</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.TimeScale`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.TimeScale\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            Multiplier for the delta time when this track entry is updated, causing time for this animation to pass slower or
+            faster. Defaults to 1.</p><p class='fsdocs-para'>
+            Values < 0 are not supported. To play an animation in reverse, use <a href="/Nu/reference/spine-trackentry.html#Reverse">TrackEntry.Reverse</a>.</p><p class='fsdocs-para'><a href="/Nu/reference/spine-trackentry.html#MixTime">TrackEntry.MixTime</a> is not affected by track entry time scale, so <a href="/Nu/reference/spine-trackentry.html#MixDuration">TrackEntry.MixDuration</a> may need to be adjusted to
+            match the animation speed.</p><p class='fsdocs-para'>
+            When using <a href="/Nu/reference/spine-animationstate.html#AddAnimation">AnimationState.AddAnimation</a> with a <code>Delay</code> <= 0, the
+            <a href="/Nu/reference/spine-trackentry.html#Delay">TrackEntry.Delay</a> is set using the mix duration from the <a href="/Nu/reference/spine-animationstatedata.html">AnimationStateData</a>, assuming time scale to be 1. If
+            the time scale is not 1, the delay may need to be adjusted.</p><p class='fsdocs-para'>
+            See AnimationState <a href="/Nu/reference/spine-animationstate.html#TimeScale">AnimationState.TimeScale</a> for affecting all animations.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9163', 9163)" onmouseover="showTip(event, '9163', 9163)">
+                <p>
+                  <a id="ToString">
+                    <a href="#ToString">
+                      <code><span>this.ToString</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9163">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ToString</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9164', 9164)" onmouseover="showTip(event, '9164', 9164)">
+                <p>
+                  <a id="TrackComplete">
+                    <a href="#TrackComplete">
+                      <code><span>this.TrackComplete</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9164">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TrackComplete</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>float32</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.TrackComplete`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.TrackComplete\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    
+            If this track entry is non-looping, the track time in seconds when <a href="/Nu/reference/spine-trackentry.html#AnimationEnd">TrackEntry.AnimationEnd</a> is reached, or the current
+            <a href="/Nu/reference/spine-trackentry.html#TrackTime">TrackEntry.TrackTime</a> if it has already been reached. If this track entry is looping, the track time when this
+            animation will reach its next <a href="/Nu/reference/spine-trackentry.html#AnimationEnd">TrackEntry.AnimationEnd</a> (the next loop completion).
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9165', 9165)" onmouseover="showTip(event, '9165', 9165)">
+                <p>
+                  <a id="TrackEnd">
+                    <a href="#TrackEnd">
+                      <code><span>this.TrackEnd</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9165">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TrackEnd</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.TrackEnd`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.TrackEnd\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                <p class='fsdocs-para'>
+            The track time in seconds when this animation will be removed from the track. Defaults to the highest possible float
+            value, meaning the animation will be applied until a new animation is set or the track is cleared. If the track end time
+            is reached, no other animations are queued for playback, and mixing from any previous animations is complete, then the
+            properties keyed by the animation are set to the setup pose and the track is cleared.</p><p class='fsdocs-para'>
+            It may be desired to use <a href="/Nu/reference/spine-animationstate.html#AddEmptyAnimation">AnimationState.AddEmptyAnimation</a>  rather than have the animation
+            abruptly cease being applied.</p>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9166', 9166)" onmouseover="showTip(event, '9166', 9166)">
+                <p>
+                  <a id="TrackIndex">
+                    <a href="#TrackIndex">
+                      <code><span>this.TrackIndex</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9166">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TrackIndex</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.TrackIndex`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.TrackIndex\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    The index of the track where this entry is either current or queued.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9167', 9167)" onmouseover="showTip(event, '9167', 9167)">
+                <p>
+                  <a id="TrackTime">
+                    <a href="#TrackTime">
+                      <code><span>this.TrackTime</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9167">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TrackTime</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.TrackTime`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.TrackTime\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                
+            Current time in seconds this track entry has been the current track entry. The track time determines
+            <a href="/Nu/reference/spine-trackentry.html#AnimationTime">TrackEntry.AnimationTime</a>. The track time can be set to start the animation at a time other than 0, without affecting
+            looping.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9168', 9168)" onmouseover="showTip(event, '9168', 9168)">
+                <p>
+                  <a id="WasApplied">
+                    <a href="#WasApplied">
+                      <code><span>this.WasApplied</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9168">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.WasApplied</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Spine.TrackEntry.WasApplied`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Spine.TrackEntry.WasApplied\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <p class="fsdocs-summary">
+                    Returns true if this track entry has been applied at least once.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+
+</body>
+</html>
