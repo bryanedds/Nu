@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Nu.Math" name="author">
+    <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="Path<'Node> (Nu)" />
+    <meta property="og:title" content="Entity3dDispatcher<'model, 'message, 'command> (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="Path<'Node> (Nu)">
+    <meta name="twitter:title" content="Entity3dDispatcher<'model, 'message, 'command> (Nu)">
     
-    <title>Path<'Node> (Nu) | Nu</title>
+    <title>Entity3dDispatcher<'model, 'message, 'command> (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    Path<'Node> Type
+    Entity3dDispatcher<'model, 'message, 'command> Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -102,25 +102,29 @@
       </a>
     </dt>
     <dt>
-      Assembly: Nu.Math.dll
+      Assembly: Nu.dll
+    </dt>
+    <dt>
+      Parent Module: 
+      <a href="/Nu/reference/nu-entitydispatchermodule.html">
+        EntityDispatcherModule
+      </a>
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
+      <code><span><a href="/Nu/reference/nu-entitydispatchermodule-entitydispatcher-3.html">EntityDispatcher</a>&lt;<span>'model,&#32;'message,&#32;'command</span>&gt;</span></code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;'Node&gt;</span></code>
+      <code><a href="/Nu/reference/nu-dispatcher.html">Dispatcher</a></code>
       , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a></code>
+      <code><a href="/Nu/reference/nu-latebindings.html">LateBindings</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
-            A path through a graph of A* nodes.
-            
+         A 3d entity dispatcher.
       </p>
     </div>
   </div>
@@ -149,110 +153,60 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7533', 7533)" onmouseover="showTip(event, '7533', 7533)">
+              <code onmouseout="hideTip(event, '3976', 3976)" onmouseover="showTip(event, '3976', 3976)">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
-                      <code><span>Path<span><span>(<span>start</span>)</span></span></span></code>
+                      <code><span>Entity3dDispatcher<span><span>(<span>physical,&#32;lightProbe,&#32;light,&#32;initial</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7533">
+              <div class="fsdocs-tip" id="3976">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Path<span><span>(<span>start</span>)</span></span></span></code>
+                  <code><span>Entity3dDispatcher<span><span>(<span>physical,&#32;lightProbe,&#32;light,&#32;initial</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        start
+                        physical
                       </b>
                       :
-                      <code>'Node</code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  start
-                </span>
-                :
-                <code>'Node</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div>
-    <h3>
-      Instance members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Instance member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '7534', 7534)" onmouseover="showTip(event, '7534', 7534)">
-                <p>
-                  <a id="AddStep">
-                    <a href="#AddStep">
-                      <code><span>this.AddStep</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="7534">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.AddStep</span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        step
-                      </b>
-                      :
-                      <code>'Node</code>
+                      <code>bool</code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        stepCost
+                        lightProbe
                       </b>
                       :
-                      <code>float32</code>
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        light
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        initial
+                      </b>
+                      :
+                      <code>'model</code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-path-1.html">Path</a>&lt;'Node&gt;</span></code>
+                    <code><span><a href="/Nu/reference/nu-entitydispatchermodule-entity3ddispatcher-3.html">Entity3dDispatcher</a>&lt;<span>'model,&#32;'message,&#32;'command</span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -263,18 +217,34 @@
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  step
+                  physical
                 </span>
                 :
-                <code>'Node</code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  stepCost
+                  lightProbe
                 </span>
                 :
-                <code>float32</code>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  light
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  initial
+                </span>
+                :
+                <code>'model</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -283,7 +253,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><a href="/Nu/reference/nu-path-1.html">Path</a>&lt;'Node&gt;</span></code>
+                <code><span><a href="/Nu/reference/nu-entitydispatchermodule-entity3ddispatcher-3.html">Entity3dDispatcher</a>&lt;<span>'model,&#32;'message,&#32;'command</span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -292,115 +262,174 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7535', 7535)" onmouseover="showTip(event, '7535', 7535)">
+              <code onmouseout="hideTip(event, '3977', 3977)" onmouseover="showTip(event, '3977', 3977)">
                 <p>
-                  <a id="LastStep">
-                    <a href="#LastStep">
-                      <code><span>this.LastStep</span></code>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>Entity3dDispatcher<span><span>(<span>physical,&#32;lightProbe,&#32;light,&#32;makeInitial</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7535">
+              <div class="fsdocs-tip" id="3977">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.LastStep</span></code>
+                  <code><span>Entity3dDispatcher<span><span>(<span>physical,&#32;lightProbe,&#32;light,&#32;makeInitial</span>)</span></span></span></code>
                   <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        physical
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        lightProbe
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        light
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        makeInitial
+                      </b>
+                      :
+                      <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;'model</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="/Nu/reference/nu-entitydispatchermodule-entity3ddispatcher-3.html">Entity3dDispatcher</a>&lt;<span>'model,&#32;'message,&#32;'command</span>&gt;</span></code>
+                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Nu.Path`1.LastStep``')">
-                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Path`1.LastStep\'/>')">
-                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-              </div>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '7536', 7536)" onmouseover="showTip(event, '7536', 7536)">
-                <p>
-                  <a id="PreviousSteps">
-                    <a href="#PreviousSteps">
-                      <code><span>this.PreviousSteps</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="7536">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.PreviousSteps</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Nu.Path`1.PreviousSteps``')">
-                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Path`1.PreviousSteps\'/>')">
-                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-              </div>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '7537', 7537)" onmouseover="showTip(event, '7537', 7537)">
-                <p>
-                  <a id="TotalCost">
-                    <a href="#TotalCost">
-                      <code><span>this.TotalCost</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="7537">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.TotalCost</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Nu.Path`1.TotalCost``')">
-                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Path`1.TotalCost\'/>')">
-                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-              </div>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  physical
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lightProbe
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  light
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  makeInitial
+                </span>
+                :
+                <code><span><a href="/Nu/reference/nu-world.html">World</a>&#32;->&#32;'model</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="/Nu/reference/nu-entitydispatchermodule-entity3ddispatcher-3.html">Entity3dDispatcher</a>&lt;<span>'model,&#32;'message,&#32;'command</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
   <div></div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '3978', 3978)" onmouseover="showTip(event, '3978', 3978)">
+                <p>
+                  <a id="Properties">
+                    <a href="#Properties">
+                      <code><span>Entity3dDispatcher.Properties</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="3978">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Entity3dDispatcher.Properties</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydefinition">PropertyDefinition</a>&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydefinition">PropertyDefinition</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
         
     </div>
