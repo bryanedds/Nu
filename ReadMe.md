@@ -23,7 +23,7 @@ Getting Started with Nu
 
 Look here to get started with your own project in Nu -
 
-[Introductory Material](https://github.com/bryanedds/Nu/wiki)
+[Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material)
 
 [API Documentation](https://bryanedds.github.io/Nu/)
 
