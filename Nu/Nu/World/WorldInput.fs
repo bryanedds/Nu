@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open ImGuiNET
 open Prime
 

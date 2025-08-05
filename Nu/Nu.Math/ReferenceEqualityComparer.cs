@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     /// <summary>
     /// A simple reference equality comparer for use in C# (F# uses HashIdentity.Reference).

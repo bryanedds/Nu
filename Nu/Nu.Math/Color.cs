@@ -1,7 +1,6 @@
 using System;
-using System.Numerics;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// A 4-channel, floating point color.

@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.Numerics
 open System.Runtime.InteropServices
 open System.Threading
 open SDL2

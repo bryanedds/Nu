@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     public static class ISetExtension
     {

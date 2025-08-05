@@ -303,10 +303,10 @@ module Behavior =
     let inline notZero bhvr = map Generic.notZero bhvr
 
     /// A behavior that checks for non-positive values.
-    let inline isNeg bhvr = map (fun a -> a < Generic.zero ()) bhvr
+    let inline isNegative bhvr = map (fun a -> a < Generic.zero ()) bhvr
 
     /// A behavior that checks for positive values.
-    let inline isPos bhvr = map (fun a -> a >= Generic.zero ()) bhvr
+    let inline isPositive bhvr = map (fun a -> a >= Generic.zero ()) bhvr
 
     /// A negation behavior.
     let inline negate bhvr = map (fun a -> Generic.negate a) bhvr

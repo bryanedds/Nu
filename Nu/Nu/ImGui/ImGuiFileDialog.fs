@@ -4,6 +4,7 @@
 namespace ImGuiNET
 open System
 open System.IO
+open System.Numerics
 open ImGuiNET
 open Prime
 open Nu

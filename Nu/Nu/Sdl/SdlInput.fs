@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
 open Prime

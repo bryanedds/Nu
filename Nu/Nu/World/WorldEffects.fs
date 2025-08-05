@@ -46,7 +46,7 @@ module Effect =
               RenderType_ : RenderType
               ParticleSystem_ : ParticleSystem
               HistoryMax_ : int
-              History_ : Effects.Slice Deque
+              History_ : Effects.Slice System.Collections.Generic.Deque
               Definitions_ : Definitions
               TagTokens_ : Map<string, Slice>
               Descriptor_ : EffectDescriptor }
@@ -200,7 +200,7 @@ module Effect =
 
     /// Make an effect.
     let make startTime offset transform shadowOffset renderType descriptor =
-        makePlus startTime offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
+        makePlus startTime offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (System.Collections.Generic.Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =

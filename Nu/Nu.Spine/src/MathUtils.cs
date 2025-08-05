@@ -103,33 +103,33 @@ namespace Spine {
 #else
 		/// <summary>Returns the sine of a given angle in radians.</summary>
 		static public float Sin (float radians) {
-			return (float)Math.Sin(radians);
+			return (float)System.Math.Sin(radians);
 		}
 
 		/// <summary>Returns the cosine of a given angle in radians.</summary>
 		static public float Cos (float radians) {
-			return (float)Math.Cos(radians);
+			return (float)System.Math.Cos(radians);
 		}
 
 		/// <summary>Returns the sine of a given angle in degrees.</summary>
 		static public float SinDeg (float degrees) {
-			return (float)Math.Sin(degrees * DegRad);
+			return (float)System.Math.Sin(degrees * DegRad);
 		}
 
 		/// <summary>Returns the cosine of a given angle in degrees.</summary>
 		static public float CosDeg (float degrees) {
-			return (float)Math.Cos(degrees * DegRad);
+			return (float)System.Math.Cos(degrees * DegRad);
 		}
 
 
 		static public float Atan2Deg (float y, float x) {
-			return (float)Math.Atan2(y, x) * RadDeg;
+			return (float)System.Math.Atan2(y, x) * RadDeg;
 		}
 
 
 		/// <summary>Returns the atan2 using Math.Atan2.</summary>
 		static public float Atan2 (float y, float x) {
-			return (float)Math.Atan2(y, x);
+			return (float)System.Math.Atan2(y, x);
 		}
 #endif
 		static public float Clamp (float value, float min, float max) {
@@ -145,8 +145,8 @@ namespace Spine {
 		static public float RandomTriangle (float min, float max, float mode) {
 			float u = (float)random.NextDouble();
 			float d = max - min;
-			if (u <= (mode - min) / d) return min + (float)Math.Sqrt(u * d * (mode - min));
-			return max - (float)Math.Sqrt((1 - u) * d * (max - mode));
+			if (u <= (mode - min) / d) return min + (float)System.Math.Sqrt(u * d * (mode - min));
+			return max - (float)System.Math.Sqrt((1 - u) * d * (max - mode));
 		}
 	}
 
@@ -169,8 +169,8 @@ namespace Spine {
 		}
 
 		protected override float Apply (float a) {
-			if (a <= 0.5f) return (float)Math.Pow(a * 2, Power) / 2;
-			return (float)Math.Pow((a - 1) * 2, Power) / (Power % 2 == 0 ? -2 : 2) + 1;
+			if (a <= 0.5f) return (float)System.Math.Pow(a * 2, Power) / 2;
+			return (float)System.Math.Pow((a - 1) * 2, Power) / (Power % 2 == 0 ? -2 : 2) + 1;
 		}
 	}
 
@@ -179,7 +179,7 @@ namespace Spine {
 		}
 
 		protected override float Apply (float a) {
-			return (float)Math.Pow(a - 1, Power) * (Power % 2 == 0 ? -1 : 1) + 1;
+			return (float)System.Math.Pow(a - 1, Power) * (Power % 2 == 0 ? -1 : 1) + 1;
 		}
 	}
 

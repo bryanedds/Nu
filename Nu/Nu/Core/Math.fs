@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Nu
+namespace System.Numerics
 open System
 open System.Collections.Generic
 open System.ComponentModel
@@ -9,6 +9,7 @@ open System.Globalization
 open System.Numerics
 open FSharp.NativeInterop
 open Prime
+open Nu
 
 [<AutoOpen>]
 module Vector2 =

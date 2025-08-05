@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     /// <summary>
     /// Concurrent priority queue.

@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     /// <summary>
     /// Priority queue.

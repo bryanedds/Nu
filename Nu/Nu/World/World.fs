@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.Numerics
 open System.Reflection
 open System.Threading
 open SDL2

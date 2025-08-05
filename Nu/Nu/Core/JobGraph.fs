@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
 open Prime

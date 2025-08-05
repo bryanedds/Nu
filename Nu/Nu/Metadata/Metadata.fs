@@ -7,6 +7,7 @@ open System.Buffers.Binary
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
+open System.Numerics
 open TiledSharp
 open Prime
 

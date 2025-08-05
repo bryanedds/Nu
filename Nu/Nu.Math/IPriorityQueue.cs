@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     /// <summary>
     /// Priority queue interface.

@@ -11,7 +11,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Represents a 2D vector using two 32-bit integer numbers.
