@@ -1813,14 +1813,15 @@ and [<Struct>] ArgImSim<'s when 's :> Simulant> =
       ArgValue : obj }
 
 /// The world's dispatchers (including facets).
-/// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
+/// NOTE: it would be nice to make this record internal, but doing so would non-trivially increases the number of
 /// parameters of World.make, which is already rather long.
 and [<ReferenceEquality>] Dispatchers =
-    { Facets : Map<string, Facet>
-      EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
-      ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher> }
+    internal
+        { Facets : Map<string, Facet>
+          EntityDispatchers : Map<string, EntityDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GameDispatchers : Map<string, GameDispatcher> }
 
 /// The subsystems contained by the engine.
 and [<ReferenceEquality>] internal Subsystems =

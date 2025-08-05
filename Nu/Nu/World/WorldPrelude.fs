@@ -436,7 +436,7 @@ module internal AmbientState =
     let [<Literal>] private FramePacingMask =           0b01000u
     let [<Literal>] private AdvancementClearedMask =    0b10000u
 
-    /// The ambient state of the world.
+    /// The 'ambient' state of the world (miscellaneous world state such as time).
     type [<ReferenceEquality>] internal 'w AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
