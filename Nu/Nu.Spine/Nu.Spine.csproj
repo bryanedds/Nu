@@ -11,6 +11,7 @@
         <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
         <RepositoryBranch>master</RepositoryBranch>
         <RepositoryType>git</RepositoryType>
+        <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
