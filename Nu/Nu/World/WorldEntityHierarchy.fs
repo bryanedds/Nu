@@ -322,26 +322,6 @@ module Permafreezer3dDispatcherExtensions =
         member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
         member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
 
-[<AutoOpen>]
-module Freezer3dFacetExtensions =
-
-    type Entity with
-        member this.GetFrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.FrozenBundles) world
-        member this.SetFrozenBundles (value : StaticModelSurfaceBundle array) world = this.Set (nameof this.FrozenBundles) value world
-        member this.FrozenBundles = lens (nameof this.FrozenBundles) this this.GetFrozenBundles this.SetFrozenBundles
-        member this.GetFrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.FrozenShapes) world
-        member this.SetFrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
-        member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
-        member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
-        member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
-        member this.Frozen = lens (nameof this.Frozen) this this.GetFrozen this.SetFrozen
-        member this.GetSurfaceMaterialsPopulated world : bool = this.Get (nameof this.SurfaceMaterialsPopulated) world
-        member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
-        member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
-        member this.GetIgnoreGlobalFreezerCommands world : bool = this.Get (nameof this.IgnoreGlobalFreezerCommands) world
-        member this.SetIgnoreGlobalFreezerCommands (value : bool) world = this.Set (nameof this.IgnoreGlobalFreezerCommands) value world
-        member this.IgnoreGlobalFreezerCommands = lens (nameof this.IgnoreGlobalFreezerCommands) this this.GetIgnoreGlobalFreezerCommands this.SetIgnoreGlobalFreezerCommands
-
         member internal this.RegisterFrozenShapesNav getFrozenShapes world =
             let mutable index = 0
             let frozenShapes = getFrozenShapes this world
@@ -407,23 +387,6 @@ module Freezer3dFacetExtensions =
             this.UnregisterFrozenShapesNav getFrozenShapes world
             this.UnregisterFrozenShapesPhysics getFrozenShapes world
 
-        member internal this.UpdateFrozenHierarchy world =
-            let getFrozenShapes = fun (entity : Entity) -> entity.GetFrozenShapes
-            if this.GetFrozen world then
-                let surfaceMaterialsPopulated = this.GetSurfaceMaterialsPopulated world
-                let (frozenBundles, frozenShapes, world) = World.freezeEntityHierarchy surfaceMaterialsPopulated this world
-                this.SetFrozenBundles frozenBundles world
-                this.SetStatic true world
-                if this.GetSelected world then this.UnregisterFrozenShapes getFrozenShapes world
-                this.SetFrozenShapes frozenShapes world
-                if this.GetSelected world then this.RegisterFrozenShapes getFrozenShapes world
-            else
-                if this.GetSelected world then this.UnregisterFrozenShapes getFrozenShapes world
-                this.SetFrozenShapes [||] world
-                this.SetStatic false world
-                this.SetFrozenBundles [||] world
-                World.thawEntityHierarchy (this.GetPresenceConferred world) this world
-
         member internal this.RenderFrozenBundles (bounds, presenceConferred, getFrozenBundles, renderPass, entity, world) =
 
             // compute intersection function based on render pass
@@ -444,17 +407,6 @@ module Freezer3dFacetExtensions =
                 let bundles = getFrozenBundles entity world
                 let message = RenderStaticModelSurfaceBundles { StaticModelSurfaceBundles = bundles; RenderPass = renderPass }
                 World.enqueueRenderMessage3d message world
-
-        /// Permanently freeze a freezer entity's descendents by freezing and then destroying them.
-        member this.Permafreeze world =
-            this.SetFrozen true world
-            let descendents =
-                this.GetDescendants world
-                |> Array.ofSeq
-                |> Array.sortBy (fun descendant -> descendant.Names.Length)
-            for descendent in descendents do
-                if descendent.GetExists world && descendent.GetSurfaceFreezable world then
-                    World.destroyEntityImmediate descendent world
 
 /// Gives an entity the base behavior of a permafrozen hierarchy of potentially-rigid model surfaces.
 type Permafreezer3dDispatcher () =
@@ -484,6 +436,54 @@ type Permafreezer3dDispatcher () =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
             [|Intersection.ofNullable intersectionOpt|]
         else [|Miss|]
+
+[<AutoOpen>]
+module Freezer3dFacetExtensions =
+
+    type Entity with
+        member this.GetFrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.FrozenBundles) world
+        member this.SetFrozenBundles (value : StaticModelSurfaceBundle array) world = this.Set (nameof this.FrozenBundles) value world
+        member this.FrozenBundles = lens (nameof this.FrozenBundles) this this.GetFrozenBundles this.SetFrozenBundles
+        member this.GetFrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.FrozenShapes) world
+        member this.SetFrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
+        member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
+        member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
+        member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
+        member this.Frozen = lens (nameof this.Frozen) this this.GetFrozen this.SetFrozen
+        member this.GetSurfaceMaterialsPopulated world : bool = this.Get (nameof this.SurfaceMaterialsPopulated) world
+        member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
+        member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
+        member this.GetIgnoreGlobalFreezerCommands world : bool = this.Get (nameof this.IgnoreGlobalFreezerCommands) world
+        member this.SetIgnoreGlobalFreezerCommands (value : bool) world = this.Set (nameof this.IgnoreGlobalFreezerCommands) value world
+        member this.IgnoreGlobalFreezerCommands = lens (nameof this.IgnoreGlobalFreezerCommands) this this.GetIgnoreGlobalFreezerCommands this.SetIgnoreGlobalFreezerCommands
+
+        member internal this.UpdateFrozenHierarchy world =
+            let getFrozenShapes = fun (entity : Entity) -> entity.GetFrozenShapes
+            if this.GetFrozen world then
+                let surfaceMaterialsPopulated = this.GetSurfaceMaterialsPopulated world
+                let (frozenBundles, frozenShapes, world) = World.freezeEntityHierarchy surfaceMaterialsPopulated this world
+                this.SetFrozenBundles frozenBundles world
+                this.SetStatic true world
+                if this.GetSelected world then this.UnregisterFrozenShapes getFrozenShapes world
+                this.SetFrozenShapes frozenShapes world
+                if this.GetSelected world then this.RegisterFrozenShapes getFrozenShapes world
+            else
+                if this.GetSelected world then this.UnregisterFrozenShapes getFrozenShapes world
+                this.SetFrozenShapes [||] world
+                this.SetStatic false world
+                this.SetFrozenBundles [||] world
+                World.thawEntityHierarchy (this.GetPresenceConferred world) this world
+
+        /// Permanently freeze a freezer entity's descendents by freezing and then destroying them.
+        member this.Permafreeze world =
+            this.SetFrozen true world
+            let descendents =
+                this.GetDescendants world
+                |> Array.ofSeq
+                |> Array.sortBy (fun descendant -> descendant.Names.Length)
+            for descendent in descendents do
+                if descendent.GetExists world && descendent.GetSurfaceFreezable world then
+                    World.destroyEntityImmediate descendent world
 
 /// Gives an entity the ability to freeze hierarchies of 3D entities.
 type Freezer3dFacet () =
