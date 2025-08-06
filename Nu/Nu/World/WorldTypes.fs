@@ -2004,18 +2004,17 @@ and [<NoEquality; NoComparison>] World =
         AmbientState.getTimers this.AmbientState
 
     /// Get the current ImSim context.
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextImSim =
         this.WorldExtension.ContextImSim
 
     /// Get the current ImSim Game context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGame =
         if this.WorldExtension.ContextImSim.Names.Length > 0
         then Game.Handle
         else raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
     /// Get the current ImSim Screen context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextScreen =
         match this.WorldExtension.ContextImSim with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
@@ -2024,7 +2023,6 @@ and [<NoEquality; NoComparison>] World =
         | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
     /// Get the current ImSim Group context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGroup =
         match this.WorldExtension.ContextImSim with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
@@ -2032,7 +2030,6 @@ and [<NoEquality; NoComparison>] World =
         | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
     /// Get the current ImSim Entity context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextEntity =
         match this.WorldExtension.ContextImSim with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
@@ -2045,18 +2042,17 @@ and [<NoEquality; NoComparison>] World =
         | (false, _) -> false
 
     /// Get the recent ImSim declaration.
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredImSim =
         this.WorldExtension.DeclaredImSim
 
     /// Get the recent ImSim Game declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGame =
         if this.WorldExtension.DeclaredImSim.Names.Length > 0
         then Game.Handle
         else raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImSim Screen declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredScreen =
         match this.WorldExtension.DeclaredImSim with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
@@ -2065,7 +2061,6 @@ and [<NoEquality; NoComparison>] World =
         | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImSim Group declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGroup =
         match this.WorldExtension.DeclaredImSim with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
@@ -2073,7 +2068,6 @@ and [<NoEquality; NoComparison>] World =
         | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImSim Entity declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredEntity =
         match this.WorldExtension.DeclaredImSim with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
