@@ -2288,7 +2288,7 @@ type LayoutFacet () =
         performLayout entity world
         World.sense handleMount entity.MountEvent entity (nameof LayoutFacet) world
         World.sense handleLayoutPlus entity.Size.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense handleLayout entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayout entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
 
