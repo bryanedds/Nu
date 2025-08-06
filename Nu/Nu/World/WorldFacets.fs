@@ -2226,9 +2226,33 @@ type LayoutFacet () =
                 gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
             | Manual -> ()
 
+    static let performLayoutTop (entity : Entity) world =
+        let mutable top = entity
+        let mutable currentOpt = Some top
+        while currentOpt.IsSome do
+            match top.GetMountOpt world with
+            | Some mount ->
+                let mountAddress = Relation.resolve top.EntityAddress mount
+                if  mountAddress.Names.Length > 3 then
+                    let mountee = Nu.Entity mountAddress
+                    if  mountee.GetExists world &&
+                        mountee.Has<LayoutFacet> world then
+                        match mountee.GetLayout world with
+                        | Flow _ | Dock _ -> top <- mountee; currentOpt <- Some top
+                        | Grid _ | Manual -> currentOpt <- None
+                    else currentOpt <- None
+                else currentOpt <- None
+            | None -> currentOpt <- None
+        performLayout top world
+
     static let handleLayout evt world =
         let entity = evt.Subscriber : Entity
         performLayout entity world
+        Cascade
+
+    static let handleLayoutTop evt world =
+        let entity = evt.Subscriber : Entity
+        performLayoutTop entity world
         Cascade
 
     static let handleMount evt world =
@@ -2263,7 +2287,7 @@ type LayoutFacet () =
     override this.Register (entity, world) =
         performLayout entity world
         World.sense handleMount entity.MountEvent entity (nameof LayoutFacet) world
-        World.sense handleLayout entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayoutTop entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
 
