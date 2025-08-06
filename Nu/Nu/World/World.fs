@@ -183,6 +183,7 @@ module WorldModule4 =
                  TerrainDispatcher ()
                  Nav3dConfigDispatcher ()
                  EditVolumeDispatcher ()
+                 Permafreezer3dDispatcher ()
                  StaticModelHierarchyDispatcher ()
                  RigidModelHierarchyDispatcher ()]
 

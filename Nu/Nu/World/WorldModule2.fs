@@ -2271,7 +2271,9 @@ module EntityPropertyDescriptor =
             propertyName = "Angles" ||
             propertyName = "AnglesLocal" ||
             propertyName = "Light" ||
-            propertyName = "LightProbe" then
+            propertyName = "LightProbe" ||
+            propertyName = "PermafrozenBundles" ||
+            propertyName = "PermafrozenShapes" then
             false
         else
             propertyName = "Degrees" ||

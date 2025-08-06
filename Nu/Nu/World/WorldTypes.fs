@@ -647,6 +647,14 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     abstract Unregister : entity : Entity * world : World -> unit
     default this.Unregister (_, _) = ()
 
+    /// Participate in the registration of an entity's physics with the physics subsystems.
+    abstract RegisterPhysics : entity : Entity * world : World -> unit
+    default this.RegisterPhysics (_, _) = ()
+
+    /// Participate in the unregistration of an entity's physics from the physics subsystems.
+    abstract UnregisterPhysics : entity : Entity * world : World -> unit
+    default this.UnregisterPhysics (_, _) = ()
+
     /// Attempt to ImSim process an entity.
     abstract TryProcess : zeroDelta : bool * entity : Entity * world : World -> unit
     default this.TryProcess (_, _, _) = ()
@@ -728,11 +736,11 @@ and Facet (physical, lightProbe, light) =
     abstract Unregister : entity : Entity * world : World -> unit
     default this.Unregister (_, _) = ()
 
-    /// Participate in the registration of an entity's physics with the physics subsystem.
+    /// Participate in the registration of an entity's physics with the physics subsystems.
     abstract RegisterPhysics : entity : Entity * world : World -> unit
     default this.RegisterPhysics (_, _) = ()
 
-    /// Participate in the unregistration of an entity's physics from the physics subsystem.
+    /// Participate in the unregistration of an entity's physics from the physics subsystems.
     abstract UnregisterPhysics : entity : Entity * world : World -> unit
     default this.UnregisterPhysics (_, _) = ()
 

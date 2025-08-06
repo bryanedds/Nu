@@ -2137,6 +2137,7 @@ module WorldModuleEntity =
                 facet.Register (entity, world)
                 if WorldModule.getSelected entity world then facet.RegisterPhysics (entity, world)
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            dispatcher.RegisterPhysics (entity, world)
             World.registerEntityIndex (getType dispatcher) entity world
             dispatcher.Register (entity, world)
             World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
@@ -2162,17 +2163,22 @@ module WorldModuleEntity =
                 World.unregisterEntityIndex (getType facet) entity world
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             dispatcher.Unregister (entity, world)
+            dispatcher.UnregisterPhysics (entity, world)
             World.unregisterEntityIndex (getType dispatcher) entity world
 
         static member internal registerEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
             for facet in facets do
                 facet.RegisterPhysics (entity, world)
+            let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            dispatcher.RegisterPhysics (entity, world)
 
         static member internal unregisterEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
             for facet in facets do
                 facet.UnregisterPhysics (entity, world)
+            let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            dispatcher.UnregisterPhysics (entity, world)
 
         static member internal propagateEntityPhysics entity world =
             World.unregisterEntityPhysics entity world
@@ -2410,7 +2416,6 @@ module WorldModuleEntity =
                     let entityDescriptor = { entityDescriptor with EntityDispatcherName = dispatcherName }
                     World.destroyEntityImmediate entity world
                     World.readEntity true true entityDescriptor (Some entity.Name) entity.Parent world |> ignore<Entity>
-                    World.autoBoundsEntity entity world
 
         /// Write an entity to an entity descriptor.
         static member writeEntity writeOrder writePropagationHistory (entityDescriptor : EntityDescriptor) (entity : Entity) world =
