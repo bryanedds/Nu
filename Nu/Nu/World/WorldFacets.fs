@@ -1300,6 +1300,9 @@ module RigidBodyFacetExtensions =
         member this.GetBodyEnabled world : bool = this.Get (nameof this.BodyEnabled) world
         member this.SetBodyEnabled (value : bool) world = this.Set (nameof this.BodyEnabled) value world
         member this.BodyEnabled = lens (nameof this.BodyEnabled) this this.GetBodyEnabled this.SetBodyEnabled
+        member this.GetBodyFrozen world : bool = this.Get (nameof this.BodyFrozen) world
+        member this.SetBodyFrozen (value : bool) world = this.Set (nameof this.BodyFrozen) value world
+        member this.BodyFrozen = lens (nameof this.BodyFrozen) this this.GetBodyFrozen this.SetBodyFrozen
         member this.GetBodyType world : BodyType = this.Get (nameof this.BodyType) world
         member this.SetBodyType (value : BodyType) world = this.Set (nameof this.BodyType) value world
         member this.BodyType = lens (nameof this.BodyType) this this.GetBodyType this.SetBodyType
@@ -1460,6 +1463,7 @@ type RigidBodyFacet () =
 
     static member Properties =
         [define Entity.BodyEnabled true
+         define Entity.BodyFrozen false
          define Entity.BodyType Static
          define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
          define Entity.SleepingAllowed true
@@ -1511,45 +1515,49 @@ type RigidBodyFacet () =
         entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
-        let is2d = entity.GetIs2d world
-        let bodyId = entity.GetBodyId world
-        let mutable transform = entity.GetTransform world
-        let vehicleProperties =
-            match entity.GetBodyType world with
-            | Vehicle ->
-                match entity.GetVehicleProperties world with
-                | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesAether () else createVehiclePropertiesJolt ()
-                | _ as properties -> properties
-            | _ -> VehiclePropertiesAbsent
-        let bodyProperties =
-            { Enabled = entity.GetBodyEnabled world
-              Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
-              Rotation = transform.Rotation
-              Scale = transform.Scale
-              BodyShape = getBodyShape entity world
-              BodyType = entity.GetBodyType world
-              SleepingAllowed = entity.GetSleepingAllowed world
-              Friction = entity.GetFriction world
-              Restitution = entity.GetRestitution world
-              LinearVelocity = entity.GetLinearVelocity world
-              LinearDamping = entity.GetLinearDamping world
-              AngularVelocity = entity.GetAngularVelocity world
-              AngularDamping = entity.GetAngularDamping world
-              AngularFactor = entity.GetAngularFactor world
-              Substance = entity.GetSubstance world
-              GravityOverride = entity.GetGravityOverride world
-              CharacterProperties = entity.GetCharacterProperties world
-              VehicleProperties = vehicleProperties
-              CollisionDetection = entity.GetCollisionDetection world
-              CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
-              CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
-              Sensor = entity.GetSensor world
-              Awake = entity.GetAwake world
-              BodyIndex = bodyId.BodyIndex }
-        World.createBody is2d bodyId bodyProperties world
+        let frozen = entity.GetBodyFrozen world
+        if not frozen then
+            let is2d = entity.GetIs2d world
+            let bodyId = entity.GetBodyId world
+            let mutable transform = entity.GetTransform world
+            let vehicleProperties =
+                match entity.GetBodyType world with
+                | Vehicle ->
+                    match entity.GetVehicleProperties world with
+                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesAether () else createVehiclePropertiesJolt ()
+                    | _ as properties -> properties
+                | _ -> VehiclePropertiesAbsent
+            let bodyProperties =
+                { Enabled = entity.GetBodyEnabled world
+                  Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
+                  Rotation = transform.Rotation
+                  Scale = transform.Scale
+                  BodyShape = getBodyShape entity world
+                  BodyType = entity.GetBodyType world
+                  SleepingAllowed = entity.GetSleepingAllowed world
+                  Friction = entity.GetFriction world
+                  Restitution = entity.GetRestitution world
+                  LinearVelocity = entity.GetLinearVelocity world
+                  LinearDamping = entity.GetLinearDamping world
+                  AngularVelocity = entity.GetAngularVelocity world
+                  AngularDamping = entity.GetAngularDamping world
+                  AngularFactor = entity.GetAngularFactor world
+                  Substance = entity.GetSubstance world
+                  GravityOverride = entity.GetGravityOverride world
+                  CharacterProperties = entity.GetCharacterProperties world
+                  VehicleProperties = vehicleProperties
+                  CollisionDetection = entity.GetCollisionDetection world
+                  CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
+                  CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
+                  Sensor = entity.GetSensor world
+                  Awake = entity.GetAwake world
+                  BodyIndex = bodyId.BodyIndex }
+            World.createBody is2d bodyId bodyProperties world
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+        let frozen = entity.GetBodyFrozen world
+        if not frozen then
+            World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
     override this.Edit (op, entity, world) =
         match (op, entity.GetBodyType world) with

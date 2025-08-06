@@ -261,7 +261,7 @@ module WorldEntityHierarchyExtensions =
                 entity.SetVisibleLocal false world
                 if entity.GetBodyFreezableWhenSurfaceFreezable world then
                     entity.SetNavEnabled false world
-                    entity.SetBodyEnabled false world
+                    entity.SetBodyFrozen true world
             match boundsOpt with
             | Some bounds ->
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
@@ -296,7 +296,8 @@ module WorldEntityHierarchyExtensions =
                     entity.SetVisibleLocal true world
                     if entity.GetBodyFreezableWhenSurfaceFreezable world then
                         entity.SetNavEnabled true world
-                        entity.SetBodyEnabled true world
+                        entity.SetBodyEnabled true world // TODO: P0: remove this line of code once serializaion changes have propagated over enough time (8/6/25).
+                        entity.SetBodyFrozen false world
                 for child in entity.GetChildren world do
                     showChildren child
             showChildren parent

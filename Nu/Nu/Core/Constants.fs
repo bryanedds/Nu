@@ -323,6 +323,7 @@ module Physics =
               "Offset"
               "Size"
               "BodyEnabled"
+              "BodyFrozen"
               "BodyType"
               "BodyShape"
               "SleepingAllowed"
