@@ -642,6 +642,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         |> Seq.map (fun group -> World.getEntities group world)
         |> Seq.concat
         |> Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
+        |> Seq.filter (fun entity -> not (entity.GetIgnoreGlobalFreezerCommands world))
         |> Seq.iter (fun freezer -> freezer.SetFrozen true world)
 
     let private thawEntities world =
@@ -650,6 +651,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         |> Seq.map (fun group -> World.getEntities group world)
         |> Seq.concat
         |> Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
+        |> Seq.filter (fun entity -> not (entity.GetIgnoreGlobalFreezerCommands world))
         |> Seq.iter (fun freezer -> freezer.SetFrozen false world)
 
     let private synchronizeNav world =

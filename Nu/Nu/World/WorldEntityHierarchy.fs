@@ -326,6 +326,9 @@ module Freezer3dFacetExtensions =
         member this.GetSurfaceMaterialsPopulated world : bool = this.Get (nameof this.SurfaceMaterialsPopulated) world
         member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
         member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
+        member this.GetIgnoreGlobalFreezerCommands world : bool = this.Get (nameof this.IgnoreGlobalFreezerCommands) world
+        member this.SetIgnoreGlobalFreezerCommands (value : bool) world = this.Set (nameof this.IgnoreGlobalFreezerCommands) value world
+        member this.IgnoreGlobalFreezerCommands = lens (nameof this.IgnoreGlobalFreezerCommands) this this.GetIgnoreGlobalFreezerCommands this.SetIgnoreGlobalFreezerCommands
 
         member internal this.RegisterFrozenShapesNav world =
             let mutable index = 0
@@ -430,7 +433,8 @@ type Freezer3dFacet () =
          nonPersistent Entity.FrozenShapes [||]
          define Entity.Frozen false
          define Entity.PresenceConferred Exterior
-         define Entity.SurfaceMaterialsPopulated false]
+         define Entity.SurfaceMaterialsPopulated false
+         define Entity.IgnoreGlobalFreezerCommands false]
 
     override this.Register (entity, world) =
         entity.SetOffset v3Zero world
