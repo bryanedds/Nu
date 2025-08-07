@@ -507,3 +507,85 @@ module WorldModule4 =
             let rasterViewport = Viewport.makeRaster outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
             World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin
+
+namespace Nu.TypeProviders
+open System
+open ProviderImplementation.ProvidedTypes
+open FSharp.Core.CompilerServices
+open Nu
+
+[<TypeProvider>]
+type EntityLensProvider (config : TypeProviderConfig) as this =
+    inherit TypeProviderForNamespaces(config)
+    
+    // declare the un-instantiated shell
+    let asm = System.Reflection.Assembly.GetExecutingAssembly()
+    let ns = "My.Provided.EntityLenses"
+    let tyDef = ProvidedTypeDefinition (asm, ns, "EntityLens", Some typeof<obj>)
+    do tyDef.AddXmlDoc "Emit Get/Set/Lens extensions on Entity for a given property."
+
+    // define instantiation
+    let instantiate typeName (args : obj array) =
+        let propName = args.[0] :?> string
+        let propType = args.[1] :?> Type
+        let inst = ProvidedTypeDefinition (asm, ns, typeName, Some typeof<obj>)
+        let target = typeof<Entity>
+        let worldTy = typeof<World>
+        
+        // getter
+        inst.AddMember $
+            ProvidedMethod
+                (methodName = "Get" + propName,
+                 parameters = [ProvidedParameter ("world", worldTy)],
+                 returnType = propType,
+                 isStatic = true,
+                 //isExtensionMethod = true,
+                 //extensionTarget = Some target,
+                 invokeCode =
+                    fun [thisExpr; worldExpr] ->
+                        <@@ (%%thisExpr :> obj :?> Entity).Get propName %%worldExpr |> unbox @@>)
+        
+        // setter
+        inst.AddMember $
+            ProvidedMethod
+                (methodName = "Set" + propName,
+                 parameters = [ProvidedParameter ("value", propType); ProvidedParameter ("world", worldTy)],
+                 returnType = worldTy,
+                 isStatic = true,
+                 //isExtensionMethod = true,
+                 //extensionTarget = Some target,
+                 invokeCode =
+                    fun [thisExpr; valueExpr; worldExpr] ->
+                        <@@ (%%thisExpr :> obj :?> Entity).Set propName %%valueExpr %%worldExpr @@>)
+        
+        // lens
+        let lensTy = typedefof<Lens<_,_>>.MakeGenericType(target, propType)
+        inst.AddMember $
+            ProvidedMethod
+                (methodName = propName,
+                 parameters = [ProvidedParameter ("e", target)],
+                 returnType = lensTy,
+                 isStatic = true,
+                 //isExtensionMethod = true,
+                 //extensionTarget = Some target,
+                 invokeCode =
+                    fun [thisExpr; eExpr] ->
+                        <@@ lens propName (%%eExpr : Entity) ((%%eExpr : Entity).Get propName) ((%%eExpr : Entity).Set propName) @@>)
+            
+        inst
+
+    // use two static parameters: property name (string) and type (System.Type)
+    do tyDef.DefineStaticParameters
+        ([ProvidedStaticParameter ("PropertyName", typeof<string>)
+          ProvidedStaticParameter ("PropertyType", typeof<Type>)],
+          instantiate)
+    
+    // fin
+    do this.AddNamespace(ns, [tyDef])
+
+// Usage:
+//
+//[<AutoOpen>]
+//module ExampleExtensions =
+//
+//    let _ = EntityLens<"Int32", typeof<int>>

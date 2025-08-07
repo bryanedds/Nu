@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
+        <TypeProvider>True</TypeProvider>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
         <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
         <RepositoryBranch>master</RepositoryBranch>
@@ -215,6 +216,7 @@
 		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
+		<PackageReference Include="FSharp.TypeProviders.SDK" Version="8.1.0" />
 		<PackageReference Include="JoltPhysicsSharp" Version="2.17.4" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.7.0" />
 		<PackageReference Include="Pfim" Version="0.11.3" />
