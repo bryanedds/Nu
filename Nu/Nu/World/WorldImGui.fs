@@ -378,20 +378,19 @@ module WorldImGui =
                     | _ -> failwithumf ()
                 (promoted, edited, style :> obj)
             | :? LightType as light ->
-                let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
+                let mutable index = light.Enumerate
                 let (edited, light) =
-                    if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
-                    then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
+                    let names = LightType.Names
+                    if ImGui.Combo (name, &index, names, names.Length)
+                    then (true, LightType.makeFromEnumeration index)
                     else (false, light)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let (edited, light) =
                     match index with
                     | 0 -> (edited, light)
-                    | 1 -> (edited, light)
-                    | 2 ->
+                    | 1 ->
                         match light with
                         | PointLight -> failwithumf ()
-                        | DirectionalLight -> failwithumf ()
                         | SpotLight (innerCone, outerCone) ->
                             let mutable (innerCone, outerCone) = (innerCone, outerCone)
                             ImGui.Indent ()
@@ -401,6 +400,10 @@ module WorldImGui =
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             ImGui.Unindent ()
                             (edited || innerConeEdited || outerConeEdited, SpotLight (innerCone, outerCone))
+                        | DirectionalLight -> failwithumf ()
+                        | CascadedLight -> failwithumf ()
+                    | 2 -> (edited, light)
+                    | 3 -> (edited, light)
                     | _ -> failwithumf ()
                 (promoted, edited, light :> obj)
             | :? Substance as substance ->

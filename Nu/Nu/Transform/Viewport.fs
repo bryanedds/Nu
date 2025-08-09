@@ -27,6 +27,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
     member this.ShadowMapResolution =
         this.ShadowTextureResolution / 2
 
+    /// The shadow cascade buffer resolution appropriate for this viewport.
+    member this.ShadowCascadeResolution =
+        this.ShadowTextureResolution
+
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
 

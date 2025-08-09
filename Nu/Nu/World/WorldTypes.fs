@@ -1944,11 +1944,11 @@ and [<NoEquality; NoComparison>] World =
     member this.Functional =
         not this.AmbientState.Imperative
 
-    /// Check that the world is accompanied (such as by an editor program that controls it).
+    /// Check that the world is accompanied (such as being controlled by editing program like Gaia).
     member this.Accompanied =
         this.AmbientState.Accompanied
 
-    /// Check that the world is unaccompanied (such as being absent of an editor program that controls it).
+    /// Check that the world is unaccompanied (such as not being controlled by editing program like Gaia).
     member this.Unaccompanied =
         not this.AmbientState.Accompanied
 

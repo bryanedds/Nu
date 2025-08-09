@@ -797,7 +797,11 @@ type private SortableLight =
         for light in lights do
             light.SortableLightDistance <-
                 (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
-        let lightsSorted = lights |> Seq.toArray |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType = 0) |> Array.sortBy SortableLight.project
+        let lightsSorted =
+            lights
+            |> Seq.toArray
+            |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType = 0)
+            |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
@@ -811,7 +815,29 @@ type private SortableLight =
         for light in lights do
             light.SortableLightDistance <-
                 (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
-        let lightsSorted = lights |> Seq.toArray |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType <> 0) |> Array.sortBy SortableLight.project
+        let lightsSorted =
+            lights
+            |> Seq.toArray
+            |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && (light.SortableLightType = 1 || light.SortableLightType = 2))
+            |> Array.sortBy SortableLight.project
+        for i in 0 .. dec lightsMax do
+            if i < lightsSorted.Length then
+                let light = lightsSorted.[i]
+                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows, light.SortableLightBounds)
+        lightsArray
+
+    /// Sort shadowing cascaded lights.
+    /// TODO: see if we can get rid of allocation here.
+    static member sortShadowingCascadedLightsIntoArray lightsMax position lights =
+        let lightsArray = Array.zeroCreate<_> lightsMax
+        for light in lights do
+            light.SortableLightDistance <-
+                (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
+        let lightsSorted =
+            lights
+            |> Seq.toArray
+            |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType = 3)
+            |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
@@ -2766,7 +2792,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
-        irradianceMaps environmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
+        irradianceMaps environmentFilterMaps shadowTextures shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) depthTest blending shader vao vertexSize renderer =
 
@@ -2814,7 +2840,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
             (bonesArrays, parameters.Length, renderer.InstanceFields,
-             irradianceMaps, environmentFilterMaps, shadowTextures, shadowMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount,
+             irradianceMaps, environmentFilterMaps, shadowTextures, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, shader, vao, vertexSize)
 
@@ -2973,7 +2999,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
+                | DirectionalLight | CascadedLight-> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
                 entry.Key shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -2987,7 +3013,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
+                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaceBundle
                 lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] bundle
                 surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -3004,7 +3030,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
+                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
                 entry.Key shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -3018,7 +3044,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
+                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaceBundle
                 lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] bundle
                 surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -3038,7 +3064,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
+                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays parameters
                 surfaceKey.AnimatedSurface shadowShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
@@ -3050,7 +3076,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
-                | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
+                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
             GlRenderer3d.renderPhysicallyBasedTerrain
                 lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
@@ -3068,7 +3094,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match lightType with
                     | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
                     | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
-                    | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
+                    | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                     surface shadowShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
@@ -3078,7 +3104,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match lightType with
                     | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                     | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                    | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
+                    | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                     surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -3131,7 +3157,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (renderbuffer : uint)
         (framebuffer : uint) =
 
-        // setup shadow buffer and viewport
+        // setup shadow frame buffer and viewport
         OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
@@ -3144,15 +3170,53 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
         OpenGL.Hl.Assert ()
         
-        // render to shadow map face
+        // render to shadow cube map face
         GlRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowViewProjection shadowFrustum PointLight renderTasks renderer
         OpenGL.Hl.Assert ()
         
-        let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + shadowFace)
+        // unbind shadow cube map face
         OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, 0u, 0)
         OpenGL.Hl.Assert ()
         
-        // unbind shadow mapping frame buffer
+        // unbind shadow frame buffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
+
+    static member private renderShadowCascadeFace // TODO: P0: change nomenclature from face to layer.
+        renderTasks
+        renderer
+        (lightOrigin : Vector3)
+        (lightCutoff : single)
+        (shadowFace : int)
+        (shadowView : Matrix4x4)
+        (shadowProjection : Matrix4x4)
+        (shadowViewProjection : Matrix4x4)
+        (shadowFrustum : Frustum)
+        (shadowResolution : Vector2i)
+        (shadowCascade : OpenGL.Texture.Texture)
+        (renderbuffer : uint)
+        (framebuffer : uint) =
+
+        // setup shadow frame buffer and viewport
+        OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Hl.Assert ()
+
+        // setup shadow cascade face for rendering
+        OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascade.TextureId, 0, shadowFace)
+        OpenGL.Gl.ClearColor (lightCutoff, 0.0f, 0.0f, 0.0f)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
+        OpenGL.Hl.Assert ()
+
+        // render to shadow cascade face
+        GlRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowViewProjection shadowFrustum CascadedLight renderTasks renderer
+        OpenGL.Hl.Assert ()
+
+        // unbind shadow cascade face frame buffer
+        OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowFace)
+        OpenGL.Hl.Assert ()
+
+        // unbind shadow frame buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
 
     static member private renderGeometry
@@ -3289,6 +3353,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // grab shadow maps
         let shadowMaps = Array.map a__ renderer.PhysicallyBasedBuffers.ShadowMapBuffersArray
+
+        // grab shadow cascades
+        let shadowCascades = Array.map a__ renderer.PhysicallyBasedBuffers.ShadowCascadeBuffersArray
 
         // presume shadow near plane distance as interior near plane distance
         let shadowNear = Constants.Render.NearPlaneDistanceInterior
@@ -3517,7 +3584,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
              sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
-             depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, shadowTextures, shadowMaps,
+             depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, shadowTextures, shadowMaps, shadowCascades,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowNear, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightingShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
@@ -3644,7 +3711,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | ValueNone -> ([||], renderer.PhysicallyBasedShaders.ForwardStaticShader, renderer.PhysicallyBasedStaticVao, OpenGL.PhysicallyBased.StaticVertexSize)
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
-                lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count)
+                lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count)
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowMatrices
                 surface depthTest true shader vao vertexSize renderer
             OpenGL.Hl.Assert ()
@@ -3847,7 +3914,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowCutoff = lightCutoff
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (lightOrigin, shadowView, shadowProjection)
-                            | PointLight -> failwithumf ()
+                            | PointLight | CascadedLight -> failwithumf ()
 
                         // draw shadow texture when not cached
                         let shouldDraw =
@@ -3944,7 +4011,66 @@ type [<ReferenceEquality>] GlRenderer3d =
                             elif shadowFace = dec 6 then
                                 shadowMapBufferIndex <- inc shadowMapBufferIndex
 
-                        | SpotLight (_, _) | DirectionalLight -> failwithumf ()
+                        | SpotLight (_, _) | DirectionalLight | CascadedLight -> failwithumf ()
+                    | _ -> ()
+
+        // sort cascaded lights according to how they are utilized by shadows
+        let cascadedLightsArray = SortableLight.sortShadowingCascadedLightsIntoArray Constants.Render.ShadowCascadesMax eyeCenter normalTasks.Lights
+
+        // sort cascaded lights so that shadows that have the possibility of cache reuse come to the front
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
+        let cascadedLightsArray =
+            Array.sortBy (fun struct (id, _, _, _, _, _) ->
+                renderer.RenderPasses2.Pairs
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.headOrDefault Int32.MaxValue)
+                cascadedLightsArray
+
+        // shadow cascade pre-passes
+        let mutable shadowCascadeBufferIndex = 0
+        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows, lightBounds) in cascadedLightsArray do
+            if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+                for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
+                    match renderPass with
+                    | ShadowPass (shadowLightId, shadowFaceInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowFaceInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
+                        match shadowLightType with
+                        | CascadedLight ->
+
+                            // destructure shadow face info
+                            let (shadowFace, shadowView, shadowProjection) = shadowFaceInfoOpt.Value
+                            let shadowViewProjection = shadowView * shadowProjection
+
+                            // draw shadow texture when not cached
+                            // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map
+                            // once per face render here, but probably nothing worth caring about.
+                            let shouldDraw =
+                                match renderer.RenderPasses2.TryGetValue renderPass with
+                                | (true, renderTasksCached) ->
+                                    if Option.contains (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached
+                                        not upToDate
+                                    else true
+                                | (_, _) -> true
+                            if true (*shouldDraw*) then
+                                let shadowResolution = renderer.GeometryViewport.ShadowCascadeResolution
+                                let (shadowCascade, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowCascadeBuffersArray.[shadowCascadeBufferIndex]
+                                GlRenderer3d.renderShadowCascadeFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowViewProjection shadowFrustum shadowResolution shadowCascade shadowRenderbuffer shadowFramebuffer
+
+                            // remember the utilized index for the next frame
+                            renderTasks.ShadowBufferIndexOpt <- Some (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax)
+
+                            // update renderer values or next shadow
+                            // NOTE: this behavior completely DEPENDS on shadow face messages for a shadow cascade
+                            // being received and processed in numerical order.
+                            renderer.ShadowMatrices.
+                                [shadowCascadeBufferIndex * Constants.Render.ShadowCascadeLevels + shadowFace + Constants.Render.ShadowTexturesMax] <-
+                                shadowView * shadowProjection
+                            if shadowFace = 0 then
+                                renderer.LightShadowIndices.[lightId] <- shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax
+                            elif shadowFace = dec Constants.Render.ShadowCascadeLevels then
+                                shadowCascadeBufferIndex <- inc shadowCascadeBufferIndex
+
+                        | PointLight | SpotLight (_, _) | DirectionalLight -> failwithumf ()
                     | _ -> ()
 
         // process top-level geometry pass
@@ -4287,7 +4413,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedAnimatedVao = physicallyBasedAnimatedVao
               PhysicallyBasedTerrainVao = physicallyBasedTerrainVao
               PhysicallyBasedShaders = physicallyBasedShaders
-              ShadowMatrices = Array.zeroCreate<Matrix4x4> Constants.Render.ShadowTexturesMax
+              ShadowMatrices = Array.zeroCreate<Matrix4x4> (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
               LightShadowIndices = dictPlus HashIdentity.Structural []
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               CubeMapGeometry = cubeMapGeometry

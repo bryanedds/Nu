@@ -1511,6 +1511,7 @@ type LightType =
     | PointLight
     | SpotLight of ConeInner : single * ConeOuter : single
     | DirectionalLight
+    | CascadedLight
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1518,6 +1519,24 @@ type LightType =
         | PointLight -> 0
         | SpotLight _ -> 1
         | DirectionalLight -> 2
+        | CascadedLight -> 3
+
+    /// Make a light type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> PointLight
+        | 1 -> SpotLight (0.9f, 1.0f)
+        | 2 -> DirectionalLight
+        | 3 -> CascadedLight
+        | _ -> failwithumf ()
+
+    /// The names of the light types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof PointLight
+          nameof SpotLight
+          nameof DirectionalLight
+          nameof CascadedLight|]
 
 /// The type of subsurface scattering that a material utilizes.
 type ScatterType =
