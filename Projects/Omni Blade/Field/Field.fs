@@ -234,9 +234,8 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty inventory party prizePool battleSpeed battleData
-        battle
-        
+        Battle.makeFromParty inventory party prizePool battleSpeed battleData
+
     let rec detokenize (field : Field) (text : string) =
         text
             .Replace("$FEE", scstring (getRecruitmentFee field))

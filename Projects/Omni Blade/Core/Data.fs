@@ -899,7 +899,18 @@ type BattleData =
       BattleTileMap : TileMap AssetTag
       BattleTileIndexOffset : int
       BattleTileIndexOffsetRange : int * int
-      BattleSongOpt : Song AssetTag option }
+      BattleSongOpt : Song AssetTag option
+      BattleEnemyListDataForRetryOpt : (int * Vector3 * EnemyType) list option }
+
+    static member empty =
+        { BattleType = BattleType.EmptyBattle
+          BattleAllyPositions = []
+          BattleEnemies = []
+          BattleTileMap = Assets.Default.EmptyTileMap // TODO: P0: give a default battle tile map instead?
+          BattleTileIndexOffset = 0
+          BattleTileIndexOffsetRange = (0, 0)
+          BattleSongOpt = None
+          BattleEnemyListDataForRetryOpt = None }
 
 type EncounterData =
     { EncounterType : EncounterType // key

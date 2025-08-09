@@ -25,7 +25,7 @@ type OmniBladeMessage =
     | TryLoad of SaveSlot
     | CommencingBattle
     | CommenceBattle of BattleData * PrizePool
-    | ConcludingBattle of bool
+    | ConcludingBattle of BattleOutcome
     | ConcludeBattle
     interface Message
 
@@ -118,20 +118,22 @@ type OmniBladeDispatcher () =
             just Battle
 
         | CommenceBattle (battleData, prizePool) ->
-            withSignal (FromFieldToBattle (battleData, prizePool)) Battle    
+            withSignal (FromFieldToBattle (battleData, prizePool)) Battle
 
         | ConcludingBattle outcome ->
-            if outcome
-            then just Field
-            else just Title
+            match outcome with
+            | WinBattle -> just Field
+            | LoseBattle -> just Title
+            | BattleOutcome.RetryBattle (battleData, prizePool) -> withSignal (FromFieldToBattle (battleData, prizePool)) Battle
 
         | ConcludeBattle ->
             let battle = Simulants.Battle.GetBattle world
             match battle.BattleState with
             | BattleConcluding (_, outcome) ->
-                if outcome
-                then withSignal (FromBattleToField battle.PrizePool) Field
-                else just Title
+                match outcome with
+                | WinBattle -> withSignal (FromBattleToField battle.PrizePool) Field
+                | LoseBattle -> just Title
+                | BattleOutcome.RetryBattle (_, _) -> just Battle
             | _ -> just omniBlade
 
     override this.Command (_, command, _, world) =
@@ -144,7 +146,7 @@ type OmniBladeDispatcher () =
                 | None -> ()
 
         | UpdatePicks ->
-            if Simulants.Pick.GetSelected world then
+            if  Simulants.Pick.GetSelected world then
                 Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.User.SaveFilePath1)) world
                 Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.User.SaveFilePath2)) world
                 Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.User.SaveFilePath3)) world

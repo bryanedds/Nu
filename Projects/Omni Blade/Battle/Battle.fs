@@ -13,6 +13,7 @@ type BattleMessage =
     | UpdateRideTokens of Map<string, Effects.Slice>
     | TimeUpdate
     | InteractDialog
+    | Retry
     | RegularItemSelect of CharacterIndex * string
     | RegularItemCancel of CharacterIndex
     | ConsumableItemSelect of CharacterIndex * string
@@ -85,8 +86,8 @@ type BattleSpeed =
 type BattleState =
     | BattleReadying of int64
     | BattleRunning
-    | BattleResult of int64 * bool
-    | BattleConcluding of int64 * bool
+    | BattleResult of int64 * BattleOutcome
+    | BattleConcluding of int64 * BattleOutcome
     | BattleConclude
 
 type ActionCommand =
@@ -118,6 +119,7 @@ module Battle =
               Inventory_ : Inventory
               Characters_ : Map<CharacterIndex, Character>
               PrizePool_ : PrizePool
+              BattleData_ : BattleData
               TileMap_ : TileMap AssetTag
               TileIndexOffset_ : int
               TileIndexOffsetRange_ : int * int
@@ -134,6 +136,7 @@ module Battle =
         member this.Inventory = this.Inventory_
         member this.Characters = this.Characters_
         member this.PrizePool = this.PrizePool_
+        member this.BattleData = this.BattleData_
         member this.TileMap = this.TileMap_
         member this.TileIndexOffset = this.TileIndexOffset_
         member this.TileIndexOffsetRange = this.TileIndexOffsetRange_
@@ -1063,6 +1066,14 @@ module Battle =
     let spawnEnemy spawnType battle =
         spawnEnemies [spawnType] battle
 
+    let retry battle =
+        match battle.BattleState_ with
+        | BattleResult (_, LoseBattle) ->
+            { battle with
+                BattleState_ = BattleConcluding (battle.BattleTime_, BattleOutcome.RetryBattle (battle.BattleData_, battle.PrizePool_))
+                DialogOpt_ = None }
+        | _ -> battle
+
 #if DEV
     let win battle =
         setBattleState (BattleState.BattleResult (battle.BattleTime_, true)) battle
@@ -1818,13 +1829,13 @@ module Battle =
                     if List.forall (fun (ally : Character) -> ally.CharacterAnimationType = WoundAnimation) allies then
                         // lost battle
                         let battle = animateCharactersCelebrate false battle
-                        let battle = setBattleState (BattleResult (battle.BattleTime_, false)) battle
+                        let battle = setBattleState (BattleResult (battle.BattleTime_, LoseBattle)) battle
                         let (sigs2, battle) = update battle
                         (sigs @ sigs2, battle)
                     elif List.isEmpty enemies then
                         // won battle
                         let battle = animateCharactersCelebrate true battle
-                        let battle = setBattleState (BattleResult (battle.BattleTime_, true)) battle
+                        let battle = setBattleState (BattleResult (battle.BattleTime_, WinBattle)) battle
                         let (sigs2, battle) = update battle
                         (sigs @ sigs2, battle)
                     else (sigs, battle)
@@ -2026,9 +2037,9 @@ module Battle =
             | None -> updateNoCurrentCommand battle
         else just battle
 
-    and private updateResult startTime outcome (battle : Battle) =
+    and private updateResult startTime (outcome : BattleOutcome) (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
-        if outcome then
+        if outcome.IsWinBattle then
             if localTime = 0L then
                 let alliesLevelingUp =
                     battle |> getAllies |> Map.toValueList |>
@@ -2135,7 +2146,21 @@ module Battle =
         just field
 
     let makeFromParty inventory (party : Party) (prizePool : PrizePool) battleSpeed battleData =
-        let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
+        let enemies =
+            match battleData.BattleEnemyListDataForRetryOpt with
+            | Some enemyDataList ->
+                [for (enemyIndex, enemyPosition, enemyType) in enemyDataList do
+                    match Character.tryMakeEnemy party.Length enemyIndex (battleSpeed = WaitSpeed) true enemyPosition enemyType with
+                    | Some enemy -> enemy
+                    | None -> ()]
+            | None -> randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
+        let battleEnemeyDataForRetry =
+            enemies
+            |> List.mapi (fun enemyIndex enemy ->
+                let enemyPosition = if party.Length = 1 then enemy.Perimeter.Min - Constants.Battle.CharacterOffset else enemy.Perimeter.Min
+                let enemyType = match enemy.CharacterType with | Enemy enemyType -> enemyType | _ -> failwithumf ()
+                (enemyIndex, enemyPosition, enemyType))
+        let battleData = { battleData with BattleEnemyListDataForRetryOpt = Some battleEnemeyDataForRetry }
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
@@ -2148,6 +2173,7 @@ module Battle =
           Inventory_ = inventory
           Characters_ = characters
           PrizePool_ = prizePool
+          BattleData_ = battleData
           TileMap_ = tileMap
           TileIndexOffset_ = tileIndexOffset
           TileIndexOffsetRange_ = tileIndexOffsetRange
@@ -2166,6 +2192,7 @@ module Battle =
               Inventory_ = Inventory.empty
               Characters_ = Map.empty
               PrizePool_ = PrizePool.empty
+              BattleData_ = BattleData.empty
               TileMap_ = battle.BattleTileMap
               TileIndexOffset_ = 0
               TileIndexOffsetRange_ = (0, 0)

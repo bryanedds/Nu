@@ -36,31 +36,34 @@ module DialogContent =
                     | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
                 let textMargin =
                     v2 30.0f 30.0f
-                Content.composite<TextDispatcher> name
+                Content.text name
                     [Entity.Perimeter := perimeter
-                     Entity.Elevation := elevation
+                     Entity.Elevation := elevation + 0.5f // NOTE: not sure why + 0.5f is needed here.
                      Entity.BackdropImageOpt := backdropImageOpt
                      Entity.Text := text
                      Entity.Justification := justification
                      Entity.TextMargin == textMargin]
-                    [if dialog.DialogForm = DialogNarration then
-                        for x in 2.0f .. 2.0f .. 4.0f do
-                            for y in 2.0f .. 2.0f .. 4.0f do
-                                let offset = v3 -x -y 0.0f
-                                Content.text ("DropShadow+" + scstring offset)
-                                    [Entity.PositionLocal == offset; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
-                                     Entity.BackdropImageOpt == None
-                                     Entity.Text := text
-                                     Entity.Justification := justification
-                                     Entity.TextMargin == textMargin
-                                     Entity.TextColor == Color.Black]
-                     if Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog then
-                        Content.button "Left"
-                            [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
-                             Entity.Text := match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
-                             Entity.ClickEvent => promptLeft]
-                        Content.button "Right"
-                            [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
-                             Entity.Text := match dialog.DialogPromptOpt with Some (_, (promptText, _)) -> promptText | None -> ""
-                             Entity.ClickEvent => promptRight]]
+                if dialog.DialogForm = DialogNarration then
+                    for x in 2.0f .. 2.0f .. 4.0f do
+                        for y in 2.0f .. 2.0f .. 4.0f do
+                            let offset = v3 -x -y 0.0f
+                            Content.text ("DropShadow+" + scstring offset)
+                                [Entity.Position == perimeter.Min + offset
+                                 Entity.Size := perimeter.Size
+                                 Entity.Elevation == elevation + 0.5f // NOTE: not sure why + 0.5f is needed here.
+                                 Entity.BackdropImageOpt == None
+                                 Entity.Text := text
+                                 Entity.TextShift == Constants.Gui.TextShiftDefault * 0.5f
+                                 Entity.Justification := justification
+                                 Entity.TextMargin == textMargin
+                                 Entity.TextColor == Color.Black]
+                if Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog then
+                    Content.button "Left"
+                        [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
+                         Entity.Text := match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
+                         Entity.ClickEvent => promptLeft]
+                    Content.button "Right"
+                        [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
+                         Entity.Text := match dialog.DialogPromptOpt with Some (_, (promptText, _)) -> promptText | None -> ""
+                         Entity.ClickEvent => promptRight]
              | None -> ()]

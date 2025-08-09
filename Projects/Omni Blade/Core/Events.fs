@@ -7,6 +7,11 @@ open System.Numerics
 open Prime
 open Nu
 
+type BattleOutcome =
+    | WinBattle
+    | LoseBattle
+    | RetryBattle of BattleData * PrizePool
+
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -18,5 +23,6 @@ module Events =
     let QuitFieldEvent = stoa<unit> "Quit/Field/Event"
     let CommencingBattleEvent = stoa<unit> "Commencing/Battle/Event"
     let CommenceBattleEvent = stoa<BattleData * PrizePool> "Commence/Battle/Event"
-    let ConcludingBattleEvent = stoa<bool> "Concluding/Battle/Event"
-    let ConcludeBattleEvent = stoa<bool * PrizePool> "Conclude/Battle/Event"
+    let ConcludingBattleEvent = stoa<BattleOutcome> "Concluding/Battle/Event"
+    let ConcludeBattleEvent = stoa<BattleOutcome * PrizePool> "Conclude/Battle/Event"
+    let RetryBattleEvent = stoa<BattleData * PrizePool> "Retry/Battle/Event"

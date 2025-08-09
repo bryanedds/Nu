@@ -15,6 +15,7 @@ module BattleExtensions =
         member this.Battle = this.ModelGeneric<Battle> ()
         member this.ConcludingBattleEvent = Events.ConcludingBattleEvent --> this
         member this.ConcludeBattleEvent = Events.ConcludeBattleEvent --> this
+        member this.RetryBattleEvent = Events.RetryBattleEvent --> this
 
 type BattleDispatcher () =
     inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty : Battle)
@@ -72,6 +73,10 @@ type BattleDispatcher () =
                     let battle = Battle.setDialogOpt None battle
                     just battle
             | None -> just battle
+
+        | BattleMessage.Retry ->
+            let battle = Battle.retry battle
+            just battle
 
         | RegularItemSelect (characterIndex, regularStr) ->
             let battle =
@@ -390,7 +395,7 @@ type BattleDispatcher () =
              // death fade
              let deathFadeOpt =
                 match battle.BattleState with
-                | BattleResult (concludeTime, outcome) when not outcome ->
+                | BattleResult (concludeTime, outcome) when not outcome.IsWinBattle ->
                     let localTime = battle.BattleTime - concludeTime
                     let progress =
                        if localTime < 360L then
@@ -400,7 +405,7 @@ type BattleDispatcher () =
                            single fadeTime / single 240L
                        else 1.0f
                     Some progress
-                | BattleConcluding (_, outcome) when not outcome -> Some 1.0f
+                | BattleConcluding (_, outcome) when not outcome.IsWinBattle -> Some 1.0f
                 | _ -> None
              match deathFadeOpt with
              | Some deathFade ->
@@ -417,8 +422,24 @@ type BattleDispatcher () =
                  Entity.UpImage == Assets.Gui.ButtonShortUpImage
                  Entity.DownImage == Assets.Gui.ButtonShortDownImage
                  Entity.Visible := match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
-                 Entity.Text == "Next"
+                 Entity.Text := if battle.BattleState.IsBattleResult then "Quit" else "Next"
                  Entity.ClickEvent => InteractDialog]
+
+             // retry battle button
+             Content.button "Retry"
+                [Entity.Position == v3 90.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                 Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                 Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                 Entity.Visible :=
+                    match battle.DialogOpt with
+                    | Some dialog ->
+                        Dialog.canAdvance id dialog &&
+                        match battle.BattleState with
+                        | BattleResult (_, LoseBattle) -> true
+                        | _ -> false
+                    | None -> false
+                 Entity.Text == "Retry"
+                 Entity.ClickEvent => Retry]
 
              // characters
              for (index, character) in (Battle.getCharacters battle).Pairs do
