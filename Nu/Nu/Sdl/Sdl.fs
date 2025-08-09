@@ -85,7 +85,7 @@ module SdlDeps =
 
             // when changing from full screen, set window to windowed size and make sure its title bar is visible
             if wasFullScreen && not fullScreen then
-                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2
+                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution
                 SDL.SDL_RestoreWindow window.SglWindow
                 SDL.SDL_SetWindowSize (window.SglWindow, windowSizeWindowed.X, windowSizeWindowed.Y)
                 SDL.SDL_SetWindowPosition (window.SglWindow, 100, 100)
