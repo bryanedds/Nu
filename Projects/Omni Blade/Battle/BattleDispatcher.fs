@@ -391,6 +391,19 @@ type BattleDispatcher () =
                 (Constants.Battle.GuiOutputElevation) Nop Nop id
                 (match battle.DialogOpt with Some dialog -> Some dialog | None -> None)
 
+             // retry fade
+             match battle.BattleState with
+             | BattleReadying (startTime, retry) when retry ->
+                let localTime = battle.BattleTime - startTime
+                if localTime < 30L then
+                    let progress = 1.0f - single localTime / single 30L
+                    Content.staticSprite "RetryFade"
+                        [Entity.Position == v3 -480.0f -270.0f 0.0f; Entity.Size == v3 960.0f 540.0f 0.0f; Entity.Elevation == Constants.Battle.RetryFadeElevation
+                         Entity.Absolute == true
+                         Entity.StaticImage == Assets.Default.Black
+                         Entity.Color := Color.Black.WithA progress]
+             | _ -> ()
+
              // death fade
              let deathFadeOpt =
                 match battle.BattleState with

@@ -84,7 +84,7 @@ type BattleSpeed =
     | SwiftSpeed
 
 type BattleState =
-    | BattleReadying of int64
+    | BattleReadying of int64 * bool
     | BattleRunning
     | BattleResult of int64 * BattleOutcome
     | BattleConcluding of int64 * BattleOutcome
@@ -2132,7 +2132,7 @@ module Battle =
         // update battle state
         let (signals, battle) =
             match battle.BattleState_ with
-            | BattleReadying startTime -> updateReadying startTime battle
+            | BattleReadying (startTime, _) -> updateReadying startTime battle
             | BattleRunning -> updateRunning battle
             | BattleResult (startTime, outcome) -> updateResult startTime outcome battle
             | BattleConcluding (startTime, _) -> updateConcluding startTime battle
@@ -2146,14 +2146,18 @@ module Battle =
         just field
 
     let makeFromParty inventory (party : Party) (prizePool : PrizePool) battleSpeed battleData =
-        let enemies =
+        let (retry, enemies) =
             match battleData.BattleEnemyListDataForRetryOpt with
             | Some enemyDataList ->
-                [for (enemyIndex, enemyPosition, enemyType) in enemyDataList do
-                    match Character.tryMakeEnemy party.Length enemyIndex (battleSpeed = WaitSpeed) true enemyPosition enemyType with
-                    | Some enemy -> enemy
-                    | None -> ()]
-            | None -> randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
+                let enemies =
+                    [for (enemyIndex, enemyPosition, enemyType) in enemyDataList do
+                        match Character.tryMakeEnemy party.Length enemyIndex (battleSpeed = WaitSpeed) true enemyPosition enemyType with
+                        | Some enemy -> enemy
+                        | None -> ()]
+                (true, enemies)
+            | None ->
+                let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
+                (false, enemies)
         let battleEnemeyDataForRetry =
             enemies
             |> List.mapi (fun enemyIndex enemy ->
@@ -2169,7 +2173,7 @@ module Battle =
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         { BattleTime_ = 0L
-          BattleState_ = BattleReadying 1L
+          BattleState_ = BattleReadying (1L, retry)
           Inventory_ = inventory
           Characters_ = characters
           PrizePool_ = prizePool
