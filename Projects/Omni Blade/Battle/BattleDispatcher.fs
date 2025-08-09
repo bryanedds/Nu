@@ -430,7 +430,7 @@ type BattleDispatcher () =
 
              // dialog interact button
              Content.button "DialogInteract"
-                [Entity.Position == v3 248.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                [Entity.Position == v3 252.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                  Entity.UpImage == Assets.Gui.ButtonShortUpImage
                  Entity.DownImage == Assets.Gui.ButtonShortDownImage
                  Entity.Visible := match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
@@ -439,7 +439,7 @@ type BattleDispatcher () =
 
              // retry battle button
              Content.button "Retry"
-                [Entity.Position == v3 90.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                [Entity.Position == v3 78.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                  Entity.UpImage == Assets.Gui.ButtonShortUpImage
                  Entity.DownImage == Assets.Gui.ButtonShortDownImage
                  Entity.Visible :=
