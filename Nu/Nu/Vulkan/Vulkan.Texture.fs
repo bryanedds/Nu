@@ -242,9 +242,42 @@ module Texture =
             sampler
         
         /// Record commands to generate mipmaps.
-        static member private recordGenerateMipmaps cb mipLevels vkImage =
+        static member private recordGenerateMipmaps cb (extent : VkExtent3D) mipLevels vkImage =
             
+            // use single barrier for all transfer operations
+            let mutable barrier = VkImageMemoryBarrier ()
+            barrier.image <- vkImage
+            barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            barrier.subresourceRange <- Hl.makeSubresourceRangeColor 1
 
+            // init mipmap dimensions
+            let mutable mipWidth = int extent.width
+            let mutable mipHeight = int extent.height
+
+            for i in 1 .. dec mipLevels do
+                
+                // transition layout of previous image to be copied from
+                barrier.subresourceRange.baseMipLevel <- uint (i - 1)
+                barrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+                barrier.dstAccessMask <- Vulkan.VK_ACCESS_TRANSFER_READ_BIT
+                barrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+                barrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                Vulkan.vkCmdPipelineBarrier
+                    (cb,
+                     Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                     Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                     VkDependencyFlags.None,
+                     0u, nullPtr, 0u, nullPtr,
+                     1u, asPointer &barrier)
+                
+                // generate the next mipmap image from the previous one
+                let mutable blit = VkImageBlit ()
+                blit.srcOffsets // TODO: DJL: continue once we get this shit working!
+                
+                ()
+            
+            
             ()
         
         /// Record commands to copy from buffer to image.
@@ -277,7 +310,7 @@ module Texture =
                  1u, asPointer &region)
 
             // transition image layout for usage either here or in mipmap generation as applicable
-            if mipLevels > 1 then VulkanTexture.recordGenerateMipmaps cb mipLevels vkImage
+            if mipLevels > 1 then VulkanTexture.recordGenerateMipmaps cb extent mipLevels vkImage
             else
                 let mutable useBarrier = VkImageMemoryBarrier ()
                 useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
