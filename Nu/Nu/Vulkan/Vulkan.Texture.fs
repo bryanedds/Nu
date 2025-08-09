@@ -206,6 +206,14 @@ module Texture =
 
         /// Create the image.
         static member private createImage format extent mipLevels vkc =
+            
+            // prepare for mipmap generation if applicable
+            let usage =
+                if mipLevels = 1
+                then Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+                else Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                    
+            // create image
             let mutable info = VkImageCreateInfo ()
             info.imageType <- Vulkan.VK_IMAGE_TYPE_2D
             info.format <- format
@@ -214,7 +222,7 @@ module Texture =
             info.arrayLayers <- 1u
             info.samples <- Vulkan.VK_SAMPLE_COUNT_1_BIT
             info.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
-            info.usage <- Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            info.usage <- usage
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             info.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
             let image = VulkanMemory.Image.create info vkc
@@ -233,8 +241,13 @@ module Texture =
             Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
+        /// Record commands to generate mipmaps.
+        static member private recordGenerateMipmaps cb mipLevels vkImage =
+            
+
+            ()
+        
         /// Record commands to copy from buffer to image.
-        /// TODO: DJL: move this out of VulkanTexture.
         static member recordBufferToImageCopy cb extent mipLevels vkBuffer vkImage =
             
             // transition image layout for data transfer
@@ -263,23 +276,25 @@ module Texture =
                  Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                  1u, asPointer &region)
 
-            // transition image layout for usage
-            let mutable useBarrier = VkImageMemoryBarrier ()
-            useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            useBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            useBarrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
-            useBarrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
-            useBarrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
-            useBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            useBarrier.image <- vkImage
-            Vulkan.vkCmdPipelineBarrier
-                (cb,
-                 Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
-                 Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &useBarrier)
+            // transition image layout for usage either here or in mipmap generation as applicable
+            if mipLevels > 1 then VulkanTexture.recordGenerateMipmaps cb mipLevels vkImage
+            else
+                let mutable useBarrier = VkImageMemoryBarrier ()
+                useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+                useBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+                useBarrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
+                useBarrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+                useBarrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
+                useBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+                useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                useBarrier.image <- vkImage
+                Vulkan.vkCmdPipelineBarrier
+                    (cb,
+                     Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                     Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                     VkDependencyFlags.None,
+                     0u, nullPtr, 0u, nullPtr,
+                     1u, asPointer &useBarrier)
         
         /// Copy the pixels from the staging buffer to the image.
         static member private copyBufferToImage extent mipLevels vkBuffer vkImage (vkc : Hl.VulkanContext) =
