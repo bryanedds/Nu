@@ -15,7 +15,6 @@ module BattleExtensions =
         member this.Battle = this.ModelGeneric<Battle> ()
         member this.ConcludingBattleEvent = Events.ConcludingBattleEvent --> this
         member this.ConcludeBattleEvent = Events.ConcludeBattleEvent --> this
-        member this.RetryBattleEvent = Events.RetryBattleEvent --> this
 
 type BattleDispatcher () =
     inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty : Battle)
@@ -74,7 +73,7 @@ type BattleDispatcher () =
                     just battle
             | None -> just battle
 
-        | BattleMessage.Retry ->
+        | Retry ->
             let battle = Battle.retry battle
             just battle
 

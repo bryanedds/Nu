@@ -25,4 +25,3 @@ module Events =
     let CommenceBattleEvent = stoa<BattleData * PrizePool> "Commence/Battle/Event"
     let ConcludingBattleEvent = stoa<BattleOutcome> "Concluding/Battle/Event"
     let ConcludeBattleEvent = stoa<BattleOutcome * PrizePool> "Conclude/Battle/Event"
-    let RetryBattleEvent = stoa<BattleData * PrizePool> "Retry/Battle/Event"

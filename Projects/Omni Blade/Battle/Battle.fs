@@ -1070,7 +1070,7 @@ module Battle =
         match battle.BattleState_ with
         | BattleResult (_, LoseBattle) ->
             { battle with
-                BattleState_ = BattleConcluding (battle.BattleTime_, BattleOutcome.RetryBattle (battle.BattleData_, battle.PrizePool_))
+                BattleState_ = BattleConcluding (battle.BattleTime_, RetryBattle (battle.BattleData_, battle.PrizePool_))
                 DialogOpt_ = None }
         | _ -> battle
 

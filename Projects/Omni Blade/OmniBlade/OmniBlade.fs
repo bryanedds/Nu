@@ -124,7 +124,7 @@ type OmniBladeDispatcher () =
             match outcome with
             | WinBattle -> just Field
             | LoseBattle -> just Title
-            | BattleOutcome.RetryBattle (battleData, prizePool) -> withSignal (FromFieldToBattle (battleData, prizePool)) Battle
+            | RetryBattle (battleData, prizePool) -> withSignal (FromFieldToBattle (battleData, prizePool)) Battle
 
         | ConcludeBattle ->
             let battle = Simulants.Battle.GetBattle world
@@ -133,7 +133,7 @@ type OmniBladeDispatcher () =
                 match outcome with
                 | WinBattle -> withSignal (FromBattleToField battle.PrizePool) Field
                 | LoseBattle -> just Title
-                | BattleOutcome.RetryBattle (_, _) -> just Battle
+                | RetryBattle (_, _) -> just Battle
             | _ -> just omniBlade
 
     override this.Command (_, command, _, world) =
