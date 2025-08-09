@@ -7,6 +7,7 @@ open System.Numerics
 open ImGuiNET
 open Prime
 
+/// ImGuizmo functions.
 [<RequireQualifiedAccess>]
 module ImGuizmo =
 

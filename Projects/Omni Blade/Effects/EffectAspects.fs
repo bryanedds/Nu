@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu
+open System.Numerics
 open Nu.Effects
 module Effects =
 

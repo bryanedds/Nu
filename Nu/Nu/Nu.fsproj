@@ -4,6 +4,11 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
+        <RepositoryBranch>master</RepositoryBranch>
+        <RepositoryType>git</RepositoryType>
+        <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
+        <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -211,7 +216,7 @@
 		<PackageReference Include="FParsec" Version="1.1.1" />
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
 		<PackageReference Include="JoltPhysicsSharp" Version="2.17.4" />
-		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.10.0" />
+		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.7.0" />
 		<PackageReference Include="Pfim" Version="0.11.3" />
 		<PackageReference Include="Prime" Version="11.1.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "fsdocs-tool": {
+      "version": "20.0.1",
+      "commands": [
+        "fsdocs"
+      ],
+      "rollForward": false
+    }
+  }
+}

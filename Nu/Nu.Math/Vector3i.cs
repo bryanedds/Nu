@@ -11,7 +11,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Represents a 3D vector using three 32-bit integer numbers.

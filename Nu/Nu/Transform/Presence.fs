@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
 
 /// Describes the form of an element's presence.
@@ -46,6 +47,7 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
             | Interior | Exterior | Imposter -> match lightBoxOpt with ValueSome lightBox -> lightBox.Intersects bounds | ValueNone -> false
             | Omnipresent -> true
 
+/// Presence operators.
 [<AutoOpen>]
 module PresenceOperators =
     

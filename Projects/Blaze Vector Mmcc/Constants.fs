@@ -1,5 +1,6 @@
 ﻿namespace BlazeVector
 open System
+open System.Numerics
 open Nu
 open Prime
 

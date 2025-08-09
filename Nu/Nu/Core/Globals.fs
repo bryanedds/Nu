@@ -6,9 +6,12 @@ open System
 open System.Configuration
 open Prime
 
+/// Global mutable values. Any code that dynamically depends on these values must track their changes manually by
+/// internally keeping track of their last observed value and comparing it with the current one.
 [<RequireQualifiedAccess>]
 module Globals =
 
+    /// Global mutable rendering values. Change tracking must be done manually by dependant code.
     [<RequireQualifiedAccess>]
     module Render =
 

@@ -7,6 +7,7 @@ open System.Configuration
 open Prime
 open Nu
 
+/// Provides engine-specific configuration functionality.
 [<RequireQualifiedAccess>]
 module Configure =
 

@@ -22,7 +22,7 @@ module Xtension =
             member this.ContainsRuntimeProperties with get () = this.Flags &&& ContainsRuntimePropertiesMask <> 0
 
     /// Check whether the Xtension uses mutation.
-    let getImperative (xtension : Xtension) = xtension.Imperative
+    let imperative (xtension : Xtension) = xtension.Imperative
 
     /// Check whether the Xtension contains any DesignerProperty's or ComputedProperty's in constant-time (via an
     /// internally-cached flag).

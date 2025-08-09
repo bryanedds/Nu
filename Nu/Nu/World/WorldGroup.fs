@@ -6,6 +6,7 @@ open System
 open System.IO
 open Prime
 
+/// Group functions for the world (2/2).
 [<AutoOpen>]
 module WorldGroupModule =
 

@@ -614,6 +614,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 
+/// Miscellaneous physics operations.
 [<RequireQualifiedAccess>]
 module Physics =
 

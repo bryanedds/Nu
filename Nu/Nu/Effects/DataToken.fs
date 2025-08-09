@@ -20,6 +20,7 @@ type [<ReferenceEquality>] DataToken =
     | TagToken of Name : string * UserDefined : obj
     | DataTokens of DataTokens : DataToken SArray
 
+/// DataToken functions.
 [<RequireQualifiedAccess>]
 module DataToken =
 

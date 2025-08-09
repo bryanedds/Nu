@@ -7,6 +7,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
 
+/// Generalized simulant functions for the world.
 [<AutoOpen>]
 module WorldSimulantModule =
 
@@ -282,6 +283,7 @@ module WorldSimulantModule =
             let state = World.getState simulant world
             Reflection.getReflectivePropertyDefinitions state
 
+/// PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 

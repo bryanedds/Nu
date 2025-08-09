@@ -10,6 +10,7 @@ module OpenGL = let _ = ()
 namespace OpenGL
 open System
 open System.Runtime.InteropServices
+open System.Numerics
 open System.Text
 open SDL2
 open Prime

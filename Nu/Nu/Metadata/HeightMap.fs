@@ -31,6 +31,7 @@ type [<Struct>] RawHeightMap =
       RawFormat : RawFormat
       RawAsset : Raw AssetTag }
 
+/// Metadata for a height map, including resolution, normalized heights, and positions and texture coordinates.
 type HeightMapMetadata =
     { Resolution : Vector2i
       HeightsNormalized : single array

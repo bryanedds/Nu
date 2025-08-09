@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldEntityHierarchy =
+module WorldEntityHierarchyExtensions =
 
     type Entity with
 
@@ -261,7 +261,7 @@ module WorldEntityHierarchy =
                 entity.SetVisibleLocal false world
                 if entity.GetBodyFreezableWhenSurfaceFreezable world then
                     entity.SetNavEnabled false world
-                    entity.SetBodyEnabled false world
+                    entity.SetBodyFrozen true world
             match boundsOpt with
             | Some bounds ->
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
@@ -296,7 +296,8 @@ module WorldEntityHierarchy =
                     entity.SetVisibleLocal true world
                     if entity.GetBodyFreezableWhenSurfaceFreezable world then
                         entity.SetNavEnabled true world
-                        entity.SetBodyEnabled true world
+                        entity.SetBodyEnabled true world // TODO: P0: remove this line of code once serializaion changes have propagated over enough time (8/6/25).
+                        entity.SetBodyFrozen false world
                 for child in entity.GetChildren world do
                     showChildren child
             showChildren parent
@@ -308,35 +309,31 @@ module WorldEntityHierarchy =
             parent.SetOffset v3Zero world
 
 [<AutoOpen>]
-module Freezer3dFacetModule =
+module Permafreezer3dDispatcherExtensions =
 
     type Entity with
-        member this.GetFrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.FrozenBundles) world
-        member this.SetFrozenBundles (value : StaticModelSurfaceBundle array) world = this.Set (nameof this.FrozenBundles) value world
-        member this.FrozenBundles = lens (nameof this.FrozenBundles) this this.GetFrozenBundles this.SetFrozenBundles
-        member this.GetFrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.FrozenShapes) world
-        member this.SetFrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
-        member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
-        member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
-        member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
-        member this.Frozen = lens (nameof this.Frozen) this this.GetFrozen this.SetFrozen
+        member this.GetPermafrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.PermafrozenBundles) world
+        member this.SetPermafrozenBundles (value : StaticModelSurfaceBundle array) world = this.Set (nameof this.PermafrozenBundles) value world
+        member this.PermafrozenBundles = lens (nameof this.PermafrozenBundles) this this.GetPermafrozenBundles this.SetPermafrozenBundles
+        member this.GetPermafrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.PermafrozenShapes) world
+        member this.SetPermafrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.PermafrozenShapes) value world
+        member this.PermafrozenShapes = lens (nameof this.PermafrozenShapes) this this.GetPermafrozenShapes this.SetPermafrozenShapes
         member this.GetPresenceConferred world : Presence = this.Get (nameof this.PresenceConferred) world
         member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
         member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
-        member this.GetSurfaceMaterialsPopulated world : bool = this.Get (nameof this.SurfaceMaterialsPopulated) world
-        member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
-        member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
 
-        member internal this.RegisterFrozenShapesNav world =
+        member internal this.RegisterFrozenShapesNav getFrozenShapes world =
             let mutable index = 0
-            for (bounds, matrix, staticModel, surfaceIndex, navShape, _, _) in this.GetFrozenShapes world do
+            let frozenShapes = getFrozenShapes this world
+            for (bounds, matrix, staticModel, surfaceIndex, navShape, _, _) in frozenShapes do
                 let navId = { NavIndex = index; NavEntity = this }
                 World.setNav3dBodyOpt (Some (bounds, matrix, staticModel, surfaceIndex, navShape)) navId world
                 index <- inc index
 
-        member internal this.RegisterFrozenShapesPhysics world =
+        member internal this.RegisterFrozenShapesPhysics getFrozenShapes world =
             let mutable index = 0
-            for (_, _, _, _, _, affine : Affine, bodyShape) in this.GetFrozenShapes world do
+            let frozenShapes = getFrozenShapes this world
+            for (_, _, _, _, _, affine : Affine, bodyShape) in frozenShapes do
                 let bodyId = { BodySource = this; BodyIndex = index }
                 let bodyProperties =
                     { Enabled = true
@@ -366,39 +363,112 @@ module Freezer3dFacetModule =
                 World.createBody (this.GetIs2d world) bodyId bodyProperties world
                 index <- inc index
 
-        member internal this.RegisterFrozenShapes world =
-            this.RegisterFrozenShapesNav world
-            this.RegisterFrozenShapesPhysics world
+        member internal this.RegisterFrozenShapes getFrozenShapes world =
+            this.RegisterFrozenShapesNav getFrozenShapes world
+            this.RegisterFrozenShapesPhysics getFrozenShapes world
 
-        member internal this.UnregisterFrozenShapesNav world =
+        member internal this.UnregisterFrozenShapesNav getFrozenShapes world =
             let mutable index = 0
-            for _ in this.GetFrozenShapes world do
+            let frozenShapes = getFrozenShapes this world
+            for _ in frozenShapes do
                 let navId = { NavIndex = index; NavEntity = this }
                 World.setNav3dBodyOpt None navId world
                 index <- inc index
 
-        member internal this.UnregisterFrozenShapesPhysics world =
+        member internal this.UnregisterFrozenShapesPhysics getFrozenShapes world =
             let mutable index = 0
-            for _ in this.GetFrozenShapes world do
+            let frozenShapes = getFrozenShapes this world
+            for _ in frozenShapes do
                 let bodyId = { BodySource = this; BodyIndex = index }
                 World.destroyBody false bodyId world
                 index <- inc index
 
-        member internal this.UnregisterFrozenShapes world =
-            this.UnregisterFrozenShapesNav world
-            this.UnregisterFrozenShapesPhysics world
+        member internal this.UnregisterFrozenShapes getFrozenShapes world =
+            this.UnregisterFrozenShapesNav getFrozenShapes world
+            this.UnregisterFrozenShapesPhysics getFrozenShapes world
+
+        member internal this.RenderFrozenBundles (bounds, presenceConferred, getFrozenBundles, renderPass, entity, world) =
+
+            // compute intersection function based on render pass
+            let intersects =
+                let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
+                let exterior = World.getGameEye3dFrustumExterior Game world
+                let imposter = World.getGameEye3dFrustumImposter Game world
+                let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
+                fun probe light presence (bounds : Box3) ->
+                    match renderPass with
+                    | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
+                    | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
+                    | ReflectionPass (_, _) -> false
+                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
+
+            // render unculled surfaces
+            if intersects false false presenceConferred bounds then
+                let bundles = getFrozenBundles entity world
+                let message = RenderStaticModelSurfaceBundles { StaticModelSurfaceBundles = bundles; RenderPass = renderPass }
+                World.enqueueRenderMessage3d message world
+
+/// Gives an entity the base behavior of a permafrozen hierarchy of potentially-rigid model surfaces.
+type Permafreezer3dDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static member Properties =
+        [define Entity.PermafrozenBundles [||]
+         define Entity.PermafrozenShapes [||]
+         define Entity.PresenceConferred Exterior]
+
+    override this.Render (renderPass, entity, world) =
+        let bounds = entity.GetBounds world
+        let presenceConferred = entity.GetPresenceConferred world
+        let getFrozenBundles = fun (entity : Entity) -> entity.GetPermafrozenBundles
+        entity.RenderFrozenBundles (bounds, presenceConferred, getFrozenBundles, renderPass, entity, world)
+
+    override this.RegisterPhysics (entity, world) =
+        let getFrozenShapes = fun (entity : Entity) -> entity.GetPermafrozenShapes
+        entity.RegisterFrozenShapesPhysics getFrozenShapes world
+
+    override this.UnregisterPhysics (entity, world) =
+        let getFrozenShapes = fun (entity : Entity) -> entity.GetPermafrozenShapes
+        entity.UnregisterFrozenShapesPhysics getFrozenShapes world
+
+    override this.RayCast (ray, entity, world) =
+        if entity.GetPickable world then
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            [|Intersection.ofNullable intersectionOpt|]
+        else [|Miss|]
+
+[<AutoOpen>]
+module Freezer3dFacetExtensions =
+
+    type Entity with
+        member this.GetFrozenBundles world : StaticModelSurfaceBundle array = this.Get (nameof this.FrozenBundles) world
+        member this.SetFrozenBundles (value : StaticModelSurfaceBundle array) world = this.Set (nameof this.FrozenBundles) value world
+        member this.FrozenBundles = lens (nameof this.FrozenBundles) this this.GetFrozenBundles this.SetFrozenBundles
+        member this.GetFrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.FrozenShapes) world
+        member this.SetFrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.FrozenShapes) value world
+        member this.FrozenShapes = lens (nameof this.FrozenShapes) this this.GetFrozenShapes this.SetFrozenShapes
+        member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
+        member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
+        member this.Frozen = lens (nameof this.Frozen) this this.GetFrozen this.SetFrozen
+        member this.GetSurfaceMaterialsPopulated world : bool = this.Get (nameof this.SurfaceMaterialsPopulated) world
+        member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
+        member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
+        member this.GetIgnoreGlobalFreezerCommands world : bool = this.Get (nameof this.IgnoreGlobalFreezerCommands) world
+        member this.SetIgnoreGlobalFreezerCommands (value : bool) world = this.Set (nameof this.IgnoreGlobalFreezerCommands) value world
+        member this.IgnoreGlobalFreezerCommands = lens (nameof this.IgnoreGlobalFreezerCommands) this this.GetIgnoreGlobalFreezerCommands this.SetIgnoreGlobalFreezerCommands
 
         member internal this.UpdateFrozenHierarchy world =
+            let getFrozenShapes = fun (entity : Entity) -> entity.GetFrozenShapes
             if this.GetFrozen world then
                 let surfaceMaterialsPopulated = this.GetSurfaceMaterialsPopulated world
                 let (frozenBundles, frozenShapes, world) = World.freezeEntityHierarchy surfaceMaterialsPopulated this world
                 this.SetFrozenBundles frozenBundles world
                 this.SetStatic true world
-                if this.GetSelected world then this.UnregisterFrozenShapes world
+                if this.GetSelected world then this.UnregisterFrozenShapes getFrozenShapes world
                 this.SetFrozenShapes frozenShapes world
-                if this.GetSelected world then this.RegisterFrozenShapes world
+                if this.GetSelected world then this.RegisterFrozenShapes getFrozenShapes world
             else
-                if this.GetSelected world then this.UnregisterFrozenShapes world
+                if this.GetSelected world then this.UnregisterFrozenShapes getFrozenShapes world
                 this.SetFrozenShapes [||] world
                 this.SetStatic false world
                 this.SetFrozenBundles [||] world
@@ -415,168 +485,161 @@ module Freezer3dFacetModule =
                 if descendent.GetExists world && descendent.GetSurfaceFreezable world then
                     World.destroyEntityImmediate descendent world
 
-    /// Gives an entity the ability to freeze hierarchies of 3D entities.
-    type Freezer3dFacet () =
-        inherit Facet (false, false, false)
+/// Gives an entity the ability to freeze hierarchies of 3D entities.
+type Freezer3dFacet () =
+    inherit Facet (false, false, false)
 
-        static let handleUpdateFrozenHierarchy evt world =
-            let entity = evt.Subscriber : Entity
-            entity.UpdateFrozenHierarchy world
-            Cascade
+    static let handleUpdateFrozenHierarchy evt world =
+        let entity = evt.Subscriber : Entity
+        entity.UpdateFrozenHierarchy world
+        Cascade
 
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             nonPersistent Entity.FrozenBundles [||]
-             nonPersistent Entity.FrozenShapes [||]
-             define Entity.Frozen false
-             define Entity.PresenceConferred Exterior
-             define Entity.SurfaceMaterialsPopulated false]
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel
+         nonPersistent Entity.FrozenBundles [||]
+         nonPersistent Entity.FrozenShapes [||]
+         define Entity.Frozen false
+         define Entity.PresenceConferred Exterior
+         define Entity.SurfaceMaterialsPopulated false
+         define Entity.IgnoreGlobalFreezerCommands false]
 
-        override this.Register (entity, world) =
-            entity.SetOffset v3Zero world
-            World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
-            World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
+    override this.Register (entity, world) =
+        entity.SetOffset v3Zero world
+        World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
+        World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
 
-        override this.Render (renderPass, entity, world) =
+    override this.Render (renderPass, entity, world) =
+        let bounds = entity.GetBounds world
+        let presenceConferred = entity.GetPresenceConferred world
+        let getFrozenBundles = fun (entity : Entity) -> entity.GetFrozenBundles
+        entity.RenderFrozenBundles (bounds, presenceConferred, getFrozenBundles, renderPass, entity, world)
 
-            // compute intersection function based on render pass
-            let intersects =
-                let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
-                let exterior = World.getGameEye3dFrustumExterior Game world
-                let imposter = World.getGameEye3dFrustumImposter Game world
-                let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
-                fun probe light presence (bounds : Box3) ->
-                    match renderPass with
-                    | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
-                    | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
-                    | ReflectionPass (_, _) -> false
-                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
+    override this.RegisterPhysics (entity, world) =
+        let getFrozenShapes = fun (entity : Entity) -> entity.GetFrozenShapes
+        entity.RegisterFrozenShapesPhysics getFrozenShapes world
 
-            // render unculled surfaces
-            let bounds = entity.GetBounds world
-            let presenceConferred = entity.GetPresenceConferred world
-            if intersects false false presenceConferred bounds then
-                let bundles = entity.GetFrozenBundles world
-                let message = RenderStaticModelSurfaceBundles { StaticModelSurfaceBundles = bundles; RenderPass = renderPass }
-                World.enqueueRenderMessage3d message world
+    override this.UnregisterPhysics (entity, world) =
+        let getFrozenShapes = fun (entity : Entity) -> entity.GetFrozenShapes
+        entity.UnregisterFrozenShapesPhysics getFrozenShapes world
 
-        override this.RegisterPhysics (entity, world) =
-            entity.RegisterFrozenShapesPhysics world
+    override this.RayCast (ray, entity, world) =
+        if entity.GetPickable world then
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            [|Intersection.ofNullable intersectionOpt|]
+        else [|Miss|]
 
-        override this.UnregisterPhysics (entity, world) =
-            entity.UnregisterFrozenShapesPhysics world
-
-        override this.RayCast (ray, entity, world) =
-            if entity.GetPickable world then
-                let intersectionOpt = ray.Intersects (entity.GetBounds world)
-                [|Intersection.ofNullable intersectionOpt|]
-            else [|Miss|]
-
-        override this.Edit (op, entity, world) =
-            match op with
-            | AppendProperties append ->
-                if ImGui.Button "Permafreeze" then
-                    append.EditContext.Snapshot Permafreeze world
-                    entity.Permafreeze world
-            | _ -> ()
+    override this.Edit (op, entity, world) =
+        match op with
+        | AppendProperties append ->
+            if ImGui.Button "Permafreeze" then
+                append.EditContext.Snapshot Permafreeze world
+                entity.Permafreeze world
+                let frozenBundles = entity.GetFrozenBundles world
+                let frozenShapes = entity.GetFrozenShapes world
+                World.changeEntityDispatcher (nameof Permafreezer3dDispatcher) entity world
+                entity.SetPermafrozenBundles frozenBundles world
+                entity.SetPermafrozenShapes frozenShapes world
+                let getFrozenShapes = fun (entity : Entity) -> entity.GetPermafrozenShapes
+                entity.RegisterFrozenShapesPhysics getFrozenShapes world
+        | _ -> ()
 
 [<AutoOpen>]
-module StaticModelHierarchyDispatcherModule =
+module StaticModelHierarchyDispatcherExtensions =
 
     type Entity with
         member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
 
-    /// Gives an entity the base behavior of hierarchy of indexed static models.
-    type StaticModelHierarchyDispatcher () =
-        inherit Entity3dDispatcher (false, false, false)
+/// Gives an entity the base behavior of hierarchy of indexed static models.
+type StaticModelHierarchyDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
 
-        static let updateLoadedHierarchy (entity : Entity) world =
-            for child in entity.GetChildren world do
-                World.destroyEntityImmediate child world
-            World.tryImportEntityHierarchy
-                (entity.GetPresenceConferred world)
-                (entity.GetStaticModel world)
-                (entity.GetSurfaceMaterialsPopulated world)
-                Convex false (Right entity) world
-            entity.UpdateFrozenHierarchy world
+    static let updateLoadedHierarchy (entity : Entity) world =
+        for child in entity.GetChildren world do
+            World.destroyEntityImmediate child world
+        World.tryImportEntityHierarchy
+            (entity.GetPresenceConferred world)
+            (entity.GetStaticModel world)
+            (entity.GetSurfaceMaterialsPopulated world)
+            Convex false (Right entity) world
+        entity.UpdateFrozenHierarchy world
 
-        static let handleUpdateLoadedHierarchy evt world =
-            let entity = evt.Subscriber : Entity
+    static let handleUpdateLoadedHierarchy evt world =
+        let entity = evt.Subscriber : Entity
+        updateLoadedHierarchy entity world
+        Cascade
+
+    static member Facets =
+        [typeof<Freezer3dFacet>]
+
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel
+         define Entity.Loaded false]
+
+    override this.Register (entity, world) =
+        if not (entity.GetLoaded world) then
             updateLoadedHierarchy entity world
-            Cascade
+            entity.SetLoaded true world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
 
-        static member Facets =
-            [typeof<Freezer3dFacet>]
-
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.Loaded false]
-
-        override this.Register (entity, world) =
-            if not (entity.GetLoaded world) then
-                updateLoadedHierarchy entity world
-                entity.SetLoaded true world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
-
-        override this.Edit (op, _, _) =
-            match op with
-            | ReplaceProperty replace ->
-                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
-                    replace.IndicateReplaced ()
-            | _ -> ()
+    override this.Edit (op, _, _) =
+        match op with
+        | ReplaceProperty replace ->
+            if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
+                replace.IndicateReplaced ()
+        | _ -> ()
 
 [<AutoOpen>]
-module RigidModelHierarchyDispatcherModule =
+module RigidModelHierarchyDispatcherExtensions =
 
     type Entity with
         member this.GetProfile world : Profile = this.Get (nameof this.Profile) world
         member this.SetProfile (value : Profile) world = this.Set (nameof this.Profile) value world
         member this.Profile = lens (nameof this.Profile) this this.GetProfile this.SetProfile
 
-    /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
-    type RigidModelHierarchyDispatcher () =
-        inherit Entity3dDispatcher (true, false, false)
+/// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
+type RigidModelHierarchyDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
 
-        static let updateLoadedHierarchy (entity : Entity) world =
-            for child in entity.GetChildren world do
-                World.destroyEntityImmediate child world
-            World.tryImportEntityHierarchy
-                (entity.GetPresenceConferred world)
-                (entity.GetStaticModel world)
-                (entity.GetSurfaceMaterialsPopulated world)
-                (entity.GetProfile world)
-                true (Right entity) world
-            entity.UpdateFrozenHierarchy world
+    static let updateLoadedHierarchy (entity : Entity) world =
+        for child in entity.GetChildren world do
+            World.destroyEntityImmediate child world
+        World.tryImportEntityHierarchy
+            (entity.GetPresenceConferred world)
+            (entity.GetStaticModel world)
+            (entity.GetSurfaceMaterialsPopulated world)
+            (entity.GetProfile world)
+            true (Right entity) world
+        entity.UpdateFrozenHierarchy world
 
-        static let handleUpdateLoadedHierarchy evt world =
-            let entity = evt.Subscriber : Entity
+    static let handleUpdateLoadedHierarchy evt world =
+        let entity = evt.Subscriber : Entity
+        updateLoadedHierarchy entity world
+        Cascade
+
+    static member Facets =
+        [typeof<Freezer3dFacet>]
+
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel
+         define Entity.Profile Convex
+         define Entity.Loaded false]
+
+    override this.Register (entity, world) =
+        if not (entity.GetLoaded world) then
             updateLoadedHierarchy entity world
-            Cascade
+            entity.SetLoaded true world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
+        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.Profile)) entity world
 
-        static member Facets =
-            [typeof<Freezer3dFacet>]
-
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.Profile Convex
-             define Entity.Loaded false]
-
-        override this.Register (entity, world) =
-            if not (entity.GetLoaded world) then
-                updateLoadedHierarchy entity world
-                entity.SetLoaded true world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
-            World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.Profile)) entity world
-
-        override this.Edit (op, _, _) =
-            match op with
-            | ReplaceProperty replace ->
-                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
-                    replace.IndicateReplaced ()
-            | _ -> ()
+    override this.Edit (op, _, _) =
+        match op with
+        | ReplaceProperty replace ->
+            if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then
+                replace.IndicateReplaced ()
+        | _ -> ()

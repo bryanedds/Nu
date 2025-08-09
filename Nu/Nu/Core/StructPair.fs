@@ -12,6 +12,7 @@ namespace Nu
 type [<Struct>] StructPair<'a, 'b> =
     { Fst : 'a; Snd : 'b }
 
+/// StructPair functions.
 [<RequireQualifiedAccess>]
 module StructPair =
 
@@ -43,6 +44,7 @@ module StructPair =
     let inline mapSnd<'a, 'b> mapper (pair : StructPair<'a, 'b>) =
         make pair.Fst (mapper pair.Snd)
 
+/// StructPair operators.
 [<AutoOpen>]
 module StructPairOperators =
 

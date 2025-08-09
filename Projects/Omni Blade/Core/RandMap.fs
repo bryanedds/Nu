@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.Numerics
 open TiledSharp
 open Prime
 open Nu

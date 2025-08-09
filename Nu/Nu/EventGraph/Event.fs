@@ -15,6 +15,7 @@ and Event<'a, 's when 's :> Simulant> =
       Address : 'a Address
       Trace : EventTrace }
 
+/// Event functions.
 [<RequireQualifiedAccess>]
 module Event =
 

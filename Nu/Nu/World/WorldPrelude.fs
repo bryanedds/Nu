@@ -240,36 +240,72 @@ type [<SymbolicExpansion>] NavBuilderResultData =
 
 /// The manner in which a gui entity may be docked by a parent entity.
 type DockType =
+
+    /// Dock in the available center space of the parent entity.
     | DockCenter
+
+    /// Dock in the available top side of the parent entity.
     | DockTop
+
+    /// Dock in the available right side of the parent entity.
     | DockRight
+
+    /// Dock in the available bottom side of the parent entity.
     | DockBottom
+
+    /// Dock in the available left side of the parent entity.
     | DockLeft
 
 /// The manner in which a layout limits the flow its children.
 type FlowLimit =
+
+    /// Flow within the parent's bounds.
     | FlowParent
+
+    /// Flow without limit.
     | FlowUnlimited
+
+    /// Flow to a specific distance.
     | FlowTo of single
 
 /// The direction in which a layout flows its children.
 type FlowDirection =
+
+    /// Flow to the right.
     | FlowRightward
+
+    /// Flow downward.
     | FlowDownward
+
+    /// Flow to the left.
     | FlowLeftward
+
+    /// Flow upward.
     | FlowUpward
 
 /// A gui layout.
 type Layout =
+
+    /// Flow children in the given direcion up to the given limit.
     | Flow of FlowDirection : FlowDirection * FlowLimit : FlowLimit
+
+    /// Dock children in the given bounds
     | Dock of Bounds : Vector4 * PercentageBased : bool * ResizeChildren : bool
+
+    /// Arrange children in a grid with the given dimensions, optional flow direction, and with optional resizing behavior.
     | Grid of Dims : Vector2i * FlowDirectionOpt : FlowDirection option * ResizeChildren : bool
+
+    /// Utilize no layout, allowing children to be placed freely.
     | Manual
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =
+
+    /// A transition that occurs when a screen has been selected.
     | Incoming
+
+    /// A transition that occurs when a screen is being deselected.
     | Outgoing
 
 /// The state of a screen's transition.
@@ -323,7 +359,7 @@ type OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
-/// A tasklet to be completed at the scheduled update time.
+/// A tasklet to be completed at the scheduled time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
       ScheduledOp : 'w -> unit }
@@ -428,7 +464,7 @@ type Timers =
           GcFrameTime = gcTime }
 
 [<AutoOpen>]
-module AmbientState =
+module internal AmbientState =
 
     let [<Literal>] private ImperativeMask =            0b00001u
     let [<Literal>] private AccompaniedMask =           0b00010u
@@ -436,8 +472,8 @@ module AmbientState =
     let [<Literal>] private FramePacingMask =           0b01000u
     let [<Literal>] private AdvancementClearedMask =    0b10000u
 
-    /// The ambient state of the world.
-    type [<ReferenceEquality>] 'w AmbientState =
+    /// The 'ambient' state of the world (miscellaneous world state such as time).
+    type [<ReferenceEquality>] internal 'w AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Flags : uint
@@ -470,23 +506,19 @@ module AmbientState =
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
         member this.AdvancementCleared = this.Flags &&& AdvancementClearedMask <> 0u
 
-    /// Get the the liveness state of the engine.
-    let getLiveness state =
+    let internal getLiveness state =
         state.Liveness
 
-    /// Set whether the world's state is advancing.
-    let setAdvancing advancing (state : _ AmbientState) =
+    let internal setAdvancing advancing (state : _ AmbientState) =
         if advancing <> state.Advancing then
             if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
             { state with Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask }
         else state
 
-    /// Set whether the world's frame rate is being explicitly paced based on clock progression.
-    let setFramePacing framePacing (state : _ AmbientState) =
+    let internal setFramePacing framePacing (state : _ AmbientState) =
         { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
 
-    /// Get the collection config value.
-    let getConfig (state : _ AmbientState) =
+    let internal getConfig (state : _ AmbientState) =
         if state.Imperative then TConfig.Imperative else TConfig.Functional
 
     let internal clearAdvancement (state : _ AmbientState) =
@@ -506,52 +538,41 @@ module AmbientState =
             ClockDelta = clockDelta
             TickDelta = tickDelta }
 
-    /// Get the update delta.
-    let getUpdateDelta state =
+    let internal getUpdateDelta state =
         state.UpdateDelta
 
-    /// Get the update time.
-    let getUpdateTime state =
+    let internal getUpdateTime state =
         state.UpdateTime
 
-    /// Get the clock delta as a number of seconds.
-    let getClockDelta state =
+    let internal getClockDelta state =
         state.ClockDelta
 
-    /// Get the clock time as a number of seconds.
-    let getClockTime state =
+    let internal getClockTime state =
         state.ClockTime
 
-    /// Get the tick delta as a number of environment ticks.
-    let getTickDelta state =
+    let internal getTickDelta state =
         state.TickDelta
 
-    /// Get the tick time as a number of environment ticks.
-    let getTickTime state =
+    let internal getTickTime state =
         state.TickTime
 
-    /// Get the polymorphic engine time delta.
-    let getGameDelta (state : 'w AmbientState) =
+    let internal getGameDelta (state : 'w AmbientState) =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
         | DynamicFrameRate _ -> TickTime (getTickDelta state)
 
-    /// Get the polymorphic engine time.
-    let getGameTime state =
+    let internal getGameTime state =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
         | DynamicFrameRate _ -> TickTime (getTickTime state)
 
-    /// Get the date delta as a TimeSpan.
-    let getDateDelta state =
+    let internal getDateDelta state =
         state.DateDelta
 
-    /// Get the date time as a DateTimeOffset.
-    let getDateTime state =
+    let internal getDateTime state =
         state.DateTime
 
-    /// Update the update and clock times.
-    let updateTime (state : 'w AmbientState) =
+    let internal updateTime (state : 'w AmbientState) =
         let tickDeltaCurrent =
             if state.Advancing
             then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
@@ -575,88 +596,70 @@ module AmbientState =
             DateTime = dateTime
             DateDelta = dateTime - state.DateTime }
 
-    /// Switch simulation to use this ambient state.
-    let switch (state : 'w AmbientState) =
+    let internal switch (state : 'w AmbientState) =
         if state.Advancing
         then state.TickWatch.Start ()
         else state.TickWatch.Stop ()
         state
 
-    /// Place the engine into a state such that the app will exit at the end of the current frame.
-    let exit state =
+    let internal exit state =
         { state with Liveness = Dead }
 
-    /// Get the key-value store.
-    let getKeyValueStore state =
+    let internal getKeyValueStore state =
         state.KeyValueStore
 
-    /// Get the key-value store with the by map.
-    let getKeyValueStoreBy by state =
+    let internal getKeyValueStoreBy by state =
         by state.KeyValueStore
 
-    /// Set the key-value store.
-    let setKeyValueStore store state =
+    let internal setKeyValueStore store state =
         { state with KeyValueStore = store }
 
-    /// Update the key-value store.
-    let mapKeyValueStore mapper state =
+    let internal mapKeyValueStore mapper state =
         let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
 
-    /// Get the active coroutines.
-    let getCoroutines state =
+    let internal getCoroutines state =
         state.Coroutines
 
-    /// Set the active coroutines.
-    let setCoroutines coroutines state =
+    let internal setCoroutines coroutines state =
         { state with Coroutines = coroutines }
 
-    /// Add a coroutine to the active coroutines.
-    let addCoroutine coroutine state =
+    let internal addCoroutine coroutine state =
         let id = Gen.id64
         let coroutines = OMap.add id coroutine state.Coroutines
         { state with Coroutines = coroutines }
 
-    /// Get the tasklets scheduled for future processing.
-    let getTasklets state =
+    let internal getTasklets state =
         state.Tasklets
 
-    /// Remove all tasklets associated with a simulant.
-    let removeTasklets simulant state =
+    let internal removeTasklets simulant state =
         { state with Tasklets = OMap.remove simulant state.Tasklets }
 
-    /// Clear the tasklets from future processing.
-    let clearTasklets state =
+    let internal clearTasklets state =
         { state with Tasklets = OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets) }
 
-    /// Restore the given tasklets from future processing.
-    let restoreTasklets tasklets state =
+    let internal restoreTasklets tasklets state =
         { state with Tasklets = tasklets }
 
-    /// Add a tasklet to be executed at the scheduled time.
-    let addTasklet simulant tasklet state =
+    let internal addTasklet simulant tasklet state =
         { state with
             Tasklets =
                 match state.Tasklets.TryGetValue simulant with
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) state.Tasklets
                 | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig state.Tasklets) tasklet) state.Tasklets }
 
-    /// Attempt to get the window flags.
-    let tryGetWindowFlags state =
+    let internal tryGetWindowFlags state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some (SglWindow window) -> Some (SDL.SDL_GetWindowFlags window.SglWindow)
         | _ -> None
 
-    /// Attempt to check that the window is minimized.
-    let tryGetWindowMinimized state =
+    let internal tryGetWindowMinimized state =
         Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u) (tryGetWindowFlags state)
 
-    /// Attempt to check that the window is maximized.
-    let tryGetWindowMaximized state =
+    let internal tryGetWindowMaximized state =
         Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED <> 0u) (tryGetWindowFlags state)
 
-    /// Attempt to check that the window is in a full screen state.
-    let tryGetWindowFullScreen state =
+    let internal tryGetWindowFullScreen state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some (SglWindow window) ->            
             let (width, height) = (ref 0, ref 0)
@@ -666,20 +669,17 @@ module AmbientState =
             Some (width.Value = displayMode.w || height.Value = displayMode.h)
         | _ -> None
 
-    /// Attempt to set the window's full screen state.
-    let trySetWindowFullScreen fullScreen state =
+    let internal trySetWindowFullScreen fullScreen state =
         match state.SdlDepsOpt with
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
 
-    /// Attempt to toggle the window's full screen state.
-    let tryToggleWindowFullScreen state =
+    let internal tryToggleWindowFullScreen state =
         match tryGetWindowFullScreen state with
         | Some fullScreen -> trySetWindowFullScreen (not fullScreen) state
         | None -> state
 
-    /// Attempt to get the window position.
-    let tryGetWindowPosition state =
+    let internal tryGetWindowPosition state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some (SglWindow window) ->
             let (x, y) = (ref 0, ref 0)
@@ -687,14 +687,12 @@ module AmbientState =
             Some (v2i x.Value y.Value)
         | _ -> None
 
-    /// Attempt to set the window's position.
-    let trySetWindowPosition (position : Vector2i) state =
+    let internal trySetWindowPosition (position : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some (SglWindow window) -> SDL.SDL_SetWindowPosition (window.SglWindow, position.X, position.Y) |> ignore
         | None -> ()
 
-    /// Attempt to get the window size.
-    let tryGetWindowSize state =
+    let internal tryGetWindowSize state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some (SglWindow window) ->
             let (width, height) = (ref 0, ref 0)
@@ -702,55 +700,43 @@ module AmbientState =
             Some (v2i width.Value height.Value)
         | _ -> None
 
-    /// Attempt to set the window's size.
-    let trySetWindowSize (size : Vector2i) state =
+    let internal trySetWindowSize (size : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some (SglWindow window) -> SDL.SDL_SetWindowSize (window.SglWindow, size.X, size.Y) |> ignore
         | None -> ()
 
-    /// Get symbolics with the by map.
-    let getSymbolicsBy by state =
+    let internal getSymbolicsBy by state =
         by state.Symbolics
 
-    /// Get symbolics.
-    let getSymbolics state =
+    let internal getSymbolics state =
         getSymbolicsBy id state
 
-    /// Set symbolics.
-    let setSymbolics symbolics state =
+    let internal setSymbolics symbolics state =
         { state with Symbolics = symbolics }
 
-    /// Update symbolics.
-    let mapSymbolics mapper state =
+    let internal mapSymbolics mapper state =
         let store = mapper (getSymbolics state)
         { state with Symbolics = store }
 
-    /// Get the overlayer.
-    let getOverlayer state =
+    let internal getOverlayer state =
         state.Overlayer
 
-    /// Set the overlayer.
-    let setOverlayer overlayer state =
+    let internal setOverlayer overlayer state =
         { state with Overlayer = overlayer }
 
-    /// Get the timers.
-    let getTimers state =
+    let internal getTimers state =
         state.Timers
 
-    /// Acknowledge a light map render request.
-    let acknowledgeLightMapRenderRequest state =
+    let internal acknowledgeLightMapRenderRequest state =
         { state with LightMapRenderRequested = false }
 
-    /// Get whether a light map render was requested.
-    let getLightMapRenderRequested state =
+    let internal getLightMapRenderRequested state =
         state.LightMapRenderRequested
 
-    /// Request a light map render for the current frame.
-    let requestLightMapRender state =
+    let internal requestLightMapRender state =
         { state with LightMapRenderRequested = true }
 
-    /// Make an ambient state value.
-    let make imperative accompanied advancing framePacing symbolics overlayer timers sdlDepsOpt =
+    let internal make imperative accompanied advancing framePacing symbolics overlayer timers sdlDepsOpt =
         let flags =
             (if imperative then ImperativeMask else 0u) |||
             (if accompanied then AccompaniedMask else 0u) |||
@@ -778,5 +764,4 @@ module AmbientState =
           Timers = timers
           LightMapRenderRequested = false }
 
-/// The ambient state of the world.
-type 'w AmbientState = 'w AmbientState.AmbientState
+type internal 'w AmbientState = 'w AmbientState.AmbientState

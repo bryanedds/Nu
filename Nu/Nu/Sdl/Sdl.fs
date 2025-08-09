@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open SDL2
 open Prime
 
@@ -184,4 +185,5 @@ module SdlDeps =
                             let context = SglWindow { SglWindow = window }
                             Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
+/// The dependencies needed to initialize SDL.
 type SdlDeps = SdlDeps.SdlDeps
