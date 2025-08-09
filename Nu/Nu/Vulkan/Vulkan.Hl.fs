@@ -73,7 +73,7 @@ module Hl =
     let makeSubresourceRangeColor mips =
         let mutable subresourceRange = VkImageSubresourceRange ()
         subresourceRange.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
-        subresourceRange.levelCount <- mips
+        subresourceRange.levelCount <- uint mips
         subresourceRange.layerCount <- 1u
         subresourceRange
 
@@ -457,7 +457,7 @@ module Hl =
         /// Create the image views.
         static member private createImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView format 1u images.[i] device
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView format 1 images.[i] device
             imageViews
         
         /// Create the framebuffers.

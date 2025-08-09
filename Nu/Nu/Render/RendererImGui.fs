@@ -359,7 +359,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR metadata (Some pixels) vkc
+            fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false metadata (Some pixels) vkc
             
             // create pipeline
             pipeline <-

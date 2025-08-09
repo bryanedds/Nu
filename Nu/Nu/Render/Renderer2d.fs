@@ -760,6 +760,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 vkc.GraphicsQueue
                                 Vulkan.VK_FILTER_NEAREST
                                 Vulkan.VK_FILTER_NEAREST
+                                false
                                 (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
                                 textSurface.pixels
                                 vkc.InFlightFence
