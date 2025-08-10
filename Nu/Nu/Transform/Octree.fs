@@ -534,7 +534,8 @@ module Octree =
         if  not (Octnode.isIntersectingBox bounds tree.Node) ||
             bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
             tree.UbiquitousFallback.Remove element |> ignore
-        else Octnode.removeElement bounds &element tree.Node |> ignore
+        //else HACK: always removing node from node tree to temporarily fix a bug.
+        Octnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
