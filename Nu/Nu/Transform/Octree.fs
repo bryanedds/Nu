@@ -493,10 +493,12 @@ module Octree =
 
         // add to imposter when such
         if presence.IsImposter then
+            tree.Imposter.Remove element |> ignore
             tree.Imposter.Add element |> ignore
 
         // add to omnipresent when such
         if presence.IsOmnipresent then
+            tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
 
         // add to omnipresent-in-play-only when appropriate
