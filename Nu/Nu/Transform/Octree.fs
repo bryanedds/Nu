@@ -493,10 +493,12 @@ module Octree =
 
         // add to imposter when such
         if presence.IsImposter then
+            tree.Imposter.Remove element |> ignore
             tree.Imposter.Add element |> ignore
 
         // add to omnipresent when such
         if presence.IsOmnipresent then
+            tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
 
         // add to omnipresent-in-play-only when appropriate
@@ -538,12 +540,12 @@ module Octree =
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
 
         // update imposter where appropriate
-        if presenceOld.IsImposter then tree.Omnipresent.Remove element |> ignore
-        if presenceNew.IsImposter then tree.Omnipresent.Add element |> ignore
+        if presenceOld.IsImposter then tree.Imposter.Remove element |> ignore
+        if presenceNew.IsImposter then tree.Imposter.Add element |> ignore
 
         // update omnipresent where appropriate
-        if presenceOld.IsOmnipresent then tree.OmnipresentInPlayOnly.Remove element |> ignore
-        if presenceNew.IsOmnipresent then tree.OmnipresentInPlayOnly.Add element |> ignore
+        if presenceOld.IsOmnipresent then tree.Omnipresent.Remove element |> ignore
+        if presenceNew.IsOmnipresent then tree.Omnipresent.Add element |> ignore
 
         // update omnipresent-in-play-only where appropriate
         let omnipresentInPlayOnlyOld = not presenceOld.IsOmnipresent && presenceInPlayOld.IsOmnipresent
