@@ -425,7 +425,7 @@ type FieldDispatcher () =
                                 (teammate, inventory)
                         let field = Field.mapTeammate (constant teammate) teammate.TeamIndex field
                         let field = Field.mapInventory (constant inventory) field
-                        let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuTeam { menuTeam with TeamEquipOpt = None }}) field
+                        let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuTeam { menuTeam with TeamEquipOpt = Some { equip with EquipMenuUseOpt = None }}}) field
                         just field
                     | (false, _) -> just field
                 | None -> just field
@@ -1170,6 +1170,7 @@ type FieldDispatcher () =
                          Content.button "Info"
                             [Entity.PositionLocal == v3 276.0f 282.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 96.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                             Entity.VisibleLocal := currentEquipmentName <> "None" && not changing
                              Entity.TextMargin == v2 15.0f 0.0f
                              Entity.Text == "Info"
                              Entity.UpImage == Assets.Gui.ButtonTinyUpImage
