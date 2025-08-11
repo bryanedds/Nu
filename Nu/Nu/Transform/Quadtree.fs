@@ -7,6 +7,13 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+// Helper functions for presence checking
+module internal PresenceHelpers =
+    let isImposter = function | Presence.Imposter -> true | _ -> false
+    let isOmnipresent = function | Presence.Omnipresent -> true | _ -> false
+    let isInterior = function | Presence.Interior -> true | _ -> false
+    let isExterior = function | Presence.Exterior -> true | _ -> false
+
 /// Masks for Quadelement flags.
 module QuadelementMasks =
 
@@ -243,7 +250,7 @@ module internal Quadnode =
         | ElementChildren elements ->
             for element in elements do
                 let presence = element.Presence
-                let ubiquitous = presence.IsImposter || presence.IsOmnipresent
+                let ubiquitous = PresenceHelpers.isImposter presence || PresenceHelpers.isOmnipresent presence
                 if not element.StaticInPlay && not ubiquitous && bounds.Intersects element.Bounds then
                     set.Add element |> ignore
 
@@ -314,15 +321,15 @@ module Quadtree =
     let addElement (presence : Presence) (presenceInPlay : Presence) bounds element tree =
 
         // add to ubiquitous when appropriate
-        let ubiquitous = presence.IsImposter || presence.IsOmnipresent
+        let ubiquitous = PresenceHelpers.isImposter presence || PresenceHelpers.isOmnipresent presence
         if ubiquitous then
             tree.Ubiquitous.Remove element |> ignore
             tree.Ubiquitous.Add element |> ignore
 
         // add to ubiquitous-in-play-only when appropriate
         let ubiquitousInPlayOnly =
-            not (presence.IsImposter || presence.IsOmnipresent) &&
-            presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent
+            not (PresenceHelpers.isImposter presence || PresenceHelpers.isOmnipresent presence) &&
+            PresenceHelpers.isImposter presenceInPlay || PresenceHelpers.isOmnipresent presenceInPlay
         if ubiquitousInPlayOnly then
             tree.UbiquitousInPlayOnly.Remove element |> ignore
             tree.UbiquitousInPlayOnly.Add element |> ignore
@@ -338,14 +345,14 @@ module Quadtree =
     let removeElement (presence : Presence) (presenceInPlay : Presence) bounds element tree =
 
         // remove from ubiquitous when appropriate
-        let ubiquitous = presence.IsImposter || presence.IsOmnipresent
+        let ubiquitous = PresenceHelpers.isImposter presence || PresenceHelpers.isOmnipresent presence
         if ubiquitous then
             tree.Ubiquitous.Remove element |> ignore
 
         // remove from ubiquitous-in-play-only when appropriate
         let ubiquitousInPlayOnly =
-            not (presence.IsImposter || presence.IsOmnipresent) &&
-            presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent
+            not (PresenceHelpers.isImposter presence || PresenceHelpers.isOmnipresent presence) &&
+            PresenceHelpers.isImposter presenceInPlay || PresenceHelpers.isOmnipresent presenceInPlay
         if ubiquitousInPlayOnly then
             tree.UbiquitousInPlayOnly.Remove element |> ignore
 
@@ -353,25 +360,25 @@ module Quadtree =
         if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
             bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
             tree.UbiquitousFallback.Remove element |> ignore
-        //else HACK: always removing node from node tree to temporarily fix a bug.
-        Quadnode.removeElement bounds &element tree.Node |> ignore
+        else 
+            Quadnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
 
         // update ubiquitous in play where appropriate
-        let ubiquitousOld = presenceOld.IsImposter || presenceOld.IsOmnipresent
-        let ubiquitousNew = presenceNew.IsImposter || presenceNew.IsOmnipresent
+        let ubiquitousOld = PresenceHelpers.isImposter presenceOld || PresenceHelpers.isOmnipresent presenceOld
+        let ubiquitousNew = PresenceHelpers.isImposter presenceNew || PresenceHelpers.isOmnipresent presenceNew
         if ubiquitousOld then tree.Ubiquitous.Remove element |> ignore
         if ubiquitousNew then tree.Ubiquitous.Add element |> ignore
 
         // update ubiquitous-in-play-only where appropriate
         let ubiquitousInPlayOnlyOld =
-            not (presenceOld.IsImposter || presenceOld.IsOmnipresent) &&
-            presenceInPlayOld.IsImposter || presenceInPlayOld.IsOmnipresent
+            not (PresenceHelpers.isImposter presenceOld || PresenceHelpers.isOmnipresent presenceOld) &&
+            PresenceHelpers.isImposter presenceInPlayOld || PresenceHelpers.isOmnipresent presenceInPlayOld
         let ubiquitousInPlayOnlyNew =
-            not (presenceNew.IsImposter || presenceNew.IsOmnipresent) &&
-            presenceInPlayNew.IsImposter || presenceInPlayNew.IsOmnipresent
+            not (PresenceHelpers.isImposter presenceNew || PresenceHelpers.isOmnipresent presenceNew) &&
+            PresenceHelpers.isImposter presenceInPlayNew || PresenceHelpers.isOmnipresent presenceInPlayNew
         if ubiquitousInPlayOnlyOld then tree.UbiquitousInPlayOnly.Remove element |> ignore
         if ubiquitousInPlayOnlyNew then tree.UbiquitousInPlayOnly.Add element |> ignore
 

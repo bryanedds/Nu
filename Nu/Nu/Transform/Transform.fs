@@ -84,7 +84,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Optimized imperative =
         let presence = ValueOption.defaultValue this.Presence_ this.PresenceOverride
         imperative &&
-        presence.IsOmnipresent &&
+        match presence with | Presence.Omnipresent -> true | _ -> false &&
         not this.PublishChangeEvents
 
     member this.Rotation

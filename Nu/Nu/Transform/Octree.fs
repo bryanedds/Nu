@@ -7,6 +7,13 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+// Helper functions for presence checking
+module internal PresenceHelpersOctree =
+    let isImposter = function | Presence.Imposter -> true | _ -> false
+    let isOmnipresent = function | Presence.Omnipresent -> true | _ -> false
+    let isInterior = function | Presence.Interior -> true | _ -> false
+    let isExterior = function | Presence.Exterior -> true | _ -> false
+
 /// Masks for Octelement flags.
 module OctelementMasks =
 
@@ -258,7 +265,7 @@ module internal Octnode =
         | ElementChildren elements ->
             for element in elements do
                 let presence = element.Presence
-                if not element.StaticInPlay && not presence.IsImposter && not presence.IsOmnipresent then
+                if not element.StaticInPlay && not (PresenceHelpersOctree.isImposter presence) && not (PresenceHelpersOctree.isOmnipresent presence) then
                     let bounds = element.Bounds
                     if bounds.Intersects box then
                         set.Add element |> ignore
@@ -353,7 +360,7 @@ module internal Octnode =
         | ElementChildren elements ->
             for element in elements do
                 let presence = element.Presence
-                if not element.StaticInPlay && not presence.IsImposter && not presence.IsOmnipresent then
+                if not element.StaticInPlay && not (PresenceHelpersOctree.isImposter presence) && not (PresenceHelpersOctree.isOmnipresent presence) then
                     let bounds = element.Bounds
                     if frustum.Intersects bounds then
                         set.Add element |> ignore
@@ -371,11 +378,11 @@ module internal Octnode =
             for element in elements do
                 let presence = element.Presence
                 if interior then
-                    if presence.IsInterior || presence.IsExterior then
+                    if PresenceHelpersOctree.isInterior presence || PresenceHelpersOctree.isExterior presence then
                         if element.VisibleInView && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
                 elif exterior then
-                    if presence.IsExterior then
+                    if PresenceHelpersOctree.isExterior presence then
                         if element.VisibleInView && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
 
@@ -492,17 +499,17 @@ module Octree =
     let addElement (presence : Presence) (presenceInPlay : Presence) bounds (element : 'e Octelement) tree =
 
         // add to imposter when such
-        if presence.IsImposter then
+        if PresenceHelpersOctree.isImposter presence then
             tree.Imposter.Remove element |> ignore
             tree.Imposter.Add element |> ignore
 
         // add to omnipresent when such
-        if presence.IsOmnipresent then
+        if PresenceHelpersOctree.isOmnipresent presence then
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
 
         // add to omnipresent-in-play-only when appropriate
-        let omnipresentInPlayOnly = not presence.IsOmnipresent && presenceInPlay.IsOmnipresent
+        let omnipresentInPlayOnly = not (PresenceHelpersOctree.isOmnipresent presence) && PresenceHelpersOctree.isOmnipresent presenceInPlay
         if omnipresentInPlayOnly then
             tree.OmnipresentInPlayOnly.Remove element |> ignore
             tree.OmnipresentInPlayOnly.Add element |> ignore
@@ -518,15 +525,15 @@ module Octree =
     let removeElement (presence : Presence) (presenceInPlay : Presence) bounds (element : 'e Octelement) tree =
 
         // remove from imposter when appropriate
-        if presence.IsImposter then
+        if PresenceHelpersOctree.isImposter presence then
             tree.Imposter.Remove element |> ignore
 
         // remove from omnipresent when appropriate
-        if presence.IsOmnipresent then
+        if PresenceHelpersOctree.isOmnipresent presence then
             tree.Omnipresent.Remove element |> ignore
 
         // remove from omnipresent-in-play-only when appropriate
-        let omnipresentInPlayOnly = not presence.IsOmnipresent && presenceInPlay.IsOmnipresent
+        let omnipresentInPlayOnly = not (PresenceHelpersOctree.isOmnipresent presence) && PresenceHelpersOctree.isOmnipresent presenceInPlay
         if omnipresentInPlayOnly then
             tree.OmnipresentInPlayOnly.Remove element |> ignore
 
@@ -534,23 +541,23 @@ module Octree =
         if  not (Octnode.isIntersectingBox bounds tree.Node) ||
             bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
             tree.UbiquitousFallback.Remove element |> ignore
-        //else HACK: always removing node from node tree to temporarily fix a bug.
-        Octnode.removeElement bounds &element tree.Node |> ignore
+        else 
+            Octnode.removeElement bounds &element tree.Node |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
 
         // update imposter where appropriate
-        if presenceOld.IsImposter then tree.Imposter.Remove element |> ignore
-        if presenceNew.IsImposter then tree.Imposter.Add element |> ignore
+        if PresenceHelpersOctree.isImposter presenceOld then tree.Imposter.Remove element |> ignore
+        if PresenceHelpersOctree.isImposter presenceNew then tree.Imposter.Add element |> ignore
 
         // update omnipresent where appropriate
-        if presenceOld.IsOmnipresent then tree.Omnipresent.Remove element |> ignore
-        if presenceNew.IsOmnipresent then tree.Omnipresent.Add element |> ignore
+        if PresenceHelpersOctree.isOmnipresent presenceOld then tree.Omnipresent.Remove element |> ignore
+        if PresenceHelpersOctree.isOmnipresent presenceNew then tree.Omnipresent.Add element |> ignore
 
         // update omnipresent-in-play-only where appropriate
-        let omnipresentInPlayOnlyOld = not presenceOld.IsOmnipresent && presenceInPlayOld.IsOmnipresent
-        let omnipresentInPlayOnlyNew = not presenceNew.IsOmnipresent && presenceInPlayNew.IsOmnipresent
+        let omnipresentInPlayOnlyOld = not (PresenceHelpersOctree.isOmnipresent presenceOld) && PresenceHelpersOctree.isOmnipresent presenceInPlayOld
+        let omnipresentInPlayOnlyNew = not (PresenceHelpersOctree.isOmnipresent presenceNew) && PresenceHelpersOctree.isOmnipresent presenceInPlayNew
         if omnipresentInPlayOnlyOld then tree.OmnipresentInPlayOnly.Remove element |> ignore
         if omnipresentInPlayOnlyNew then tree.OmnipresentInPlayOnly.Add element |> ignore
 
