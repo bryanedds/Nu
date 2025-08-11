@@ -273,7 +273,7 @@ module Texture =
                 
                 // generate the next mipmap image from the previous one
                 let mutable blit = VkImageBlit ()
-                blit.srcOffsets // TODO: DJL: continue once we get this shit working!
+                NativePtr.writeVoidPtrArray [|VkOffset3D.Zero; VkOffset3D (mipWidth, mipHeight, 1)|] (asVoidPtr &blit.srcOffsets)
                 
                 ()
             

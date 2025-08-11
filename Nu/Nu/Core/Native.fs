@@ -74,6 +74,12 @@ module NativePtr =
         for i in 0 .. dec length do array.[i] <- NativePtr.get ptr i
         array
 
+    /// Write an array into opaque data via void pointer.
+    /// This is DANGEROUS, you MUST know what you're writing to and not exceed its bounds!
+    let writeVoidPtrArray (array : 'a array) voidPtr =
+        let ptr = NativePtr.ofVoidPtr<'a> voidPtr
+        for i in 0 .. dec array.Length do NativePtr.set ptr i array.[i]
+    
     /// Convert a ReadOnlySpan<byte> to a string.
     let spanToString (span : ReadOnlySpan<byte>) =
         Encoding.UTF8.GetString span
