@@ -17,6 +17,10 @@ module NativePtr =
         let voidPtr = Unsafe.AsPointer<'a> &managedPtr
         NativePtr.ofVoidPtr<'a> voidPtr
 
+    /// Convert a managed pointer to a void pointer.
+    let asVoidPtr (managedPtr : byref<'a>) =
+        Unsafe.AsPointer<'a> &managedPtr
+
     /// Get the byte offset of a field within the unmanaged form of a managed type.
     /// This is valid for any struct that does not contain non-blittable types like bool.
     let offsetOf<'a> fieldName =
@@ -63,11 +67,8 @@ module NativePtr =
         let ptr = NativePtr.ofVoidPtr<byte> voidPtr
         unmanagedToString ptr
 
-    /// Convert a fixed-size buffer to an array of given length.
-    /// TODO: DJL: this function is broken.
-    let fixedBufferToArray<'a when 'a : unmanaged> length fixedBuffer =
-        let mutable fixedBuffer = fixedBuffer
-        let voidPtr = Unsafe.AsPointer &fixedBuffer
+    /// Convert opaque data via void pointer to an array of given type and length.
+    let voidPtrToArray<'a when 'a : unmanaged> length voidPtr =
         let ptr = NativePtr.ofVoidPtr<'a> voidPtr
         let array = Array.zeroCreate<'a> length
         for i in 0 .. dec length do array.[i] <- NativePtr.get ptr i
@@ -98,6 +99,10 @@ module NativePtrOperators =
     /// Convert a managed pointer to a typed native pointer.
     let inline asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         NativePtr.asPointer<'a> &managedPtr
+
+    /// Convert a managed pointer to a void pointer.
+    let inline asVoidPtr (managedPtr : byref<'a>) =
+        NativePtr.asVoidPtr &managedPtr
 
 /// Abstraction for native pointer pinning for arrays.
 type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =
