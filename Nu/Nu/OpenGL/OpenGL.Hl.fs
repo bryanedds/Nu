@@ -86,40 +86,37 @@ module Hl =
             | InternalFormat.Rgb4
             | InternalFormat.Rgb5
             | InternalFormat.Rgb8
-            | InternalFormat.Rgba2
-            | InternalFormat.Rgba4
-            | InternalFormat.Rgb5A1 ->
+            | InternalFormat.Rgba2 ->
                 CheckRenderFormat InternalFormat.Rgba8
+            | InternalFormat.Rgb9E5
             | InternalFormat.Rgb10
             | InternalFormat.Rgb12
-            | InternalFormat.Rgb16
-            | InternalFormat.Rgb10A2
             | InternalFormat.Rgba12
-            | InternalFormat.Rgb9E5
-            | InternalFormat.Rgb565 ->
+            | InternalFormat.Rgb16 ->
                 CheckRenderFormat InternalFormat.Rgba16
-            | InternalFormat.R16f
-            | InternalFormat.Rg16f
-            | InternalFormat.Rgb16f
-            | InternalFormat.R11fG11fB10f ->
+            | InternalFormat.Rgb16f ->
                 CheckRenderFormat InternalFormat.Rgba16f
-            | InternalFormat.Rg32f
             | InternalFormat.Rgb32f ->
                 CheckRenderFormat InternalFormat.Rgba32f
-            | InternalFormat.Rgb16
-            | InternalFormat.Rgba16 ->
-                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required.")
             | InternalFormat.DepthComponent16 (* standard *)
             | InternalFormat.DepthComponent24 (* standard *)
             | InternalFormat.DepthComponent32 (* standard *)
             | InternalFormat.Depth24Stencil8 (* standard *)
             | InternalFormat.R8 (* standard *)
             | InternalFormat.Rg8 (* standard *)
+            | InternalFormat.Rgb565 (* standard *)
+            | InternalFormat.Rgba4 (* standard *)
+            | InternalFormat.Rgb5A1 (* standard *)
+            | InternalFormat.Rgb10A2 (* standard *)
             | InternalFormat.Rgba8 (* standard *)
             | InternalFormat.R16 (* standard *)
             | InternalFormat.Rg16 (* standard *)
+            | InternalFormat.Rgba16 (* standard *)
+            | InternalFormat.R11fG11fB10f (* standard *)
+            | InternalFormat.Rg16f (* standard *)
             | InternalFormat.Rgba16f (* standard *)
             | InternalFormat.R32f (* standard *)
+            | InternalFormat.Rg32f (* standard *)
             | InternalFormat.Rgba32f (* standard *) ->
                 Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, it's a requirement in the OpenGL specification!")
             | _ ->
