@@ -106,6 +106,9 @@ module Hl =
             | InternalFormat.Rg32f
             | InternalFormat.Rgb32f ->
                 CheckRenderFormat InternalFormat.Rgba32f
+            | InternalFormat.Rgb16
+            | InternalFormat.Rgba16 ->
+                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required.")
             | InternalFormat.DepthComponent16 (* standard *)
             | InternalFormat.DepthComponent24 (* standard *)
             | InternalFormat.DepthComponent32 (* standard *)
@@ -119,9 +122,6 @@ module Hl =
             | InternalFormat.R32f (* standard *)
             | InternalFormat.Rgba32f (* standard *) ->
                 Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, it's a requirement in the OpenGL specification!")
-            | InternalFormat.Rgb16 (* non-standard *)
-            | InternalFormat.Rgba16 (* non-standard *) ->
-                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required.")
             | _ ->
                 Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, its format is uncategorized by Nu.")
         else format
