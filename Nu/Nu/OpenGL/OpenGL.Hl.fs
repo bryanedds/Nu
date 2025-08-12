@@ -123,7 +123,7 @@ module Hl =
             | InternalFormat.Rgba16 (* non-standard *) ->
                 Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required.")
             | _ ->
-                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, it's format is uncategorized by Nu.")
+                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, its format is uncategorized by Nu.")
         else format
 
     /// Create an SDL OpenGL context with the given window.
