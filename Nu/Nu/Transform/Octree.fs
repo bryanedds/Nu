@@ -538,7 +538,11 @@ module Octree =
 
         // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
         // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
-        Octnode.removeElement bounds &element tree.Node |> ignore
+        // NOTE: I can no longer reproduce the bug that caused this, so I've wrapped it in a #if.
+#if DEBUG
+        if Octnode.removeElement bounds &element tree.Node <> 0 then
+            Log.errorOnce "Element was in tree node when it shouldn't have been."
+#endif
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
