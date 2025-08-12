@@ -237,12 +237,15 @@ module Texture =
             info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
             let mutable sampler = Unchecked.defaultof<VkSampler>
             Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
         /// Record commands to generate mipmaps.
         static member private recordGenerateMipmaps cb (extent : VkExtent3D) mipLevels vkImage =
+            
+            // TODO: DJL: figure out how to handle possible lack of linear filtering support, see https://vulkan-tutorial.com/Generating_Mipmaps#page_Linear-filtering-support.
             
             // use single barrier for all transfer operations
             let mutable barrier = VkImageMemoryBarrier ()
@@ -321,13 +324,13 @@ module Texture =
             
             // transition image layout for data transfer
             let mutable copyBarrier = VkImageMemoryBarrier ()
-            copyBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            copyBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            copyBarrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
             copyBarrier.dstAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
             copyBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
             copyBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            copyBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            copyBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
             copyBarrier.image <- vkImage
+            copyBarrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
             Vulkan.vkCmdPipelineBarrier
                 (cb,
                  Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
@@ -349,14 +352,14 @@ module Texture =
             if mipLevels > 1 then VulkanTexture.recordGenerateMipmaps cb extent mipLevels vkImage
             else
                 let mutable useBarrier = VkImageMemoryBarrier ()
-                useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-                useBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-                useBarrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
                 useBarrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
                 useBarrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
                 useBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                 useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+                useBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
                 useBarrier.image <- vkImage
+                useBarrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
                 Vulkan.vkCmdPipelineBarrier
                     (cb,
                      Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
