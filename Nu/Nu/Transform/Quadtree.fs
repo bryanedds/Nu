@@ -349,15 +349,10 @@ module Quadtree =
         if ubiquitousInPlayOnly then
             tree.UbiquitousInPlayOnly.Remove element |> ignore
 
-        // remove from node tree or ubiquitous fallback
-        let inNode = Quadnode.isIntersectingBounds bounds tree.Node && bounds.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
-        if inNode
-        then Quadnode.removeElement bounds &element tree.Node |> ignore
-        else tree.UbiquitousFallback.Remove element |> ignore
-
-        // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
-        // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
+        // remove from both node tree and ubiquitous fallback to maintain invariant
+        // (element should be in one OR the other, never both)
         Quadnode.removeElement bounds &element tree.Node |> ignore
+        tree.UbiquitousFallback.Remove element |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
@@ -393,14 +388,18 @@ module Quadtree =
                     | None -> Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
                 | None -> Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
             else
+                // transitioning from node to fallback - remove from both locations to be safe
+                Quadnode.removeElement boundsOld &element tree.Node |> ignore
                 tree.UbiquitousFallback.Remove element |> ignore
                 tree.UbiquitousFallback.Add element |> ignore
-                Quadnode.removeElement boundsOld &element tree.Node |> ignore
         else
             if isInNode then
+                // transitioning from fallback to node - remove from both locations to be safe
                 tree.UbiquitousFallback.Remove element |> ignore
+                Quadnode.removeElement boundsOld &element tree.Node |> ignore
                 Quadnode.addElement boundsNew &element tree.Node |> ignore
             else
+                // staying in fallback
                 tree.UbiquitousFallback.Remove element |> ignore
                 tree.UbiquitousFallback.Add element |> ignore
 

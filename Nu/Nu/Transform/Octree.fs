@@ -530,15 +530,10 @@ module Octree =
         if omnipresentInPlayOnly then
             tree.OmnipresentInPlayOnly.Remove element |> ignore
 
-        // remove from node tree or ubiquitous fallback
-        let inNode = Octnode.isIntersectingBox bounds tree.Node && bounds.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
-        if inNode
-        then Octnode.removeElement bounds &element tree.Node |> ignore
-        else tree.UbiquitousFallback.Remove element |> ignore
-
-        // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
-        // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
+        // remove from both node tree and ubiquitous fallback to maintain invariant
+        // (element should be in one OR the other, never both)
         Octnode.removeElement bounds &element tree.Node |> ignore
+        tree.UbiquitousFallback.Remove element |> ignore
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
@@ -572,14 +567,18 @@ module Octree =
                     | None -> Octnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
                 | None -> Octnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
             else
+                // transitioning from node to fallback - remove from both locations to be safe
+                Octnode.removeElement boundsOld &element tree.Node |> ignore
                 tree.UbiquitousFallback.Remove element |> ignore
                 tree.UbiquitousFallback.Add element |> ignore
-                Octnode.removeElement boundsOld &element tree.Node |> ignore
         else
             if isInNode then
+                // transitioning from fallback to node - remove from both locations to be safe
                 tree.UbiquitousFallback.Remove element |> ignore
+                Octnode.removeElement boundsOld &element tree.Node |> ignore
                 Octnode.addElement boundsNew &element tree.Node |> ignore
             else
+                // staying in fallback
                 tree.UbiquitousFallback.Remove element |> ignore
                 tree.UbiquitousFallback.Add element |> ignore
 
