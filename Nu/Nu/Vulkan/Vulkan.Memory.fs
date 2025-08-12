@@ -94,7 +94,7 @@ module VulkanMemory =
             // get memory types
             let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
             Vulkan.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
-            let memoryTypes = NativePtr.voidPtrToArray<VkMemoryType> (int memProperties.memoryTypeCount) (asVoidPtr &memProperties.memoryTypes)
+            let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
 
             // try find suitable memory type
             let mutable memoryTypeOpt = None

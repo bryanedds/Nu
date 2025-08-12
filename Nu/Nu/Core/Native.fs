@@ -61,24 +61,29 @@ module NativePtr =
         NativePtr.ofNativeInt<byte> nint
 
     /// Convert a fixed-size buffer to a string.
-    let fixedBufferToString fixedBuffer =
+    let fixedBufferToString (fixedBuffer : 'a when 'a : struct) =
         let mutable fixedBuffer = fixedBuffer
         let voidPtr = Unsafe.AsPointer &fixedBuffer
         let ptr = NativePtr.ofVoidPtr<byte> voidPtr
         unmanagedToString ptr
 
-    /// Convert opaque data via void pointer to an array of given type and length.
-    let voidPtrToArray<'a when 'a : unmanaged> length voidPtr =
-        let ptr = NativePtr.ofVoidPtr<'a> voidPtr
+    /// Convert a fixed-size buffer to an array of given type and length.
+    let fixedBufferToArray<'a when 'a : unmanaged> length fixedBuffer =
+        let handle = GCHandle.Alloc (fixedBuffer, GCHandleType.Pinned) // fixedBuffer must be pinned because generic functions like this convert it to obj
+        let ptr = NativePtr.ofNativeInt<'a> (handle.AddrOfPinnedObject ())
         let array = Array.zeroCreate<'a> length
         for i in 0 .. dec length do array.[i] <- NativePtr.get ptr i
+        handle.Free ()
         array
 
-    /// Write an array into opaque data via void pointer.
-    /// This is DANGEROUS, you MUST know what you're writing to and not exceed its bounds!
-    let writeVoidPtrArray (array : 'a array) voidPtr =
+    /// Write an array onto a fixed-size buffer.
+    /// This is an INSECURE pure function that will corrupt the stack if you exceed fixedBuffer's size.
+    let writeArrayToFixedBuffer (array : 'a array) (fixedBuffer : 'b when 'b : struct) =
+        let mutable fixedBuffer = fixedBuffer
+        let voidPtr = Unsafe.AsPointer &fixedBuffer
         let ptr = NativePtr.ofVoidPtr<'a> voidPtr
         for i in 0 .. dec array.Length do NativePtr.set ptr i array.[i]
+        fixedBuffer
     
     /// Convert a ReadOnlySpan<byte> to a string.
     let spanToString (span : ReadOnlySpan<byte>) =
