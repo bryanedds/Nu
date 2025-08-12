@@ -78,9 +78,10 @@ module Hl =
         subresourceRange
 
     /// Make a VkImageSubresourceLayers representing a color image.
-    let makeSubresourceLayersColor () =
+    let makeSubresourceLayersColor (mipLevel : int) =
         let mutable subresourceLayers = VkImageSubresourceLayers ()
         subresourceLayers.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
+        subresourceLayers.mipLevel <- uint mipLevel
         subresourceLayers.layerCount <- 1u
         subresourceLayers
 

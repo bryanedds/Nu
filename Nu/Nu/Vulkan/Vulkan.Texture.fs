@@ -246,9 +246,9 @@ module Texture =
             
             // use single barrier for all transfer operations
             let mutable barrier = VkImageMemoryBarrier ()
-            barrier.image <- vkImage
             barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
             barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            barrier.image <- vkImage
             barrier.subresourceRange <- Hl.makeSubresourceRangeColor 1
 
             // init mipmap dimensions
@@ -258,11 +258,11 @@ module Texture =
             for i in 1 .. dec mipLevels do
                 
                 // transition layout of previous image to be copied from
-                barrier.subresourceRange.baseMipLevel <- uint (i - 1)
                 barrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
                 barrier.dstAccessMask <- Vulkan.VK_ACCESS_TRANSFER_READ_BIT
                 barrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                 barrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                barrier.subresourceRange.baseMipLevel <- uint (i - 1)
                 Vulkan.vkCmdPipelineBarrier
                     (cb,
                      Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -272,13 +272,49 @@ module Texture =
                      1u, asPointer &barrier)
                 
                 // generate the next mipmap image from the previous one
+                let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
+                let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
                 let mutable blit = VkImageBlit ()
+                blit.srcSubresource <- Hl.makeSubresourceLayersColor (i - 1)
                 blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (mipWidth, mipHeight, 1)|] blit.srcOffsets
+                blit.dstSubresource <- Hl.makeSubresourceLayersColor i
+                blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (nextWidth, nextHeight, 1)|] blit.dstOffsets
+                Vulkan.vkCmdBlitImage
+                    (cb,
+                     vkImage, Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     vkImage, Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     1u, asPointer &blit, Vulkan.VK_FILTER_LINEAR)
                 
-                ()
+                // transition layout of previous image to be read by shader
+                barrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_READ_BIT
+                barrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
+                barrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                barrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                Vulkan.vkCmdPipelineBarrier
+                    (cb,
+                     Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                     Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                     VkDependencyFlags.None,
+                     0u, nullPtr, 0u, nullPtr,
+                     1u, asPointer &barrier)
+                
+                // update mipmap dimensions
+                mipWidth <- nextWidth
+                mipHeight <- nextHeight
             
-            
-            ()
+            // transition final mip image left unfinished by loop
+            barrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+            barrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
+            barrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            barrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
+            Vulkan.vkCmdPipelineBarrier
+                (cb,
+                 Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                 Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &barrier)
         
         /// Record commands to copy from buffer to image.
         static member recordBufferToImageCopy cb extent mipLevels vkBuffer vkImage =
@@ -302,7 +338,7 @@ module Texture =
 
             // copy data from buffer to image
             let mutable region = VkBufferImageCopy ()
-            region.imageSubresource <- Hl.makeSubresourceLayersColor ()
+            region.imageSubresource <- Hl.makeSubresourceLayersColor 0
             region.imageExtent <- extent
             Vulkan.vkCmdCopyBufferToImage
                 (cb, vkBuffer, vkImage,
