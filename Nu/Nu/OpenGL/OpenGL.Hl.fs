@@ -96,7 +96,15 @@ module Hl =
                 CheckRenderFormat InternalFormat.Rgba16
             | InternalFormat.Rgb16f ->
                 CheckRenderFormat InternalFormat.Rgba16f
+            | InternalFormat.R16f ->
+                CheckRenderFormat InternalFormat.Rgba16f
+            | InternalFormat.Rg16f ->
+                CheckRenderFormat InternalFormat.Rgba16f
             | InternalFormat.Rgb32f ->
+                CheckRenderFormat InternalFormat.Rgba32f
+            | InternalFormat.R32f ->
+                CheckRenderFormat InternalFormat.Rgba32f
+            | InternalFormat.Rg32f ->
                 CheckRenderFormat InternalFormat.Rgba32f
             | InternalFormat.DepthComponent16 (* standard *)
             | InternalFormat.DepthComponent24 (* standard *)
@@ -113,10 +121,7 @@ module Hl =
             | InternalFormat.Rg16 (* standard *)
             | InternalFormat.Rgba16 (* standard *)
             | InternalFormat.R11fG11fB10f (* standard *)
-            | InternalFormat.Rg16f (* standard *)
             | InternalFormat.Rgba16f (* standard *)
-            | InternalFormat.R32f (* standard *)
-            | InternalFormat.Rg32f (* standard *)
             | InternalFormat.Rgba32f (* standard *) ->
                 Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, it's a requirement in the OpenGL specification!")
             | _ ->
