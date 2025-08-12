@@ -461,6 +461,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     (* Prelude Functions *)
 
+    let private shouldSwallowMouseButton (world : World) =
+        let io = ImGui.GetIO ()
+        not io.WantCaptureMouseGlobal &&
+        (world.Halted || EditWhileAdvancing)
+
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
         not CaptureMode &&
@@ -778,7 +783,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
-        if canEditWithMouse world then Resolve else Cascade
+        if shouldSwallowMouseButton world then Resolve else Cascade
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
         match evt.Data with
