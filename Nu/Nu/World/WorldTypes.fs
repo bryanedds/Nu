@@ -56,18 +56,25 @@ and ChangeData =
 /// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
 and Lens =
     interface
+        
         /// The name of the property accessed by the lens.
         abstract Name : string
+        
         /// The simulant whose property is accessed by the lens.
         abstract This : Simulant
+        
         /// Get the value of the property accessed by the lens.
         abstract Get : world : World -> obj
+        
         /// Get an optional setter function that updates the property accessed by the lens.
         abstract SetOpt : (obj -> World -> unit) voption
+        
         /// Attempt to set the lensed property to the given value.
         abstract TrySet : value : obj -> world : World -> bool
+        
         /// The change event associated with the lensed property.
         abstract ChangeEvent : ChangeData Address
+        
         /// The type of the lensed property.
         abstract Type : Type
         end

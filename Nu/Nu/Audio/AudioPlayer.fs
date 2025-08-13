@@ -40,30 +40,43 @@ type internal AudioAsset =
 
 /// The audio player. Represents the audio subsystem of Nu generally.
 type AudioPlayer =
+    
     /// The master audio volume.
     abstract MasterAudioVolume : single with get, set
+    
     /// The master sound volume.
     abstract MasterSoundVolume : single with get, set
+    
     /// The master song volume.
     abstract MasterSongVolume : single with get, set
+    
     /// Pop all of the audio messages that have been enqueued.
     abstract PopMessages : unit -> AudioMessage List
+    
     /// Clear all of the audio messages that have been enqueued.
     abstract ClearMessages : unit -> unit
+    
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : message : AudioMessage -> unit
+    
     /// Get the current optionally-playing song.
     abstract SongOpt : SongDescriptor option
+    
     /// Get the current song's position or 0.0 if one isn't playing.
     abstract SongPosition : double
+    
     /// Get the current song's volume or 0.0f if one isn't playing.
     abstract SongVolume : single
+    
     /// Whether a song is currently playing and fading in.
     abstract SongFadingIn : bool
+    
     /// Whether a song is currently playing and fading out.
     abstract SongFadingOut : bool
+    
     /// 'Play' the audio system. Must be called once per frame.
     abstract Play : messages : AudioMessage List -> unit
+    
     /// Handle audio clean up by stopping all playback and freeing all loaded audio assets.
     abstract CleanUp : unit -> unit
 
