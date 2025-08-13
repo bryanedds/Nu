@@ -8,8 +8,8 @@ open Prime
 
 /// Specifies whether a process is live or dead.
 type [<Struct>] Liveness =
-   | Live
-   | Dead
+    | Live
+    | Dead
 
 /// Describes whether an in-flight event has been resolved or should cascade to down-stream handlers.
 type [<Struct>] Handling =
