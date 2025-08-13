@@ -227,7 +227,7 @@ module Texture =
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                if anisoFilter then Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
+                if anisoFilter && mipmaps then Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
                 if mipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
                 Gl.BindTexture (TextureTarget.Texture2d, 0u)
                 Hl.Assert ()
@@ -257,7 +257,7 @@ module Texture =
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                    if mipmaps || mipmapBytesArray.Length > 0 then
+                    if anisoFilter && (mipmaps || mipmapBytesArray.Length > 0) then
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
                     if mipmaps && mipmapBytesArray.Length = 0 then
                         Gl.GenerateMipmap TextureTarget.Texture2d
@@ -286,7 +286,7 @@ module Texture =
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                    if mipmaps || mipmapBytesArray.Length > 0 then
+                    if anisoFilter && (mipmaps || mipmapBytesArray.Length > 0) then
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)                
                     if mipmaps && mipmapBytesArray.Length = 0 then
                         Gl.GenerateMipmap TextureTarget.Texture2d
@@ -308,8 +308,9 @@ module Texture =
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-            if mipmaps then
+            if anisoFilter && mipmaps then
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
+            if mipmaps then
                 Gl.GenerateMipmap TextureTarget.Texture2d
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             (metadata, textureId)
