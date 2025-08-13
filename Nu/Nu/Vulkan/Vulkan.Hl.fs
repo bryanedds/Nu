@@ -312,18 +312,28 @@ module Hl =
     type private PhysicalDevice =
         { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
+          Features : VkPhysicalDeviceFeatures
           Extensions : VkExtensionProperties array
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
           Formats : VkSurfaceFormatKHR array
           GraphicsQueueFamily : uint
           PresentQueueFamily : uint }
 
+        /// Supports anisotropy.
+        member this.SupportsAnisotropy = this.Features.samplerAnisotropy = VkBool32.True
+        
         /// Get properties.
         static member private getProperties vkPhysicalDevice =
             let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
             Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
             properties
 
+        /// Get features.
+        static member private getFeatures vkPhysicalDevice =
+            let mutable features = Unchecked.defaultof<VkPhysicalDeviceFeatures>
+            Vulkan.vkGetPhysicalDeviceFeatures (vkPhysicalDevice, &features)
+            features
+        
         /// Get available extensions.
         static member private getExtensions vkPhysicalDevice =
             let mutable extensionCount = 0u
@@ -383,6 +393,7 @@ module Hl =
         /// Attempt to construct PhysicalDevice.
         static member tryCreate vkPhysicalDevice surface =
             let properties = PhysicalDevice.getProperties vkPhysicalDevice
+            let features = PhysicalDevice.getFeatures vkPhysicalDevice
             let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
             let surfaceCapabilities = getSurfaceCapabilities vkPhysicalDevice surface
             let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
@@ -391,6 +402,7 @@ module Hl =
                 let physicalDevice =
                     { VkPhysicalDevice = vkPhysicalDevice
                       Properties = properties
+                      Features = features
                       Extensions = extensions
                       SurfaceCapabilities = surfaceCapabilities
                       Formats = surfaceFormats
@@ -645,6 +657,12 @@ module Hl =
         
         /// The physical device.
         member this.PhysicalDevice = this._PhysicalDevice.VkPhysicalDevice
+
+        /// Anisotropy supported.
+        member this.AnisotropySupported = this._PhysicalDevice.SupportsAnisotropy
+
+        /// Maximum anisotropy.
+        member this.MaxAnisotropy = this._PhysicalDevice.Properties.limits.maxSamplerAnisotropy
         
         /// The logical device.
         member this.Device = this._Device
@@ -806,8 +824,19 @@ module Hl =
                 
             // if compatible devices exist then return the first along with its data
             let physicalDeviceOpt =
-                if candidatesFilteredAndOrdered.Length > 0
-                then Some (List.head candidatesFilteredAndOrdered)
+                if candidatesFilteredAndOrdered.Length > 0 then
+                    
+                    // select physical device
+                    let physicalDevice = List.head candidatesFilteredAndOrdered
+                    
+                    // log any important data about physical device
+                    // TODO: DJL: log device name!
+                    if not physicalDevice.SupportsAnisotropy then Log.info "Graphics device does not support anisotropy."
+                    
+                    // return physical device
+                    Some physicalDevice
+                
+                // no physical device
                 else Log.info "Could not find a suitable graphics device for Vulkan."; None
 
             // fin
@@ -841,12 +870,17 @@ module Hl =
             // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which
             // are deprecated. These must be enabled if validation support for said implementations is desired.
 
+            // specify device features to be enabled
+            let mutable features = VkPhysicalDeviceFeatures ()
+            if physicalDevice.SupportsAnisotropy then features.samplerAnisotropy <- VkBool32.True
+            
             // create device
             let mutable info = VkDeviceCreateInfo ()
             info.queueCreateInfoCount <- uint queueCreateInfos.Length
             info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
             info.enabledExtensionCount <- 1u
             info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
+            info.pEnabledFeatures <- asPointer &features
             let mutable device = Unchecked.defaultof<VkDevice>
             Vulkan.vkCreateDevice (physicalDevice.VkPhysicalDevice, &info, nullPtr, &device) |> check
             device
