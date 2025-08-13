@@ -203,7 +203,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
-            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, renderer.VulkanContext) with
+            let textureEir =
+                if Texture.Filtered2d asset.FilePath
+                then assetClient.TextureClient.TryCreateTextureFiltered (false, false, asset.FilePath, renderer.VulkanContext)
+                else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, renderer.VulkanContext)
+            match textureEir with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->

@@ -62,21 +62,18 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
             match textureData with
             | Right (filePath, textureData) ->
                 let texture =
-//                    if is2d then
-
                     let (metadata, vulkanTexture) =
-                        Vortice.Vulkan.Texture.CreateTextureVulkanFromData
-                            (Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
-                             Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
-                             false, false, false, textureData, vkc)
-                    
+                        if Vortice.Vulkan.Texture.Filtered2d filePath then
+                            Vortice.Vulkan.Texture.CreateTextureVulkanFromData
+                                (Vortice.Vulkan.Vulkan.VK_FILTER_LINEAR,
+                                 Vortice.Vulkan.Vulkan.VK_FILTER_LINEAR,
+                                 true, true, false, textureData, vkc)
+                        else
+                            Vortice.Vulkan.Texture.CreateTextureVulkanFromData
+                                (Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
+                                 Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
+                                 false, false, false, textureData, vkc)
                     Vortice.Vulkan.Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
-
-//                    else
-//                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.BlockCompressable filePath, textureData)
-//                        let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
-//                        textureClient.LazyTextureQueue.Enqueue lazyTexture
-//                        OpenGL.Texture.LazyTexture lazyTexture
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
 

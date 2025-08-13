@@ -576,6 +576,8 @@ module Texture =
 
         | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
+            // TODO: DJL: implement.
+            
             (metadata, VulkanTexture.empty)
 
         | TextureDataNative (metadata, bytesPtr, disposer) ->
@@ -766,7 +768,6 @@ module Texture =
                 match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vkc) with
                 | Right (metadata, vulkanTexture) ->
                     let texture = EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
-
                     textures.Add (filePath, texture)
                     Right texture
                 | Left error -> Left error
@@ -774,6 +775,10 @@ module Texture =
             // already exists
             | (true, texture) -> Right texture
 
+        /// Attempt to create a filtered memoized texture from a file.
+        member this.TryCreateTextureFiltered (desireLazy, blockCompress, filePath, vkc) =
+            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, blockCompress, filePath, vkc)
+        
         /// Attempt to create an unfiltered memoized texture from a file.
         member this.TryCreateTextureUnfiltered (desireLazy, filePath, vkc) =
             this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vkc)
