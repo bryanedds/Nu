@@ -28,7 +28,7 @@ type [<Struct>] Life =
             Life.getProgress localTime sublife
         else Life.getProgress time life
 
-    /// The aliveness of the instance as a boolean.
+    /// Whether the instance is alive at the given time.
     static member getAlive (time : GameTime) life =
         if life.LifeTimeOpt.NotZero
         then time - life.StartTime < life.LifeTimeOpt
@@ -693,8 +693,8 @@ module BasicParticle =
 /// TODO: consider making this an abstract data type?
 type [<ReferenceEquality>] ParticleSystem =
     { Emitters : Map<string, Emitter> }
-    
-    /// Get the aliveness of the particle system.
+
+    /// Whether the particle system is alive at the given time.
     static member getAlive time particleSystem =
         Map.exists (fun _ (emitter : Emitter) -> emitter.Alive time) particleSystem.Emitters
 
@@ -765,7 +765,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
             then emitter.ParticleWatermark
             else emitter.ParticleIndex
 
-    /// Determine emitter's aliveness.
+    /// Whether the emitter is alive at the given time.
     static member getAlive time emitter =
         if emitter.ParticleLifeTimeMaxOpt.NotZero
         then Life.getAlive (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
@@ -1017,7 +1017,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
             then emitter.ParticleWatermark
             else emitter.ParticleIndex
 
-    /// Determine emitter's aliveness.
+    /// Whether the emitter is alive at the given time.
     static member getAlive time emitter =
         if emitter.ParticleLifeTimeMaxOpt.NotZero
         then Life.getAlive (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
