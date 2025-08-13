@@ -1943,6 +1943,14 @@ and [<NoEquality; NoComparison>] World =
     member this.CurrentState =
         this.WorldState
 
+    /// Check that the world is alive (still running).
+    member this.Alive =
+        AmbientState.getAlive this.AmbientState
+
+    /// Check that the world is dead (notno longer running).
+    member this.Dead =
+        not this.Alive
+
     /// Check that the world is executing with imperative semantics where applicable.
     member this.Imperative =
         this.AmbientState.Imperative

@@ -477,7 +477,7 @@ module internal AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Flags : uint
-              Liveness : Liveness
+              Alive : bool
               UpdateDelta : int64
               UpdateTime : int64
               ClockDelta : single
@@ -506,8 +506,8 @@ module internal AmbientState =
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
         member this.AdvancementCleared = this.Flags &&& AdvancementClearedMask <> 0u
 
-    let internal getLiveness state =
-        state.Liveness
+    let internal getAlive state =
+        state.Alive
 
     let internal setAdvancing advancing (state : _ AmbientState) =
         if advancing <> state.Advancing then
@@ -603,7 +603,7 @@ module internal AmbientState =
         state
 
     let internal exit state =
-        { state with Liveness = Dead }
+        { state with Alive = false }
 
     let internal getKeyValueStore state =
         state.KeyValueStore
@@ -744,7 +744,7 @@ module internal AmbientState =
             (if framePacing then FramePacingMask else 0u)
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Flags = flags
-          Liveness = Live
+          Alive = true
           UpdateDelta = 0L
           UpdateTime = 0L
           ClockDelta = 0.0f

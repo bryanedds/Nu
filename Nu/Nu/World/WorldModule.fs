@@ -179,9 +179,9 @@ module WorldModule =
         static member getCollectionConfig (world : World) =
             AmbientState.getConfig world.AmbientState
 
-        /// Get the the liveness state of the engine.
-        static member getLiveness (world : World) =
-            AmbientState.getLiveness world.AmbientState
+        /// Get the the aliveness state of the engine.
+        static member getAlive (world : World) =
+            AmbientState.getAlive world.AmbientState
 
         static member internal updateTime world =
             World.mapAmbientState AmbientState.updateTime world
@@ -669,8 +669,7 @@ module WorldModule =
                 let mutable handling = Cascade
                 while going && enr.MoveNext () do
                     let (_, subscriptionEntry) = enr.Current
-                    if  (match handling with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness world with Live -> true | Dead -> false) then
+                    if (match handling with Cascade -> true | Resolve -> false) && world.Alive then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
                         if not selectedOnly || getSelected subscriber world then
                             let namesLength = subscriber.SimulantAddress.Names.Length
