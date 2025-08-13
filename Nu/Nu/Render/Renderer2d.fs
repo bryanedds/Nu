@@ -761,6 +761,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 Vulkan.VK_FILTER_NEAREST
                                 Vulkan.VK_FILTER_NEAREST
                                 false
+                                false
                                 (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
                                 textSurface.pixels
                                 vkc.InFlightFence
