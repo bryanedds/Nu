@@ -585,7 +585,7 @@ module Texture =
             // upload native texture data
             use _ = disposer
 
-            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter mipmaps mipmaps metadata (Some bytesPtr) vkc
+            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter anisoFilter mipmaps metadata (Some bytesPtr) vkc
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.
