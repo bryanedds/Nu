@@ -10,9 +10,9 @@ open Nu
 module VulkanMemory =
 
     type private BufferType =
-        | Staging of bool
-        | Vertex of bool
-        | Index of bool
+        | Staging of bool // in frame
+        | Vertex of bool // upload enabled
+        | Index of bool // upload enabled
         | Uniform
 
         member this.IsParallel =
