@@ -570,7 +570,7 @@ module Texture =
             // upload dotnet texture data
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try 
-                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter anisoFilter mipmaps metadata (Some (bytesPtr.AddrOfPinnedObject ())) vkc
+                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter (anisoFilter && mipmaps) mipmaps metadata (Some (bytesPtr.AddrOfPinnedObject ())) vkc
                 (metadata, vulkanTexture)
             finally bytesPtr.Free ()
 
@@ -585,7 +585,7 @@ module Texture =
             // upload native texture data
             use _ = disposer
 
-            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter anisoFilter mipmaps metadata (Some bytesPtr) vkc
+            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter (anisoFilter && mipmaps) mipmaps metadata (Some bytesPtr) vkc
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.
