@@ -1,8 +1,9 @@
 # configure Linux for Nu development
 echo Configuring Linux for Nu development...
 
-# configure apt
+# configure apt and apt-get
 sudo apt update
+sudo apt-get update
 
 #configure x11 (this seems to be needed when running just Wayland due to issue #810)
 sudo apt-get install libx11-dev
@@ -15,7 +16,7 @@ sudo apt install \
   libfreetype6-dev libsdl2-ttf-dev libsdl2-ttf-2.0-0
 
 # configure .net
-sudo snap install dotnet --classic
+sudo apt-get install -y dotnet-sdk-9.0
 
 # configure assimp
 sudo apt-get install libassimp-dev
