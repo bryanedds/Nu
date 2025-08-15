@@ -212,6 +212,23 @@ module Texture =
             | TransferDst -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
             | ShaderRead -> Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
     
+    /// The format of a vkImage.
+    type ImageFormat =
+        | Bgra
+        | Rgba
+
+        /// The vkFormat.
+        member this.Format =
+            match this with
+            | Bgra -> Vulkan.VK_FORMAT_B8G8R8A8_UNORM
+            | Rgba -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+
+        /// The number of bytes per pixel.
+        member this.BytesPerPixel =
+            match this with
+            | Bgra -> 4
+            | Rgba -> 4
+    
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
@@ -415,21 +432,21 @@ module Texture =
             Hl.awaitFence vkc.ResourceReadyFence vkc.Device
         
         /// Create a VulkanTexture.
-        static member private createInternal format bytesPerPixel minFilter magFilter anisoFilter mipmaps metadata pixelsOpt (vkc : Hl.VulkanContext) =
+        static member create (format : ImageFormat) minFilter magFilter anisoFilter mipmaps metadata pixelsOpt (vkc : Hl.VulkanContext) =
 
             // calculate mip levels if mipmaps enabled
             let mipLevels = if mipmaps then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int else 1
             
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            let image = VulkanTexture.createImage format extent mipLevels vkc
-            let imageView = Hl.createImageView format mipLevels image.VkImage vkc.Device
+            let image = VulkanTexture.createImage format.Format extent mipLevels vkc
+            let imageView = Hl.createImageView format.Format mipLevels image.VkImage vkc.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter vkc
             
             // upload pixels to image if provided
             match pixelsOpt with
             | Some pixels ->
-                let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
+                let uploadSize = metadata.TextureWidth * metadata.TextureHeight * format.BytesPerPixel
                 let stagingBuffer = VulkanMemory.Buffer.stageData uploadSize pixels vkc
                 VulkanTexture.copyBufferToImage extent mipLevels stagingBuffer.VkBuffer image.VkImage vkc
                 VulkanMemory.Buffer.destroy stagingBuffer vkc
@@ -445,18 +462,10 @@ module Texture =
             // fin
             vulkanTexture
 
-        /// Create a VulkanTexture with Bgra format.
-        static member createBgra minFilter magFilter anisoFilter mipmaps metadata pixelsOpt vkc =
-            VulkanTexture.createInternal Vulkan.VK_FORMAT_B8G8R8A8_UNORM 4 minFilter magFilter anisoFilter mipmaps metadata pixelsOpt vkc
-
-        /// Create a VulkanTexture with Rgba format.
-        static member createRgba minFilter magFilter anisoFilter mipmaps metadata pixelsOpt vkc =
-            VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter anisoFilter mipmaps metadata pixelsOpt vkc
-
         /// Create an empty VulkanTexture.
-        /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f), perhaps just loading up the Assets.Default.Image asset.
+        /// TODO: DJL: make color (1.0f, 0.0f, 1.0f, 1.0f), perhaps just loading up the Assets.Default.Image asset.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            VulkanTexture.createRgba Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false false (TextureMetadata.make 1 1) None vkc
+            VulkanTexture.create Rgba Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false false (TextureMetadata.make 32 32) None vkc
         
         /// Destroy VulkanTexture.
         static member destroy vulkanTexture (vkc : Hl.VulkanContext) =
@@ -476,6 +485,7 @@ module Texture =
         private
             { VulkanTextures : VulkanTexture array
               StagingBuffers : VulkanMemory.Buffer array
+              Format : ImageFormat
               mutable Extent : VkExtent3D
               mutable StagingBufferSize : int
               mutable TextureIndex : int }
@@ -484,7 +494,7 @@ module Texture =
         member this.VulkanTexture = this.VulkanTextures.[this.TextureIndex]
 
         member private this.CurrentStagingBuffer = this.StagingBuffers.[this.TextureIndex]
-        member private this.ImageSize = (int this.Extent.width) * (int this.Extent.height) * 4
+        member private this.ImageSize = (int this.Extent.width) * (int this.Extent.height) * this.Format.BytesPerPixel
 
         static member private newCycle metadata pixels dynamicTexture (vkc : Hl.VulkanContext) =
             
@@ -502,16 +512,11 @@ module Texture =
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkc
 
-        /// Add a new bgra VulkanTexture.
-        static member private addBgra minFilter magFilter anisoFilter mipmaps metadata pixels dynamicTexture vkc =
+        /// Add a new VulkanTexture.
+        static member private addTexture minFilter magFilter anisoFilter mipmaps metadata pixels dynamicTexture vkc =
             DynamicTexture.newCycle metadata pixels dynamicTexture vkc
-            dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.createBgra minFilter magFilter anisoFilter mipmaps metadata None vkc
+            dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.create dynamicTexture.Format minFilter magFilter anisoFilter mipmaps metadata None vkc
 
-        /// Add a new rgba VulkanTexture.
-        static member private addRgba minFilter magFilter anisoFilter mipmaps metadata pixels dynamicTexture vkc =
-            DynamicTexture.newCycle metadata pixels dynamicTexture vkc
-            dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter anisoFilter mipmaps metadata None vkc
-        
         /// Transfer pixels to texture.
         static member private loadTexture cb commandQueue fence dynamicTexture device =
             Hl.beginCommandBlock cb fence device
@@ -519,20 +524,14 @@ module Texture =
                 cb dynamicTexture.Extent dynamicTexture.VulkanTexture.MipLevels dynamicTexture.CurrentStagingBuffer.VkBuffer dynamicTexture.VulkanTexture.Image.VkImage
             Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
 
-        /// Instantly stage a bgra image, then submit texture load once fence is ready.
-        /// A Pipeline barrier ensures the load is complete before use. TODO: DJL: confirm this!
-        static member loadBgra cb commandQueue minFilter magFilter anisoFilter mipmaps metadata pixels fence dynamicTexture vkc =
-            DynamicTexture.addBgra minFilter magFilter anisoFilter mipmaps metadata pixels dynamicTexture vkc
-            DynamicTexture.loadTexture cb commandQueue fence dynamicTexture vkc.Device
-
-        /// Instantly stage an rgba image, then submit texture load once fence is ready.
-        /// A Pipeline barrier ensures the load is complete before use. TODO: DJL: confirm this!
-        static member loadRgba cb commandQueue minFilter magFilter anisoFilter mipmaps metadata pixels fence dynamicTexture vkc =
-            DynamicTexture.addRgba minFilter magFilter anisoFilter mipmaps metadata pixels dynamicTexture vkc
+        /// Instantly stage an image, then submit texture load once fence is ready.
+        /// A Pipeline barrier ensures the load is complete before use.
+        static member load cb commandQueue minFilter magFilter anisoFilter mipmaps metadata pixels fence dynamicTexture vkc =
+            DynamicTexture.addTexture minFilter magFilter anisoFilter mipmaps metadata pixels dynamicTexture vkc
             DynamicTexture.loadTexture cb commandQueue fence dynamicTexture vkc.Device
 
         /// Create DynamicTexture.
-        static member create vkc =
+        static member create format vkc =
 
             // create the resources
             let extent = VkExtent3D (32, 32, 1)
@@ -544,6 +543,7 @@ module Texture =
             let dynamicTexture =
                 { VulkanTextures = vulkanTextures
                   StagingBuffers = stagingBuffers
+                  Format = format
                   Extent = extent
                   StagingBufferSize = sbSize
                   TextureIndex = 1 }
@@ -593,7 +593,7 @@ module Texture =
             // upload dotnet texture data
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try 
-                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter (anisoFilter && mipmaps) mipmaps metadata (Some (bytesPtr.AddrOfPinnedObject ())) vkc
+                let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmaps metadata (Some (bytesPtr.AddrOfPinnedObject ())) vkc
                 (metadata, vulkanTexture)
             finally bytesPtr.Free ()
 
@@ -608,7 +608,7 @@ module Texture =
             // upload native texture data
             use _ = disposer
 
-            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter (anisoFilter && mipmaps) mipmaps metadata (Some bytesPtr) vkc
+            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmaps metadata (Some bytesPtr) vkc
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.

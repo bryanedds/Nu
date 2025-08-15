@@ -759,7 +759,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // load texture
                             let vkc = renderer.VulkanContext
-                            Texture.DynamicTexture.loadBgra
+                            Texture.DynamicTexture.load
                                 vkc.TextureCommandBuffer
                                 vkc.GraphicsQueue
                                 Vulkan.VK_FILTER_NEAREST
@@ -903,7 +903,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
-        let textTexture = Texture.DynamicTexture.create vkc
+        let textTexture = Texture.DynamicTexture.create Texture.Bgra vkc
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
