@@ -53,7 +53,7 @@ type GameplayDispatcher () =
                 for sectionEntity in World.getEntities section world do
                     sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world
 
-        // process clean-up
+        // process screen deselection
         if FQueue.contains Deselecting selectionResults then
 
             // destroy stage sections that were created from section files
@@ -61,7 +61,7 @@ type GameplayDispatcher () =
                 let section = Simulants.GameplaySection sectionIndex
                 World.destroyGroup section world
 
-        // process gameplay when selected
+        // process gameplay while screen is selected
         if screen.GetSelected world then
 
             // declare scene group
