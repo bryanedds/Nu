@@ -61,26 +61,10 @@ module VulkanMemory =
     
     /// Copy data from the source buffer to the destination buffer.
     let private copyData size source destination (vkc : Hl.VulkanContext) =
-
-        // create command buffer for transfer
-        let mutable cb = Hl.allocateCommandBuffer vkc.TransientCommandPool vkc.Device
-
-        // reset command buffer and begin recording
-        Vulkan.vkResetCommandPool (vkc.Device, vkc.TransientCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
-        let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-        Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
-
-        // copy data
+        let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
-
-        // execute command
-        Vulkan.vkEndCommandBuffer cb |> Hl.check
-        let mutable sInfo = VkSubmitInfo ()
-        sInfo.commandBufferCount <- 1u
-        sInfo.pCommandBuffers <- asPointer &cb
-        Vulkan.vkQueueSubmit (vkc.GraphicsQueue, 1u, asPointer &sInfo, vkc.ResourceReadyFence) |> Hl.check
-        Hl.awaitFence vkc.ResourceReadyFence vkc.Device
+        Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
     
     /// A manually allocated buffer for diagnostic purposes.
     /// TODO: DJL: adapt to simplified buffer api.

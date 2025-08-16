@@ -108,7 +108,7 @@ module SpriteBatch =
             let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             Hl.beginRenderBlock cb vkc.RenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
 
-            // pin uniform arrays
+            // pin uniform arrays to pass the addresses because we don't want to upload the entire arrays every frame
             use perimetersPin = new ArrayPin<_> (env.Perimeters)
             use pivotsPin = new ArrayPin<_> (env.Pivots)
             use rotationsPin = new ArrayPin<_> (env.Rotations)

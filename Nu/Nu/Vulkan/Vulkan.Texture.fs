@@ -393,45 +393,6 @@ module Texture =
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &barrier)
         
-        /// Record commands to copy from buffer to image.
-        static member recordBufferToImageCopy cb extent mipLevels vkBuffer vkImage =
-            
-            // transition image layout for data transfer
-            VulkanTexture.recordTransitionLayout cb true mipLevels Undefined TransferDst vkImage
-
-            // copy data from buffer to image
-            let mutable region = VkBufferImageCopy ()
-            region.imageSubresource <- Hl.makeSubresourceLayersColor 0
-            region.imageExtent <- extent
-            Vulkan.vkCmdCopyBufferToImage
-                (cb, vkBuffer, vkImage,
-                 TransferDst.vkImageLayout,
-                 1u, asPointer &region)
-
-            // transition image layout for usage either here or in mipmap generation as applicable
-            if mipLevels > 1 then VulkanTexture.recordGenerateMipmaps cb extent mipLevels vkImage
-            else VulkanTexture.recordTransitionLayout cb true mipLevels TransferDst ShaderRead vkImage
-        
-        /// Copy the pixels from the staging buffer to the image.
-        static member private copyBufferToImage extent mipLevels vkBuffer vkImage (vkc : Hl.VulkanContext) =
-            
-            // setup command buffer for copy
-            let mutable cb = Hl.allocateCommandBuffer vkc.TransientCommandPool vkc.Device
-            Vulkan.vkResetCommandPool (vkc.Device, vkc.TransientCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
-            let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-            Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
-
-            // record copy
-            VulkanTexture.recordBufferToImageCopy cb extent mipLevels vkBuffer vkImage
-
-            // execute copy
-            Vulkan.vkEndCommandBuffer cb |> Hl.check
-            let mutable sInfo = VkSubmitInfo ()
-            sInfo.commandBufferCount <- 1u
-            sInfo.pCommandBuffers <- asPointer &cb
-            Vulkan.vkQueueSubmit (vkc.GraphicsQueue, 1u, asPointer &sInfo, vkc.ResourceReadyFence) |> Hl.check
-            Hl.awaitFence vkc.ResourceReadyFence vkc.Device
-        
         /// Create a VulkanTexture.
         static member create (format : ImageFormat) minFilter magFilter anisoFilter mipmaps metadata (vkc : Hl.VulkanContext) =
 
@@ -455,12 +416,33 @@ module Texture =
             // fin
             vulkanTexture
 
+        /// Record commands to copy from buffer to image.
+        static member recordBufferToImageCopy cb extent mipLevels vkBuffer vkImage =
+            
+            // transition image layout for data transfer
+            VulkanTexture.recordTransitionLayout cb true mipLevels Undefined TransferDst vkImage
+
+            // copy data from buffer to image
+            let mutable region = VkBufferImageCopy ()
+            region.imageSubresource <- Hl.makeSubresourceLayersColor 0
+            region.imageExtent <- extent
+            Vulkan.vkCmdCopyBufferToImage
+                (cb, vkBuffer, vkImage,
+                 TransferDst.vkImageLayout,
+                 1u, asPointer &region)
+
+            // transition image layout for usage either here or in mipmap generation as applicable
+            if mipLevels > 1 then VulkanTexture.recordGenerateMipmaps cb extent mipLevels vkImage
+            else VulkanTexture.recordTransitionLayout cb true mipLevels TransferDst ShaderRead vkImage
+        
         /// Upload pixel data to VulkanTexture.
         static member upload metadata pixels vulkanTexture (vkc : Hl.VulkanContext) =
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.Format.BytesPerPixel
             let stagingBuffer = VulkanMemory.Buffer.stageData uploadSize pixels vkc
-            VulkanTexture.copyBufferToImage extent vulkanTexture.MipLevels stagingBuffer.VkBuffer vulkanTexture.Image.VkImage vkc
+            let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
+            VulkanTexture.recordBufferToImageCopy cb extent vulkanTexture.MipLevels stagingBuffer.VkBuffer vulkanTexture.Image.VkImage
+            Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
             VulkanMemory.Buffer.destroy stagingBuffer vkc
         
         /// Create an empty VulkanTexture.

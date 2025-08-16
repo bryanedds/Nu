@@ -246,6 +246,35 @@ module Hl =
         Vulkan.vkWaitForFences (device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
+    /// Begin recording to a transient command buffer.
+    let beginTransientCommandBlock commandPool device =
+        
+        // create command buffer
+        let cb = allocateCommandBuffer commandPool device
+
+        // reset command buffer and begin recording
+        Vulkan.vkResetCommandPool (device, commandPool, VkCommandPoolResetFlags.None) |> check
+        let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+        Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
+
+        // return command buffer
+        cb
+    
+    /// End recording to a transient command buffer, execute and free.
+    let endTransientCommandBlock cb commandQueue commandPool finishFence device =
+        
+        // execute command
+        let mutable cb = cb
+        Vulkan.vkEndCommandBuffer cb |> check
+        let mutable sInfo = VkSubmitInfo ()
+        sInfo.commandBufferCount <- 1u
+        sInfo.pCommandBuffers <- asPointer &cb
+        Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &sInfo, finishFence) |> check
+        awaitFence finishFence device
+
+        // free command buffer
+        Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb)
+    
     /// Begin command buffer recording.
     let beginCommandBlock cb waitFence device =
 
