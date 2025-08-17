@@ -1931,7 +1931,7 @@ module EntityDispatcherModule =
                      scstring entity.EntityAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
-            World.advanceContext entity.EntityAddress context world
+            World.setContextAndDeclared context entity.EntityAddress world
 
         /// ImSim process an entity.
         abstract Process : entity : Entity * world : World -> unit
@@ -2314,7 +2314,7 @@ module GroupDispatcherModule =
                      scstring group.GroupAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
-            World.advanceContext group.GroupAddress context world
+            World.setContextAndDeclared context group.GroupAddress world
 
         /// ImSim process a group.
         abstract Process : group : Group * world : World -> unit
@@ -2530,7 +2530,7 @@ module ScreenDispatcherModule =
                      scstring screen.ScreenAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call World.endGroup?")
 #endif
-            World.advanceContext screen.ScreenAddress context world
+            World.setContextAndDeclared context screen.ScreenAddress world
 
         /// ImSim process a screen.
         abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> unit
@@ -2743,7 +2743,7 @@ module GameDispatcherModule =
                      scstring game.GameAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call World.endScreen?")
 #endif
-            World.advanceContext game.GameAddress context world
+            World.setContextAndDeclared context game.GameAddress world
 
         /// ImSim process a game.
         abstract Process : game : Game * world : World -> unit

@@ -258,21 +258,16 @@ module WorldModule =
         static member getDeclaredInitializing (world : World) =
             world.DeclaredInitializing
 
-        static member internal setContext context (world : World) =
+        static member internal setContextAndDeclared context declared (world : World) =
             if world.Imperative then
-                world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
                 world.WorldExtension.ContextImSim <- context
+                world.WorldExtension.DeclaredImSim <- declared
             else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldState.WorldExtension.ContextImSim; ContextImSim = context }
+                let worldExtension = { world.WorldExtension with ContextImSim = context; DeclaredImSim = declared }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal advanceContext declared context (world : World) =
-            if world.Imperative then
-                world.WorldExtension.DeclaredImSim <- declared
-                world.WorldExtension.ContextImSim <- context
-            else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = declared; ContextImSim = context }
-                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+        static member internal setContext context (world : World) =
+            World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
         static member internal getSimulantsImSim (world : World) =
             world.SimulantsImSim
@@ -388,15 +383,44 @@ module WorldModule =
             World.mapAmbientState (AmbientState.addTasklet simulant tasklet) world
 
         /// Schedule an operation to be executed by the engine with the given delay.
+        /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
+        /// World that were active in that Process context as well as time and advancement state.
         static member schedule delay operation (simulant : Simulant) (world : World) =
+
+            // compute time at which to schedule the operation
             let time =
                 match delay with
                 | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
                 | TickTime delay -> TickTime (world.TickTime + delay)
+
+            // restore the ImSim context when we're in an ImSim Process context
+            let operation =
+                let context = world.ContextImSim
+                if context.Names.Length > 0 then
+                    let declared = world.DeclaredImSim
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    fun (world : World) ->
+                        let context' = world.ContextImSim
+                        let declared' = world.DeclaredImSim
+                        World.mapAmbientState AmbientState.clearAdvancement world
+                        World.setContextAndDeclared context declared world
+                        operation world
+                        World.setContextAndDeclared context' declared' world
+                        World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else operation
+
+            // add tasklet
             let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
-        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
+        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if
+        /// we've already started processing tasklets.
+        /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
+        /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
             let time =
                 if EndFrameProcessingStarted && world.Advancing then
