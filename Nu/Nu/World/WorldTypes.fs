@@ -53,7 +53,7 @@ and ChangeData =
       Value : obj }
 
 /// Provides access to the property of a simulant via an interface.
-/// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
+/// Initially inspired by Haskell lenses, but specialized for simulant properties.
 and Lens =
     interface
         
@@ -1886,7 +1886,7 @@ and [<ReferenceEquality>] WorldState =
           WorldExtension : WorldExtension }
 
     override this.ToString () =
-        // NOTE: Too big to print in the debugger, so printing nothing.
+        // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
@@ -2174,7 +2174,7 @@ and [<NoEquality; NoComparison>] World =
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
     override this.ToString () =
-        // NOTE: Too big to print in the debugger, so printing nothing.
+        // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-

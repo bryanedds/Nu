@@ -481,8 +481,8 @@ module internal AmbientState =
               UpdateDelta : int64
               UpdateTime : int64
               ClockDelta : single
-              ClockTime : single
               // cache line 2
+              ClockTime : single
               TickDelta : int64
               KeyValueStore : SUMap<string, obj>
               TickTime : int64
@@ -492,12 +492,12 @@ module internal AmbientState =
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
               Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
+              // cache line 4
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               Overlayer : Overlayer
               Timers : Timers
-              // cache line 4
               LightMapRenderRequested : bool }
 
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
