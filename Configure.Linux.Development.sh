@@ -1,8 +1,9 @@
 # configure Linux for Nu development
 echo Configuring Linux for Nu development...
 
-# configure apt
+# configure apt and apt-get
 sudo apt update
+sudo apt-get update
 
 #configure x11 (this seems to be needed when running just Wayland due to issue #810)
 sudo apt-get install libx11-dev
@@ -15,8 +16,6 @@ sudo apt install \
   libfreetype6-dev libsdl2-ttf-dev libsdl2-ttf-2.0-0
 
 # configure .net
-# if this reports that the package can't be found, try the advice here - https://dev.to/solrevdev/unable-to-locate-package-dotnet-sdk-3-1-4b6
-sudo apt-get update
 sudo apt-get install -y dotnet-sdk-9.0
 
 # configure assimp

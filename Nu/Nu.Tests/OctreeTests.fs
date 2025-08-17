@@ -193,7 +193,7 @@ module OctreeTests =
         let element2 = makeTestOctelement 2 "outside" true false false false Presence.Exterior Presence.Exterior (box3 (v3 20.0f 20.0f 20.0f) (v3 2.0f 2.0f 2.0f))
         let element3 = makeTestOctelement 3 "overlapping" true false false false Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 2.0f 2.0f 2.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f)) element1 tree
-        Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 20.0f 20.0f 20.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
+        Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 12.0f 12.0f 12.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 2.0f 2.0f 2.0f)) element3 tree
         
         // query bounds that should intersect elements 1 and 3

@@ -141,9 +141,8 @@ module WorldModule2 =
                 localTime - world.TickDelta * 2L >= lifeTime
             | (_, _) -> failwithumf ()
 
-        static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
-            match World.getLiveness world with
-            | Live ->
+        static member private updateScreenIncoming transitionTime (selectedScreen : Screen) (world : World) =
+            if world.Alive then
                 if transitionTime = world.GameTime then
                     let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
                     World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
@@ -153,18 +152,14 @@ module WorldModule2 =
                         | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
-                match World.getLiveness world with
-                | Live ->
+                if world.Alive then
                     if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
                         World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
                         World.publishPlus () selectedScreen.IncomingFinishEvent eventTrace selectedScreen false false world
-                | Dead -> ()
-            | Dead -> ()
 
-        static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
-            match World.getLiveness world with
-            | Live ->
+        static member private updateScreenIdling transitionTime (selectedScreen : Screen) (world : World) =
+            if world.Alive then
                 if world.Accompanied && world.Halted then // special case to play song when halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
@@ -213,7 +208,6 @@ module WorldModule2 =
                         World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
                         World.updateScreenOutgoing transitionTime selectedScreen world
                     | DesireIgnore -> ()
-            | Dead -> ()
 
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             if transitionTime = world.GameTime then
@@ -245,19 +239,15 @@ module WorldModule2 =
                 | None -> ()
                 let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                 World.publishPlus () selectedScreen.OutgoingStartEvent eventTrace selectedScreen false false world
-            match World.getLiveness world with
-            | Live ->
+            if world.Alive then
                 if World.updateScreenTransition3 Outgoing selectedScreen world then
                     let transitionTime = world.GameTime
                     World.setScreenTransitionStatePlus (IdlingState transitionTime) selectedScreen world
                     World.updateScreenIdling transitionTime selectedScreen world
-                    match World.getLiveness world with
-                    | Live ->
+                    if world.Alive then
                         let eventTrace = EventTrace.debug "World" "updateScreenOutgoing" "OutgoingFinish" EventTrace.empty
                         World.publishPlus () selectedScreen.OutgoingFinishEvent eventTrace selectedScreen false false world
-                    | Dead -> ()
-                    match World.getLiveness world with
-                    | Live ->
+                    if world.Alive then
                         let destinationOpt =
                             match selectedScreen.GetSlideOpt world with
                             | Some slide -> Some slide.Destination
@@ -284,8 +274,6 @@ module WorldModule2 =
                                 World.updateScreenIncoming transitionTime destination world
                             | DesireNone -> ()
                             | DesireIgnore -> ()
-                    | Dead -> ()
-            | Dead -> ()
 
         static member private updateScreenRequestedSong world =
             match World.getSelectedScreenOpt world with
@@ -1191,9 +1179,8 @@ module WorldModule2 =
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
             | _ -> ()
 
-        static member private processIntegrationMessage integrationMessage world =
-            match World.getLiveness world with
-            | Live ->
+        static member private processIntegrationMessage integrationMessage (world : World) =
+            if world.Alive then
                 match integrationMessage with
                 | BodyPenetrationMessage bodyPenetrationMessage ->
                     match bodyPenetrationMessage.BodyShapeSource.BodyId.BodySource with
@@ -1248,7 +1235,6 @@ module WorldModule2 =
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus breakData entity.BodyJointBreakEvent eventTrace entity false false world
                     | _ -> ()
-            | Dead -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
         /// It can make sense to call this after loading a new level.
@@ -1677,20 +1663,19 @@ module WorldModule2 =
             finally
                 HashSet3dShadowCached.Clear ()
 
-        static member private processInput world =
+        static member private processInput (world : World) =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
                 MouseState.update ()
                 KeyboardState.update ()
-                let mutable liveness = World.getLiveness world
+                let mutable alive = world.Alive
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
-                    (match liveness with Live -> true | Dead -> false) &&
+                    alive &&
                     SDL.SDL_PollEvent &polledEvent <> 0 do
                     World.processInput2 polledEvent world
-                    liveness <- World.getLiveness world
-                match liveness with
-                | Dead -> World.exit world
-                | Live -> ()
+                    alive <- world.Alive
+                if not alive then
+                    World.exit world
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
@@ -1728,42 +1713,37 @@ module WorldModule2 =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
-            if runWhile world then
+            if world.Alive && runWhile world then
 
                 // run user-defined pre-process callbacks
                 world.Timers.PreProcessTimer.Restart ()
                 World.preProcess world
                 preProcess world
                 world.Timers.PreProcessTimer.Stop ()
-                match World.getLiveness world with
-                | Live ->
+                if world.Alive then
 
                     // update screen transitioning process
                     World.updateScreenTransition world
                     World.updateScreenRequestedSong world
-                    match World.getLiveness world with
-                    | Live ->
+                    if world.Alive then
 
                         // process HID inputs
                         world.Timers.InputTimer.Restart ()
                         World.processInput world
                         world.Timers.InputTimer.Stop ()
-                        match World.getLiveness world with
-                        | Live ->
+                        if world.Alive then
 
                             // process physics
                             world.Timers.PhysicsTimer.Restart ()
                             World.processPhysics world
                             world.Timers.PhysicsTimer.Stop ()
-                            match World.getLiveness world with
-                            | Live ->
+                            if world.Alive then
 
                                 // pre-update simulants
                                 world.Timers.PreUpdateTimer.Restart ()
                                 World.preUpdateSimulants world
                                 world.Timers.PreUpdateTimer.Stop ()
-                                match World.getLiveness world with
-                                | Live ->
+                                if world.Alive then
 
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
@@ -1771,54 +1751,47 @@ module WorldModule2 =
                                     World.updateSimulants world
                                     WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
-                                    match World.getLiveness world with
-                                    | Live ->
+                                    if world.Alive then
 
                                         // post-update simulants
                                         world.Timers.PostUpdateTimer.Restart ()
                                         World.postUpdateSimulants world
                                         world.Timers.PostUpdateTimer.Stop ()
-                                        match World.getLiveness world with
-                                        | Live ->
+                                        if world.Alive then
 
                                             // run user-defined per-process callbacks
                                             world.Timers.PerProcessTimer.Restart ()
                                             World.perProcess world
                                             perProcess world
                                             world.Timers.PerProcessTimer.Stop ()
-                                            match World.getLiveness world with
-                                            | Live ->
+                                            if world.Alive then
 
                                                 // process coroutines
                                                 world.Timers.CoroutinesTimer.Restart ()
                                                 World.processCoroutines world
                                                 world.Timers.CoroutinesTimer.Stop ()
-                                                match World.getLiveness world with
-                                                | Live ->
+                                                if world.Alive then
 
                                                     // process tasklets that have been scheduled and are ready to run
                                                     world.Timers.TaskletsTimer.Restart ()
                                                     WorldModule.EndFrameProcessingStarted <- true
                                                     World.processTasklets world
                                                     world.Timers.TaskletsTimer.Stop ()
-                                                    match World.getLiveness world with
-                                                    | Live ->
+                                                    if world.Alive then
 
                                                         // destroy simulants that have been marked for destruction at the end of frame
                                                         world.Timers.DestructionTimer.Restart ()
                                                         World.processImSim world
                                                         World.destroySimulants world
                                                         world.Timers.DestructionTimer.Stop ()
-                                                        match World.getLiveness world with
-                                                        | Live ->
-                                                    
+                                                        if world.Alive then
+
                                                             // run engine and user-defined post-process callbacks
                                                             world.Timers.PostProcessTimer.Restart ()
                                                             World.postProcess world
                                                             postProcess world
                                                             world.Timers.PostProcessTimer.Stop ()
-                                                            match World.getLiveness world with
-                                                            | Live ->
+                                                            if world.Alive then
 
                                                                 // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
                                                                 world.Timers.RenderMessagesTimer.Restart ()
@@ -1826,8 +1799,7 @@ module WorldModule2 =
                                                                 World.acknowledgeLightMapRenderRequest world
                                                                 World.renderSimulants lightMapRenderRequested world
                                                                 world.Timers.RenderMessagesTimer.Stop ()
-                                                                match World.getLiveness world with
-                                                                | Live ->
+                                                                if world.Alive then
 
                                                                     // process audio
                                                                     world.Timers.AudioTimer.Restart ()
@@ -1848,15 +1820,12 @@ module WorldModule2 =
                                                                     if world.Timers.MainThreadTimer.IsRunning then
 
                                                                         // automatically enable frame pacing when need is detected
-                                                                        let world =
-                                                                            if not world.FramePacing then
-                                                                                let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
-                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
-                                                                                FramePaceChecks <- inc FramePaceChecks
-                                                                                if FramePaceIssues = 15 then World.setFramePacing true world
-                                                                                if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
-                                                                                world
-                                                                            else world
+                                                                        if not world.FramePacing then
+                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                            if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                            FramePaceChecks <- inc FramePaceChecks
+                                                                            if FramePaceIssues = 15 then World.setFramePacing true world
+                                                                            if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
@@ -1923,23 +1892,8 @@ module WorldModule2 =
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
 
-                                                                    // recur or return
-                                                                    match World.getLiveness world with
-                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
-                                                                    | Dead -> ()
-                                                                | Dead -> ()
-                                                            | Dead -> ()
-                                                        | Dead -> ()
-                                                    | Dead -> ()
-                                                | Dead -> ()
-                                            | Dead -> ()
-                                        | Dead -> ()
-                                    | Dead -> ()
-                                | Dead -> ()
-                            | Dead -> ()
-                        | Dead -> ()
-                    | Dead -> ()
-                | Dead -> ()
+                                                                    // recur
+                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
 
         /// Run the game engine using the given world and returning exit code upon termination.
         static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
@@ -1981,7 +1935,7 @@ module EntityDispatcherModule =
                      scstring entity.EntityAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
-            World.advanceContext entity.EntityAddress context world
+            World.setContextAndDeclared context entity.EntityAddress world
 
         /// ImSim process an entity.
         abstract Process : entity : Entity * world : World -> unit
@@ -2372,7 +2326,7 @@ module GroupDispatcherModule =
                      scstring group.GroupAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
-            World.advanceContext group.GroupAddress context world
+            World.setContextAndDeclared context group.GroupAddress world
 
         /// ImSim process a group.
         abstract Process : group : Group * world : World -> unit
@@ -2588,7 +2542,7 @@ module ScreenDispatcherModule =
                      scstring screen.ScreenAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call World.endGroup?")
 #endif
-            World.advanceContext screen.ScreenAddress context world
+            World.setContextAndDeclared context screen.ScreenAddress world
 
         /// ImSim process a screen.
         abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> unit
@@ -2801,7 +2755,7 @@ module GameDispatcherModule =
                      scstring game.GameAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call World.endScreen?")
 #endif
-            World.advanceContext game.GameAddress context world
+            World.setContextAndDeclared context game.GameAddress world
 
         /// ImSim process a game.
         abstract Process : game : Game * world : World -> unit

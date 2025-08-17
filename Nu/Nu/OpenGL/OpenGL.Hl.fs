@@ -67,12 +67,60 @@ module Hl =
         Gl.DebugMessageControl (DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, [||], true)
         Gl.DebugMessageCallback (DebugMessageProc, nativeint 0)
 
-    /// Check if an OpenGL internal format is supported.
-    let CheckFormat (format : InternalFormat) =
+    /// Check if an OpenGL internal format is supported for render buffers, falling back to a standard format where
+    /// possible.
+    let rec CheckRenderFormat (format : InternalFormat) =
         let result = [|0|]
         Gl.GetInternalformat (TextureTarget.Renderbuffer, format, InternalFormatPName.InternalformatSupported, result)
-        if result.[0] = 0
-        then Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required.")
+        if result.[0] = 0 then
+            match format with
+            | InternalFormat.StencilIndex
+            | InternalFormat.DepthComponent
+            | InternalFormat.Red
+            | InternalFormat.Rg
+            | InternalFormat.Rgb
+            | InternalFormat.Rgba ->
+                Log.fail ("OpenGL framebuffer internal format '" + string format + "' is not intended for format buffers.")
+            | InternalFormat.R3G3B2
+            | InternalFormat.Rgb2Ext
+            | InternalFormat.Rgb4
+            | InternalFormat.Rgb5
+            | InternalFormat.Rgb8
+            | InternalFormat.Rgba2 ->
+                CheckRenderFormat InternalFormat.Rgba8
+            | InternalFormat.Rgb9E5
+            | InternalFormat.Rgb10
+            | InternalFormat.Rgb12
+            | InternalFormat.Rgba12
+            | InternalFormat.Rgb16 ->
+                CheckRenderFormat InternalFormat.Rgba16
+            | InternalFormat.Rgb16f ->
+                CheckRenderFormat InternalFormat.Rgba16f
+            | InternalFormat.Rgb32f ->
+                CheckRenderFormat InternalFormat.Rgba32f
+            | InternalFormat.DepthComponent16 (* standard *)
+            | InternalFormat.DepthComponent24 (* standard *)
+            | InternalFormat.DepthComponent32 (* standard *)
+            | InternalFormat.Depth24Stencil8 (* standard *)
+            | InternalFormat.R8 (* standard *)
+            | InternalFormat.Rg8 (* standard *)
+            | InternalFormat.Rgb565 (* standard *)
+            | InternalFormat.Rgba4 (* standard *)
+            | InternalFormat.Rgb5A1 (* standard *)
+            | InternalFormat.Rgb10A2 (* standard *)
+            | InternalFormat.Rgba8 (* standard *)
+            | InternalFormat.R16 (* standard *)
+            | InternalFormat.Rg16 (* standard *)
+            | InternalFormat.Rgba16 (* standard *)
+            | InternalFormat.R11fG11fB10f (* standard *)
+            | InternalFormat.Rg16f (* standard *)
+            | InternalFormat.Rgba16f (* standard *)
+            | InternalFormat.R32f (* standard *)
+            | InternalFormat.Rg32f (* standard *)
+            | InternalFormat.Rgba32f (* standard *) ->
+                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, it's a requirement in the OpenGL specification!")
+            | _ ->
+                Log.fail ("OpenGL framebuffer internal format '" + string format + "' support is absent but required. Further, its format is uncategorized by Nu.")
         else format
 
     /// Create an SDL OpenGL context with the given window.

@@ -53,21 +53,28 @@ and ChangeData =
       Value : obj }
 
 /// Provides access to the property of a simulant via an interface.
-/// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
+/// Initially inspired by Haskell lenses, but specialized for simulant properties.
 and Lens =
     interface
+        
         /// The name of the property accessed by the lens.
         abstract Name : string
+        
         /// The simulant whose property is accessed by the lens.
         abstract This : Simulant
+        
         /// Get the value of the property accessed by the lens.
         abstract Get : world : World -> obj
+        
         /// Get an optional setter function that updates the property accessed by the lens.
         abstract SetOpt : (obj -> World -> unit) voption
+        
         /// Attempt to set the lensed property to the given value.
         abstract TrySet : value : obj -> world : World -> bool
+        
         /// The change event associated with the lensed property.
         abstract ChangeEvent : ChangeData Address
+        
         /// The type of the lensed property.
         abstract Type : Type
         end
@@ -1884,7 +1891,7 @@ and [<ReferenceEquality>] WorldState =
           WorldExtension : WorldExtension }
 
     override this.ToString () =
-        // NOTE: Too big to print in the debugger, so printing nothing.
+        // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
@@ -1940,6 +1947,14 @@ and [<NoEquality; NoComparison>] World =
     /// Get the current world state.
     member this.CurrentState =
         this.WorldState
+
+    /// Check that the world is alive (still running).
+    member this.Alive =
+        AmbientState.getAlive this.AmbientState
+
+    /// Check that the world is dead (notno longer running).
+    member this.Dead =
+        not this.Alive
 
     /// Check that the world is executing with imperative semantics where applicable.
     member this.Imperative =
@@ -2164,7 +2179,7 @@ and [<NoEquality; NoComparison>] World =
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
     override this.ToString () =
-        // NOTE: Too big to print in the debugger, so printing nothing.
+        // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-

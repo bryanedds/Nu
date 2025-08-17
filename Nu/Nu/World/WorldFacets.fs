@@ -1220,11 +1220,11 @@ type EffectFacet () =
                 (entity.GetEffectDescriptor world)
 
         // run effect, optionally destroying upon exhaustion
-        let (liveness, effect, dataToken) = Effect.run effect world
+        let (alive, effect, dataToken) = Effect.run effect world
         entity.SetParticleSystem effect.ParticleSystem world
         entity.SetEffectTagTokens effect.TagTokens world
         entity.SetEffectDataToken dataToken world
-        if liveness = Dead && entity.GetSelfDestruct world then
+        if not alive && entity.GetSelfDestruct world then
             World.destroyEntity entity world
 
     static let handleEffectDescriptorChange evt world =

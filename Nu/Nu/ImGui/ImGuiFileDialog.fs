@@ -17,10 +17,12 @@ type internal ImGuiFileSortOrder =
     | Descending = 1
     | Unsorted = 2
 
+/// The type of ImGui file dialog.
 type ImGuiFileDialogType =
     | Open = 0
     | Save = 1
 
+/// The state of an ImGui file dialog.
 type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val Title : string = "" with get, set
     member val FilePattern : string = "*" with get, set
@@ -63,24 +65,15 @@ module ImGui =
         dialogInfo.CurrentFiles <- directory.GetFiles (dialogInfo.FilePattern) |> Seq.toList
 
     let private sort (dialogState : ImGuiFileDialogState, forceSort : bool) =
+
+        // compute sorting requirements
         let mutable sort = false
+        if FileNameSortOrderCopy <> FileNameSortOrder then FileNameSortOrderCopy <- FileNameSortOrder; sort <- true
+        if SizeSortOrderCopy <> SizeSortOrder then SizeSortOrderCopy <- SizeSortOrder; sort <- true
+        if DateSortOrderCopy <> DateSortOrder then DateSortOrderCopy <- DateSortOrder; sort <- true
+        if TypeSortOrderCopy <> TypeSortOrder then TypeSortOrderCopy <- TypeSortOrder; sort <- true
 
-        if  FileNameSortOrderCopy <> FileNameSortOrder then
-            FileNameSortOrderCopy <- FileNameSortOrder
-            sort <- true
-
-        if  SizeSortOrderCopy <> SizeSortOrder then
-            SizeSortOrderCopy <- SizeSortOrder
-            sort <- true
-
-        if  DateSortOrderCopy <> DateSortOrder then
-            DateSortOrderCopy <- DateSortOrder
-            sort <- true
-
-        if  TypeSortOrderCopy <> TypeSortOrder then
-            TypeSortOrderCopy <- TypeSortOrder
-            sort <- true
-
+        // sort entries when needed
         if sort || forceSort then
 
             // Sort directories
@@ -117,6 +110,7 @@ module ImGui =
                     then dialogState.CurrentFiles |> List.sortBy (fun i -> i.LastWriteTime)
                     else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.LastWriteTime)
 
+    /// Declare an ImGui file dialog.
     let FileDialog (opened : bool byref, dialogState : ImGuiFileDialogState) =
 
         if opened then
