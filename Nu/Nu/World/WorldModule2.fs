@@ -1708,7 +1708,7 @@ module WorldModule2 =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
-            if runWhile world then
+            if world.Alive && runWhile world then
 
                 // run user-defined pre-process callbacks
                 world.Timers.PreProcessTimer.Restart ()
@@ -1887,9 +1887,8 @@ module WorldModule2 =
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
 
-                                                                    // recur or return
-                                                                    if world.Alive then
-                                                                        World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
+                                                                    // recur
+                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
 
         /// Run the game engine using the given world and returning exit code upon termination.
         static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
