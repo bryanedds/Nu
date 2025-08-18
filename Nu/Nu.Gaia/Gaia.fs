@@ -189,7 +189,7 @@ module Gaia =
     (* Fsi Session *)
 
     let FsProjectNoWarn = "--nowarn:FS0009;FS0052;FS1178;FS3391;FS3536;FS3560"
-    let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectNoWarn|] // TODO: see if can we use --warnon as well.
+    let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectNoWarn|] // TODO: see if we can use --warnon as well.
     let FsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private FsiErrorStream = new StringWriter ()
     let private FsiInStream = new StringReader ""
@@ -1228,7 +1228,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     // dispose of existing fsi eval session
                     (FsiSession :> IDisposable).Dispose ()
 
-                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda its also roots.
+                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda and also roots.
                     let mutable fsiDynamicCompiler = FsiSession.GetType().GetField("fsiDynamicCompiler", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
                     fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(fsiDynamicCompiler, null)
                     fsiDynamicCompiler <- null
