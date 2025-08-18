@@ -1217,8 +1217,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace (">", ""))
                         |> Array.map (fun line -> line.Replace ("<", ""))
                         |> fun fdcs ->
-                            if fdcs.Length = 2
-                            then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                            if fdcs.Length = 2 then
+                                if not (Array.exists (fun (fdc : string) -> fdc.Length = 0) fdcs)
+                                then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                                else None
                             else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
