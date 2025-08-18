@@ -2011,6 +2011,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderPass,
          renderTasks,
          _ : GlRenderer3d) =
+
+        // compute tex coords offset
         let texCoordsOffset =
             match insetOpt with
             | Some inset ->
@@ -2027,6 +2029,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sx = 1.0f
                 let sy = -1.0f
                 Box2 (px, py, sx, sy)
+
+        // render as appropriate
         match renderPass with
         | ShadowPass (_, _, _, shadowRotation, _) ->
 
@@ -2121,6 +2125,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderPass : RenderPass,
          renderTasksOpt : RenderTasks voption,
          renderer) =
+
+        // compute tex coords offset
         let texCoordsOffset =
             match insetOpt with
             | ValueSome inset ->
@@ -2133,10 +2139,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | ValueNone -> box2 v2Zero v2Zero
+
+        // decide destination of render tasks
         let renderTasks =
             match renderTasksOpt with
             | ValueSome renderTasks -> renderTasks
             | ValueNone -> GlRenderer3d.getRenderTasks renderPass renderer
+        
+        // render as appropriate
         match renderType with
         | DeferredRenderType ->
             if not surface.SurfaceMaterial.Clipped then
