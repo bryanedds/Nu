@@ -664,7 +664,7 @@ module Texture =
             | MipmapAuto -> VulkanTexture.generateMipmaps metadata vulkanTexture vkc
             
             // fin
-            (metadata, VulkanTexture.empty)
+            (metadata, vulkanTexture)
 
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
