@@ -437,7 +437,7 @@ module WorldModule4 =
                         assemblyName.Name <> "Prime" then
                         try Some (Assembly.Load assemblyName)
                         with exn ->
-                            Log.error ("Could not load assembly '" + assemblyName.FullName + "' due to: " + scstring exn)
+                            Log.warn ("Could not load assembly '" + assemblyName.FullName + "' due to: " + scstring exn)
                             None
                     else None)
                 |> Array.definitize
