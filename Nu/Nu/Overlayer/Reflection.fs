@@ -40,7 +40,7 @@ module Reflection =
         |> Seq.map (flip pair true)
         |> dictPlus StringComparer.Ordinal
 
-    /// Load all the referenced assemblies of an assembly that satisfy a predicate transitively.
+    /// Load all the referenced assemblies of an assembly transitively that satisfy the given predicate.
     let rec loadReferencedAssembliesTransitively assemblyNamePredicate (assembly : Assembly) =
         [|for assemblyName in assembly.GetReferencedAssemblies () do
             if assemblyNamePredicate assemblyName then

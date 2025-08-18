@@ -500,7 +500,7 @@ type RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-/// Describes a static model surface bundle, which is a collection of static model surfaces.
+/// Describes a pre-composed collection of static model surfaces.
 type StaticModelSurfaceBundle =
     { BundleId : Guid
       StaticModelSurfaces : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array
