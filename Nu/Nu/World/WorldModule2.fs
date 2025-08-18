@@ -2226,7 +2226,7 @@ module EntityPropertyDescriptor =
             propertyName = "AnglesLocal" ||
             propertyName = "Light" ||
             propertyName = "LightProbe" ||
-            propertyName = "PermafrozenBatches" ||
+            propertyName = "PermafrozenPreBatches" ||
             propertyName = "PermafrozenShapes" then
             false
         else

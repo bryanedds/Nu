@@ -500,9 +500,9 @@ type RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-/// Describes a pre-composed collection of static model surfaces.
-type StaticModelSurfaceBatch =
-    { BatchId : Guid
+/// Describes a pre-composed batch of static model surfaces.
+type StaticModelSurfacePreBatch =
+    { PreBatchId : Guid
       StaticModelSurfaces : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array
       Material : Material
       StaticModel : StaticModel AssetTag
@@ -511,14 +511,14 @@ type StaticModelSurfaceBatch =
       DepthTest : DepthTest
       RenderType : RenderType }
 
-/// Describes how to render a static model surface batch.
-type RenderStaticModelSurfaceBatch =
-    { StaticModelSurfaceBatch : StaticModelSurfaceBatch
+/// Describes how to render a static model surface pre-batch.
+type RenderStaticModelSurfacePreBatch =
+    { StaticModelSurfacePreBatch : StaticModelSurfacePreBatch
       RenderPass : RenderPass }
 
-/// Describes how to render multiple static model surface batches with shared attributes.
-type RenderStaticModelSurfaceBatches =
-    { StaticModelSurfaceBatches : StaticModelSurfaceBatch array
+/// Describes how to render multiple static model surface pre-batches with shared attributes.
+type RenderStaticModelSurfacePreBatches =
+    { StaticModelSurfacePreBatches : StaticModelSurfacePreBatch array
       RenderPass : RenderPass }
 
 /// Describes how to render a static model.
@@ -699,8 +699,8 @@ type RenderMessage3d =
     | RenderBillboards of RenderBillboards
     | RenderBillboardParticles of RenderBillboardParticles
     | RenderStaticModelSurface of RenderStaticModelSurface
-    | RenderStaticModelSurfaceBatch of RenderStaticModelSurfaceBatch
-    | RenderStaticModelSurfaceBatches of RenderStaticModelSurfaceBatches
+    | RenderStaticModelSurfacePreBatch of RenderStaticModelSurfacePreBatch
+    | RenderStaticModelSurfacePreBatches of RenderStaticModelSurfacePreBatches
     | RenderStaticModel of RenderStaticModel
     | RenderStaticModels of RenderStaticModels
     | RenderCachedStaticModel of CachedStaticModelMessage
@@ -904,9 +904,9 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
       DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
       DeferredStaticClipped : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticClippedBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
@@ -923,9 +923,9 @@ type [<ReferenceEquality>] private RenderTasks =
           LightMaps = List ()
           Lights = List ()
           DeferredStatic = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          DeferredStaticBatches = dictPlus HashIdentity.Structural []
+          DeferredStaticPreBatches = dictPlus HashIdentity.Structural []
           DeferredStaticClipped = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          DeferredStaticClippedBatches = dictPlus HashIdentity.Structural []
+          DeferredStaticClippedPreBatches = dictPlus HashIdentity.Structural []
           DeferredAnimated = dictPlus AnimatedModelSurfaceKey.comparer []
           DeferredTerrains = List ()
           Forward = List ()
@@ -950,7 +950,7 @@ type [<ReferenceEquality>] private RenderTasks =
         for removal in renderTasks.DeferredStaticRemovals do
             renderTasks.DeferredStatic.Remove removal |> ignore<bool>
         renderTasks.DeferredStaticRemovals.Clear ()
-        renderTasks.DeferredStaticBatches.Clear ()
+        renderTasks.DeferredStaticPreBatches.Clear ()
 
         for entry in renderTasks.DeferredStaticClipped do
             if entry.Value.Count = 0
@@ -959,7 +959,7 @@ type [<ReferenceEquality>] private RenderTasks =
         for removal in renderTasks.DeferredStaticClippedRemovals do
             renderTasks.DeferredStaticClipped.Remove removal |> ignore<bool>
         renderTasks.DeferredStaticClippedRemovals.Clear ()
-        renderTasks.DeferredStaticClippedBatches.Clear ()
+        renderTasks.DeferredStaticClippedPreBatches.Clear ()
 
         for entry in renderTasks.DeferredAnimated do
             if entry.Value.Count = 0
@@ -984,10 +984,10 @@ type [<ReferenceEquality>] private RenderTasks =
                     static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
-            let deferredStaticBatchesCached =
-                renderTasks.DeferredStaticBatches.Count = renderTasksCached.DeferredStaticBatches.Count &&
-                (renderTasks.DeferredStaticBatches, renderTasksCached.DeferredStaticBatches)
-                ||> Seq.forall2 (fun staticBatch staticBatchCached -> staticBatch.Key = staticBatchCached.Key)
+            let deferredStaticPreBatchesCached =
+                renderTasks.DeferredStaticPreBatches.Count = renderTasksCached.DeferredStaticPreBatches.Count &&
+                (renderTasks.DeferredStaticPreBatches, renderTasksCached.DeferredStaticPreBatches)
+                ||> Seq.forall2 (fun staticPreBatch staticPreBatchCached -> staticPreBatch.Key = staticPreBatchCached.Key)
             let deferredStaticClippedCached =
                 renderTasks.DeferredStaticClipped.Count = renderTasksCached.DeferredStaticClipped.Count &&
                 (renderTasks.DeferredStaticClipped, renderTasksCached.DeferredStaticClipped)
@@ -996,10 +996,10 @@ type [<ReferenceEquality>] private RenderTasks =
                     static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
-            let deferredStaticClippedBatchesCached =
-                renderTasks.DeferredStaticClippedBatches.Count = renderTasksCached.DeferredStaticClippedBatches.Count &&
-                (renderTasks.DeferredStaticClippedBatches, renderTasksCached.DeferredStaticClippedBatches)
-                ||> Seq.forall2 (fun staticBatch staticBatchCached -> staticBatch.Key = staticBatchCached.Key)
+            let deferredStaticClippedPreBatchesCached =
+                renderTasks.DeferredStaticClippedPreBatches.Count = renderTasksCached.DeferredStaticClippedPreBatches.Count &&
+                (renderTasks.DeferredStaticClippedPreBatches, renderTasksCached.DeferredStaticClippedPreBatches)
+                ||> Seq.forall2 (fun staticPreBatch staticPreBatchCached -> staticPreBatch.Key = staticPreBatchCached.Key)
             let deferredAnimatedCached =
                 renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
                 (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated)
@@ -1016,9 +1016,9 @@ type [<ReferenceEquality>] private RenderTasks =
                     terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
                     terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
             deferredStaticCached &&
-            deferredStaticBatchesCached &&
+            deferredStaticPreBatchesCached &&
             deferredStaticClippedCached &&
-            deferredStaticClippedBatchesCached &&
+            deferredStaticClippedPreBatchesCached &&
             deferredAnimatedCached &&
             deferredTerrainsCached
         else false
@@ -2190,8 +2190,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
-    static member private categorizeStaticModelSurfaceBatch
-        (batchId : Guid,
+    static member private categorizeStaticModelSurfacePreBatch
+        (preBatchId : Guid,
          staticModelSurfaces : _ array,
          material : Material,
          staticModel : StaticModel AssetTag,
@@ -2218,17 +2218,17 @@ type [<ReferenceEquality>] GlRenderer3d =
                         else surface
                     match renderType with
                     | DeferredRenderType ->
-                        let batch = struct (surface, staticModelSurfaces)
+                        let preBatch = struct (surface, staticModelSurfaces)
                         if not surface.SurfaceMaterial.Clipped
-                        then renderTasks.DeferredStaticBatches.Add (batchId, batch)
-                        else renderTasks.DeferredStaticClippedBatches.Add (batchId, batch)
+                        then renderTasks.DeferredStaticPreBatches.Add (preBatchId, preBatch)
+                        else renderTasks.DeferredStaticClippedPreBatches.Add (preBatchId, preBatch)
                     | ForwardRenderType (subsort, sort) ->
                         for (model, castShadow, presence, insetOpt, properties, bounds) in staticModelSurfaces do
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
-                                    if castShadow then // TODO: see if we should check for CastShadow when constructing the batch.
+                                    if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
                                         let shadowFrustumInteriorOpt = if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone
                                         Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                                     else false
@@ -2552,15 +2552,15 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
-            | RenderStaticModelSurfaceBatch rsmsb ->
+            | RenderStaticModelSurfacePreBatch rsmsb ->
                 let renderPass = rsmsb.RenderPass
                 let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
-                GlRenderer3d.categorizeStaticModelSurfaceBatch (rsmsb.StaticModelSurfaceBatch.BatchId, rsmsb.StaticModelSurfaceBatch.StaticModelSurfaces, rsmsb.StaticModelSurfaceBatch.Material, rsmsb.StaticModelSurfaceBatch.StaticModel, rsmsb.StaticModelSurfaceBatch.SurfaceIndex, rsmsb.StaticModelSurfaceBatch.DepthTest, rsmsb.StaticModelSurfaceBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
-            | RenderStaticModelSurfaceBatches rsmsbs ->
+                GlRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.StaticModelSurfaces, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.DepthTest, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
+            | RenderStaticModelSurfacePreBatches rsmsbs ->
                 let renderPass = rsmsbs.RenderPass
                 let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
-                for batch in rsmsbs.StaticModelSurfaceBatches do
-                    GlRenderer3d.categorizeStaticModelSurfaceBatch (batch.BatchId, batch.StaticModelSurfaces, batch.Material, batch.StaticModel, batch.SurfaceIndex, batch.DepthTest, batch.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
+                for preBatch in rsmsbs.StaticModelSurfacePreBatches do
+                    GlRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.StaticModelSurfaces, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.DepthTest, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = GlRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -2628,7 +2628,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             (batchPhase, eyeCenter, viewArray, projectionArray, viewProjectionArray, bonesArray, parameters.Count,
              renderer.InstanceFields, renderer.LightingConfig.LightShadowExponent, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
-    static member private renderPhysicallyBasedDepthSurfaceBatch
+    static member private renderPhysicallyBasedDepthSurfacePreBatch
         shadowLightType shadowFrustum
         eyeCenter viewArray projectionArray viewProjectionArray bonesArray (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
@@ -2704,7 +2704,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             (batchPhase, viewArray, projectionArray, viewProjectionArray, bonesArray, eyeCenter,
              parameters.Count, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
-    static member private renderPhysicallyBasedDeferredSurfaceBatch
+    static member private renderPhysicallyBasedDeferredSurfacePreBatch
         frustumInterior frustumExterior frustumImposter lightBox renderPass
         viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
@@ -2991,16 +2991,16 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // deferred render static surface batches shadows
-        for entry in renderTasks.DeferredStaticBatches do
-            let struct (surface, batch) = entry.Value
+        // deferred render static surface preBatches shadows
+        for entry in renderTasks.DeferredStaticPreBatches do
+            let struct (surface, preBatch) = entry.Value
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
-            GlRenderer3d.renderPhysicallyBasedDepthSurfaceBatch
-                lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] batch
+            GlRenderer3d.renderPhysicallyBasedDepthSurfacePreBatch
+                lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] preBatch
                 surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
 
@@ -3022,16 +3022,16 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // deferred render static surface batches clipped shadows (TODO: consider implementing clipped shadow rendering.)
-        for entry in renderTasks.DeferredStaticClippedBatches do
-            let struct (surface, batch) = entry.Value
+        // deferred render static surface pre-batches clipped shadows (TODO: consider implementing clipped shadow rendering.)
+        for entry in renderTasks.DeferredStaticClippedPreBatches do
+            let struct (surface, preBatch) = entry.Value
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
-            GlRenderer3d.renderPhysicallyBasedDepthSurfaceBatch
-                lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] batch
+            GlRenderer3d.renderPhysicallyBasedDepthSurfacePreBatch
+                lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] preBatch
                 surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
 
@@ -3338,12 +3338,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // render static surface batches deferred
-        for entry in renderTasks.DeferredStaticBatches do
-            let struct (surface, batch) = entry.Value
-            GlRenderer3d.renderPhysicallyBasedDeferredSurfaceBatch
+        // render static surface pre-batches deferred
+        for entry in renderTasks.DeferredStaticPreBatches do
+            let struct (surface, preBatch) = entry.Value
+            GlRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
                 frustumInterior frustumExterior frustumImposter lightBox renderPass
-                viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter batch
+                viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter preBatch
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surface renderer.PhysicallyBasedShaders.DeferredStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
@@ -3362,12 +3362,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // render static surface batches clipped deferred
-        for entry in renderTasks.DeferredStaticClippedBatches do
-            let struct (surface, batch) = entry.Value
-            GlRenderer3d.renderPhysicallyBasedDeferredSurfaceBatch
+        // render static surface pre-batches clipped deferred
+        for entry in renderTasks.DeferredStaticClippedPreBatches do
+            let struct (surface, preBatch) = entry.Value
+            GlRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
                 frustumInterior frustumExterior frustumImposter lightBox renderPass
-                viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter batch
+                viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter preBatch
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surface renderer.PhysicallyBasedShaders.DeferredStaticClippedShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
