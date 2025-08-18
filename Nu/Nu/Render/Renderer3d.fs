@@ -2053,6 +2053,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     else renderTasks.DeferredStaticClipped.Add (billboardSurface, List ([struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)]))
             | ForwardRenderType (subsort, sort) ->
                 renderTasks.Forward.Add struct (subsort, sort, billboardMatrix, presence, texCoordsOffset, properties, ValueNone, billboardSurface, depthTest)
+
         | _ ->
             
             // compute billboard rotation based on orient up and planarness
@@ -2064,7 +2065,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let forwardFlat = eyeRotation.Forward.WithY 0.0f
                         if forwardFlat.MagnitudeSquared > 0.0f then
                             let forward = forwardFlat.Normalized
-                            let yaw = MathF.Atan2(forward.X, forward.Z) - MathF.PI
+                            let yaw = MathF.Atan2 (forward.X, forward.Z) - MathF.PI
                             Matrix4x4.CreateRotationY yaw
                         else m4Identity
 
@@ -2085,7 +2086,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // not oriented up and not planar, like a sprite
                 else
-                    let lookat = Matrix4x4.CreateLookAt(eyeCenter,model.Translation,eyeRotation.Up)
+                    let lookat = Matrix4x4.CreateLookAt (eyeCenter, model.Translation, eyeRotation.Up)
                     lookat.Inverted
                     
             // add render task as appropriate
