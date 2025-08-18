@@ -422,25 +422,18 @@ module WorldModule4 =
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
             // collect plugin assemblies
+            let pluginAssemblyNamePredicate =
+                fun (assemblyName : AssemblyName) ->
+                    not (assemblyName.Name.StartsWith "System.") && // OPTIMIZATION: skip known irrelevant assemblies.
+                    not (assemblyName.Name.StartsWith "FSharp.") &&
+                    not (assemblyName.Name.StartsWith "Prime.") &&
+                    not (assemblyName.Name.StartsWith "Nu.") &&
+                    assemblyName.Name <> "Prime" &&
+                    assemblyName.Name <> "Nu" &&
+                    assemblyName.Name <> "netstandard" &&
+                    assemblyName.Name <> "SDL2-CS"
             let pluginAssembly = plugin.GetType().Assembly
-            let pluginAssembliesReferencedNames = pluginAssembly.GetReferencedAssemblies ()
-            let pluginAssembliesReferenced =
-                pluginAssembliesReferencedNames
-                |> Array.map (fun assemblyName ->
-                    if  assemblyName.Name <> "netstandard" && // OPTIMIZATION: skip known irrelevant assemblies.
-                        assemblyName.Name <> "System.Runtime" &&
-                        assemblyName.Name <> "System.Numerics.Vectors" &&
-                        assemblyName.Name <> "FSharp.Core" &&
-                        assemblyName.Name <> "SDL2-CS" &&
-                        assemblyName.Name <> "Nu" &&
-                        assemblyName.Name <> "Nu.Math" &&
-                        assemblyName.Name <> "Prime" then
-                        try Some (Assembly.Load assemblyName)
-                        with exn ->
-                            Log.warn ("Could not load assembly '" + assemblyName.FullName + "' due to: " + scstring exn)
-                            None
-                    else None)
-                |> Array.definitize
+            let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
             let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
 
             // make plug-in facets and dispatchers
