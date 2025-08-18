@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Nu.Gaia": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}
