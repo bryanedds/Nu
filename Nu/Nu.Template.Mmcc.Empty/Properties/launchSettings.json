@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Nu.Template.Mmcc.Empty": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

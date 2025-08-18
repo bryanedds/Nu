@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Breakout Mmcc": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}
