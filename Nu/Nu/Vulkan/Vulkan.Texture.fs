@@ -642,8 +642,28 @@ module Texture =
             (metadata, vulkanTexture)
         | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
-            // TODO: DJL: implement.
+            // if pregenerated mipmap images are available then that determines texture mipmaps, otherwise determined by parameter as usual
+            let mipmapMode =
+                if mipmapBytesArray.Length > 0 then MipmapManual (mipmapBytesArray.Length + 1)
+                elif mipmaps then MipmapAuto else MipmapNone
+
+            // create texture and upload original image
+            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode metadata vkc
+            VulkanTexture.uploadArray metadata 0 bytes vulkanTexture vkc
+
+            // populate mipmaps as determined
+            match mipmapMode with
+            | MipmapNone -> ()
+            | MipmapManual mipLevels ->
+                let mutable mipmapIndex = 0
+                while mipmapIndex < mipLevels - 1 do
+                    let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                    let metadata = TextureMetadata.make mipmapResolution.X mipmapResolution.Y
+                    VulkanTexture.uploadArray metadata (inc mipmapIndex) mipmapBytes vulkanTexture vkc
+                    mipmapIndex <- inc mipmapIndex
+            | MipmapAuto -> VulkanTexture.generateMipmaps metadata vulkanTexture vkc
             
+            // fin
             (metadata, VulkanTexture.empty)
 
         | TextureDataNative (metadata, bytesPtr, disposer) ->
