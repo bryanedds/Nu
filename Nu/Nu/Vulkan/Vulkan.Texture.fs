@@ -238,21 +238,37 @@ module Texture =
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
-        { Image : VulkanMemory.Image // TODO: DJL: privatize and stop exposing Image.
-          ImageView : VkImageView
-          Sampler : VkSampler
-          Format : ImageFormat
-          MipLevels : int }
+        private
+            { _Image : VulkanMemory.Image
+              _ImageView : VkImageView
+              _Sampler : VkSampler
+              _Format : ImageFormat
+              _MipLevels : int }
 
+        /// The VkImage.
+        member this.VkImage = this._Image.VkImage
+
+        /// The image view.
+        member this.ImageView = this._ImageView
+
+        /// The sampler.
+        member this.Sampler = this._Sampler
+
+        /// The image format.
+        member this.Format = this._Format
+
+        /// The mip level count.
+        member this.MipLevels = this._MipLevels
+        
         override this.Equals thatObj =
             match thatObj with
             | :? VulkanTexture as that ->
-                this.Image.VkImage.Handle = that.Image.VkImage.Handle &&
+                this.VkImage.Handle = that.VkImage.Handle &&
                 this.ImageView.Handle = that.ImageView.Handle
             | _ -> false
 
         override this.GetHashCode () = 
-            hash this.Image.VkImage.Handle ^^^
+            hash this.VkImage.Handle ^^^
             hash this.ImageView.Handle
 
         /// Create the image.
@@ -456,11 +472,11 @@ module Texture =
             
             // make VulkanTexture
             let vulkanTexture =
-                { Image = image
-                  ImageView = imageView
-                  Sampler = sampler
-                  Format = format
-                  MipLevels = mipLevels }
+                { _Image = image
+                  _ImageView = imageView
+                  _Sampler = sampler
+                  _Format = format
+                  _MipLevels = mipLevels }
 
             // fin
             vulkanTexture
@@ -476,11 +492,11 @@ module Texture =
             if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels vkImage
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
-        static member upload metadata mipLevel pixels vulkanTexture (vkc : Hl.VulkanContext) =
+        static member upload metadata mipLevel pixels (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.Format.BytesPerPixel
             let stagingBuffer = VulkanMemory.Buffer.stageData uploadSize pixels vkc
             let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
-            VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.Image.VkImage
+            VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.VkImage
             Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
             VulkanMemory.Buffer.destroy stagingBuffer vkc
 
@@ -490,10 +506,10 @@ module Texture =
             VulkanTexture.upload metadata mipLevel arrayPin.NativeInt vulkanTexture vkc
         
         /// Generate mipmaps in VulkanTexture. Can only be done once, after upload to (only) mipLevel 0.
-        static member generateMipmaps metadata vulkanTexture (vkc : Hl.VulkanContext) =
+        static member generateMipmaps metadata (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             if vulkanTexture.MipLevels > 1 then
                 let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
-                VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels vulkanTexture.Image.VkImage
+                VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels vulkanTexture.VkImage
                 Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
         
         /// Create an empty VulkanTexture.
@@ -502,10 +518,10 @@ module Texture =
             VulkanTexture.create Rgba Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone (TextureMetadata.make 32 32) vkc
         
         /// Destroy VulkanTexture.
-        static member destroy vulkanTexture (vkc : Hl.VulkanContext) =
+        static member destroy (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroySampler (vkc.Device, vulkanTexture.Sampler, nullPtr)
             Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageView, nullPtr)
-            VulkanMemory.Image.destroy vulkanTexture.Image vkc
+            VulkanMemory.Image.destroy vulkanTexture._Image vkc
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
@@ -520,15 +536,13 @@ module Texture =
             { VulkanTextures : VulkanTexture array
               StagingBuffers : VulkanMemory.Buffer array
               Format : ImageFormat
-              mutable Extent : VkExtent3D // TODO: DJL: get rid of this.
               mutable StagingBufferSize : int
               mutable TextureIndex : int }
 
+        member private this.StagingBuffer = this.StagingBuffers.[this.TextureIndex]
+
         /// The VulkanTexture.
         member this.VulkanTexture = this.VulkanTextures.[this.TextureIndex]
-
-        member private this.CurrentStagingBuffer = this.StagingBuffers.[this.TextureIndex]
-        member private this.ImageSize = (int this.Extent.width) * (int this.Extent.height) * this.Format.BytesPerPixel
 
         static member private newCycle metadata pixels dynamicTexture (vkc : Hl.VulkanContext) =
             
@@ -536,12 +550,12 @@ module Texture =
             dynamicTexture.TextureIndex <- (inc dynamicTexture.TextureIndex) % 2
 
             // enlarge staging buffer size if needed
-            dynamicTexture.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            while dynamicTexture.ImageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
-            VulkanMemory.Buffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.CurrentStagingBuffer vkc
+            let imageSize = metadata.TextureWidth * metadata.TextureHeight * dynamicTexture.Format.BytesPerPixel
+            while imageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
+            VulkanMemory.Buffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.StagingBuffer vkc
 
             // stage pixels
-            VulkanMemory.Buffer.upload 0 dynamicTexture.ImageSize pixels dynamicTexture.CurrentStagingBuffer vkc
+            VulkanMemory.Buffer.upload 0 imageSize pixels dynamicTexture.StagingBuffer vkc
 
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkc
@@ -554,9 +568,8 @@ module Texture =
         /// Transfer pixels to texture.
         static member private loadTexture cb commandQueue metadata fence (dynamicTexture : DynamicTexture) device =
             Hl.beginCommandBlock cb fence device
-            VulkanTexture.recordBufferToImageCopy
-                cb metadata 0 dynamicTexture.CurrentStagingBuffer.VkBuffer dynamicTexture.VulkanTexture.Image.VkImage
-            VulkanTexture.recordGenerateMipmaps cb metadata dynamicTexture.VulkanTexture.MipLevels dynamicTexture.VulkanTexture.Image.VkImage
+            VulkanTexture.recordBufferToImageCopy cb metadata 0 dynamicTexture.StagingBuffer.VkBuffer dynamicTexture.VulkanTexture.VkImage
+            VulkanTexture.recordGenerateMipmaps cb metadata dynamicTexture.VulkanTexture.MipLevels dynamicTexture.VulkanTexture.VkImage
             Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
 
         /// Instantly stage an image, then submit texture load once fence is ready.
@@ -569,7 +582,6 @@ module Texture =
         static member create format vkc =
 
             // create the resources
-            let extent = VkExtent3D (32, 32, 1)
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let vulkanTextures = [|VulkanTexture.createEmpty vkc; VulkanTexture.createEmpty vkc|]
             let stagingBuffers = [|VulkanMemory.Buffer.createStagingInFrame sbSize vkc; VulkanMemory.Buffer.createStagingInFrame sbSize vkc|]
@@ -579,7 +591,6 @@ module Texture =
                 { VulkanTextures = vulkanTextures
                   StagingBuffers = stagingBuffers
                   Format = format
-                  Extent = extent
                   StagingBufferSize = sbSize
                   TextureIndex = 1 }
 
