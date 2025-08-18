@@ -420,9 +420,30 @@ module WorldModule4 =
                 let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
-                    
+
+            // collect plugin assemblies
+            let pluginAssembly = plugin.GetType().Assembly
+            let pluginAssembliesReferencedNames = pluginAssembly.GetReferencedAssemblies ()
+            let pluginAssembliesReferenced =
+                pluginAssembliesReferencedNames
+                |> Array.map (fun assemblyName ->
+                    if  assemblyName.Name <> "netstandard" && // OPTIMIZATION: skip known irrelevant assemblies.
+                        assemblyName.Name <> "System.Runtime" &&
+                        assemblyName.Name <> "System.Numerics.Vectors" &&
+                        assemblyName.Name <> "FSharp.Core" &&
+                        assemblyName.Name <> "SDL2-CS" &&
+                        assemblyName.Name <> "Nu" &&
+                        assemblyName.Name <> "Nu.Math" &&
+                        assemblyName.Name <> "Prime" then
+                        try Some (Assembly.Load assemblyName)
+                        with exn ->
+                            Log.error ("Could not load assembly '" + assemblyName.FullName + "' due to: " + scstring exn)
+                            None
+                    else None)
+                |> Array.definitize
+            let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
+
             // make plug-in facets and dispatchers
-            let pluginAssemblies = [|plugin.GetType().Assembly|]
             let pluginFacets = plugin.Birth<Facet> pluginAssemblies
             let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
             let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
