@@ -2239,7 +2239,7 @@ module EntityPropertyDescriptor =
             propertyName = "AnglesLocal" ||
             propertyName = "Light" ||
             propertyName = "LightProbe" ||
-            propertyName = "PermafrozenBundles" ||
+            propertyName = "PermafrozenPreBatches" ||
             propertyName = "PermafrozenShapes" then
             false
         else

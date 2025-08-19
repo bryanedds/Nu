@@ -239,9 +239,13 @@ type GameplayDispatcher () =
         [// the scene group while playing
          if gameplay.GameplayState = Playing then
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-                [Content.staticModel "StaticModel"
+
+                [// static model
+                 Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
                      Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
+
+                 // walls
                  Content.staticSprite "LeftWall"
                     [Entity.Position == v3 -164.0f 0.0f 0.0f
                      Entity.Size == v3 8.0f 360.0f 0.0f
@@ -254,46 +258,49 @@ type GameplayDispatcher () =
                     [Entity.Position == v3 0.0f 176.0f 0.0f
                      Entity.Size == v3 320.0f 8.0f 0.0f
                      Entity.StaticImage == Assets.Default.Black]
+
+                 // paddle
                  Content.staticSprite "Paddle"
                     [Entity.Position := gameplay.Paddle.Position
                      Entity.Size == gameplay.Paddle.Size
                      Entity.StaticImage == Assets.Default.Paddle]
+
+                 // ball
                  Content.staticSprite "Ball"
                     [Entity.Position := gameplay.Ball.Position
                      Entity.Size == gameplay.Ball.Size
                      Entity.StaticImage == Assets.Default.Ball]
+
+                 // bricks
                  for (brickName, brick) in gameplay.Bricks.Pairs do
                     Content.staticSprite brickName
                         [Entity.Position == brick.Position
                          Entity.Size == brick.Size
                          Entity.Color := brick.Color
-                         Entity.StaticImage == Assets.Default.Brick]]
+                         Entity.StaticImage == Assets.Default.Brick]
 
-         // the gui group
-         Content.group Simulants.GameplayGui.Name []
+                 // score
+                 Content.text "Score"
+                    [Entity.Position == v3 248.0f 136.0f 0.0f
+                     Entity.Text := "Score: " + string gameplay.Score]
 
-            [// score
-             Content.text "Score"
-                [Entity.Position == v3 248.0f 136.0f 0.0f
-                 Entity.Text := "Score: " + string gameplay.Score]
+                 // lives
+                 Content.text "Lives"
+                    [Entity.Position == v3 -240.0f 0.0f 0.0f
+                     Entity.Text == "Lives"]
+                 for i in 0 .. dec gameplay.Lives do
+                    Content.staticSprite ("Life+" + string i)
+                        [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
+                         Entity.Size == v3 32.0f 8.0f 0.0f
+                         Entity.StaticImage == Assets.Default.Paddle]
 
-             // lives
-             Content.text "Lives"
-                [Entity.Position == v3 -240.0f 0.0f 0.0f
-                 Entity.Text == "Lives"]
-             for i in 0 .. dec gameplay.Lives do
-                Content.staticSprite ("Life+" + string i)
-                    [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
-                     Entity.Size == v3 32.0f 8.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Paddle]
+                 // message
+                 Content.text "Message"
+                    [Entity.Text := if gameplay.Lives <= 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
 
-             // message
-             Content.text "Message"
-                [Entity.Text := if gameplay.Lives <= 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
-
-             // quit
-             Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]]
+                 // quit
+                 Content.button Simulants.GameplayQuit.Name
+                    [Entity.Position == v3 232.0f -144.0f 0.0f
+                     Entity.Elevation == 10.0f
+                     Entity.Text == "Quit"
+                     Entity.ClickEvent => StartQuitting]]]

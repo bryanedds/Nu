@@ -134,23 +134,22 @@ type GameplayDispatcher () =
         [// the scene group while playing
          if gameplay.GameplayState = Playing then
             Content.group Simulants.GameplayScene.Name []
-                [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
+
+                [// player
+                 Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                     [Entity.Position == v3 -390.0f -50.0f 0.0f
                      Entity.Elevation == 1.0f
-                     Entity.DeathEvent => StartQuitting]]
-            
-         // the gui group
-         Content.group Simulants.GameplayGui.Name []
+                     Entity.DeathEvent => StartQuitting]
 
-             [// score
-              Content.text Simulants.GameplayScore.Name
-                [Entity.Position == v3 260.0f 155.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text := "Score: " + string gameplay.Score]
-              
-              // quit
-              Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]]
+                 // score
+                 Content.text Simulants.GameplayScore.Name
+                   [Entity.Position == v3 260.0f 155.0f 0.0f
+                    Entity.Elevation == 10.0f
+                    Entity.Text := "Score: " + string gameplay.Score]
+
+                 // quit
+                 Content.button Simulants.GameplayQuit.Name
+                   [Entity.Position == v3 232.0f -144.0f 0.0f
+                    Entity.Elevation == 10.0f
+                    Entity.Text == "Quit"
+                    Entity.ClickEvent => StartQuitting]]]

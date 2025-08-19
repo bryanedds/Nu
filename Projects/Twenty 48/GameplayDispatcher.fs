@@ -121,15 +121,14 @@ type GameplayDispatcher () =
                        [Entity.Position == v3 0.0f 155.0f 0.0f
                         Entity.Elevation == 10.0f
                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                        Entity.Text == "Game Over!"]]
+                        Entity.Text == "Game Over!"]
+                        
+                // quit
+                Content.button Simulants.GameplayQuit.Name
+                   [Entity.Position == v3 232.0f -144.0f 0.0f
+                    Entity.Elevation == 10.0f
+                    Entity.Text == "Quit"
+                    Entity.ClickEvent => StartQuitting]]
 
          // nothing while quit
-         | Quit -> ()
-
-         // the gui group
-         Content.group Simulants.GameplayGui.Name []
-            [Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]]
+         | Quit -> ()]
