@@ -92,15 +92,14 @@ type GameplayDispatcher () =
         [// the scene group while playing
          if gameplay.GameplayState = Playing then
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-                [Content.staticModel "StaticModel"
+
+                [// decor
+                 Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]]
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
 
-         // the gui group
-         Content.group Simulants.GameplayGui.Name []
-
-            [// quit
-             Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]]
+                 // quit
+                 Content.button Simulants.GameplayQuit.Name
+                    [Entity.Position == v3 232.0f -144.0f 0.0f
+                     Entity.Text == "Quit"
+                     Entity.ClickEvent => StartQuitting]]]
