@@ -86,7 +86,7 @@ type GameplayDispatcher () =
         | StartQuitting ->
             World.publish () screen.QuitEvent screen world
 
-    // here we describe the content of the game including the hud, the scene, and the player
+    // here we describe the content of the game including the scene and the hud
     override this.Content (gameplay, _) =
 
         [// the scene group while playing
