@@ -101,7 +101,6 @@ vec3 saturate(vec3 rgb, float adjustment)
 void main()
 {
     // write depth
-    float depthCutoff = heightPlusOut.z;
     depth = gl_FragCoord.z;
 
     // compute spatial converters
