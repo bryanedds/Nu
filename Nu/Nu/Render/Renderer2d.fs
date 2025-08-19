@@ -623,7 +623,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | _ -> 0u
                 | _ -> 0u
             let displayScalar = single renderer.Viewport.DisplayScalar
-            let dividedScalar = displayScalar / 3.0f
+            let dividedScalar = displayScalar * Constants.Render.SpineSkeletonScalar
             let model = Matrix4x4.CreateAffine (transform.Position * displayScalar, transform.Rotation, transform.Scale * dividedScalar)
             let modelViewProjection = model * Viewport.getViewProjection2d transform.Absolute eyeCenter eyeSize renderer.Viewport
             let ssRenderer =
