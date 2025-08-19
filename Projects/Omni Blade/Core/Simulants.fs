@@ -53,4 +53,3 @@ module Simulants =
     let Battle = Game / "Battle"
     let BattleScene = Battle / "Scene"
     let BattleRide = BattleScene / "Ride"
-    let BattleInputs = Battle / "Inputs"
