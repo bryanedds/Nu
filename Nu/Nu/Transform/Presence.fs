@@ -25,7 +25,7 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
     member this.DepthCutoff =
         match this with
         | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
-        | Imposter -> Constants.Render.FarPlaneDistanceImposter
+        | Imposter -> -Constants.Render.NearPlaneDistanceImposter // NOTE: special case where negative value inverts to near cutoff.
         | Exterior | Interior -> Constants.Render.FarPlaneDistanceExterior
 
     /// Determines the highest override in the context of the given presence configuration.
