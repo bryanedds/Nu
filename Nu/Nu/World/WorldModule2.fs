@@ -2688,11 +2688,11 @@ module ScreenDispatcherModule =
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
-    /// Check that the described property exists for the given entity.
+    /// Check that the described property exists for the given screen.
     let containsPropertyDescriptor propertyName (screen : Screen) world =
         PropertyDescriptor.containsPropertyDescriptor<ScreenState> propertyName screen world
 
-    /// Get the property descriptors for the given entity.
+    /// Get the property descriptors for the given screen.
     let getPropertyDescriptors (screen : Screen) world =
         PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
 
@@ -2708,13 +2708,13 @@ module ScreenPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
-    /// Get the value of the described property for the given entity.
+    /// Get the value of the described property for the given screen.
     let getValue propertyDescriptor (screen : Screen) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
         | Some value -> value
         | None -> null
 
-    /// Attempt to set the value of the described property for the given entity.
+    /// Attempt to set the value of the described property for the given screen.
     let trySetValue (value : obj) propertyDescriptor (screen : Screen) world =
         
         // pull string quotes out of string
