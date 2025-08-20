@@ -1674,52 +1674,38 @@ module WorldModule2 =
                             let lightId = light.GetId world
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
+                            let shadowRotation = light.GetRotation world
+                            let shadowOrigin = light.GetPosition world
 
                             // compute eye values
                             let eyeRotation = World.getEye3dRotation world
                             let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeRotation.Forward, eyeRotation.Up)
-                            let eyeViewInverse = eyeView.Inverted
                             let eyeFov = World.getEye3dFieldOfView world
                             let eyeAspectRatio = World.getEye3dAspectRatio world
-                            let tanHalfFovH = tan (eyeFov / 2.0f)
-                            let tanHalfFovV = tan (eyeFov / 2.0f * eyeAspectRatio)
-
-                            // compute the shadow rotation matrix
-                            let shadowRotation = light.GetRotation world
-                            let shadowRotationMatrix =
-                                if abs (shadowRotation.Forward.Dot v3Up) <= 0.99f
-                                then Matrix4x4.CreateLookAt (v3Zero, shadowRotation.Forward, v3Up)
-                                else Matrix4x4.CreateLookAt (v3Zero, shadowRotation.Forward, v3Forward)
-
-                            // compute cascade ends
-                            let cascadeLimits =
-                                [|shadowNearDistance
-                                  25.0f // TODO: P0: make these a ratio of far plane distance.
-                                  90.0f // TODO: P0: make these a ratio of far plane distance.
-                                  shadowFarDistance|]
 
                             // render faces
                             for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
 
-                                // compute the frustum corners in view space.
-                                let xNear = cascadeLimits.[i] * tanHalfFovH
-                                let yNear = cascadeLimits.[i] * tanHalfFovV
-                                let xFar = cascadeLimits.[i + 1] * tanHalfFovH
-                                let yFar = cascadeLimits.[i + 1] * tanHalfFovV
-                                let frustumCornersView =
-                                    [|// near face
-                                      v4 xNear yNear -cascadeLimits.[i] 1.0f
-                                      v4 -xNear yNear -cascadeLimits.[i] 1.0f
-                                      v4 xNear -yNear -cascadeLimits.[i] 1.0f
-                                      v4 -xNear -yNear -cascadeLimits.[i] 1.0f
-                                      // far face
-                                      v4 xFar yFar -cascadeLimits.[i + 1] 1.0f
-                                      v4 -xFar yFar -cascadeLimits.[i + 1] 1.0f
-                                      v4 xFar -yFar -cascadeLimits.[i + 1] 1.0f
-                                      v4 -xFar -yFar -cascadeLimits.[i + 1] 1.0f|]
+                                // compute segment corners in world space
+                                let segmentNear =
+                                    match i with
+                                    | 0 -> Constants.Render.NearPlaneDistanceInterior
+                                    | 1 -> shadowFarDistance * 0.25f
+                                    | 2 -> shadowFarDistance * 0.75f
+                                    | _ -> failwithumf () // HACK: just presuming the cascade levels here to get started on the CSM feature.
+                                let segmentFar =
+                                    match i with
+                                    | 0 -> shadowFarDistance * 0.25f
+                                    | 1 -> shadowFarDistance * 0.75f
+                                    | 2 -> shadowFarDistance
+                                    | _ -> failwithumf () // HACK: just presuming the cascade levels here to get started on the CSM feature.
+                                let segmentUp = if abs (shadowRotation.Forward.Dot v3Up) <= 0.99f then v3Up else v3Forward
+                                let segmentProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, segmentNear, segmentFar)
+                                let segmentViewProjection = eyeView * segmentProjection
+                                let segmentFrustum = Frustum segmentViewProjection
+                                let segmentCorners = segmentFrustum.Corners
 
-                                // compute frustum corners in shadow space
-                                let frustumCornersShadow = Array.zeroCreate 8
+                                // compute frustum corner bounds in world space
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
                                 let mutable minY = Single.MaxValue
@@ -1727,24 +1713,21 @@ module WorldModule2 =
                                 let mutable minZ = Single.MaxValue
                                 let mutable maxZ = Single.MinValue
                                 for j in 0 .. dec 8 do
-                                    let cornerWorld = frustumCornersView.[j].Transform eyeViewInverse
-                                    frustumCornersShadow.[j] <- cornerWorld.Transform shadowRotationMatrix
-                                    minX <- min minX frustumCornersShadow.[j].X
-                                    maxX <- max maxX frustumCornersShadow.[j].X
-                                    minY <- min minY frustumCornersShadow.[j].Y
-                                    maxY <- max maxY frustumCornersShadow.[j].Y
-                                    minZ <- min minZ frustumCornersShadow.[j].Z
-                                    maxZ <- max maxZ frustumCornersShadow.[j].Z
+                                    minX <- min minX segmentCorners.[j].X
+                                    maxX <- max maxX segmentCorners.[j].X
+                                    minY <- min minY segmentCorners.[j].Y
+                                    maxY <- max maxY segmentCorners.[j].Y
+                                    minZ <- min minZ segmentCorners.[j].Z
+                                    maxZ <- max maxZ segmentCorners.[j].Z
 
+                                // compute an orthographic projection using world space bounds
+                                let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
+                                
                                 // compute the shadow frustum
-                                let shadowOrigin = (v3 minX minY minZ + v3 maxX maxY maxZ) * 0.5f
-                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                                shadowView.Translation <- shadowOrigin
-                                shadowView <- shadowView.Inverted
-                                let shadowProjection = Matrix4x4.CreateOrthographic (maxX - minX, maxY - minY, minZ, maxZ)
-                                let shadowViewProjection = shadowView * shadowProjection
-                                let shadowFrustum = Frustum shadowViewProjection
-                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, shadowRotation, shadowFrustum)) world
+                                let segmentViewOrtho = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Forward, segmentUp)
+                                let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
+                                let segmentFrustumOrtho = Frustum segmentViewProjectionOrtho
+                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, segmentViewOrtho, segmentProjectionOrtho), lightType, shadowRotation, segmentFrustumOrtho)) world
 
                             // fin
                             shadowCascadesCount <- inc shadowCascadesCount

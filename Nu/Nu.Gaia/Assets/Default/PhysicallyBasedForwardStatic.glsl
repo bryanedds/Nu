@@ -305,13 +305,13 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     return 1.0;
 }
 
-float computeShadowScalarCascaded(vec4 position, int shadowIndex)
+float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowIndex)
 {
     float[] shadowCascadeLimits =
         float[](
-            25.0, // TODO: P0: make these a ratio of far plane distance or uniforms.
-            90.0, // TODO: P0: make these a ratio of far plane distance or uniforms.
-            1000000.0f);
+            shadowCutoff * 0.25,
+            shadowCutoff * 0.75,
+            shadowCutoff); // HACK: just presuming the cascade levels here to get started on the CSM feature.
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
         mat4 shadowMatrix = shadowMatrices[(shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
@@ -322,8 +322,8 @@ float computeShadowScalarCascaded(vec4 position, int shadowIndex)
         if (shadowZ < shadowCascadeLimits[i])
         {
             // TODO: P0: make this work with exponential shadow data.
-            float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
-            if (shadowZ - 0.0001 > shadowDepthExp) return 0.0;
+            float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
+            if (shadowZ - 0.0001 > shadowDepth) return 0.0;
         }
     }
     return 1.0;
@@ -606,6 +606,7 @@ void main()
     {
         // per-light radiance
         vec3 lightOrigin = lightOrigins[i];
+        float lightCutoff = lightCutoffs[i];
         int lightType = lightTypes[i];
         bool lightDirectional = lightType == 2;
         vec3 l, h, radiance;
@@ -616,8 +617,7 @@ void main()
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoff = lightCutoffs[i];
-            float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5;
@@ -645,7 +645,7 @@ void main()
                 case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
                 case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
                 case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
-                default: { shadowScalar = computeShadowScalarCascaded(position, shadowIndex); break; } // cascaded
+                default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
             }
         }
 
