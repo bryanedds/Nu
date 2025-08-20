@@ -3,6 +3,7 @@
 
 namespace Nu
 
+/// Active patterns for recognizing asset file extensions.
 [<AutoOpen>]
 module AssetPatterns =
 
@@ -17,15 +18,18 @@ module AssetPatterns =
     let (|ModelExtension|_|) extension = match extension with ".fbx" | ".gltf" | ".glb" | ".dae" | ".obj" -> Some extension | _ -> None
     let (|CsvExtension|_|) extension = match extension with ".csv" -> Some extension | _ -> None
 
+/// The assets that come with the Nu Game Engine.
 [<RequireQualifiedAccess>]
 module Assets =
 
+    /// The global assets that come with the Nu Game Engine.
     [<RequireQualifiedAccess>]
     module Global =
 
         let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
         let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
 
+    /// The default assets that come with the Nu Game Engine.
     [<RequireQualifiedAccess>]
     module Default =
 

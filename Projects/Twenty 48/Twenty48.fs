@@ -65,7 +65,7 @@ type Twenty48Dispatcher () =
         match command with
         | Exit -> if world.Unaccompanied then World.exit world
 
-    // here we describe the content of the game, including all of its screens.
+    // here we describe the content of the game, including all of its screens
     override this.Content (_, _) =
         [Content.screen Simulants.Splash.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
          Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []

@@ -4,9 +4,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Describes a sphere in 3D-space for bounding operations.

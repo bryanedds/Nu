@@ -16,6 +16,7 @@ open DotRecast.Recast.Toolset.Builder
 open DotRecast.Recast.Toolset.Tools
 open Prime
 
+/// Screen functions for the world (2/2).
 [<AutoOpen>]
 module WorldScreenModule =
 

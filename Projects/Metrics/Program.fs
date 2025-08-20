@@ -78,7 +78,7 @@ type MyGameDispatcher () =
 #if IMSIM
     inherit GameDispatcherImSim ()
 
-    static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
+    static let Positions = // 15,000 entities (goal: 60FPS, current 60FPS)
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 6 do

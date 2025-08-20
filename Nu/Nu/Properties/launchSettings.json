@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Nu": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Terra Firma": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

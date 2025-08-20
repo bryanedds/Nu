@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 
+/// Physics functions for the world.
 [<AutoOpen>]
 module WorldPhysics =
 
@@ -17,8 +18,8 @@ module WorldPhysics =
         static member internal getPhysicsEngine3d world =
             world.Subsystems.PhysicsEngine3d
 
-        static member internal getRendererPhysics3d world =
-            world.Subsystems.RendererPhysics3d
+        static member internal getRendererPhysics3dOpt (world : World) =
+            world.Subsystems.RendererPhysics3dOpt
 
         /// Localize a primitive body shape to a specific size; non-primitive body shapes are unaffected.
         static member localizePrimitiveBodyShape (size : Vector3) (bodyShape : BodyShape) =

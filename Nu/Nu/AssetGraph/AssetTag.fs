@@ -96,6 +96,7 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AssetTagConverter>
         member this.PackageName = this.PackageName
         member this.AssetName = this.AssetName
 
+/// AssetTag functions.
 [<RequireQualifiedAccess>]
 module AssetTag =
 
@@ -123,6 +124,7 @@ module AssetTag =
     let specialize<'a> (assetTag : AssetTag) : 'a AssetTag =
         make<'a> assetTag.PackageName assetTag.AssetName
 
+/// AssetTag operators.
 [<AutoOpen>]
 module AssetTagOperators =
 

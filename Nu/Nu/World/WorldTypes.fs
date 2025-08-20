@@ -53,21 +53,28 @@ and ChangeData =
       Value : obj }
 
 /// Provides access to the property of a simulant via an interface.
-/// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
+/// Initially inspired by Haskell lenses, but specialized for simulant properties.
 and Lens =
     interface
+        
         /// The name of the property accessed by the lens.
         abstract Name : string
+        
         /// The simulant whose property is accessed by the lens.
         abstract This : Simulant
+        
         /// Get the value of the property accessed by the lens.
         abstract Get : world : World -> obj
+        
         /// Get an optional setter function that updates the property accessed by the lens.
         abstract SetOpt : (obj -> World -> unit) voption
+        
         /// Attempt to set the lensed property to the given value.
         abstract TrySet : value : obj -> world : World -> bool
+        
         /// The change event associated with the lensed property.
         abstract ChangeEvent : ChangeData Address
+        
         /// The type of the lensed property.
         abstract Type : Type
         end
@@ -647,6 +654,14 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     abstract Unregister : entity : Entity * world : World -> unit
     default this.Unregister (_, _) = ()
 
+    /// Participate in the registration of an entity's physics with the physics subsystems.
+    abstract RegisterPhysics : entity : Entity * world : World -> unit
+    default this.RegisterPhysics (_, _) = ()
+
+    /// Participate in the unregistration of an entity's physics from the physics subsystems.
+    abstract UnregisterPhysics : entity : Entity * world : World -> unit
+    default this.UnregisterPhysics (_, _) = ()
+
     /// Attempt to ImSim process an entity.
     abstract TryProcess : zeroDelta : bool * entity : Entity * world : World -> unit
     default this.TryProcess (_, _, _) = ()
@@ -728,11 +743,11 @@ and Facet (physical, lightProbe, light) =
     abstract Unregister : entity : Entity * world : World -> unit
     default this.Unregister (_, _) = ()
 
-    /// Participate in the registration of an entity's physics with the physics subsystem.
+    /// Participate in the registration of an entity's physics with the physics subsystems.
     abstract RegisterPhysics : entity : Entity * world : World -> unit
     default this.RegisterPhysics (_, _) = ()
 
-    /// Participate in the unregistration of an entity's physics from the physics subsystem.
+    /// Participate in the unregistration of an entity's physics from the physics subsystems.
     abstract UnregisterPhysics : entity : Entity * world : World -> unit
     default this.UnregisterPhysics (_, _) = ()
 
@@ -1790,14 +1805,15 @@ and [<Struct>] ArgImSim<'s when 's :> Simulant> =
       ArgValue : obj }
 
 /// The world's dispatchers (including facets).
-/// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
+/// NOTE: it would be nice to make this record internal, but doing so would non-trivially increases the number of
 /// parameters of World.make, which is already rather long.
 and [<ReferenceEquality>] Dispatchers =
-    { Facets : Dictionary<string, Facet>
-      EntityDispatchers : Dictionary<string, EntityDispatcher>
-      GroupDispatchers : Dictionary<string, GroupDispatcher>
-      ScreenDispatchers : Dictionary<string, ScreenDispatcher>
-      GameDispatchers : Dictionary<string, GameDispatcher> }
+    internal
+        { Facets : Dictionary<string, Facet>
+          EntityDispatchers : Dictionary<string, EntityDispatcher>
+          GroupDispatchers : Dictionary<string, GroupDispatcher>
+          ScreenDispatchers : Dictionary<string, ScreenDispatcher>
+          GameDispatchers : Dictionary<string, GameDispatcher> }
 
 /// The subsystems contained by the engine.
 and [<ReferenceEquality>] internal Subsystems =
@@ -1805,7 +1821,7 @@ and [<ReferenceEquality>] internal Subsystems =
       PhysicsEngine2d : PhysicsEngine
       PhysicsEngine3d : PhysicsEngine
       RendererProcess : RendererProcess
-      RendererPhysics3d : DebugRenderer
+      RendererPhysics3dOpt : DebugRenderer option
       AudioPlayer : AudioPlayer }
 
 /// Keeps the World from occupying more than two cache lines.
@@ -1844,6 +1860,14 @@ and [<ReferenceEquality>] World =
           Simulants : Dictionary<Simulant, Simulant HashSet option> // OPTIMIZATION: using None instead of empty HashSet to descrease number of HashSet instances.
           EntitiesIndexed : Dictionary<struct (Group * Type), Entity HashSet> // NOTE: could even add: Dictionary<string, EntitySubquery * Entities HashSet> to entry value where subqueries are populated via NuPlugin.
           WorldExtension : WorldExtension }
+
+    /// Check that the world is alive (still running).
+    member this.Alive =
+        AmbientState.getAlive this.AmbientState
+
+    /// Check that the world is dead (notno longer running).
+    member this.Dead =
+        not this.Alive
 
     /// Check that the world is accompanied (such as by an editor program that controls it).
     member this.Accompanied =
@@ -1913,18 +1937,17 @@ and [<ReferenceEquality>] World =
         AmbientState.getTimers this.AmbientState
 
     /// Get the current ImSim context.
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextImSim =
         this.WorldExtension.ContextImSim
 
     /// Get the current ImSim Game context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGame =
         if this.WorldExtension.ContextImSim.Names.Length > 0
         then Game.Handle
         else raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
     /// Get the current ImSim Screen context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextScreen =
         match this.WorldExtension.ContextImSim with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
@@ -1933,7 +1956,6 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
     /// Get the current ImSim Group context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextGroup =
         match this.WorldExtension.ContextImSim with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
@@ -1941,7 +1963,6 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImSim context not of type needed to construct requested handle.")
 
     /// Get the current ImSim Entity context (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextEntity =
         match this.WorldExtension.ContextImSim with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
@@ -1954,18 +1975,17 @@ and [<ReferenceEquality>] World =
         | (false, _) -> false
 
     /// Get the recent ImSim declaration.
+    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredImSim =
         this.WorldExtension.DeclaredImSim
 
     /// Get the recent ImSim Game declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGame =
         if this.WorldExtension.DeclaredImSim.Names.Length > 0
         then Game.Handle
         else raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImSim Screen declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredScreen =
         match this.WorldExtension.DeclaredImSim with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
@@ -1974,7 +1994,6 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImSim Group declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredGroup =
         match this.WorldExtension.DeclaredImSim with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
@@ -1982,7 +2001,6 @@ and [<ReferenceEquality>] World =
         | _ -> raise (InvalidOperationException "ImSim declaration not of type needed to construct requested handle.")
 
     /// Get the recent ImSim Entity declaration (throwing upon failure).
-    [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.DeclaredEntity =
         match this.WorldExtension.DeclaredImSim with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
@@ -2070,7 +2088,7 @@ and [<ReferenceEquality>] World =
         this
 
     override this.ToString () =
-        // NOTE: Too big to print in the debugger, so printing nothing.
+        // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
@@ -2143,6 +2161,7 @@ and [<AbstractClass>] NuPlugin () =
 
     interface LateBindings
 
+/// Lens functions.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Lens =
 
@@ -2193,6 +2212,7 @@ module Lens =
     let makeReadOnly<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) : Lens<'a, 's> =
         { Name = name; This = this; Get = get; SetOpt = ValueNone }
 
+/// Lens operators.
 [<AutoOpen>]
 module LensOperators =
 
@@ -2230,6 +2250,7 @@ module LensOperators =
                  | None -> None)
         PropertyDefinition.makeValidated lens.Name typeof<ComputedProperty> (ComputedExpr computedProperty)
 
+/// Signal functions.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Signal =
 
@@ -2258,6 +2279,7 @@ module Signal =
         for signal in signals do
             processSignal processMessage processCommand modelLens signal simulant world
 
+/// Signal operators.
 [<AutoOpen>]
 module SignalOperators =
 

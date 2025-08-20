@@ -493,10 +493,12 @@ module Octree =
 
         // add to imposter when such
         if presence.IsImposter then
+            tree.Imposter.Remove element |> ignore
             tree.Imposter.Add element |> ignore
 
         // add to omnipresent when such
         if presence.IsOmnipresent then
+            tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
 
         // add to omnipresent-in-play-only when appropriate
@@ -529,21 +531,29 @@ module Octree =
             tree.OmnipresentInPlayOnly.Remove element |> ignore
 
         // remove from node tree or ubiquitous fallback
-        if  not (Octnode.isIntersectingBox bounds tree.Node) ||
-            bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
-            tree.UbiquitousFallback.Remove element |> ignore
-        else Octnode.removeElement bounds &element tree.Node |> ignore
+        let inNode = Octnode.isIntersectingBox bounds tree.Node && bounds.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
+        if inNode
+        then Octnode.removeElement bounds &element tree.Node |> ignore
+        else tree.UbiquitousFallback.Remove element |> ignore
+
+        // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
+        // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
+        // NOTE: I can no longer reproduce the bug that caused this, so I've wrapped it in a #if.
+#if DEBUG
+        if Octnode.removeElement bounds &element tree.Node <> 0 then
+            Log.errorOnce "Element was in tree node when it shouldn't have been."
+#endif
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
 
         // update imposter where appropriate
-        if presenceOld.IsImposter then tree.Omnipresent.Remove element |> ignore
-        if presenceNew.IsImposter then tree.Omnipresent.Add element |> ignore
+        if presenceOld.IsImposter then tree.Imposter.Remove element |> ignore
+        if presenceNew.IsImposter then tree.Imposter.Add element |> ignore
 
         // update omnipresent where appropriate
-        if presenceOld.IsOmnipresent then tree.OmnipresentInPlayOnly.Remove element |> ignore
-        if presenceNew.IsOmnipresent then tree.OmnipresentInPlayOnly.Add element |> ignore
+        if presenceOld.IsOmnipresent then tree.Omnipresent.Remove element |> ignore
+        if presenceNew.IsOmnipresent then tree.Omnipresent.Add element |> ignore
 
         // update omnipresent-in-play-only where appropriate
         let omnipresentInPlayOnlyOld = not presenceOld.IsOmnipresent && presenceInPlayOld.IsOmnipresent

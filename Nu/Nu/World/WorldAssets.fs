@@ -5,15 +5,18 @@ namespace Nu
 open System
 open Prime
 
+/// The assets that come with the Nu Game Engine.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Assets =
 
+    /// The global assets that come with the Nu Game Engine.
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Global =
 
         let [<Literal>] AssetGraphFilePath = Assets.Global.AssetGraphFilePath
         let [<Literal>] OverlayerFilePath = Assets.Global.OverlayerFilePath
 
+    /// The default assets that come with the Nu Game Engine.
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Default =
 

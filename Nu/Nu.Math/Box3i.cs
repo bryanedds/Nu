@@ -8,10 +8,9 @@
 //
 
 using System;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Defines an axis-aligned 3D box (cube).

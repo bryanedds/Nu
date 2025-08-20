@@ -15,32 +15,46 @@ open Prime
 /// TODO: name all these abstract method parameters.
 type RendererProcess =
     interface
+        
         /// Start the rendering process.
         abstract Start : ImFontAtlasPtr -> Window option -> Viewport -> Viewport -> Viewport -> unit
+        
         /// The current configuration of the 3d renderer.
         abstract Renderer3dConfig : Renderer3dConfig
+        
         /// Attempt to get a texture id that can be used to visually represent the specified asset.
         abstract TryGetImGuiTextureId : AssetTag -> uint32 voption
+        
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
+        
         /// Potential fast-path for rendering static models.
         abstract RenderStaticModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * StaticModel AssetTag * bool * DepthTest * RenderType * RenderPass -> unit
+        
         /// Potential fast-path for rendering static model surfaces.
         abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Material inref * StaticModel AssetTag * int * DepthTest * RenderType * RenderPass -> unit
+        
         /// Potential fast-path for rendering animated models.
         abstract RenderAnimatedModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * Map<int, single> * int Set * DepthTest * RenderType * RenderPass -> unit
+        
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
+        
         /// Potential fast-path for rendering layered sprite.
         abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        
         /// Enqueue an ImGui rendering message.
         abstract EnqueueMessageImGui : RenderMessageImGui -> unit
+        
         /// Clear enqueued render messages.
         abstract ClearMessages : unit -> unit
+        
         /// Submit enqueued render messages for processing.
         abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Vector2i -> Viewport -> Viewport -> Viewport -> ImDrawDataPtr -> unit
+        
         /// Request to swap the underlying render buffer.
         abstract RequestSwap : unit -> unit
+        
         /// Terminate the rendering process, blocking until termination is complete.
         abstract Terminate : unit -> unit
         end

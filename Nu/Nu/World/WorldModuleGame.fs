@@ -7,6 +7,7 @@ open System.Collections.Frozen
 open System.Numerics
 open Prime
 
+/// Game functions for the world (1/2).
 [<AutoOpen>]
 module WorldModuleGame =
 
@@ -290,6 +291,12 @@ module WorldModuleGame =
         static member boundsInView2dAbsolute (bounds : Box2) world =
             let viewBounds = World.getViewBounds2dAbsolute world
             bounds.Intersects viewBounds
+
+        /// Check that the given bounds is within view.
+        static member boundsInView2d absolute (bounds : Box2) world =
+            if absolute
+            then World.boundsInView2dAbsolute bounds world
+            else World.boundsInView2dRelative bounds world
 
         /// Check that the given bounds is within the 2d eye's sight relative to eye center.
         static member boundsInView2dRelative (bounds : Box2) world =

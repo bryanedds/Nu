@@ -18,7 +18,7 @@ module Dissolve =
 [<RequireQualifiedAccess>]
 module Slide =
 
-    /// The default 'slide shot' behavior of slide screens.
+    /// The default 'slide show' behavior of slide screens.
     let Default =
         { DissolveDescriptor = Dissolve.Default
           IdlingTime = GameTime.ofSeconds 1.0f

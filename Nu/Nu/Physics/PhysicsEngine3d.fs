@@ -95,6 +95,7 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
+/// The 2d implementation of PhysicsEngine in terms of Jolt Physics.
 type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem

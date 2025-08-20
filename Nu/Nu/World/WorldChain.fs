@@ -48,6 +48,7 @@ type ChainBuilder () =
             | Left c -> Left (fun e -> this.Bind (c e, cont))
             | Right v -> match cont v with Chain f -> f world)
 
+/// ChainBuilder operators.
 [<AutoOpen>]
 module ChainBuilder =
 
@@ -140,6 +141,7 @@ module Chain =
     let [<DebuggerHidden; DebuggerStepThrough>] advance (c : 'e -> Chain<'e, 'a>) (e : 'e) (world : World) : Either<'e -> Chain<'e, 'a>, 'a> =
         step (c e) world
 
+/// Chain functions for the world.
 [<AutoOpen>]
 module WorldChain =
 

@@ -10,6 +10,7 @@ type Simulant =
         abstract SimulantAddress : Address
         end
 
+/// Simulant operators.
 [<AutoOpen>]
 module SimulantOperators =
 

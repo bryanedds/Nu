@@ -384,6 +384,7 @@ module Lighting3dConfigDispatcherExtensions =
         member this.SetLighting3dConfig (value : Lighting3dConfig) world = this.Set (nameof this.Lighting3dConfig) value world
         member this.Lighting3dConfig = lens (nameof this.Lighting3dConfig) this this.GetLighting3dConfig this.SetLighting3dConfig
 
+/// Gives an entity the base behavior of a 3d lighting configuration.
 type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
     

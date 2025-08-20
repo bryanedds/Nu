@@ -56,8 +56,16 @@ packages/
 ##########
 .vscode
 
+################
+# FsDocs Files #
+################
+/.fsdocs
+/output
+/tmp/watch
+
 #######################
 # Nu Local Test Items #
 #######################
 /Nu/Nu.Gaia/TestGroups
 /Nu/Nu.Gaia/Assets/Default/TestAssets
+/docs

@@ -37,7 +37,7 @@ using System.Text;
 namespace Spine {
 	public static class Json {
 		public static object Deserialize (TextReader text) {
-			SharpJson.JsonDecoder parser = new SharpJson.JsonDecoder();
+			JsonDecoder parser = new JsonDecoder();
 			parser.parseNumbersAsFloat = true;
 			return parser.Decode(text.ReadToEnd());
 		}
@@ -70,7 +70,7 @@ namespace Spine {
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-namespace SharpJson {
+namespace Spine {
 	class Lexer {
 		public enum Token {
 			None,

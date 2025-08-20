@@ -22,6 +22,7 @@ module Assimp =
     let [<Literal>] OpaqueDistancePropertyName = RawPropertyPrefix + "OpaqueDistance"
     let [<Literal>] FinenessOffsetPropertyName = RawPropertyPrefix + "FinenessOffset"
     let [<Literal>] ScatterTypePropertyName = RawPropertyPrefix + "ScatterType"
+    let [<Literal>] SpecularScalarPropertyName = RawPropertyPrefix + "SpecularScalar"
     let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
     let [<Literal>] ClippedPropertyName = RawPropertyPrefix + "Clipped"
     let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
@@ -162,6 +163,7 @@ module Render =
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
     let [<Literal>] ScatterTypeName = "ScatterType"
+    let [<Literal>] SpecularScalarName = "SpecularScalar"
     let [<Literal>] TwoSidedName = "TwoSided"
     let [<Literal>] ClippedName = "Clipped"
     let [<Literal>] NavShapeName = "NavShape"
@@ -188,11 +190,12 @@ module Render =
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
+    let [<Uniform>] mutable SpineSkeletonScalar = match ConfigurationManager.AppSettings.["SpineSkeletonScalar"] with null -> 1.0f / 3.0f | value -> scvalue value
     let [<Literal>] BonesMax = 128 // NOTE: remember to update BONES_MAX in shaders when changing this!
     let [<Literal>] BonesInfluenceMax = 4 // NOTE: remember to update BONES_INFLUENCE_MAX in shaders when changing this!
     let [<Literal>] AnimatedModelRateScalar = 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like...
     let [<Literal>] AnimatedModelMessagesPrealloc = 128
-    let [<Literal>] InstanceFieldCount = 36 // NOTE: two slots currently free starting at 35.
+    let [<Literal>] InstanceFieldCount = 36 // NOTE: one slot free at index 35.
     let [<Literal>] InstanceBatchPrealloc = 1024
     let [<Literal>] TerrainLayersMax = 6
     let [<Literal>] BrdfResolution = 256 // NOTE: half typical resolution because we use 32-bit floats instead of 16-bit.
@@ -202,6 +205,7 @@ module Render =
     let [<Literal>] LightsMaxDeferred = 64 // NOTE: remember to update LIGHTS_MAX in deferred shaders when changing this!
     let [<Literal>] LightsMaxForward = 9 // NOTE: remember to update LIGHTS_MAX in forward shaders when changing this!
     let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings.["ShadowVirtualResolution"] with null -> 256 | value -> scvalue value
+    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings.["ShadowDisplayScalarMax"] with null -> 4 | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 9 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 9 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
@@ -270,6 +274,7 @@ module Render =
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
     let [<Literal>] FinenessOffsetDefault = 0.0f
     let [<Uniform>] ScatterTypeDefault = NoScatter
+    let [<Literal>] SpecularScalarDefault = 1.0f
     let [<Literal>] FontSizeDefault = 14
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
@@ -318,6 +323,7 @@ module Physics =
               "Offset"
               "Size"
               "BodyEnabled"
+              "BodyFrozen"
               "BodyType"
               "BodyShape"
               "SleepingAllowed"

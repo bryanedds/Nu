@@ -185,8 +185,9 @@ module Gaia =
 
     (* Fsi Session *)
 
+    let FsProjectWarnOn = "--warnon:FS1182"
     let FsProjectNoWarn = "--nowarn:FS0009;FS0052;FS1178;FS3391;FS3536;FS3560"
-    let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectNoWarn|] // TODO: see if can we use --warnon as well.
+    let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectWarnOn; FsProjectNoWarn|]
     let FsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private FsiErrorStream = new StringWriter ()
     let private FsiInStream = new StringReader ""
@@ -458,6 +459,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     (* Prelude Functions *)
 
+    let private shouldSwallowMouseButton (world : World) =
+        let io = ImGui.GetIO ()
+        not io.WantCaptureMouseGlobal &&
+        (world.Halted || EditWhileAdvancing)
+
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
         not CaptureMode &&
@@ -587,6 +593,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         |> Seq.map (fun group -> World.getEntities group world)
         |> Seq.concat
         |> Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
+        |> Seq.filter (fun entity -> not (entity.GetIgnoreGlobalFreezerCommands world))
         |> Seq.iter (fun freezer -> freezer.SetFrozen true world)
 
     let private thawEntities world =
@@ -595,6 +602,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         |> Seq.map (fun group -> World.getEntities group world)
         |> Seq.concat
         |> Seq.filter (fun entity -> entity.Has<Freezer3dFacet> world)
+        |> Seq.filter (fun entity -> not (entity.GetIgnoreGlobalFreezerCommands world))
         |> Seq.iter (fun freezer -> freezer.SetFrozen false world)
 
     let private synchronizeNav world =
@@ -720,7 +728,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
-        if canEditWithMouse world then Resolve else Cascade
+        if shouldSwallowMouseButton world then Resolve else Cascade
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
         match evt.Data with
@@ -1148,8 +1156,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace (">", ""))
                         |> Array.map (fun line -> line.Replace ("<", ""))
                         |> fun fdcs ->
-                            if fdcs.Length = 2
-                            then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                            if fdcs.Length = 2 then
+                                if not (Array.exists (fun (fdc : string) -> fdc.Length = 0) fdcs)
+                                then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                                else None
                             else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
@@ -1160,7 +1170,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     // dispose of existing fsi eval session
                     (FsiSession :> IDisposable).Dispose ()
 
-                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda its also roots.
+                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda and also roots.
                     let mutable fsiDynamicCompiler = FsiSession.GetType().GetField("fsiDynamicCompiler", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
                     fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(fsiDynamicCompiler, null)
                     fsiDynamicCompiler <- null
@@ -3005,10 +3015,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | (Choice1Of2 _, _) -> ()
                     | (Choice2Of2 exn, _) -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
 
-                    // attempt to open namespace derived from project name
+                    // attempt to open template namespace "MyGame", as well as namespace derived from project name
                     if projectDllPathValid then
+                        let errorStr = string FsiErrorStream // preserve any existing error
                         let namespaceName = PathF.GetFileNameWithoutExtension (ProjectDllPath.Replace (" ", ""))
+                        FsiSession.EvalInteractionNonThrowing ("open " + "MyGame") |> ignore<Choice<_, _> * _>
                         FsiSession.EvalInteractionNonThrowing ("open " + namespaceName) |> ignore<Choice<_, _> * _>
+                        FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder> // ignore any open directive errors
+                        FsiErrorStream.Write errorStr // restore previous error string
 
                     // eval initialization finished
                     InteractiveNeedsInitialization <- false
@@ -3016,7 +3030,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 // attempt to run interactive input
                 if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
                 if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
-                if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
                 if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
                 if InteractiveInputStr.Contains (nameof SelectedGroup) then FsiSession.AddBoundValue (nameof SelectedGroup, SelectedGroup)
                 if InteractiveInputStr.Contains (nameof SelectedEntityOpt) then
@@ -4029,7 +4042,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   CastShadow = false
                                   Presence = Omnipresent
                                   InsetOpt = None
-                                  MaterialProperties = MaterialProperties.defaultProperties
+                                  MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
                                   Clipped = false // not needed when forward-rendered
                                   DepthTest = LessThanOrEqualTest

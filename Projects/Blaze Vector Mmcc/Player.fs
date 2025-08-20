@@ -10,6 +10,11 @@ type [<SymbolicExpansion>] Player =
       LastTimeGrounded : int64
       LastTimeJump : int64 }
 
+    static member initial =
+        { Alive = true
+          LastTimeGrounded = Int64.MinValue
+          LastTimeJump = Int64.MinValue }
+
 type PlayerMessage =
     | UpdateMessage
     | TryJumpByMouse
@@ -31,7 +36,7 @@ module PlayerExtensions =
         member this.Player = this.ModelGeneric<Player> ()
 
 type PlayerDispatcher () =
-    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, { Alive = true; LastTimeGrounded = Int64.MinValue; LastTimeJump = Int64.MinValue })
+    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, Player.initial)
 
     static member Facets =
         [typeof<RigidBodyFacet>

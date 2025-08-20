@@ -13,6 +13,7 @@ open ImGuiNET
 open JoltPhysicsSharp
 open Prime
 
+/// ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui =
 
@@ -970,7 +971,6 @@ module WorldImGui =
                 else (promoted, edited, value)
 
 /// Renders 3D physics via ImGui.
-/// NOTE: there's no need for this to be stubbable since it merely makes calls to ImGui which are themselves stubbable.
 type RendererPhysics3d () =
     inherit DebugRenderer ()
 
@@ -1004,6 +1004,7 @@ type RendererPhysics3d () =
             segmentList.Clear ()
         this.NextFrame ()
 
+/// More ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui2 =
     
@@ -1011,7 +1012,10 @@ module WorldImGui2 =
 
         // Render the 3D physics via ImGui using the given settings.
         static member imGuiRenderPhysics3d (settings : DrawSettings) world =
-            let physicsEngine3d = World.getPhysicsEngine3d world
-            let renderer = World.getRendererPhysics3d world :?> RendererPhysics3d
-            physicsEngine3d.TryRender (world.Eye3dCenter, world.Eye3dFrustumView, settings, renderer)
-            renderer.Flush world
+            match World.getRendererPhysics3dOpt world with
+            | Some renderer ->
+                let renderer = renderer :?> RendererPhysics3d
+                let physicsEngine3d = World.getPhysicsEngine3d world
+                physicsEngine3d.TryRender (world.Eye3dCenter, world.Eye3dFrustumView, settings, renderer)
+                renderer.Flush world
+            | None -> ()

@@ -46,7 +46,7 @@ module Effect =
               RenderType_ : RenderType
               ParticleSystem_ : ParticleSystem
               HistoryMax_ : int
-              History_ : Effects.Slice Deque
+              History_ : Effects.Slice System.Collections.Generic.Deque
               Definitions_ : Definitions
               TagTokens_ : Map<string, Slice>
               Descriptor_ : EffectDescriptor }
@@ -73,23 +73,22 @@ module Effect =
                 processParticleSystemOutput output effect world)
                 effect outputs
 
-    let private liveness effect (world : World) =
+    let private getAlive effect (world : World) =
         let time = world.GameTime
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with
         | Some lifeTime ->
             let localTime = time - effect.StartTime_
-            if localTime <= lifeTime then Live
-            else ParticleSystem.getLiveness time particleSystem
-        | None -> Live
+            if localTime <= lifeTime then true
+            else ParticleSystem.getAlive time particleSystem
+        | None -> true
 
     /// Run an effect, returning any resulting requests as data tokens.
-    let run effect (world : World) : Liveness * Effect * DataToken =
+    let run effect (world : World) : bool * Effect * DataToken =
 
-        // run if live
-        match liveness effect world with
-        | Live ->
+        // run when alive
+        if getAlive effect world then
 
             // set up effect system to evaluate effect
             let time = world.GameTime
@@ -179,10 +178,10 @@ module Effect =
             let effect = processParticleSystemOutput output effect world
 
             // fin
-            (Live, effect, dataToken)
+            (true, effect, dataToken)
 
         // dead
-        | Dead -> (Dead, effect, DataToken.empty)
+        else (false, effect, DataToken.empty)
 
     /// Make an effect.
     let makePlus startTime offset transform shadowOffset renderType particleSystem historyMax history definitions descriptor =
@@ -200,10 +199,11 @@ module Effect =
 
     /// Make an effect.
     let make startTime offset transform shadowOffset renderType descriptor =
-        makePlus startTime offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
+        makePlus startTime offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (System.Collections.Generic.Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =
         make GameTime.zero v3Zero (Transform.makeEmpty ()) 0.0f DeferredRenderType EffectDescriptor.empty
-
+        
+/// A time-based effect.
 type Effect = Effect.Effect

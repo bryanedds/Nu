@@ -6,7 +6,11 @@ open System
 
 /// The targeted frame rate.
 type FrameRate =
+
+    /// Specifies a static frame rate, which is a fixed number of updates per second.
     | StaticFrameRate of int64
+
+    /// Specifies a dynamic frame rate, which is a variable number of updates per second.
     | DynamicFrameRate of int64
 
 namespace Nu.Constants

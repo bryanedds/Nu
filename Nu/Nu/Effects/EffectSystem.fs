@@ -283,7 +283,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.V4) (keyFrame2.TweenValue.V4) progress algorithm
-                let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (Nu.Color tweened) applicator
+                let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (System.Numerics.Color tweened) applicator
                 slice.Color <- applied
             slice
         | Emissions (applicator, algorithm, playback, keyFrames) ->
@@ -524,7 +524,8 @@ module EffectSystem =
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
-                      ScatterTypeOpt = ValueNone }
+                      ScatterTypeOpt = ValueNone
+                      SpecularScalarOpt = ValueSome 0.0f } // TODO: consider making this an aspect?
                 let material =
                     { AlbedoImageOpt = ValueSome (AssetTag.specialize<Image> imageAlbedo)
                       RoughnessImageOpt = ValueSome (AssetTag.specialize<Image> imageRoughness)
@@ -579,7 +580,8 @@ module EffectSystem =
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
-                      ScatterTypeOpt = ValueNone }
+                      ScatterTypeOpt = ValueNone
+                      SpecularScalarOpt = ValueNone }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix

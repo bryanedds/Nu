@@ -34,6 +34,7 @@ type StubRendererImGui () =
         member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = ()
 
+/// StubRendererImGui functions.
 [<RequireQualifiedAccess>]
 module StubRendererImGui =
 
@@ -324,6 +325,7 @@ type GlRendererImGui
             // destroy font texture
             fontTexture.Destroy ()
 
+/// GlRendererImGui functions.
 [<RequireQualifiedAccess>]
 module GlRendererImGui =
 

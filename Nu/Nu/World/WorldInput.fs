@@ -3,9 +3,11 @@
 
 namespace Nu
 open System
+open System.Numerics
 open ImGuiNET
 open Prime
 
+/// HID input functions for the world.
 [<AutoOpen>]
 module WorldInputModule =
 

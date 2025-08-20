@@ -6,6 +6,7 @@ open System
 open System.IO
 open Prime
 
+/// Game functions for the world (2/2).
 [<AutoOpen>]
 module WorldGameModule =
 

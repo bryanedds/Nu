@@ -6,6 +6,7 @@ open System
 open System.Collections.Frozen
 open Prime
 
+/// Group functions for the world (1/2).
 [<AutoOpen>]
 module WorldModuleGroup =
 

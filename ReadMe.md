@@ -4,7 +4,7 @@ Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](h
 
 So... just what is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative-procedural API based on ImGui called ImSim as well as a declarative-functional MVU-based API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
@@ -14,22 +14,24 @@ This repository hosts several projects, including -
 - Breakout tutorial using the MMCC API, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
-- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Nu/releases/download/v18.15.0/Project.5.Prototype.Sample.v0.1.5.zip).
-
-- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade), full game available now here - https://store.steampowered.com/app/3089800/Omni_Blade/
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.6)
+- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.3)
+- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://store.steampowered.com/app/3089800/Omni_Blade/)
 
 Getting Started with Nu
 =======================
 
 Look here to get started with your own project in Nu -
 
-[https://github.com/bryanedds/Nu/wiki/Getting-Started-with-Nu](https://github.com/bryanedds/Nu/wiki#introductory-material-starting-from-the-beginning)
+[Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material) - start here first!
+
+[API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
 
 Some Media on the Nu Game Engine
 ================================
 
 ![image](https://github.com/user-attachments/assets/77d6dfac-13ad-48e4-89e2-824a12cbe509)
-Our new soft-shadow, screen-space reflection, and volumetric fog systems as shown in ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Nu/releases/download/v18.15.0/Project.5.Prototype.Sample.v0.1.5.zip).
+Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://github.com/user-attachments/assets/44ec5233-3ed3-4038-9cc4-646bc4ddc96d)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
@@ -86,6 +88,8 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 **[@creynolds138](https://github.com/creynolds138)**
 
 **[@haraldsteinlechner](https://github.com/haraldsteinlechner)**
+
+**[@ShalokShalom](https://github.com/ShalokShalom)**
 
 **And a huge thank you to all of you who donate privately to keep this project going!**
 

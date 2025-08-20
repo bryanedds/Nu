@@ -7,34 +7,34 @@ open System.Collections.Generic
 open TiledSharp
 open Prime
 
-/// A raw data asset. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a blob of raw data.
 type Raw = private { __ : unit }
 
-/// An image. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as an image.
 type Image = private { __ : unit }
 
-/// A font. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a font.
 type Font = private { __ : unit }
 
-/// A tile map. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a tile map.
 type TileMap = private { __ : unit }
 
-/// A spine skeleton. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a spine skeleton.
 type SpineSkeleton = private { __ : unit }
 
-/// A cube map. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a cube map.
 type CubeMap = private { __ : unit }
 
-/// Sound. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a sound.
 type Sound = private { __ : unit }
 
-/// Song. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a song.
 type Song = private { __ : unit }
 
-/// A static model. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as a static model.
 type StaticModel = private { __ : unit }
 
-/// An animated model. Currently just used as a phantom type.
+/// A phantom type to denote the type of an asset as an animated model.
 type AnimatedModel = private { __ : unit }
 
 /// Thrown when a tile set property is not found.

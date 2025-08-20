@@ -20,7 +20,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// The shadow texture buffer resolution appropriate for this viewport.
     member this.ShadowTextureResolution =
-        v2iDup (Constants.Render.ShadowVirtualResolution * Globals.Render.ShadowScalar * this.DisplayScalar)
+        let shadowDisplayScalar = min Constants.Render.ShadowDisplayScalarMax this.DisplayScalar
+        v2iDup (Constants.Render.ShadowVirtualResolution * Globals.Render.ShadowScalar * shadowDisplayScalar)
 
     /// The shadow map buffer resolution appropriate for this viewport.
     member this.ShadowMapResolution =

@@ -5,6 +5,7 @@ namespace Nu
 open System
 open Prime
 
+/// Audio functions for the world.
 [<AutoOpen>]
 module WorldAudio =
 

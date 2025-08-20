@@ -3,6 +3,7 @@
 
 namespace OpenGL
 open System
+open System.Numerics
 open Prime
 open Nu
 

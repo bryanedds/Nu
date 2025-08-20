@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Reflection
 open Prime
 
+/// Global operators for the world.
 [<AutoOpen>]
 module WorldModuleOperators =
 
@@ -23,6 +24,7 @@ module WorldModuleOperators =
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
         Relation.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
 
+/// Universal function definitions for the world (1/4).
 [<AutoOpen>]
 module WorldModule =
 
@@ -176,9 +178,9 @@ module WorldModule =
         static member getUnaccompanied (world : World) =
             world.Unaccompanied
 
-        /// Get the the liveness state of the engine.
-        static member getLiveness world =
-            World.getAmbientStateBy AmbientState.getLiveness world
+        /// Get the the aliveness state of the engine.
+        static member getAlive (world : World) =
+            AmbientState.getAlive world.AmbientState
 
         static member internal updateTime world =
             AmbientState.updateTime world.AmbientState
@@ -255,13 +257,12 @@ module WorldModule =
         static member getDeclaredInitializing (world : World) =
             world.DeclaredInitializing
 
-        static member internal setContext context (world : World) =
-            world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
+        static member internal setContextAndDeclared context declared (world : World) =
             world.WorldExtension.ContextImSim <- context
-
-        static member internal advanceContext declared context (world : World) =
             world.WorldExtension.DeclaredImSim <- declared
-            world.WorldExtension.ContextImSim <- context
+
+        static member internal setContext context (world : World) =
+            World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
         static member internal getSimulantsImSim (world : World) =
             world.SimulantsImSim
@@ -328,15 +329,44 @@ module WorldModule =
             AmbientState.addTasklet simulant tasklet world.AmbientState
 
         /// Schedule an operation to be executed by the engine with the given delay.
+        /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
+        /// World that were active in that Process context as well as time and advancement state.
         static member schedule delay operation (simulant : Simulant) (world : World) =
+
+            // compute time at which to schedule the operation
             let time =
                 match delay with
                 | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
                 | TickTime delay -> TickTime (world.TickTime + delay)
+
+            // restore the ImSim context when we're in an ImSim Process context
+            let operation =
+                let context = world.ContextImSim
+                if context.Names.Length > 0 then
+                    let declared = world.DeclaredImSim
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    fun (world : World) ->
+                        let context' = world.ContextImSim
+                        let declared' = world.DeclaredImSim
+                        AmbientState.clearAdvancement world.AmbientState
+                        World.setContextAndDeclared context declared world
+                        operation world
+                        World.setContextAndDeclared context' declared' world
+                        AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta world.AmbientState
+                else operation
+
+            // add tasklet
             let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
-        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
+        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if
+        /// we've already started processing tasklets.
+        /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
+        /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
             let time =
                 if EndFrameProcessingStarted && world.Advancing then
@@ -508,12 +538,13 @@ module WorldModule =
         static member internal cleanUpSubsystems world =
             World.mapSubsystems (fun subsystems ->
                 subsystems.AudioPlayer.CleanUp ()
-                subsystems.RendererPhysics3d.Dispose ()
+                match subsystems.RendererPhysics3dOpt with Some renderer -> renderer.Dispose () | None -> ()
                 subsystems.RendererProcess.Terminate ()
                 subsystems.PhysicsEngine3d.CleanUp ()
                 subsystems.PhysicsEngine2d.CleanUp ()
                 subsystems.ImGui.CleanUp ()
-                subsystems) world
+                subsystems)
+                world
 
     type World with // EventGraph
 
@@ -600,8 +631,7 @@ module WorldModule =
                 let mutable handling = Cascade
                 while going && enr.MoveNext () do
                     let subscriptionEntry = enr.Current.Value
-                    if  (match handling with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness world with Live -> true | Dead -> false) then
+                    if (match handling with Cascade -> true | Resolve -> false) && world.Alive then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
                         if not selectedOnly || getSelected subscriber world then
                             let result =

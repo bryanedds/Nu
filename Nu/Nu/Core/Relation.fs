@@ -175,6 +175,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
         member this.Equals that =
             Relation<'a>.equals<'a> this that
 
+/// Relation functions.
 [<RequireQualifiedAccess>]
 module Relation =
 

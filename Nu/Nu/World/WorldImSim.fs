@@ -9,6 +9,7 @@ open System.Numerics
 open Prime
 open Nu
 
+/// ImSim API for the world.
 [<AutoOpen>]
 module WorldImSim =
 

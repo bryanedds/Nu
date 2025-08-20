@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+/// Entity functions for the world (2/2).
 [<AutoOpen>]
 module WorldEntityModule =
 
@@ -655,19 +656,19 @@ module WorldEntityModule =
         static member getEntitiesAs<'d when 'd :> EntityDispatcher> (group : Group) (world : World) : Entity ReadOnlySet =
             match world.EntitiesIndexed.TryGetValue struct (group, typeof<'d>) with
             | (true, entities) -> ReadOnlySet entities
-            | (false, _) -> ReadOnlySet ()
+            | (false, _) -> ReadOnlySet (HashSet ())
 
         /// Get all the entities in a group that have a given facet type.
         static member getEntitiesWith<'f when 'f :> Facet> (group : Group) (world : World) : Entity ReadOnlySet =
             match world.EntitiesIndexed.TryGetValue struct (group, typeof<'f>) with
             | (true, entities) -> ReadOnlySet entities
-            | (false, _) -> ReadOnlySet ()
+            | (false, _) -> ReadOnlySet (HashSet ())
 
         /// Get all the entities in a group.
         static member getEntities (group : Group) (world : World) : Entity ReadOnlySet =
             match world.EntitiesIndexed.TryGetValue struct (group, typeof<EntityDispatcher>) with
             | (true, entities) -> ReadOnlySet entities
-            | (false, _) -> ReadOnlySet ()
+            | (false, _) -> ReadOnlySet (HashSet ())
 
         /// Get all the entities in a group in depth-first order.
         static member getEntitiesDepthFirst (group : Group) (world : World) =
@@ -818,6 +819,7 @@ module WorldEntityModule =
             let entityNames =
                 World.getEntities group world
                 |> Seq.map _.Name
+                |> Seq.toArray
                 |> hashSetPlus StringComparer.Ordinal
             World.generateEntitySequentialName2 dispatcherName entityNames
 

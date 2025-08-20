@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open Prime
 
+/// MMCC content declaration API.
 [<RequireQualifiedAccess>]
 module Content =
 
@@ -579,6 +580,7 @@ module Content =
     let wipe () =
         ContentsCached.Clear ()
 
+/// MMCC content operators.
 [<AutoOpen>]
 module ContentOperators =
 
