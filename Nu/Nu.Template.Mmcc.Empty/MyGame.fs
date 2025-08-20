@@ -49,7 +49,7 @@ type MyGameDispatcher () =
         match command with
         | Exit -> if world.Unaccompanied then World.exit world
 
-    // here we describe the content of the game, including a screen, a group, and a couple example entities.
+    // here we describe the content of the game, including a screen, a group, and a couple example entities
     override this.Content (myGame, _) =
         [Content.screen "Screen" Vanilla []
             [Content.group "Group" []

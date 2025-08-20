@@ -2189,15 +2189,18 @@ module EntityDispatcherModule =
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
+    /// Check that the described property exists for the given entity.
     let containsPropertyDescriptor propertyName (entity : Entity) world =
         propertyName = Constants.Engine.NamePropertyName ||
         PropertyDescriptor.containsPropertyDescriptor<EntityState> propertyName entity world
 
+    /// Get the property descriptors for the given entity.
     let getPropertyDescriptors (entity : Entity) world =
         let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
         let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
         nameDescriptor :: propertyDescriptors
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
@@ -2228,6 +2231,7 @@ module EntityPropertyDescriptor =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "~ More Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
@@ -2247,11 +2251,13 @@ module EntityPropertyDescriptor =
             propertyName = "DegreesLocal" ||
             not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the given entity.
     let getValue propertyDescriptor (entity : Entity) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the given entity.
     let trySetValue (value : obj) propertyDescriptor (entity : Entity) world =
 
         // pull string quotes out of string
@@ -2473,27 +2479,33 @@ module GroupDispatcherModule =
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
 
+    /// Check that the described property exists for the given group.
     let containsPropertyDescriptor propertyName (group : Group) world =
         PropertyDescriptor.containsPropertyDescriptor<GroupState> propertyName group world
 
+    /// Get the property descriptors for the given group.
     let getPropertyDescriptors (group : Group) world =
         PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
         else "Xtension Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the given group.
     let getValue propertyDescriptor (group : Group) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor group world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the given group.
     let trySetValue (value : obj) propertyDescriptor (group : Group) world =
         
         // pull string quotes out of string
@@ -2689,27 +2701,33 @@ module ScreenDispatcherModule =
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
+    /// Check that the described property exists for the given screen.
     let containsPropertyDescriptor propertyName (screen : Screen) world =
         PropertyDescriptor.containsPropertyDescriptor<ScreenState> propertyName screen world
 
+    /// Get the property descriptors for the given screen.
     let getPropertyDescriptors (screen : Screen) world =
         PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" || propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the given screen.
     let getValue propertyDescriptor (screen : Screen) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the given screen.
     let trySetValue (value : obj) propertyDescriptor (screen : Screen) world =
         
         // pull string quotes out of string
@@ -2905,12 +2923,15 @@ module GameDispatcherModule =
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =
 
+    /// Check that the described property exists for the game.
     let containsPropertyDescriptor propertyName (game : Game) world =
         PropertyDescriptor.containsPropertyDescriptor<GameState> propertyName game world
 
+    /// Get the property descriptors for the game.
     let getPropertyDescriptors (game : Game) world =
         PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
@@ -2919,15 +2940,18 @@ module GamePropertyDescriptor =
              "Built-In Properties"
         else "Xtension Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the game.
     let getValue propertyDescriptor (game : Game) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor game world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the game.
     let trySetValue (value : obj) propertyDescriptor (game : Game) world =
         
         // pull string quotes out of string
@@ -2946,9 +2970,11 @@ module GamePropertyDescriptor =
             PropertyDescriptor.trySetValue propertyDescriptor value game world |> ignore
             Right ()
 
+/// Simulant PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module SimulantPropertyDescriptor =
 
+    /// Check that the described property exists for the given simulant.
     let containsPropertyDescriptor propertyName (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyName entity world
@@ -2957,6 +2983,7 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyName game world
         | _ -> failwithumf ()
 
+    /// Get the property descriptors for the given simulant.
     let getPropertyDescriptors (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.getPropertyDescriptors entity world
@@ -2965,6 +2992,7 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.getPropertyDescriptors game world
         | _ -> failwithumf ()
 
+    /// Get the editor category of the described property.
     let getCategory propertyDesciptor (simulant : Simulant) =
         match simulant with
         | :? Entity -> EntityPropertyDescriptor.getCategory propertyDesciptor
@@ -2973,6 +3001,7 @@ module SimulantPropertyDescriptor =
         | :? Game -> GamePropertyDescriptor.getCategory propertyDesciptor
         | _ -> failwithumf ()
 
+    /// Get whether the described property is editable.
     let getEditable propertyDesciptor (simulant : Simulant) =
         match simulant with
         | :? Entity -> EntityPropertyDescriptor.getEditable propertyDesciptor
@@ -2981,6 +3010,7 @@ module SimulantPropertyDescriptor =
         | :? Game -> GamePropertyDescriptor.getEditable propertyDesciptor
         | _ -> failwithumf ()
 
+    /// Get the value of the described property for the given simulant.
     let getValue propertyDescriptor (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.getValue propertyDescriptor entity world
@@ -2989,6 +3019,7 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.getValue propertyDescriptor game world
         | _ -> failwithumf ()
 
+    /// Attempt to set the value of the described property for the given simulant.
     let trySetValue value propertyDescriptor (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.trySetValue value propertyDescriptor entity world

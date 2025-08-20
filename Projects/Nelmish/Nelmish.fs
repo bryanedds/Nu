@@ -24,8 +24,8 @@ type NelmishDispatcher () =
         | Increment -> just (nelmish + 1)
         | Reset -> just 0
 
-    // here we describe the content of the game including its one screen, one group, three
-    // button entities, and one text control
+    // here we describe the content of the game including its one screen, one group, three button entities, and one
+    // text control
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
             [Content.group "Group" []

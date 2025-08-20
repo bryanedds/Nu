@@ -624,7 +624,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
                     | _ -> 0u
                 | _ -> 0u
-            let model = Matrix4x4.CreateAffine (transform.Position * single renderer.Viewport.DisplayScalar, transform.Rotation, transform.Scale)
+            let displayScalar = single renderer.Viewport.DisplayScalar
+            let dividedScalar = displayScalar * Constants.Render.SpineSkeletonScalar
+            let model = Matrix4x4.CreateAffine (transform.Position * displayScalar, transform.Rotation, transform.Scale * dividedScalar)
             let modelViewProjection = model * Viewport.getViewProjection2d transform.Absolute eyeCenter eyeSize renderer.Viewport
             let ssRenderer =
                 match renderer.SpineSkeletonRenderers.TryGetValue spineSkeletonId with
