@@ -1706,13 +1706,14 @@ module WorldModule2 =
                                 let segmentCorners = segmentFrustum.Corners
 
                                 // compute frustum corner bounds in world space
+                                // TODO: see if Box3.Enclose will work instead.
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
                                 let mutable minY = Single.MaxValue
                                 let mutable maxY = Single.MinValue
                                 let mutable minZ = Single.MaxValue
                                 let mutable maxZ = Single.MinValue
-                                for j in 0 .. dec 8 do
+                                for j in 0 .. dec segmentCorners.Length do
                                     minX <- min minX segmentCorners.[j].X
                                     maxX <- max maxX segmentCorners.[j].X
                                     minY <- min minY segmentCorners.[j].Y
@@ -1720,11 +1721,13 @@ module WorldModule2 =
                                     minZ <- min minZ segmentCorners.[j].Z
                                     maxZ <- max maxZ segmentCorners.[j].Z
 
-                                // compute an orthographic projection using world space bounds
+                                // compute an orthographic projection
                                 let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
-                                
+
                                 // compute the shadow frustum
-                                let segmentViewOrtho = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Forward, segmentUp)
+                                let segmentOrigin = (v3 minX minY minZ + v3 maxX maxY maxZ) * 0.5f
+                                let segmentRotation = shadowRotation// * Quaternion.CreateFromAxisAngle (shadowRotation.Right, MathF.PI_OVER_2)
+                                let segmentViewOrtho = Matrix4x4.CreateLookAt (segmentOrigin, segmentOrigin + segmentRotation.Forward, segmentUp)
                                 let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
                                 let segmentFrustumOrtho = Frustum segmentViewProjectionOrtho
                                 World.renderSimulantsInternal (ShadowPass (lightId, Some (i, segmentViewOrtho, segmentProjectionOrtho), lightType, shadowRotation, segmentFrustumOrtho)) world
