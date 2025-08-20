@@ -3,7 +3,9 @@
 #r "System.Drawing"
 #r "nuget: GiGraph.Dot, 4.1.0"
 
+open System
 open System.IO
+open System.Diagnostics
 open System.Drawing
 open GiGraph.Dot.Entities.Edges
 open GiGraph.Dot.Entities.Labels
@@ -85,9 +87,9 @@ let mkCompilerArgsFromBinLog file =
             args.Substring(idx)
         content
         
-System.Environment.CurrentDirectory <- __SOURCE_DIRECTORY__ + "/../"
+Environment.CurrentDirectory <- __SOURCE_DIRECTORY__ + "/../"
 
-System.Diagnostics.Process.Start("dotnet", "build --no-incremental -bl").WaitForExit()
+Process.Start("dotnet", "build --no-incremental -bl").WaitForExit()
 
 let log = mkCompilerArgsFromBinLog "msbuild.binlog"
 
@@ -102,8 +104,6 @@ let checkProjectResults =
     |> Async.RunSynchronously
   
 let uses = checkProjectResults.GetAllUsesOfAllSymbols()
-
-System.Environment.CurrentDirectory
 
 do
     let graph = DotGraph(directed = true)
@@ -136,7 +136,7 @@ do
     |> List.distinct
     |> List.map (fun name -> graph.Nodes.Add(name, fun node ->
         let color =
-            let r, g, b = hslToRgb (float (System.Random(name.GetHashCode()).Next(360)), 0.7, 0.8)
+            let r, g, b = hslToRgb (float (Random(name.GetHashCode()).Next(360)), 0.7, 0.8)
             Color.FromArgb(r, g, b)
         node.FillColor <- DotColorDefinition.op_Implicit(color)
         node.Label <- DotLabel.FromText name)) |> ignore
@@ -150,8 +150,13 @@ do
                 let r, g, b =
                     if dep.usageDir = "World"
                     then 96, 96, 96
-                    else hslToRgb (float (System.Random(dep.usageDir.GetHashCode()).Next(360)), 0.5, 0.5)
+                    else hslToRgb (float (Random(dep.usageDir.GetHashCode()).Next(360)), 0.5, 0.5)
                 Color.FromArgb(r, g, b)
             edge.Color <- DotColorDefinition.op_Implicit(color)) |> ignore<DotEdge>)
 
     graph.SaveToFile("Scripts/deps.dot")
+    
+    let url =
+        UriBuilder("https://dreampuf.github.io/GraphvizOnline/?engine=dot", Fragment = File.ReadAllText("Scripts/deps.dot"))
+    
+    ProcessStartInfo(url.Uri.AbsoluteUri, UseShellExecute = true) |> Process.Start |> ignore<Process>
