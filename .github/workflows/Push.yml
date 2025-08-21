@@ -1,0 +1,19 @@
+name: On Push
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: [windows-latest, ubuntu-latest]
+    steps:
+      - name: Setup Platform
+        run: sh ./Configure.${{ runner.os }}.Application.sh
+      - name: Build
+        run: dotnet build
+  test:
+    runs-on: [windows-latest, ubuntu-latest]
+    steps:
+      - name: Setup Platform
+        run: sh ./Configure.${{ runner.os }}.Application.sh
+      - name: Test
+        run: dotnet test Nu/Nu.Tests
