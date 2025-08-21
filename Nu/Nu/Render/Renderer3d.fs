@@ -2242,9 +2242,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                                | ShadowPass (_, faceInfoOpt, shadowLightType, _, shadowFrustum) ->
                                     if castShadow then // TODO: see if we should check for CastShadow when constructing the bundle.
-                                        let shadowFrustumInteriorOpt = if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone
+                                        let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior faceInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
                                         Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                                     else false
                                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
@@ -2325,7 +2325,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let unculled =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
+                        | ShadowPass (_, faceInfoOpt, shadowLightType, _, shadowFrustum) ->
+                            let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior faceInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
+                            Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
                         | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
                     if unculled then
@@ -2654,12 +2656,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         if renderer.InstanceFields.Length < length then
             renderer.InstanceFields <- Array.zeroCreate<single> length
 
+        //
         let mutable i = 0
         for j in 0 .. dec parameters.Length do
             let (model, castShadow, presence, _, _, bounds) = parameters.[j]
             let unculled =
                 castShadow &&
-                Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
+                let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior None shadowLightType then ValueSome shadowFrustum else ValueNone
+                Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
             if unculled then
                 model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
                 i <- inc i
@@ -2737,7 +2741,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             let unculled =
                 match renderPass with
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence bounds
+                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                    let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior None shadowLightType then ValueSome shadowFrustum else ValueNone
+                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
                 | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
             if unculled then
@@ -2998,7 +3004,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight | CascadedLight-> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
@@ -3012,7 +3018,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaceBundle
                 lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] bundle
@@ -3029,7 +3035,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
@@ -3043,7 +3049,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                 | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaceBundle
                 lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] bundle
@@ -3063,7 +3069,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
+                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
                 | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays parameters
@@ -3075,7 +3081,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
-                | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
+                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
                 | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
             GlRenderer3d.renderPhysicallyBasedTerrain
                 lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
@@ -3093,7 +3099,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let shadowShader =
                     match lightType with
                     | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
-                    | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
+                    | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
                     | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays (List ([struct (model, false, presence, texCoordsOffset, properties)]))
@@ -3103,7 +3109,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let shadowShader =
                     match lightType with
                     | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                    | SpotLight (_, _)-> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
+                    | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
                     | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] (List ([struct (model, false, presence, texCoordsOffset, properties)]))
