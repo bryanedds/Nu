@@ -1674,10 +1674,10 @@ module WorldModule2 =
                             let lightId = light.GetId world
                             let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
-                            let shadowForward =
-                                (Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) *
-                                 Matrix4x4.CreateFromQuaternion shadowRotation).Forward
-                            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, v3Up)//?eyeUp)
+                            let shadowRotationMatrix = Matrix4x4.CreateFromQuaternion shadowRotation
+                            let shadowForward = (Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * shadowRotationMatrix).Forward
+                            let shadowUp = if abs (shadowForward.Dot v3Up) <= 0.99f then v3Up else v3Forward
+                            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, v3Up)
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
@@ -1733,9 +1733,7 @@ module WorldModule2 =
 
                                 // compute the shadow frustum
                                 let segmentCenterWorld = segmentFrustum.Center
-                                let segmentForwardOrtho = (Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation).Forward
-                                let segmentUpOrtho = if abs (segmentForwardOrtho.Dot v3Up) <= 0.99f then v3Up else v3Forward
-                                let segmentViewOrtho = Matrix4x4.CreateLookAt (segmentCenterWorld, segmentCenterWorld + segmentForwardOrtho, segmentUpOrtho)
+                                let segmentViewOrtho = Matrix4x4.CreateLookAt (segmentCenterWorld, segmentCenterWorld + shadowForward, shadowUp)
                                 let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
                                 let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
                                 let segmentFrustumOrtho = Frustum segmentViewProjectionOrtho
