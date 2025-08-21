@@ -1711,14 +1711,14 @@ module WorldModule2 =
 
                                 // compute frustum corner bounds in shadow space
                                 let segmentCornersWorld = segmentFrustum.Corners
-                                let segmentCornersLight = Array.map (fun (c : Vector3) -> c.Transform shadowView) segmentCornersWorld
+                                let segmentCornersShadow = Array.map (fun (c : Vector3) -> c.Transform shadowView) segmentCornersWorld
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
                                 let mutable minY = Single.MaxValue
                                 let mutable maxY = Single.MinValue
                                 let mutable minZ = Single.MaxValue
                                 let mutable maxZ = Single.MinValue
-                                for corner in segmentCornersLight do
+                                for corner in segmentCornersShadow do
                                     minX <- min minX corner.X
                                     maxX <- max maxX corner.X
                                     minY <- min minY corner.Y
