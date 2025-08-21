@@ -318,13 +318,21 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        float shadowZ = shadowTexCoords.z;
-        if (shadowZ < shadowCascadeLimits[i])
+        if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
+            shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
+            shadowTexCoords.z > 0.5 + SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
         {
-            // TODO: P0: make this work with exponential shadow data.
-            float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
-            if (shadowZ - 0.0001 > shadowDepth) return 0.0;
+            float shadowZ = shadowTexCoords.z;
+            if (shadowZ < shadowCascadeLimits[i])
+            {
+                float shadowZExp = exp(-lightShadowExponent * shadowZ);
+                float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
+                float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+                shadowScalar = pow(shadowScalar, lightShadowDensity);
+                return shadowScalar;
+            }
         }
+        return 1.0;
     }
     return 1.0;
 }
