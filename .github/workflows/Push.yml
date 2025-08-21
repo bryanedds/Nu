@@ -6,6 +6,7 @@ jobs:
   build:
     runs-on: [windows-latest, ubuntu-latest]
     steps:
+      - uses: actions/setup-dotnet@v4
       - name: Setup Linux
         if: ${{ runner.os == 'Linux' }}
         run: sh ./Configure.${{ runner.os }}.Application.sh
@@ -14,6 +15,7 @@ jobs:
   test:
     runs-on: [windows-latest, ubuntu-latest]
     steps:
+      - uses: actions/setup-dotnet@v4
       - name: Setup Linux
         if: ${{ runner.os == 'Linux' }}
         run: sh ./Configure.${{ runner.os }}.Application.sh
