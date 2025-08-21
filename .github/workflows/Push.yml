@@ -6,14 +6,16 @@ jobs:
   build:
     runs-on: [windows-latest, ubuntu-latest]
     steps:
-      - name: Setup Platform
+      - name: Setup Linux
+        if: ${{ runner.os == 'Linux' }}
         run: sh ./Configure.${{ runner.os }}.Application.sh
       - name: Build
         run: dotnet build
   test:
     runs-on: [windows-latest, ubuntu-latest]
     steps:
-      - name: Setup Platform
+      - name: Setup Linux
+        if: ${{ runner.os == 'Linux' }}
         run: sh ./Configure.${{ runner.os }}.Application.sh
       - name: Test
         run: dotnet test Nu/Nu.Tests
