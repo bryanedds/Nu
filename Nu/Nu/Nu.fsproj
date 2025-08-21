@@ -234,7 +234,7 @@
 	</ItemGroup>
 
 	<Target Name="CopySymlinksForMacOS" BeforeTargets="BeforeBuild" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-		<Error Condition="!Exists('/opt/homebrew/lib/libSDL2.dylib')" Text="Please run the MacOS setup. /opt/homebrew/lib/libSDL2.dylib does not exist." /> 
+		<Error Condition="!Exists('/opt/homebrew/lib/libSDL2.dylib')" Text="Please run Configure.macOS.Application.sh. /opt/homebrew/lib/libSDL2.dylib does not exist." /> 
 		<ItemGroup>
 			<None Include="/opt/homebrew/lib/libSDL2.dylib" CopyToOutputDirectory="PreserveNewest" UseSymboliclinksIfPossible="true" />
 			<None Include="/opt/homebrew/lib/libSDL2_ttf.dylib" CopyToOutputDirectory="PreserveNewest" UseSymboliclinksIfPossible="true" />
