@@ -666,9 +666,10 @@ void main()
         float lightCutoff = lightCutoffs[i];
         int lightType = lightTypes[i];
         bool lightDirectional = lightType == 2;
+        bool lightCascaded = lightType == 3;
         vec3 l, h, radiance;
         float intensity = 0.0;
-        if (!lightDirectional)
+        if (!lightDirectional && !lightCascaded)
         {
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
