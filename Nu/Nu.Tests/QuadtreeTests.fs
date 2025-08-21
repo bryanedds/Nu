@@ -66,12 +66,14 @@ module QuadtreeTests =
     [<Test>]
     let ``Adding element to empty tree increases element count`` () =
         
+        // create empty tree and add element
         let tree = makeTestTree 3 16.0f
         let element = makeTestQuadelement 1 "test1" true false Presence.Exterior Presence.Exterior (box2 (v2 0.0f 0.0f) (v2 1.0f 1.0f))
         let presence = Presence.Exterior
         let bounds = box2 (v2 0.0f 0.0f) (v2 1.0f 1.0f)
         Quadtree.addElement presence presence bounds element tree
         
+        // verify element count is one
         let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
         Quadtree.getElements results tree
         Assert.Equal (1, results.Count)
@@ -79,17 +81,20 @@ module QuadtreeTests =
     [<Test>]
     let ``Adding multiple elements with different presence types`` () =
         
+        // create tree and add elements with different presence types
         let tree = makeTestTree 4 32.0f
         let element1 = makeTestQuadelement 1 "exterior" true false Presence.Exterior Presence.Exterior (box2 (v2 1.0f 1.0f) (v2 2.0f 2.0f))
         let element2 = makeTestQuadelement 2 "interior" true false Presence.Interior Presence.Interior (box2 (v2 5.0f 5.0f) (v2 2.0f 2.0f))
         let element3 = makeTestQuadelement 3 "omnipresent" true false Presence.Omnipresent Presence.Omnipresent (box2 (v2 10.0f 10.0f) (v2 1.0f 1.0f))
         let element4 = makeTestQuadelement 4 "imposter" true false Presence.Imposter Presence.Imposter (box2 (v2 15.0f 15.0f) (v2 1.0f 1.0f))
         
+        // add elements with different presence types
         Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 1.0f 1.0f) (v2 2.0f 2.0f)) element1 tree
         Quadtree.addElement Presence.Interior Presence.Interior (box2 (v2 5.0f 5.0f) (v2 2.0f 2.0f)) element2 tree
         Quadtree.addElement Presence.Omnipresent Presence.Omnipresent (box2 (v2 10.0f 10.0f) (v2 1.0f 1.0f)) element3 tree
         Quadtree.addElement Presence.Imposter Presence.Imposter (box2 (v2 15.0f 15.0f) (v2 1.0f 1.0f)) element4 tree
         
+        // verify all elements were added
         let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
         Quadtree.getElements results tree
         Assert.Equal (4, results.Count)
@@ -230,7 +235,6 @@ module QuadtreeTests =
         let tree = makeTestTree 4 32.0f
         let largeBounds = box2 (v2 0.0f 0.0f) (v2 1000.0f 1000.0f)
         let element = makeTestQuadelement 1 "large" true false Presence.Exterior Presence.Exterior largeBounds
-        
         Quadtree.addElement Presence.Exterior Presence.Exterior largeBounds element tree
         
         // should still be queryable
@@ -246,7 +250,6 @@ module QuadtreeTests =
         let bounds = Quadtree.getBounds tree
         let outsideBounds = box2 (v2 (bounds.Max.X + 10.0f) (bounds.Max.Y + 10.0f)) (v2 2.0f 2.0f)
         let element = makeTestQuadelement 1 "outside" true false Presence.Exterior Presence.Exterior outsideBounds
-        
         Quadtree.addElement Presence.Exterior Presence.Exterior outsideBounds element tree
         
         // should still be queryable

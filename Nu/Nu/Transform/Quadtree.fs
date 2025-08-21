@@ -350,10 +350,18 @@ module Quadtree =
             tree.UbiquitousInPlayOnly.Remove element |> ignore
 
         // remove from node tree or ubiquitous fallback
-        if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
-            bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
-            tree.UbiquitousFallback.Remove element |> ignore
-        else Quadnode.removeElement bounds &element tree.Node |> ignore
+        let inNode = Quadnode.isIntersectingBounds bounds tree.Node && bounds.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
+        if inNode
+        then Quadnode.removeElement bounds &element tree.Node |> ignore
+        else tree.UbiquitousFallback.Remove element |> ignore
+
+        // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
+        // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
+        // NOTE: I can no longer reproduce the bug that caused this, so I've wrapped it in a #if.
+#if DEBUG
+        if Quadnode.removeElement bounds &element tree.Node <> 0 then
+            Log.errorOnce "Element was in tree node when it shouldn't have been."
+#endif
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =

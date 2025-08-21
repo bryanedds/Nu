@@ -276,13 +276,14 @@ type BodyType =
 /// The way in which an entity's motion is driven by a corresponding body.
 type PhysicsMotion =
 
-    /// When body transform message comes in from physics subsystem, entity's transform will be set by the game engine.
-    /// When entity's transform is set by the user, body transform message will be sent to physics engine.
+    /// When a body transform message comes in from physics subsystem, the associated entity's transform will be set by
+    /// the game engine. When an entity's transform is set by the user, the associated body's transform message will be
+    /// sent to physics engine.
     | SynchronizedMotion
 
-    /// When body transform message comes in from physics subsystem, entity's transform will not be set by the game
-    /// engine; instead an event will be published. When entity's transform is set by the user, nothing will be sent to
-    /// the physics engine.
+    /// When a body transform message comes in from physics subsystem, the associated entity's transform will not be
+    /// set by the game engine; instead an event will be published that can be handled manually. When an entity's
+    /// transform is set by the user, nothing will be sent to the physics engine.
     | ManualMotion
 
 /// The properties specific to the utilization of the character body types.
@@ -553,40 +554,58 @@ type PhysicsMessage =
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
 type PhysicsEngine =
+    
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
+    
     /// Get the contact normals of the body with the given body id.
     abstract GetBodyContactNormals : bodyId : BodyId -> Vector3 array
+    
     /// Get the linear velocity of the body with the given body id.
     abstract GetBodyLinearVelocity : bodyId : BodyId -> Vector3
+    
     /// Get the angular velocity of the body with the given body id.
     abstract GetBodyAngularVelocity : bodyId : BodyId -> Vector3
+    
     /// Get the contact normals where the body with the given body id is touching the ground.
     abstract GetBodyToGroundContactNormals : bodyId : BodyId -> Vector3 array
+    
     /// Get a contact normal where the body with the given body id is touching the ground (if one exists).
     abstract GetBodyToGroundContactNormalOpt : bodyId : BodyId -> Vector3 option
+    
     /// Get a contact tangent where the body with the given body id is touching the ground (if one exists).
     abstract GetBodyToGroundContactTangentOpt : bodyId : BodyId -> Vector3 option
+    
     /// Check that the body with the given body id is on the ground.
     abstract GetBodyGrounded : bodyId : BodyId -> bool
+    
     /// Check that the body with the given body id is a sensor.
     abstract GetBodySensor : bodyId : BodyId -> bool
+    
     /// Get the wheel speed framed in terms of the clutch (0.0f if not a wheeled vehicle).
     abstract GetWheelSpeedAtClutch : bodyId : BodyId -> single
+    
     /// Get the given wheel's model matrix (identity if not a wheeled vehicle or invalid wheel).
     abstract GetWheelModelMatrix : wheelModelRight : Vector3 * wheelModelUp : Vector3 * wheelIndex : int * bodyId : BodyId -> Matrix4x4
+    
     /// Get the given wheel's angular velocity (0.0f if not a wheeled vehicle or invalid wheel).
     abstract GetWheelAngularVelocity : wheelIndex : int * bodyId : BodyId -> single
+    
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
+    
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
+    
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
+    
     /// Attempt torender physics with the given settings and renderer objects.
     abstract TryRender : eyeCenter : Vector3 * eyeFrustum : Frustum * renderSettings : obj * rendererObj : obj -> unit
+    
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
+    
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 

@@ -73,23 +73,22 @@ module Effect =
                 processParticleSystemOutput output effect world)
                 effect outputs
 
-    let private liveness effect (world : World) =
+    let private getAlive effect (world : World) =
         let time = world.GameTime
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with
         | Some lifeTime ->
             let localTime = time - effect.StartTime_
-            if localTime <= lifeTime then Live
-            else ParticleSystem.getLiveness time particleSystem
-        | None -> Live
+            if localTime <= lifeTime then true
+            else ParticleSystem.getAlive time particleSystem
+        | None -> true
 
     /// Run an effect, returning any resulting requests as data tokens.
-    let run effect (world : World) : Liveness * Effect * DataToken =
+    let run effect (world : World) : bool * Effect * DataToken =
 
-        // run if live
-        match liveness effect world with
-        | Live ->
+        // run when alive
+        if getAlive effect world then
 
             // set up effect system to evaluate effect
             let time = world.GameTime
@@ -179,10 +178,10 @@ module Effect =
             let effect = processParticleSystemOutput output effect world
 
             // fin
-            (Live, effect, dataToken)
+            (true, effect, dataToken)
 
         // dead
-        | Dead -> (Dead, effect, DataToken.empty)
+        else (false, effect, DataToken.empty)
 
     /// Make an effect.
     let makePlus startTime offset transform shadowOffset renderType particleSystem historyMax history definitions descriptor =

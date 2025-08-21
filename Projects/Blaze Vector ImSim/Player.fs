@@ -68,7 +68,7 @@ type PlayerDispatcher () =
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         // process jumping
-        if  world.Advancing && 
+        if  world.Advancing &&
             world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
             world.UpdateTime <= entity.GetLastTimeGrounded world + 10L &&
             World.isKeyboardKeyPressed KeyboardKey.Space world then

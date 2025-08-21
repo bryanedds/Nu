@@ -25,9 +25,8 @@ module Simulants =
 
     // gameplay screen
     let Gameplay = Game / "Gameplay"
-    let GameplayGui = Gameplay / "Gui"
-    let GameplayScore = GameplayGui / "Score"
-    let GameplayQuit = GameplayGui / "Quit"
+    let GameplaySection i = Gameplay / ("Section" + string i)
     let GameplayScene = Gameplay / "Scene"
     let GameplayPlayer = GameplayScene / "Player"
-    let GameplaySection i = Gameplay / ("Section" + string i)
+    let GameplayScore = GameplayScene / "Score"
+    let GameplayQuit = GameplayScene / "Quit"

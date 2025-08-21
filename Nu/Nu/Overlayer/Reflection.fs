@@ -40,6 +40,14 @@ module Reflection =
         |> Seq.map (flip pair true)
         |> dictPlus StringComparer.Ordinal
 
+    /// Load all the referenced assemblies of an assembly transitively that satisfy the given predicate.
+    let rec loadReferencedAssembliesTransitively assemblyNamePredicate (assembly : Assembly) =
+        [|for assemblyName in assembly.GetReferencedAssemblies () do
+            if assemblyNamePredicate assemblyName then
+                try let assembly = Assembly.Load assemblyName
+                    yield! loadReferencedAssembliesTransitively assemblyNamePredicate assembly
+                with _ -> ()|]
+
     let rec private memoizable2 level (ty : Type) =
         match MemoizableMemo.TryGetValue ty with
         | (true, result) -> result

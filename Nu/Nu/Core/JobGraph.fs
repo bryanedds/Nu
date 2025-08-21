@@ -14,6 +14,8 @@ type Job =
     { JobId : obj
       IssueTime : DateTimeOffset
       Work : unit -> obj }
+
+    /// Make a job for processing by the job graph.
     static member make jobId work =
         { JobId = jobId
           IssueTime = DateTimeOffset.Now

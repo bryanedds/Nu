@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Metrics": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

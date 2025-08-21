@@ -188,8 +188,9 @@ module Gaia =
 
     (* Fsi Session *)
 
+    let FsProjectWarnOn = "--warnon:FS1182"
     let FsProjectNoWarn = "--nowarn:FS0009;FS0052;FS1178;FS3391;FS3536;FS3560"
-    let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectNoWarn|] // TODO: see if can we use --warnon as well.
+    let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectWarnOn; FsProjectNoWarn|]
     let FsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private FsiErrorStream = new StringWriter ()
     let private FsiInStream = new StringReader ""
@@ -460,6 +461,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 """
 
     (* Prelude Functions *)
+
+    let private shouldSwallowMouseButton (world : World) =
+        let io = ImGui.GetIO ()
+        not io.WantCaptureMouseGlobal &&
+        (world.Halted || EditWhileAdvancing)
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
@@ -778,7 +784,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
-        if canEditWithMouse world then Resolve else Cascade
+        if shouldSwallowMouseButton world then Resolve else Cascade
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
         match evt.Data with
@@ -1211,8 +1217,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace (">", ""))
                         |> Array.map (fun line -> line.Replace ("<", ""))
                         |> fun fdcs ->
-                            if fdcs.Length = 2
-                            then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                            if fdcs.Length = 2 then
+                                if not (Array.exists (fun (fdc : string) -> fdc.Length = 0) fdcs)
+                                then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
+                                else None
                             else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
@@ -1223,7 +1231,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     // dispose of existing fsi eval session
                     (FsiSession :> IDisposable).Dispose ()
 
-                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda its also roots.
+                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda and also roots.
                     let mutable fsiDynamicCompiler = FsiSession.GetType().GetField("fsiDynamicCompiler", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
                     fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(fsiDynamicCompiler, null)
                     fsiDynamicCompiler <- null
