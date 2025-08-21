@@ -630,6 +630,7 @@ module Texture =
 
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
+    /// TODO: DJL: dispose textureData!
     let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vkc) =
 
         // upload data to vulkan as appropriate
