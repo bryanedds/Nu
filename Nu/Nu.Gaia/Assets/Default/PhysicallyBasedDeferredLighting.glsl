@@ -253,12 +253,12 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     float[] shadowCascadeLimits =
         float[](
-            shadowCutoff * 0.25,
+            shadowCutoff * 0.15,
             shadowCutoff * 0.75,
             shadowCutoff); // HACK: just presuming the cascade levels here to get started on the CSM feature.
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[(shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;

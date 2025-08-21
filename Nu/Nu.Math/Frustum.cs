@@ -30,6 +30,19 @@ namespace System.Numerics
         public const int CornerCount = 8;
 
         /// <summary>
+        /// The centor of the frustum.
+        /// Note that this function currently allocates via a call to Corners getter.
+        /// </summary>
+        public Vector3 Center
+        {
+            get
+            {
+                var corners = Corners;
+                return corners.Aggregate((s, t) => s + t) / corners.Length;
+            }
+        }
+
+        /// <summary>
         /// The axis-aligned bounding box enclosing the frustum.
         /// </summary>
         public Box3 Bounds
