@@ -4,20 +4,20 @@ on: [push]
 
 jobs:
   build:
-    runs-on: [windows-latest, ubuntu-latest]
+    runs-on: [windows-latest, ubuntu-latest, macos-latest]
     steps:
       - uses: actions/setup-dotnet@v4
-      - name: Setup Linux
-        if: ${{ runner.os == 'Linux' }}
-        run: sh ./Configure.${{ runner.os }}.Application.sh
+      - name: Setup Unix
+        if: ${{ runner.os != 'Windows' }}
+        run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - name: Build
         run: dotnet build
   test:
-    runs-on: [windows-latest, ubuntu-latest]
+    runs-on: [windows-latest, ubuntu-latest, macos-latest]
     steps:
       - uses: actions/setup-dotnet@v4
-      - name: Setup Linux
-        if: ${{ runner.os == 'Linux' }}
-        run: sh ./Configure.${{ runner.os }}.Application.sh
+      - name: Setup Unix
+        if: ${{ runner.os != 'Windows' }}
+        run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - name: Test
         run: dotnet test Nu/Nu.Tests
