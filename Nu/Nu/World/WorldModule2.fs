@@ -1664,15 +1664,15 @@ module WorldModule2 =
                             let shadowRotation = light.GetRotation world
                             let shadowRotationMatrix = Matrix4x4.CreateFromQuaternion shadowRotation
                             let shadowForward = (Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * shadowRotationMatrix).Forward
-                            let shadowUp = if abs (shadowForward.Dot v3Up) <= 0.99f then v3Up else v3Forward
-                            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, v3Up)
+                            let shadowUp = shadowForward.OrthonormalUp
+                            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
                             // compute eye values
                             let eyeRotation = World.getEye3dRotation world
                             let eyeForward = eyeRotation.Forward
-                            let eyeUp = if abs (eyeForward.Dot v3Up) <= 0.99f then v3Up else v3Forward
+                            let eyeUp = eyeForward.OrthonormalUp
                             let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
                             let eyeFov = World.getEye3dFieldOfView world
                             let eyeAspectRatio = World.getEye3dAspectRatio world

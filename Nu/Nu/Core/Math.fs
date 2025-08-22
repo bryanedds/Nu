@@ -131,6 +131,14 @@ module Vector3 =
         member inline this.Transform (q : Quaternion) = Vector3.Transform (this, q)
         member inline this.RollPitchYaw = Math.RollPitchYaw &this
 
+        /// 
+        member this.OrthonormalUp =
+            let candidateUp = Vector3.UnitY
+            let right = this.Cross candidateUp
+            let candidateUp = if right.MagnitudeSquared < 0.001f then -Vector3.UnitZ else candidateUp
+            let right = (this.Cross candidateUp).Normalized
+            right.Cross this
+
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
             let a = this.Normalized
