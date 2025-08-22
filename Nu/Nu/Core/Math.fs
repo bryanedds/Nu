@@ -68,10 +68,10 @@ module Vector2 =
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
     let v2UnitY = Vector2.UnitY
-    let v2Up = v2 0.0f 1.0f
-    let v2Right = v2 1.0f 0.0f
-    let v2Down = v2 0.0f -1.0f
-    let v2Left = v2 -1.0f 0.0f
+    let v2Up = Vector2.UnitY
+    let v2Down = -v2Up
+    let v2Right = Vector2.UnitX
+    let v2Left = -v2Right
 
 /// Converts Vector2 types.
 type Vector2Converter () =
@@ -133,10 +133,10 @@ module Vector3 =
 
         /// 
         member this.OrthonormalUp =
-            let candidateUp = Vector3.UnitY
-            let right = this.Cross candidateUp
-            let candidateUp = if right.MagnitudeSquared < 0.001f then -Vector3.UnitZ else candidateUp
-            let right = (this.Cross candidateUp).Normalized
+            let up = Vector3.UnitY
+            let right = this.Cross up
+            let up = if right.MagnitudeSquared < 0.00001f then -Vector3.UnitZ else up
+            let right = (this.Cross up).Normalized
             right.Cross this
 
         /// Compute angle between vectors.
@@ -205,12 +205,12 @@ module Vector3 =
     let v3UnitX = Vector3.UnitX
     let v3UnitY = Vector3.UnitY
     let v3UnitZ = Vector3.UnitZ
-    let v3Up = v3 0.0f 1.0f 0.0f
-    let v3Down = v3 0.0f -1.0f 0.0f
-    let v3Right = v3 1.0f 0.0f 0.0f
-    let v3Left = v3 -1.0f 0.0f 0.0f
-    let v3Forward = v3 0.0f 0.0f -1.0f
-    let v3Back = v3 0.0f 0.0f 1.0f
+    let v3Up = Vector3.UnitY
+    let v3Down = -v3Up
+    let v3Right = Vector3.UnitX
+    let v3Left = -v3Right
+    let v3Forward = -Vector3.UnitZ
+    let v3Back = -v3Forward
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -439,6 +439,12 @@ module Vector3i =
     let v3iUnitX = Vector3i.UnitX
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
+    let v3iUp = Vector3i.UnitY
+    let v3iDown = -v3iUp
+    let v3iRight = Vector3i.UnitX
+    let v3iLeft = -v3iRight
+    let v3iForward = -Vector3i.UnitZ
+    let v3iBack = -v3iForward
 
 /// Converts Vector3i types.
 type Vector3iConverter () =
