@@ -1,0 +1,33 @@
+name: CI
+on: push
+jobs:
+  build:
+    strategy:
+      matrix:
+        # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+        os: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+      fail-fast: false # Don't cancel one when another fails
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+      - if: ${{ runner.os != 'Windows' }}
+        run: sudo sh ./Configure.${{ runner.os }}.Application.sh
+      - run: dotnet build
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+      - if: ${{ runner.os != 'Windows' }}
+        run: sudo sh ./Configure.${{ runner.os }}.Application.sh
+        # GitHub Actions runners have no GPU so skip Integration tests
+      - run: dotnet test Nu/Nu.Tests --filter TestCategory!="Integration"
