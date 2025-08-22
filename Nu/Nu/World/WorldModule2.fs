@@ -1684,12 +1684,12 @@ module WorldModule2 =
                                 let segmentNear =
                                     match i with
                                     | 0 -> Constants.Render.NearPlaneDistanceInterior
-                                    | 1 -> shadowFarDistance * 0.25f
+                                    | 1 -> shadowFarDistance * 0.2f
                                     | 2 -> shadowFarDistance * 0.75f
                                     | _ -> failwithumf () // HACK: just presuming the cascade levels here to get started on the CSM feature.
                                 let segmentFar =
                                     match i with
-                                    | 0 -> shadowFarDistance * 0.25f
+                                    | 0 -> shadowFarDistance * 0.2f
                                     | 1 -> shadowFarDistance * 0.75f
                                     | 2 -> shadowFarDistance
                                     | _ -> failwithumf () // HACK: just presuming the cascade levels here to get started on the CSM feature.

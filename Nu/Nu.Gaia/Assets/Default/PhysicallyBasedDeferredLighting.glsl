@@ -253,7 +253,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     float[] shadowCascadeLimits =
         float[](
-            shadowCutoff * 0.15,
+            shadowCutoff * 0.2,
             shadowCutoff * 0.75,
             shadowCutoff); // HACK: just presuming the cascade levels here to get started on the CSM feature.
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
@@ -262,9 +262,9 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
-            shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
-            shadowTexCoords.z > 0.5 + SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
         {
             float shadowZ = shadowTexCoords.z;
             if (shadowZ < shadowCascadeLimits[i])
