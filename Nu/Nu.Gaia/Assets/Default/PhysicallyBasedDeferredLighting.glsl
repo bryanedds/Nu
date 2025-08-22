@@ -262,21 +262,28 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
-        {
-            float shadowZ = shadowTexCoords.z;
-            if (shadowZ < shadowCascadeLimits[i])
+        //if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+        //    shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+        //    shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        //{
+            // compute view depth for comparison with cascade limit
+            float depth = texture(depthTexture, texCoordsOut).r;
+            vec4 viewPosition = projectionInverse * vec4(texCoordsOut * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+            float viewDepth = -(viewPosition.z / viewPosition.w);
+            if (viewDepth < shadowCascadeLimits[i])
             {
-                float shadowZExp = exp(-lightShadowExponent * shadowZ);
-                float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
-                float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-                shadowScalar = pow(shadowScalar, lightShadowDensity);
-                return shadowScalar;
+                float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+                float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
+                if (shadowZ - 0.0001 > shadowDepth) return 0.0;
+                return 1.0 / float(i+1);
+                //float shadowZExp = exp(-lightShadowExponent * shadowZ);
+                //float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
+                //float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+                //shadowScalar = pow(shadowScalar, lightShadowDensity);
+                //return shadowScalar;
             }
-        }
-        return 1.0;
+        //}
+        //return 1.0;
     }
     return 1.0;
 }

@@ -1720,8 +1720,9 @@ module WorldModule2 =
                                 //if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
 
                                 // compute the shadow frustum
-                                let segmentCenterWorld = segmentFrustum.Center
-                                let segmentViewOrtho = Matrix4x4.CreateLookAt (segmentCenterWorld, segmentCenterWorld + shadowForward, shadowUp)
+                                let segmentCenter = (v3 minX minY minZ + v3 maxX maxY maxZ) * 0.5f
+                                //let segmentCenter = segmentFrustum.Center
+                                let segmentViewOrtho = Matrix4x4.CreateLookAt (segmentCenter, segmentCenter + shadowForward, shadowUp)
                                 let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
                                 let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
                                 let segmentFrustumOrtho = Frustum segmentViewProjectionOrtho
