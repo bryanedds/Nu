@@ -5,7 +5,7 @@ on: [push]
 jobs:
   build:
     # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-    runs-on: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+    runs-on: windows-latest
     steps:
       - uses: actions/setup-dotnet@v4
       - name: Setup Unix
@@ -14,7 +14,7 @@ jobs:
       - name: Build
         run: dotnet build
   test:
-    runs-on: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+    runs-on: windows-latest
     steps:
       - uses: actions/setup-dotnet@v4
       - name: Setup Unix
