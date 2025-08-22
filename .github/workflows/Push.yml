@@ -5,14 +5,14 @@ on: [push]
 jobs:
   build:
     # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-    runs-on: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+    runs-on: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v5
       - if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - run: dotnet build
   test:
-    runs-on: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+    runs-on: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v5
       - if: ${{ runner.os != 'Windows' }}
