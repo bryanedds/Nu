@@ -30,4 +30,4 @@ jobs:
       - if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
         # GitHub Actions runners have no GPU so skip Integration tests
-      - run: dotnet test Nu/Nu.Tests --filter TestCategory="Integration"
+      - run: dotnet test Nu/Nu.Tests --filter TestCategory!="Integration"
