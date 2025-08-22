@@ -12,7 +12,7 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - name: Build
-        run: dotnet build
+        run: dotnet build Nu.sln
   test:
     runs-on: windows-latest
     steps:
