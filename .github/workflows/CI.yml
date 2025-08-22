@@ -5,7 +5,7 @@ jobs:
     strategy:
       matrix:
         # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
       fail-fast: false # Don't cancel one when another fails
     runs-on: ${{ matrix.os }}
     steps:
@@ -19,7 +19,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
