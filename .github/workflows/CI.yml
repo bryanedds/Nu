@@ -1,7 +1,4 @@
-name: CI
-
 on: [push]
-
 jobs:
   build:
     strategy:
