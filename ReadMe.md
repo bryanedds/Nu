@@ -1,5 +1,5 @@
-Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md) [![Build status](https://img.shields.io/github/actions/workflow/status/bryanedds/Nu/Push
-)](https://github.com/bryanedds/Nu/actions)
+Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)  [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg
+)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
 **Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
 
