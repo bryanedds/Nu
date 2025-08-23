@@ -63,9 +63,11 @@ packages/
 /output
 /tmp/watch
 
-#######################
-# Nu Local Test Items #
-#######################
+##################
+# Nu Local Items #
+##################
+/docs
+/Nu/Nu/DependencyGraph.dot
+/Nu/Nu/msbuild.binlog
 /Nu/Nu.Gaia/TestGroups
 /Nu/Nu.Gaia/Assets/Default/TestAssets
-/docs

@@ -154,12 +154,12 @@ do
                 Color.FromArgb(r, g, b)
             edge.Color <- DotColorDefinition.op_Implicit(color)) |> ignore<DotEdge>)
 
-    graph.SaveToFile("Scripts/DependencyGraph.dot")
-    
+    graph.SaveToFile("DependencyGraph.dot")
+
     let url =
         UriBuilder
             ("https://dreampuf.github.io/GraphvizOnline/?engine=dot",
-             Fragment = File.ReadAllText("Scripts/DependencyGraph.dot"))
+             Fragment = File.ReadAllText("DependencyGraph.dot"))
 
     ProcessStartInfo(url.Uri.AbsoluteUri, UseShellExecute = true)
     |> Process.Start
