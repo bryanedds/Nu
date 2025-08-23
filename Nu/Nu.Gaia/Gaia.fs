@@ -2017,8 +2017,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 else ImGui.Text "Name"
                                 ImGui.SameLine ()
                                 ImGui.Text ("(" + string (entity.GetId world) + ")")
-                                | _ -> ()
-                                if ImGui.IsItemFocused () then focusPropertyOpt None world
+                            | _ -> ()
+                            if ImGui.IsItemFocused () then focusPropertyOpt None world
                         | Constants.Engine.ModelPropertyName ->
                             let getPropertyValue propertyDescriptor simulant world =
                                 let propertyValue = getPropertyValue propertyDescriptor simulant world
