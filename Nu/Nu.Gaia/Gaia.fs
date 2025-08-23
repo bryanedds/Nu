@@ -1,4 +1,4 @@
-﻿// Gaia - The Nu Game Engine editor.
+// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds.
 
 namespace Nu.Gaia
@@ -320,25 +320,25 @@ Size=288,236
 Collapsed=0
 DockId=0x0000000A,0
 
-[Window][Entity Properties]
+[Window][Entity##Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
 DockId=0x00000001,3
 
-[Window][Group Properties]
+[Window][Group##Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
 DockId=0x00000001,2
 
-[Window][Screen Properties]
+[Window][Screen##Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
 DockId=0x00000001,1
 
-[Window][Game Properties]
+[Window][Game##Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
@@ -1053,7 +1053,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     World.cutEntityToClipboard entity world
                     true
             else
-                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim or MMCC API)."
+                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim of MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1136,7 +1136,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     GroupFileDialogState.FileName <- ""
                     true
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim or MMCC API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim of MMCC API)."
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
@@ -1989,7 +1989,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor.PropertyName simulant world then // NOTE: this check is necessary because interaction with a property rollout can cause properties to be removed.
-                        if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
+                        match propertyDescriptor.PropertyName with
+                        | Constants.Engine.NamePropertyName -> // NOTE: name edit properties can't be replaced.
                             match simulant with
                             | :? Screen as screen ->
                                 let mutable name = screen.Name
@@ -2016,9 +2017,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 else ImGui.Text "Name"
                                 ImGui.SameLine ()
                                 ImGui.Text ("(" + string (entity.GetId world) + ")")
-                            | _ -> ()
-                            if ImGui.IsItemFocused () then focusPropertyOpt None world
-                        elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                | _ -> ()
+                                if ImGui.IsItemFocused () then focusPropertyOpt None world
+                        | Constants.Engine.ModelPropertyName ->
                             let getPropertyValue propertyDescriptor simulant world =
                                 let propertyValue = getPropertyValue propertyDescriptor simulant world
                                 if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
@@ -2047,7 +2048,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
                                     imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
                                 else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
-                        else
+                        | _ ->
                             let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                             let mutable replaced = false
                             let replaceProperty =
@@ -2663,7 +2664,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                     else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
-                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim of MMCC API)."
                         | None -> ()
                     ImGui.EndDragDropTarget ()
 
@@ -2717,28 +2718,28 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ImGui.End ()
 
     let private imGuiGamePropertiesWindow world =
-        let windowName = "Game Properties"
+        let windowName = "Game##Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties Game world
         ImGui.End ()
 
     let private imGuiScreenPropertiesWindow world =
-        let windowName = "Screen Properties"
+        let windowName = "Screen##Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties SelectedScreen world
         ImGui.End ()
 
     let private imGuiGroupPropertiesWindow world =
-        let windowName = "Group Properties"
+        let windowName = "Group##Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties SelectedGroup world
         ImGui.End ()
 
     let private imGuiEntityPropertiesWindow world =
-        let windowName = "Entity Properties"
+        let windowName = "Entity##Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             match SelectedEntityOpt with
@@ -4030,7 +4031,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
             // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
             if EntityPropertiesFocusRequested then
-                ImGui.SetWindowFocus "Entity Properties"
+                ImGui.SetWindowFocus "Entity##Properties"
                 EntityPropertiesFocusRequested <- false
 
             // render light probes of the selected group in light box and view frustum
