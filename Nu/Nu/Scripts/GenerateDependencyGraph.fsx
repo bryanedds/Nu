@@ -100,8 +100,7 @@ do
     let graph = DotGraph(directed = true)
     graph.Layout.Direction <- DotLayoutDirection.TopToBottom
     graph.Layout.EdgeOrderingMode <- System.Nullable(DotEdgeOrderingMode.IncomingEdges)
-    graph.Subgraphs.AddWithNodes(DotRank.Same, ["Physics"; "Render"; "Audio"]) |> ignore
-    graph.Subgraphs.AddWithNodes(DotRank.Same, ["ImGui"; "Assimp"]) |> ignore
+    graph.Subgraphs.AddWithNodes(DotRank.Same, ["Physics"; "Render"; "Audio"; "Symbolics"]) |> ignore
     
     // parse the binlog file to get the compiler arguments
     let log = makeCompilerArgsFromBinLog "msbuild.binlog"
