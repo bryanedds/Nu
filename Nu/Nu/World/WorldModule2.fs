@@ -1671,6 +1671,7 @@ module WorldModule2 =
                             let eyeForward = eyeRotation.Forward
                             let eyeUp = eyeForward.OrthonormalUp
                             let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
+                            //let eyeViewInverse = eyeView.Inverted // TODO: P0: make segment snapping work!
                             let eyeFov = World.getEye3dFieldOfView world
                             let eyeAspectRatio = World.getEye3dAspectRatio world
 
@@ -1687,9 +1688,24 @@ module WorldModule2 =
                                 let segmentViewProjection = eyeView * segmentProjection
                                 let segmentFrustum = Frustum segmentViewProjection
 
-                                // compute frustum corner bounds in world space
+                                // compute frustum corners and center in world space
                                 let segmentCornersWorld = segmentFrustum.Corners
                                 let segmentCenter = Array.sum segmentCornersWorld / single segmentCornersWorld.Length
+
+                                // snap segment center to shadow texel grid in light space to avoid shimmering
+                                //let shadowMapSize = world.GeometryViewport.ShadowTextureResolution.V2
+                                //let shadowWorldSize = (segmentFar - segmentNear) * MathF.Tan (eyeFov / 2.0f) * 2.0f
+                                //let shadowWorldSize = v2 (shadowWorldSize * eyeAspectRatio) shadowWorldSize
+                                //let shadowTexelSize = shadowWorldSize / shadowMapSize
+                                //let segmentCenterShadow = segmentCenter.Transform eyeView
+                                //let segmentCenterSnapped =
+                                //    v3
+                                //        (floor (segmentCenterShadow.X / shadowTexelSize.X) * shadowTexelSize.X)
+                                //        (floor (segmentCenterShadow.Y / shadowTexelSize.Y) * shadowTexelSize.Y)
+                                //        (floor (segmentCenterShadow.Z / shadowTexelSize.X) * shadowTexelSize.X)
+                                //let segmentCenter = segmentCenterSnapped.Transform eyeViewInverse
+
+                                // compute frustum corner bounds in world space
                                 let segmentView = Matrix4x4.CreateLookAt (segmentCenter, segmentCenter + shadowForward, shadowUp)
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
