@@ -1065,6 +1065,8 @@ module Hl =
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
+                // TODO: DJL: P0: this 'on the fly' command submission model has to go immediately!
+                
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain.SwapExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
