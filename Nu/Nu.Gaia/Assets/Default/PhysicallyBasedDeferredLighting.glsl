@@ -251,44 +251,24 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 
 float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowIndex)
 {
-    float[] shadowCascadeLimits =
-        float[](
-            shadowCutoff * 0.2,
-            shadowCutoff * 0.75,
-            shadowCutoff); // HACK: just presuming the cascade levels here to get started on the CSM feature.
+    float[] shadowCascadeLimits = float[](shadowCutoff * 0.2, shadowCutoff * 0.75, shadowCutoff); // HACK: just presuming the cascade levels here to get started on the CSM feature.
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
         mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        //if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-        //    shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-        //    shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
-        //{
-            
-            if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-                shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0)
-            {
-            //float depth = texture(depthTexture, texCoordsOut).r;
-            //vec3 position = eyeCenter - depthToPosition(depth, texCoordsOut).xyz;
-            //float shadowCascadeLimit = shadowCascadeLimits[i];
-            //if (position.x < shadowCascadeLimit &&
-            //    position.y < shadowCascadeLimit &&
-            //    position.z < shadowCascadeLimit)
-            //{
-                float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-                float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
-                if (shadowZ - 0.0001 > shadowDepth) return 0.0;
-                return 1.0 / float(i+1);
-                //float shadowZExp = exp(-lightShadowExponent * shadowZ);
-                //float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
-                //float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-                //shadowScalar = pow(shadowScalar, lightShadowDensity);
-                //return shadowScalar;
-            }
-        //}
-        //return 1.0;
+        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        {
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            float shadowZExp = exp(-lightShadowExponent * shadowZ);
+            float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
+            float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+            shadowScalar = pow(shadowScalar, lightShadowDensity);
+            return shadowScalar;
+        }
     }
     return 1.0;
 }

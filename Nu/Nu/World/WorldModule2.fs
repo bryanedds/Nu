@@ -1661,8 +1661,7 @@ module WorldModule2 =
                             // compute shadow info
                             let lightId = light.GetId world
                             let shadowRotation = light.GetRotation world
-                            let shadowRotationMatrix = Matrix4x4.CreateFromQuaternion shadowRotation
-                            let shadowForward = (Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * shadowRotationMatrix).Forward
+                            let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
@@ -1697,6 +1696,8 @@ module WorldModule2 =
 
                                 // compute frustum corner bounds in world space
                                 let segmentCornersWorld = segmentFrustum.Corners
+                                let segmentCenter = Array.sum segmentCornersWorld / single segmentCornersWorld.Length
+                                let segmentView = Matrix4x4.CreateLookAt (segmentCenter, segmentCenter + shadowForward, shadowUp)
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
                                 let mutable minY = Single.MaxValue
@@ -1704,35 +1705,25 @@ module WorldModule2 =
                                 let mutable minZ = Single.MaxValue
                                 let mutable maxZ = Single.MinValue
                                 for corner in segmentCornersWorld do
-                                    minX <- min minX corner.X
-                                    maxX <- max maxX corner.X
-                                    minY <- min minY corner.Y
-                                    maxY <- max maxY corner.Y
-                                    minZ <- min minZ corner.Z
-                                    maxZ <- max maxZ corner.Z
+                                    let cornerView = corner.Transform segmentView
+                                    minX <- min minX cornerView.X
+                                    maxX <- max maxX cornerView.X
+                                    minY <- min minY cornerView.Y
+                                    maxY <- max maxY cornerView.Y
+                                    minZ <- min minZ cornerView.Z
+                                    maxZ <- max maxZ cornerView.Z
 
                                 // ??? TODO: P0: utilize?
                                 //let zMult = 10.0f // tune this parameter according to the scene
                                 //if minZ < 0.0f then minZ <- minZ * zMult else minZ <- minZ / zMult
                                 //if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
-
-                                // compute the shadow frustum
-                                let segmentCenter = (v3 minX minY minZ + v3 maxX maxY maxZ) * 0.5f
-                                //let segmentCenter = segmentFrustum.Center
-
                                 
-                                minX <- minX - eyeCenter.X
-                                maxX <- maxX - eyeCenter.X
-                                minY <- minY - eyeCenter.Y
-                                maxY <- maxY - eyeCenter.Y
-                                minZ <- minZ - eyeCenter.Z
-                                maxZ <- maxZ - eyeCenter.Z
-
-                                let segmentViewOrtho = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + shadowForward, shadowUp)
+                                // 
                                 let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
-                                let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
-                                let segmentFrustumOrtho = Frustum segmentViewProjectionOrtho
-                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, segmentViewOrtho, segmentProjectionOrtho), lightType, shadowRotation, segmentFrustumOrtho)) world
+                                let segmentViewProjectionOrtho = segmentView * segmentProjectionOrtho
+                                let segmentFrustum = Frustum segmentViewProjectionOrtho
+                                let segmentRotation = shadowRotation
+                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, segmentView, segmentProjectionOrtho), lightType, segmentRotation, segmentFrustum)) world
 
                             // fin
                             shadowCascadesCount <- inc shadowCascadesCount
