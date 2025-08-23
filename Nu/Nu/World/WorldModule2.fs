@@ -1660,12 +1660,10 @@ module WorldModule2 =
 
                             // compute shadow info
                             let lightId = light.GetId world
-                            let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let shadowRotationMatrix = Matrix4x4.CreateFromQuaternion shadowRotation
                             let shadowForward = (Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * shadowRotationMatrix).Forward
                             let shadowUp = shadowForward.OrthonormalUp
-                            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
@@ -1697,16 +1695,15 @@ module WorldModule2 =
                                 let segmentViewProjection = eyeView * segmentProjection
                                 let segmentFrustum = Frustum segmentViewProjection
 
-                                // compute frustum corner bounds in shadow space
+                                // compute frustum corner bounds in world space
                                 let segmentCornersWorld = segmentFrustum.Corners
-                                let segmentCornersShadow = Array.map (fun (c : Vector3) -> c.Transform shadowView) segmentCornersWorld
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
                                 let mutable minY = Single.MaxValue
                                 let mutable maxY = Single.MinValue
                                 let mutable minZ = Single.MaxValue
                                 let mutable maxZ = Single.MinValue
-                                for corner in segmentCornersShadow do
+                                for corner in segmentCornersWorld do
                                     minX <- min minX corner.X
                                     maxX <- max maxX corner.X
                                     minY <- min minY corner.Y
@@ -1722,7 +1719,16 @@ module WorldModule2 =
                                 // compute the shadow frustum
                                 let segmentCenter = (v3 minX minY minZ + v3 maxX maxY maxZ) * 0.5f
                                 //let segmentCenter = segmentFrustum.Center
-                                let segmentViewOrtho = Matrix4x4.CreateLookAt (segmentCenter, segmentCenter + shadowForward, shadowUp)
+
+                                
+                                minX <- minX - eyeCenter.X
+                                maxX <- maxX - eyeCenter.X
+                                minY <- minY - eyeCenter.Y
+                                maxY <- maxY - eyeCenter.Y
+                                minZ <- minZ - eyeCenter.Z
+                                maxZ <- maxZ - eyeCenter.Z
+
+                                let segmentViewOrtho = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + shadowForward, shadowUp)
                                 let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
                                 let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
                                 let segmentFrustumOrtho = Frustum segmentViewProjectionOrtho

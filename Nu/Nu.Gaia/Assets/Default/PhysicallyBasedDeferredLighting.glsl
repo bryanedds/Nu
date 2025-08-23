@@ -266,12 +266,17 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         //    shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
         //    shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
         //{
-            // compute view depth for comparison with cascade limit
-            float depth = texture(depthTexture, texCoordsOut).r;
-            vec4 viewPosition = projectionInverse * vec4(texCoordsOut * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-            float viewDepth = -(viewPosition.z / viewPosition.w);
-            if (viewDepth < shadowCascadeLimits[i])
+            
+            if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+                shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0)
             {
+            //float depth = texture(depthTexture, texCoordsOut).r;
+            //vec3 position = eyeCenter - depthToPosition(depth, texCoordsOut).xyz;
+            //float shadowCascadeLimit = shadowCascadeLimits[i];
+            //if (position.x < shadowCascadeLimit &&
+            //    position.y < shadowCascadeLimit &&
+            //    position.z < shadowCascadeLimit)
+            //{
                 float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
                 float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
                 if (shadowZ - 0.0001 > shadowDepth) return 0.0;

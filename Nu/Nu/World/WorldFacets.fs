@@ -2570,6 +2570,71 @@ type Light3dFacet () =
             let shadowFrustum = entity.ComputeShadowFrustum world
             for segment in shadowFrustum.Segments do
                 World.imGuiSegment3d segment 1.0f Color.Yellow world
+            match entity.GetLightType world with
+            | CascadedLight ->
+
+                // compute shadow info
+                let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
+                let shadowFarDistance = max (entity.GetLightCutoff world) (shadowNearDistance * 2.0f)
+
+                // compute eye values
+                let eyeCenter = World.getEye3dCenter world
+                let eyeRotation = World.getEye3dRotation world
+                let eyeForward = eyeRotation.Forward
+                let eyeUp = eyeForward.OrthonormalUp
+                let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
+                let eyeFov = World.getEye3dFieldOfView world
+                let eyeAspectRatio = World.getEye3dAspectRatio world
+
+                // render faces
+                for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
+
+                    // compute segment frustum
+                    let segmentNear =
+                        match i with
+                        | 0 -> Constants.Render.NearPlaneDistanceInterior
+                        | 1 -> shadowFarDistance * 0.2f
+                        | 2 -> shadowFarDistance * 0.75f
+                        | _ -> failwithumf () // HACK: just presuming the cascade levels here to get started on the CSM feature.
+                    let segmentFar =
+                        match i with
+                        | 0 -> shadowFarDistance * 0.2f
+                        | 1 -> shadowFarDistance * 0.75f
+                        | 2 -> shadowFarDistance
+                        | _ -> failwithumf () // HACK: just presuming the cascade levels here to get started on the CSM feature.
+                    let segmentProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, segmentNear, segmentFar)
+                    let segmentViewProjection = eyeView * segmentProjection
+                    let segmentFrustum = Frustum segmentViewProjection
+
+                    // compute frustum corner bounds in world space
+                    let segmentCornersWorld = segmentFrustum.Corners
+                    let mutable minX = Single.MaxValue
+                    let mutable maxX = Single.MinValue
+                    let mutable minY = Single.MaxValue
+                    let mutable maxY = Single.MinValue
+                    let mutable minZ = Single.MaxValue
+                    let mutable maxZ = Single.MinValue
+                    for corner in segmentCornersWorld do
+                        minX <- min minX corner.X
+                        maxX <- max maxX corner.X
+                        minY <- min minY corner.Y
+                        maxY <- max maxY corner.Y
+                        minZ <- min minZ corner.Z
+                        maxZ <- max maxZ corner.Z
+
+                    // ??? TODO: P0: utilize?
+                    //let zMult = 10.0f // tune this parameter according to the scene
+                    //if minZ < 0.0f then minZ <- minZ * zMult else minZ <- minZ / zMult
+                    //if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
+
+                    // compute the shadow frustum
+                    if world.UpdateTime / 10L % 3L = int64 i then
+                        let color = match i with 0 -> Color.Red | 1 -> Color.Green | _ -> Color.Blue
+                        let segmentCenter = segmentFrustum.Center
+                        World.imGuiCircle3d segmentCenter (single (inc i) * 5.0f) false color world
+                        let segmentBox = Box3.Enclose segmentCornersWorld
+                        World.imGuiBox3d segmentBox color world
+            | _ -> ()
         | _ -> ()
 
 [<AutoOpen>]
