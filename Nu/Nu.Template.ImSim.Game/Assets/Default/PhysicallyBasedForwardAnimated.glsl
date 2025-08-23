@@ -86,10 +86,13 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 9;
-const int SHADOW_TEXTURES_MAX = 9;
-const int SHADOW_MAPS_MAX = 9;
+const int SHADOW_TEXTURES_MAX = 8;
+const int SHADOW_MAPS_MAX = 8;
+const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
+const int SHADOW_CASCADES_MAX = 2;
+const int SHADOW_CASCADE_LEVELS = 3;
+const float SHADOW_CASCADE_SEAM_INSET = 0.001;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -131,6 +134,7 @@ uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
 uniform sampler2D shadowTextures[SHADOW_TEXTURES_MAX];
 uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
+uniform sampler2DArray shadowCascades[SHADOW_CASCADES_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -151,7 +155,7 @@ uniform int lightDesireFogs[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
 uniform float shadowNear; // NOTE: currently unused.
-uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX];
+uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -261,7 +265,7 @@ float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
     return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
 
-float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapIndex)
+float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
@@ -273,7 +277,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowMapInd
             for (int k = 0; k < lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[shadowMapIndex], positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
@@ -307,9 +311,9 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-    if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.z > 0.5 + SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+    if (shadowTexCoords.x > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoords.y > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoords.z > 0.5 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
     {
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
@@ -317,6 +321,29 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
+    }
+    return 1.0;
+}
+
+float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowIndex)
+{
+    for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
+    {
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
+        vec4 positionShadowClip = shadowMatrix * position;
+        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+        if (shadowTexCoords.x > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoords.y > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoords.z > 0.5 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_CASCADE_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        {
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            float shadowZExp = exp(-lightShadowExponent * shadowZ);
+            float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
+            float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+            shadowScalar = pow(shadowScalar, lightShadowDensity);
+            return shadowScalar;
+        }
     }
     return 1.0;
 }
@@ -598,18 +625,19 @@ void main()
     {
         // per-light radiance
         vec3 lightOrigin = lightOrigins[i];
+        float lightCutoff = lightCutoffs[i];
         int lightType = lightTypes[i];
         bool lightDirectional = lightType == 2;
+        bool lightCascaded = lightType == 3;
         vec3 l, h, radiance;
-        if (!lightDirectional)
+        if (!lightDirectional && !lightCascaded)
         {
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoff = lightCutoffs[i];
-            float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5;
@@ -634,9 +662,10 @@ void main()
         {
             switch (lightType)
             {
-                case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex - SHADOW_TEXTURES_MAX); break; } // point
+                case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
                 case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
-                default: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
+                case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
+                default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
             }
         }
 
@@ -669,7 +698,8 @@ void main()
             {
                 case 0: { fogAccum += computeFogAccumPoint(position, i); break; } // point
                 case 1: { fogAccum += computeFogAccumSpot(position, i); break; } // spot
-                default: { fogAccum += computeFogAccumDirectional(position, i); break; } // directional
+                case 2: { fogAccum += computeFogAccumDirectional(position, i); break; } // directional
+                default: { break; } // cascaded
             }
         }
     }

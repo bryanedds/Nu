@@ -88,10 +88,11 @@ const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 9;
 const int SHADOW_TEXTURES_MAX = 8;
 const int SHADOW_MAPS_MAX = 8;
+const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
+const float SHADOW_CASCADE_SEAM_INSET = 0.001;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -310,9 +311,9 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
     vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-    if (shadowTexCoords.x > SHADOW_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.y > SHADOW_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_SEAM_INSET &&
-        shadowTexCoords.z > 0.5 + SHADOW_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+    if (shadowTexCoords.x > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoords.y > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoords.z > 0.5 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
     {
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
@@ -332,9 +333,9 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        if (shadowTexCoords.x > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoords.y > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoords.z > 0.5 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_CASCADE_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
         {
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             float shadowZExp = exp(-lightShadowExponent * shadowZ);
