@@ -20,7 +20,7 @@ open GiGraph.Dot.Types.Edges
 open GiGraph.Dot.Types.Layout
 open GiGraph.Dot.Types.Ranks
 
-let hueToRgb v1 v2 vh =
+let private hueToRgb v1 v2 vh =
     let vh =
         if vh < 0. then vh + 1.
         elif vh > 1. then vh - 1.
@@ -30,6 +30,7 @@ let hueToRgb v1 v2 vh =
     elif 3. * vh < 2. then v1 + (v2 - v1) * ((2. / 3.) - vh) * 6.
     else v1
 
+/// Convert HSL to RGB
 let hslToRgb (h, s, l) =
     let r, g, b =
         if s = 0. then
@@ -50,9 +51,12 @@ let hslToRgb (h, s, l) =
 /// Run `dotnet build --no-incremental -bl` to create the binlog file.
 /// The --no-incremental flag is essential for this scraping code.
 /// Taken from https://blog.nojaf.com/2023/02/02/my-fsharp-compiler-scripts/
-let mkCompilerArgsFromBinLog file =
+let makeCompilerArgsFromBinLog file =
+
+    // read the binary log file
     let build = BinaryLog.ReadBuild file
 
+    // find the project name
     let projectName =
         build.Children
         |> Seq.choose
@@ -62,6 +66,7 @@ let mkCompilerArgsFromBinLog file =
         |> Seq.distinct
         |> Seq.exactlyOne
 
+    // find the fsc task for that project
     let message (fscTask: FscTask) =
         fscTask.Children
         |> Seq.tryPick
@@ -69,8 +74,8 @@ let mkCompilerArgsFromBinLog file =
              | :? Message as m when m.Text.Contains "fsc" -> Some m.Text
              | _ -> None)
 
+    // extract the arguments
     let mutable args = None
-
     build.VisitAllChildren<Task>(fun task ->
         match task with
         | :? FscTask as fscTask ->
@@ -79,40 +84,32 @@ let mkCompilerArgsFromBinLog file =
             | _ -> ()
         | _ -> ())
 
+    // attempt to parse the arguments
     match args with
+    | Some args -> args.Substring(args.IndexOf "-o:")
     | None -> failwith "Could not process the binlog file. Did you build using '--no-incremental'?"
-    | Some args ->
-        let content =
-            let idx = args.IndexOf "-o:"
-            args.Substring(idx)
-        content
-        
-Environment.CurrentDirectory <- __SOURCE_DIRECTORY__ + "/../"
 
-Process.Start("dotnet", "build --no-incremental -bl").WaitForExit()
-
-let log = mkCompilerArgsFromBinLog "msbuild.binlog"
-
-let checker = FSharpChecker.Create(keepAssemblyContents = true)
-
-let projFile = __SOURCE_DIRECTORY__ + "Nu.fsproj"
-
-let opts = checker.GetProjectOptionsFromCommandLineArgs(projFile, log.Split('\n'))
-
-let checkProjectResults =
-    checker.ParseAndCheckProject(opts)
-    |> Async.RunSynchronously
-  
-let uses = checkProjectResults.GetAllUsesOfAllSymbols()
-
+// generate a dependency graph of the Nu project and open it in a web browser
 do
+
+    // build the project to get an up-to-date binlog file
+    Environment.CurrentDirectory <- __SOURCE_DIRECTORY__ + "/../"
+    Process.Start("dotnet", "build --no-incremental -bl").WaitForExit()
+
+    // create the graph
     let graph = DotGraph(directed = true)
     graph.Layout.Direction <- DotLayoutDirection.TopToBottom
     graph.Layout.EdgeOrderingMode <- System.Nullable(DotEdgeOrderingMode.IncomingEdges)
-
     graph.Subgraphs.AddWithNodes(DotRank.Same, ["Physics"; "Render"; "Audio"]) |> ignore
     graph.Subgraphs.AddWithNodes(DotRank.Same, ["ImGui"; "Assimp"]) |> ignore
-
+    
+    // parse the binlog file to get the compiler arguments
+    let log = makeCompilerArgsFromBinLog "msbuild.binlog"
+    let checker = FSharpChecker.Create(keepAssemblyContents = true)
+    let projFile = __SOURCE_DIRECTORY__ + "Nu.fsproj"
+    let opts = checker.GetProjectOptionsFromCommandLineArgs(projFile, log.Split('\n'))
+    let checkProjectResults = checker.ParseAndCheckProject(opts) |> Async.RunSynchronously
+    let uses = checkProjectResults.GetAllUsesOfAllSymbols()
     let deps =
         [for usage in uses do
             if usage.Symbol.Assembly.SimpleName = "Nu" then
@@ -132,6 +129,7 @@ do
                       else ()
                   | None -> ()]
 
+    // create the graph nodes
     (deps |> List.map _.declarationDir) @ (deps |> List.map _.usageDir)
     |> List.distinct
     |> List.map (fun name -> graph.Nodes.Add(name, fun node ->
@@ -141,6 +139,7 @@ do
         node.FillColor <- DotColorDefinition.op_Implicit(color)
         node.Label <- DotLabel.FromText name)) |> ignore
 
+    // create the graph edges
     deps
     |> List.distinctBy (fun dep -> dep.usageDir, dep.declarationDir)
     |> List.where (fun dep -> dep.usageDir <> dep.declarationDir)
@@ -154,13 +153,11 @@ do
                 Color.FromArgb(r, g, b)
             edge.Color <- DotColorDefinition.op_Implicit(color)) |> ignore<DotEdge>)
 
-    graph.SaveToFile("DependencyGraph.dot")
-
-    let url =
-        UriBuilder
-            ("https://dreampuf.github.io/GraphvizOnline/?engine=dot",
-             Fragment = File.ReadAllText("DependencyGraph.dot"))
-
+    // save and open the graph
+    let dotFilePath = "DependencyGraph.dot"
+    graph.SaveToFile(dotFilePath)
+    let dot = File.ReadAllText(dotFilePath)
+    let url = UriBuilder ("https://dreampuf.github.io/GraphvizOnline/?engine=dot", Fragment = dot)
     ProcessStartInfo(url.Uri.AbsoluteUri, UseShellExecute = true)
     |> Process.Start
     |> ignore<Process>
