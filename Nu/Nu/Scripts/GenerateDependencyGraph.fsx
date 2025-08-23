@@ -1,24 +1,24 @@
+#r "System.Drawing"
 #r "FSharp.Compiler.Service"
 #r "nuget: MSBuild.StructuredLogger"
-#r "System.Drawing"
 #r "nuget: GiGraph.Dot, 4.1.0"
 
 open System
 open System.IO
 open System.Diagnostics
 open System.Drawing
+open Microsoft.Build.Logging.StructuredLogger
+open FSharp.Compiler.CodeAnalysis
 open GiGraph.Dot.Entities.Edges
-open GiGraph.Dot.Entities.Labels
 open GiGraph.Dot.Entities.Edges.Endpoints
 open GiGraph.Dot.Entities.Nodes
-open GiGraph.Dot.Types.Edges
+open GiGraph.Dot.Entities.Graphs
+open GiGraph.Dot.Entities.Labels
+open GiGraph.Dot.Extensions
 open GiGraph.Dot.Types.Colors
+open GiGraph.Dot.Types.Edges
 open GiGraph.Dot.Types.Layout
 open GiGraph.Dot.Types.Ranks
-open Microsoft.Build.Logging.StructuredLogger
-open GiGraph.Dot.Entities.Graphs
-open GiGraph.Dot.Extensions
-open FSharp.Compiler.CodeAnalysis
 
 let hueToRgb v1 v2 vh =
     let vh =
@@ -154,9 +154,13 @@ do
                 Color.FromArgb(r, g, b)
             edge.Color <- DotColorDefinition.op_Implicit(color)) |> ignore<DotEdge>)
 
-    graph.SaveToFile("Scripts/deps.dot")
+    graph.SaveToFile("Scripts/DependencyGraph.dot")
     
     let url =
-        UriBuilder("https://dreampuf.github.io/GraphvizOnline/?engine=dot", Fragment = File.ReadAllText("Scripts/deps.dot"))
-    
-    ProcessStartInfo(url.Uri.AbsoluteUri, UseShellExecute = true) |> Process.Start |> ignore<Process>
+        UriBuilder
+            ("https://dreampuf.github.io/GraphvizOnline/?engine=dot",
+             Fragment = File.ReadAllText("Scripts/DependencyGraph.dot"))
+
+    ProcessStartInfo(url.Uri.AbsoluteUri, UseShellExecute = true)
+    |> Process.Start
+    |> ignore<Process>
