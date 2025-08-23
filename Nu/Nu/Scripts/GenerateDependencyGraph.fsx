@@ -111,7 +111,7 @@ do
     graph.Layout.EdgeOrderingMode <- System.Nullable(DotEdgeOrderingMode.IncomingEdges)
 
     graph.Subgraphs.AddWithNodes(DotRank.Same, ["Physics"; "Render"; "Audio"]) |> ignore
-    graph.Subgraphs.AddWithNodes(DotRank.Same, ["ImGui"; "Reflection"; "Assimp"]) |> ignore
+    graph.Subgraphs.AddWithNodes(DotRank.Same, ["ImGui"; "Assimp"]) |> ignore
 
     let deps =
         [for usage in uses do
