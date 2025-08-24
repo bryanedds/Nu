@@ -4059,8 +4059,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let shadowViewProjection = shadowView * shadowProjection
 
                             // draw shadow texture when not cached
-                            // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map
-                            // once per face render here, but probably nothing worth caring about.
+                            // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow texture
+                            // array once per face render here, but probably nothing worth caring about.
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) ->
