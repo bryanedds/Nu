@@ -1,4 +1,4 @@
-﻿// Gaia - The Nu Game Engine editor.
+// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds.
 
 namespace Nu.Gaia
@@ -1053,7 +1053,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     World.cutEntityToClipboard entity world
                     true
             else
-                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim of MMCC API)."
+                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim or MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1136,7 +1136,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     GroupFileDialogState.FileName <- ""
                     true
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim of MMCC API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim or MMCC API)."
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
@@ -1989,7 +1989,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor.PropertyName simulant world then // NOTE: this check is necessary because interaction with a property rollout can cause properties to be removed.
-                        if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
+                        match propertyDescriptor.PropertyName with
+                        | Constants.Engine.NamePropertyName -> // NOTE: name edit properties can't be replaced.
                             match simulant with
                             | :? Screen as screen ->
                                 let mutable name = screen.Name
@@ -2018,7 +2019,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 ImGui.Text ("(" + string (entity.GetId world) + ")")
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusPropertyOpt None world
-                        elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                        | Constants.Engine.ModelPropertyName ->
                             let getPropertyValue propertyDescriptor simulant world =
                                 let propertyValue = getPropertyValue propertyDescriptor simulant world
                                 if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
@@ -2047,7 +2048,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
                                     imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
                                 else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
-                        else
+                        | _ ->
                             let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                             let mutable replaced = false
                             let replaceProperty =
@@ -2663,7 +2664,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                     else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
-                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim of MMCC API)."
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
                         | None -> ()
                     ImGui.EndDragDropTarget ()
 
