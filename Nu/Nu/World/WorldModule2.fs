@@ -1671,7 +1671,6 @@ module WorldModule2 =
                             let eyeForward = eyeRotation.Forward
                             let eyeUp = eyeForward.OrthonormalUp
                             let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
-                            let eyeViewInverse = eyeView.Inverted // TODO: P0: make segment snapping work!
                             let eyeFov = World.getEye3dFieldOfView world
                             let eyeAspectRatio = World.getEye3dAspectRatio world
 
@@ -1715,6 +1714,7 @@ module WorldModule2 =
                                 if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
 
                                 // snap segment center to shadow texel grid in light space to avoid shimmering
+                                //let eyeViewInverse = eyeView.Inverted
                                 //let segmentWidth = maxX - minX
                                 //let segmentHeight = maxY - minY
                                 //let shadowMapSize : Vector2 = world.GeometryViewport.ShadowTextureResolution.V2
