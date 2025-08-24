@@ -320,25 +320,25 @@ Size=288,236
 Collapsed=0
 DockId=0x0000000A,0
 
-[Window][Entity##Properties]
+[Window][Entity Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
 DockId=0x00000001,3
 
-[Window][Group##Properties]
+[Window][Group Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
 DockId=0x00000001,2
 
-[Window][Screen##Properties]
+[Window][Screen Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
 DockId=0x00000001,1
 
-[Window][Game##Properties]
+[Window][Game Properties]
 Pos=985,56
 Size=295,664
 Collapsed=0
@@ -2718,28 +2718,28 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ImGui.End ()
 
     let private imGuiGamePropertiesWindow world =
-        let windowName = "Game##Properties"
+        let windowName = "Game Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties Game world
         ImGui.End ()
 
     let private imGuiScreenPropertiesWindow world =
-        let windowName = "Screen##Properties"
+        let windowName = "Screen Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties SelectedScreen world
         ImGui.End ()
 
     let private imGuiGroupPropertiesWindow world =
-        let windowName = "Group##Properties"
+        let windowName = "Group Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties SelectedGroup world
         ImGui.End ()
 
     let private imGuiEntityPropertiesWindow world =
-        let windowName = "Entity##Properties"
+        let windowName = "Entity Properties"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             match SelectedEntityOpt with
@@ -4031,7 +4031,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
             // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
             if EntityPropertiesFocusRequested then
-                ImGui.SetWindowFocus "Entity##Properties"
+                ImGui.SetWindowFocus "Entity Properties"
                 EntityPropertiesFocusRequested <- false
 
             // render light probes of the selected group in light box and view frustum
@@ -4229,20 +4229,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let run gaiaState targetDir plugin =
 
         // ensure imgui ini file exists and was created by Gaia before initialising imgui
-        let imguiIniFilePath = targetDir + "/imgui.ini"
-        if File.Exists imguiIniFilePath then
-            let lines = File.ReadAllLines imguiIniFilePath
-            if lines[0] = "[Window][Gaia]" then
-                lines
-                |> Array.map (function // Update old property menu names
-                    | "[Window][Entity Properties]" -> "[Window][Entity##Properties]"
-                    | "[Window][Group Properties]" -> "[Window][Group##Properties]"
-                    | "[Window][Screen Properties]" -> "[Window][Screen##Properties]"
-                    | "[Window][Game Properties]" -> "[Window][Game##Properties]"
-                    | line -> line)
-                |> fun lines -> File.WriteAllLines (imguiIniFilePath, lines)
-            else File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
-        else File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
+        if  not (File.Exists imguiIniFilePath) ||
+            (File.ReadAllLines imguiIniFilePath).[0] <> "[Window][Gaia]" then
+            File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies
         let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
