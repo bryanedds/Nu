@@ -110,6 +110,39 @@ module WorldImGui =
         static member imGuiSegment3d segment thickness color world =
             World.imGuiSegments3d (SArray.singleton segment) thickness color world
 
+        /// Render a box via ImGui in the current eye 3d space.
+        static member imGuiBox3d (box : Box3) (color : Color) (world : World) =
+            let drawList = ImGui.GetBackgroundDrawList ()
+            let windowPosition = ImGui.GetWindowPos ()
+            let windowSize = ImGui.GetWindowSize ()
+            let eyeCenter = world.Eye3dCenter
+            let eyeRotation = world.Eye3dRotation
+            let eyeFieldOfView = world.Eye3dFieldOfView
+            let viewport = world.RasterViewport
+            let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let projection = Viewport.getProjection3d eyeFieldOfView viewport
+            let viewProjection = view * projection
+            let corners = box.Corners
+            let segments =
+                [|(corners.[0], corners.[1])
+                  (corners.[1], corners.[2])
+                  (corners.[2], corners.[3])
+                  (corners.[3], corners.[0])
+                  (corners.[4], corners.[5])
+                  (corners.[5], corners.[6])
+                  (corners.[6], corners.[7])
+                  (corners.[7], corners.[4])
+                  (corners.[0], corners.[6])
+                  (corners.[1], corners.[5])
+                  (corners.[2], corners.[4])
+                  (corners.[3], corners.[7])|]
+            for (a, b) in segments do
+                for (a', b') in Math.TryUnionSegmentAndFrustum' (a, b, frustum) do
+                    let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
+                    let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
+                    drawList.AddLine (aWindow, bWindow, color.Abgr)
+
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =
             let mutable box = box
@@ -378,20 +411,19 @@ module WorldImGui =
                     | _ -> failwithumf ()
                 (promoted, edited, style :> obj)
             | :? LightType as light ->
-                let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
+                let mutable index = light.Enumerate
                 let (edited, light) =
-                    if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
-                    then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
+                    let names = LightType.Names
+                    if ImGui.Combo (name, &index, names, names.Length)
+                    then (true, LightType.makeFromEnumeration index)
                     else (false, light)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let (edited, light) =
                     match index with
                     | 0 -> (edited, light)
-                    | 1 -> (edited, light)
-                    | 2 ->
+                    | 1 ->
                         match light with
                         | PointLight -> failwithumf ()
-                        | DirectionalLight -> failwithumf ()
                         | SpotLight (innerCone, outerCone) ->
                             let mutable (innerCone, outerCone) = (innerCone, outerCone)
                             ImGui.Indent ()
@@ -401,6 +433,10 @@ module WorldImGui =
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             ImGui.Unindent ()
                             (edited || innerConeEdited || outerConeEdited, SpotLight (innerCone, outerCone))
+                        | DirectionalLight -> failwithumf ()
+                        | CascadedLight -> failwithumf ()
+                    | 2 -> (edited, light)
+                    | 3 -> (edited, light)
                     | _ -> failwithumf ()
                 (promoted, edited, light :> obj)
             | :? Substance as substance ->

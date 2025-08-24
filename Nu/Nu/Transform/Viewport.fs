@@ -16,7 +16,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
       SsaoResolutionDivisor : int }
 
     /// The aspect ratio of this viewport.
-    member this.AspectRatio = single this.Bounds.Size.X / single this.Bounds.Size.Y
+    member this.AspectRatio =
+        single this.Bounds.Size.X / single this.Bounds.Size.Y
 
     /// The shadow texture buffer resolution appropriate for this viewport.
     member this.ShadowTextureResolution =
@@ -26,6 +27,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
     /// The shadow map buffer resolution appropriate for this viewport.
     member this.ShadowMapResolution =
         this.ShadowTextureResolution / 2
+
+    /// The shadow cascade buffer resolution appropriate for this viewport.
+    member this.ShadowCascadeResolution =
+        this.ShadowTextureResolution
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor

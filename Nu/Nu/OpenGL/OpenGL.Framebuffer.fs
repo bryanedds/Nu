@@ -263,7 +263,7 @@ module Framebuffer =
         Gl.DeleteFramebuffers [|framebuffer|]
         filter.Destroy ()
 
-    /// Create shadow texture buffers.
+    /// Attempt to create shadow texture buffers.
     let TryCreateShadowTextureBuffers (shadowResolutionX, shadowResolutionY) =
 
         // create frame buffer object
@@ -306,6 +306,7 @@ module Framebuffer =
         Gl.DeleteFramebuffers [|framebuffer|]
         shadowTexture.Destroy ()
 
+    /// Attempt to create shadow map buffers.
     let TryCreateShadowMapBuffers (shadowResolutionX, shadowResolutionY) =
 
         // create shadow renderbuffer
@@ -353,6 +354,7 @@ module Framebuffer =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
             Hl.Assert ()
 
+        // fin
         result
 
     /// Destroy shadow map buffers.
@@ -360,6 +362,99 @@ module Framebuffer =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         shadowMap.Destroy ()
+
+    /// Attempt to create shadow cascade array buffers.
+    let TryCreateShadowCascadeArrayBuffers (shadowCascadeResolutionX, shadowCascadeResolutionY, shadowCascadeLevels) =
+
+        // create shadow renderbuffer
+        let shadowRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowCascadeResolutionX, shadowCascadeResolutionY)
+        Hl.Assert ()
+
+        // create shadow framebuffer
+        let shadowFramebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, shadowFramebuffer)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Hl.Assert ()
+
+        // create shadow cascade array texture
+        let shadowCascadeArrayId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascadeArrayId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowCascadeArrayId, 0)
+        Hl.Assert ()
+
+        // setup shadow cascade array texture
+        Gl.TexImage3D (TextureTarget.Texture2dArray, 0, Hl.CheckRenderFormat InternalFormat.Rg32f, shadowCascadeResolutionX, shadowCascadeResolutionY, shadowCascadeLevels, 0, PixelFormat.Rg, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Hl.Assert ()
+
+        // assert shadow cascade array framebuffer completion
+        let result =
+            Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowCascadeArrayId, 0, 0)
+            if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+                let shadowCascadeArray = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowCascadeArrayId }
+                Right (shadowCascadeArray, shadowRenderbuffer, shadowFramebuffer)
+            else Left "Shadow cascade array framebuffer is incomplete!"
+
+        // teardown attachment
+        Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, 0u, 0, 0)
+
+        // fin
+        result
+
+    /// Destroy shadow cascade array buffers.
+    let DestroyShadowCascadeArrayBuffers (shadowCascadeArray : Texture.Texture, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        shadowCascadeArray.Destroy ()
+
+    /// Attempt to create shadow cascade filter buffers.
+    let TryCreateShadowCascadeFilterBuffers (shadowResolutionX, shadowResolutionY) =
+
+        // create filter renderbuffer
+        let shadowRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
+        Hl.Assert ()
+
+        // create filter framebuffer
+        let shadowFramebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, shadowFramebuffer)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Hl.Assert ()
+
+        // create shadow cascade filter texture
+        let shadowCascadeFilterId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, shadowCascadeFilterId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowCascadeFilterId, 0)
+        Hl.Assert ()
+
+        // setup shadow cascade filter texture
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rg32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Rg, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Hl.Assert ()
+
+        // assert shadow cascade filter framebuffer completion
+        Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowCascadeFilterId, 0, 0)
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+            let shadowCascadeFilter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowCascadeFilterId }
+            Right (shadowCascadeFilter, shadowRenderbuffer, shadowFramebuffer)
+        else Left "Shadow cascade filter framebuffer is incomplete!"
+
+    /// Destroy shadow cascade filter buffers.
+    let DestroyShadowCascadeFilterBuffers (shadowCascadeFilter : Texture.Texture, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        shadowCascadeFilter.Destroy ()
 
     /// Create a geometry buffers.
     let TryCreateGeometryBuffers (resolutionX, resolutionY) =

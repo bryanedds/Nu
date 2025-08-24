@@ -20,6 +20,13 @@ module Filter =
           InputTextureUniform : int
           FilterGaussianShader : uint }
 
+    /// Describes a gaussian filter shader that operates on texture arrays that's loaded into GPU.
+    type FilterGaussianArrayShader =
+        { ScaleUniform : int
+          InputIndexUniform : int
+          InputTextureArrayUniform : int
+          FilterGaussianArrayShader : uint }
+
     /// Describes an box down-sampling filter shader that's loaded into GPU.
     type FilterBilateralDownSampleShader =
         { ColorTextureUniform : int
@@ -67,6 +74,24 @@ module Filter =
         { ScaleUniform = scaleUniform
           InputTextureUniform = inputTextureUniform
           FilterGaussianShader = shader }
+
+    /// Create a filter gaussian shader that operates on texture arrays.
+    let CreateFilterGaussianArrayShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let scaleUniform = Gl.GetUniformLocation (shader, "scale")
+        let inputIndexUniform = Gl.GetUniformLocation (shader, "inputIndex")
+        let inputTextureArrayUniform = Gl.GetUniformLocation (shader, "inputTextureArray")
+
+        // make shader record
+        { ScaleUniform = scaleUniform
+          InputIndexUniform = inputIndexUniform
+          InputTextureArrayUniform = inputTextureArrayUniform
+          FilterGaussianArrayShader = shader }
 
     /// Create a filter bilateral down-sample shader.
     let CreateFilterBilateralDownSampleShader (shaderFilePath : string) =
