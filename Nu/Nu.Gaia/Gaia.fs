@@ -4229,6 +4229,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let run gaiaState targetDir plugin =
 
         // ensure imgui ini file exists and was created by Gaia before initialising imgui
+        let imguiIniFilePath = targetDir + "/imgui.ini"
         if  not (File.Exists imguiIniFilePath) ||
             (File.ReadAllLines imguiIniFilePath).[0] <> "[Window][Gaia]" then
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
