@@ -3373,7 +3373,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let shadowMaps = Array.map a__ renderer.PhysicallyBasedBuffers.ShadowMapBuffersArray
 
         // grab shadow cascades
-        let shadowCascades = Array.map a__ renderer.PhysicallyBasedBuffers.ShadowCascadeBuffersArray
+        let shadowCascades = Array.map a__ renderer.PhysicallyBasedBuffers.ShadowCascadeArrayBuffersArray
 
         // presume shadow near plane distance as interior near plane distance
         let shadowNear = Constants.Render.NearPlaneDistanceInterior
@@ -4073,21 +4073,23 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                                 // draw shadow face
                                 let shadowResolution = renderer.GeometryViewport.ShadowCascadeResolution
-                                let (shadowCascade, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowCascadeBuffersArray.[shadowCascadeBufferIndex]
-                                GlRenderer3d.renderShadowCascadeFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowViewProjection shadowFrustum shadowResolution shadowCascade shadowRenderbuffer shadowFramebuffer
+                                let (shadowCascadeArray, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowCascadeArrayBuffersArray.[shadowCascadeBufferIndex]
+                                GlRenderer3d.renderShadowCascadeFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowViewProjection shadowFrustum shadowResolution shadowCascadeArray shadowRenderbuffer shadowFramebuffer
                                 OpenGL.Hl.Assert ()
 
                                 // filter shadows on the x (presuming that viewport already configured correctly)
-                                let (shadowCascade2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowCascadeBuffers2Array.[shadowCascadeBufferIndex]
+                                let (shadowCascadeFilter, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowCascadeFilterBuffersArray.[shadowCascadeBufferIndex]
                                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
                                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowFace, shadowCascade, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianFilterSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowFace, shadowCascadeArray, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
                                 OpenGL.Hl.Assert ()
 
                                 // filter shadows on the y (presuming that viewport already configured correctly)
                                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
                                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowFace, shadowCascade2, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascadeArray.TextureId, 0, shadowFace)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowCascadeFilter, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowFace)
                                 OpenGL.Hl.Assert ()
 
                             // remember the utilized index for the next frame
