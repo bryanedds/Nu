@@ -610,7 +610,7 @@ module PhysicallyBased =
                 | Right shadowMapBuffers -> shadowMapBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
 
-        // create shadow csacade array buffers array
+        // create shadow cascade array buffers array
         let shadowCascadeArrayBuffersArray =
             [|for _ in 0 .. dec Constants.Render.ShadowCascadesMax do
                 let shadowResolution = geometryViewport.ShadowCascadeResolution
@@ -618,11 +618,11 @@ module PhysicallyBased =
                 | Right shadowCascadeArrayBuffers -> shadowCascadeArrayBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
 
-        // create second array of shadow csacade filter buffers
+        // create second array of shadow cascade filter buffers
         let shadowCascadeFilterBuffersArray =
             [|for _ in 0 .. dec Constants.Render.ShadowCascadesMax do
-                let shadowResolution = geometryViewport.ShadowCascadeResolution
-                match OpenGL.Framebuffer.TryCreateShadowCascadeFilterBuffers (shadowResolution.X, shadowResolution.Y) with
+                let shadowCascadeResolution = geometryViewport.ShadowCascadeResolution
+                match OpenGL.Framebuffer.TryCreateShadowCascadeFilterBuffers (shadowCascadeResolution.X, shadowCascadeResolution.Y) with
                 | Right shadowCascadeFilterBuffers -> shadowCascadeFilterBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
 

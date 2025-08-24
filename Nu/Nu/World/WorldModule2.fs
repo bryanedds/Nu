@@ -1674,7 +1674,7 @@ module WorldModule2 =
                             let eyeFov = World.getEye3dFieldOfView world
                             let eyeAspectRatio = World.getEye3dAspectRatio world
 
-                            // render faces
+                            // render cascades
                             for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
 
                                 // compute segment frustum
@@ -1713,6 +1713,7 @@ module WorldModule2 =
                                 if minZ < 0.0f then minZ <- minZ * zMult else minZ <- minZ / zMult
                                 if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
 
+                                // TODO: P1: get this working properly!
                                 // snap segment center to shadow texel grid in light space to avoid shimmering
                                 //let eyeViewInverse = eyeView.Inverted
                                 //let segmentWidth = maxX - minX

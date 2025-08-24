@@ -3220,17 +3220,17 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Hl.Assert ()
 
-        // setup shadow cascade face for rendering
+        // setup shadow cascade layer for rendering
         OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascade.TextureId, 0, shadowCascadeLevel)
         OpenGL.Gl.ClearColor (lightCutoff, 0.0f, 0.0f, 0.0f)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
         OpenGL.Hl.Assert ()
 
-        // render to shadow cascade face
+        // render to shadow cascade
         GlRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowViewProjection shadowFrustum CascadedLight renderTasks renderer
         OpenGL.Hl.Assert ()
 
-        // unbind shadow cascade face frame buffer
+        // unbind shadow cascade layer
         OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowCascadeLevel)
         OpenGL.Hl.Assert ()
 
@@ -4229,6 +4229,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         let physicallyBasedShaders = OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
         OpenGL.Hl.Assert ()
 
+        // create shadow matrices buffer
+        let shadowMatricesCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let shadowMatrices = Array.zeroCreate<Matrix4x4> shadowMatricesCount
+
         // create white cube map
         let cubeMap =
             let white = "Assets/Default/White.png"
@@ -4454,7 +4458,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedAnimatedVao = physicallyBasedAnimatedVao
               PhysicallyBasedTerrainVao = physicallyBasedTerrainVao
               PhysicallyBasedShaders = physicallyBasedShaders
-              ShadowMatrices = Array.zeroCreate<Matrix4x4> (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
+              ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               CubeMapGeometry = cubeMapGeometry
