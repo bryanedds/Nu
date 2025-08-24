@@ -4230,9 +4230,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
         // ensure imgui ini file exists and was created by Gaia before initialising imgui
         let imguiIniFilePath = targetDir + "/imgui.ini"
-        if  not (File.Exists imguiIniFilePath) ||
-            (File.ReadAllLines imguiIniFilePath).[0] <> "[Window][Gaia]" then
-            File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
+        if File.Exists imguiIniFilePath then
+            let lines = File.ReadAllLines imguiIniFilePath
+            if lines[0] = "[Window][Gaia]" then
+                lines
+                |> Array.map (function // Update old property menu names
+                    | "[Window][Entity Properties]" -> "[Window][Entity##Properties]"
+                    | "[Window][Group Properties]" -> "[Window][Group##Properties]"
+                    | "[Window][Screen Properties]" -> "[Window][Screen##Properties]"
+                    | "[Window][Game Properties]" -> "[Window][Game##Properties]"
+                    | line -> line)
+                |> fun lines -> File.WriteAllLines (imguiIniFilePath, lines)
+            else File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
+        else File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies
         let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
