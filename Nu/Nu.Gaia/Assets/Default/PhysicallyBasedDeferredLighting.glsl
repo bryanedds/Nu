@@ -630,6 +630,74 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     return result;
 }
 
+vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
+{
+    vec3 result = vec3(0.0);
+    int shadowIndex = lightShadowIndices[lightIndex];
+    if (shadowIndex >= 0)
+    {
+        // grab light values
+        vec3 lightOrigin = lightOrigins[lightIndex];
+        vec3 lightDirection = lightDirections[lightIndex];
+
+        // compute ray info
+        vec3 startPosition = eyeCenter;
+        vec3 rayVector = position.xyz - startPosition;
+        float rayLength = length(rayVector);
+        vec3 rayDirection = rayVector / rayLength;
+
+        // compute step info
+        float stepLength = rayLength / ssvfSteps;
+        vec3 step = rayDirection * stepLength;
+
+        // compute light view term
+        float theta = dot(-rayDirection, lightDirection);
+
+        // compute dithering
+        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
+        // march over ray, accumulating fog light value
+        vec3 currentPosition = startPosition + step * dithering;
+        for (int i = 0; i < ssvfSteps; ++i)
+        {
+            // use the nearest available cascade for this step
+            for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
+            {
+                // compute tex coords and use when in range
+                mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
+                vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
+                vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
+                vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+                if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+                    shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+                    shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+                {
+                    // compute depths
+                    float shadowZ = shadowTexCoords.z;
+                    float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
+
+                    // step through ray, accumulating fog light moment
+                    if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
+                    {
+                        // mie scaterring approximated with Henyey-Greenstein phase function
+                        float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                        float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+                        result += fogMoment;
+                    }
+
+                    // step resolved in current cascade
+                    //break;
+                }
+            }
+
+            // step
+            currentPosition += step;
+        }
+        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+    }
+    return result;
+}
+
 void main()
 {
     // ensure fragment was written
@@ -745,7 +813,7 @@ void main()
                 case 0: { fogAccum.rgb += computeFogAccumPoint(position, i); break; } // point
                 case 1: { fogAccum.rgb += computeFogAccumSpot(position, i); break; } // spot
                 case 2: { fogAccum.rgb += computeFogAccumDirectional(position, i); break; } // directional
-                default: { break; } // cascaded
+                default: { fogAccum.rgb += computeFogAccumCascaded(position, i); break; } // cascaded
             }
         }
     }

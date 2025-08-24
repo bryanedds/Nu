@@ -3016,7 +3016,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
                 | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight | CascadedLight-> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
+                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
                 entry.Key shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
