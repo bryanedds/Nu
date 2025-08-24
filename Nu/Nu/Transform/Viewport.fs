@@ -98,13 +98,27 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let projection = viewport.Projection2d
         view * projection
 
+    /// Compute the scissor clip absolute view matrix.
+    static member getViewClipAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let translation = eyeSize * 0.5f * virtualScalar
+        Matrix4x4.CreateTranslation translation.V3
+
+    /// Compute the scissor clip relative view matrix.
+    static member getViewClipRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let translation = -eyeCenter + eyeSize * 0.5f * virtualScalar
+        Matrix4x4.CreateTranslation translation.V3
+
     /// Compute the scissor clip view matrix.
-    static member getViewClip (eyeCenter : Vector2) eyeSize viewport =
-        Viewport.getView2d false (eyeCenter / single viewport.DisplayScalar) eyeSize viewport
+    static member getViewClip absolute (eyeCenter : Vector2) eyeSize viewport =
+        if absolute
+        then Viewport.getViewClipAbsolute eyeCenter eyeSize viewport
+        else Viewport.getViewClipRelative eyeCenter eyeSize viewport
 
     /// Compute the scissor clip view projection matrix.
-    static member getViewProjectionClip eyeCenter eyeSize viewport =
-        let view = Viewport.getViewClip eyeCenter eyeSize viewport
+    static member getViewProjectionClip absolute eyeCenter eyeSize viewport =
+        let view = Viewport.getViewClip absolute eyeCenter eyeSize viewport
         let projection = viewport.Projection2d
         view * projection
 

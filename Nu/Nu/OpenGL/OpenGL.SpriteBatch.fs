@@ -44,9 +44,10 @@ module SpriteBatch =
     type [<ReferenceEquality>] SpriteBatchEnv =
         private
             { mutable SpriteIndex : int
-              mutable ViewProjectionAbsolute : Matrix4x4
-              mutable ViewProjectionRelative : Matrix4x4
-              mutable ViewProjectionClip : Matrix4x4
+              mutable ViewProjection2dAbsolute : Matrix4x4
+              mutable ViewProjection2dRelative : Matrix4x4
+              mutable ViewProjectionClipAbsolute : Matrix4x4
+              mutable ViewProjectionClipRelative : Matrix4x4
               PerimetersUniform : int
               TexCoordsesUniform : int
               PivotsUniform : int
@@ -99,7 +100,7 @@ module SpriteBatch =
             Gl.Enable EnableCap.CullFace
             match env.State.ClipOpt with
             | ValueSome clip ->
-                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionClip
+                let viewProjection = if env.State.Absolute then env.ViewProjectionClipAbsolute else env.ViewProjectionClipRelative
                 let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
                 let minNdc = minClip / minClip.W * single viewport.DisplayScalar
                 let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
@@ -125,7 +126,7 @@ module SpriteBatch =
             Gl.Uniform2 (env.PivotsUniform, env.Pivots)
             Gl.Uniform1 (env.RotationsUniform, env.Rotations)
             Gl.Uniform4 (env.ColorsUniform, env.Colors)
-            Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
+            Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ())
             Gl.Uniform1 (env.TexUniform, 0)
             Gl.ActiveTexture TextureUnit.Texture0
             Gl.BindTexture (TextureTarget.Texture2d, texture.TextureId)
@@ -163,13 +164,15 @@ module SpriteBatch =
 
     /// Beging a new sprite batch frame3.
     let BeginSpriteBatchFrame
-        (viewProjectionAbsolute : Matrix4x4 inref,
-         viewProjectionRelative : Matrix4x4 inref,
-         viewProjectionClip : Matrix4x4 inref,
+        (viewProjection2dAbsolute : Matrix4x4 inref,
+         viewProjection2dRelative : Matrix4x4 inref,
+         viewProjectionClipAbsolute : Matrix4x4 inref,
+         viewProjectionClipRelative : Matrix4x4 inref,
          env) =
-        env.ViewProjectionAbsolute <- viewProjectionAbsolute
-        env.ViewProjectionRelative <- viewProjectionRelative
-        env.ViewProjectionClip <- viewProjectionClip
+        env.ViewProjection2dAbsolute <- viewProjection2dAbsolute
+        env.ViewProjection2dRelative <- viewProjection2dRelative
+        env.ViewProjectionClipAbsolute <- viewProjectionClipAbsolute
+        env.ViewProjectionClipRelative <- viewProjectionClipRelative
         BeginSpriteBatch SpriteBatchState.defaultState env
 
     /// End the current sprite batch frame, if any.
@@ -239,7 +242,9 @@ module SpriteBatch =
         Hl.Assert ()
 
         // create env
-        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionClip = m4Identity
+        { SpriteIndex = 0
+          ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
+          ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           TexUniform = texUniform; Shader = shader

@@ -677,7 +677,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
-                let viewProjectionClip = Viewport.getViewProjectionClip eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClip = Viewport.getViewProjectionClip absolute eyeCenter eyeSize renderer.Viewport
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
@@ -849,8 +849,9 @@ type [<ReferenceEquality>] GlRenderer2d =
         // begin sprite batch frame
         let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
         let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
-        let viewProjectionClip = Viewport.getViewProjectionClip eyeCenter eyeSize viewport
-        OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClip, renderer.SpriteBatchEnv)
+        let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
+        let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
+        OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
         OpenGL.Hl.Assert ()
 
         // render frame
