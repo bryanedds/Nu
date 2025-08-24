@@ -663,37 +663,29 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
             // use the nearest available cascade for this step
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
             {
-                // compute tex coords and use when in range
+                // compute depths
                 mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
                 vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-                if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-                    shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-                    shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+                bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
+                float shadowZ = shadowTexCoords.z;
+                float shadowDepth = shadowTexCoordsInRange ? texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x : 1.0;
+
+                // step through ray, accumulating fog light moment
+                if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
                 {
-                    // compute depths
-                    float shadowZ = shadowTexCoords.z;
-                    float shadowDepth = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x;
-
-                    // step through ray, accumulating fog light moment
-                    if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
-                    {
-                        // mie scaterring approximated with Henyey-Greenstein phase function
-                        float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
-                        float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
-                        result += fogMoment;
-                    }
-
-                    // step resolved in current cascade
-                    //break;
+                    // mie scaterring approximated with Henyey-Greenstein phase function
+                    float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                    float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+                    result += fogMoment;
                 }
             }
 
             // step
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / (ssvfSteps * SHADOW_CASCADE_LEVELS)) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
