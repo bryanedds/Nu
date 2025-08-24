@@ -673,7 +673,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Choice3Of3 vehicleConstraintSettings ->
 
             // create vehicle offset COM shape
-            let offset = v3Down * 1.25f // TODO: P0: expose this as parameter.
+            let offset = v3Down * 1.25f // TODO: P1: expose this as parameter.
             let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
             // create vehicle body

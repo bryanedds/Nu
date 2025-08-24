@@ -1535,14 +1535,14 @@ type LightType =
         | DirectionalLight -> 2
         | CascadedLight -> 3
 
-    /// Check that the light should shadow interior surfaces with the given shadowFaceInfoOpt information.
-    static member shouldShadowInterior shadowFaceInfoOpt lightType =
+    /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
+    static member shouldShadowInterior shadowIndexInfoOpt lightType =
         match lightType with
         | PointLight | SpotLight (_, _) -> true
         | DirectionalLight -> false
         | CascadedLight ->
-            match shadowFaceInfoOpt with
-            | Some (face, _, _) -> face < 1
+            match shadowIndexInfoOpt with
+            | Some (index, _, _) -> index < 1
             | None -> true // always render shadow when no face info
 
     /// Make a light type from an enumeration value that can be utilized by a shader.

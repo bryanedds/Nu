@@ -2254,9 +2254,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                                | ShadowPass (_, faceInfoOpt, shadowLightType, _, shadowFrustum) ->
+                                | ShadowPass (_, indexInfoOpt, shadowLightType, _, shadowFrustum) ->
                                     if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
-                                        let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior faceInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
+                                        let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior indexInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
                                         Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                                     else false
                                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
@@ -2337,8 +2337,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let unculled =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, faceInfoOpt, shadowLightType, _, shadowFrustum) ->
-                            let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior faceInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
+                        | ShadowPass (_, indexInfoOpt, shadowLightType, _, shadowFrustum) ->
+                            let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior indexInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
                             Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
                         | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
@@ -3199,12 +3199,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         // unbind shadow frame buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
 
-    static member private renderShadowCascadeFace // TODO: P0: change nomenclature from face to layer.
+    static member private renderShadowCascade
         renderTasks
         renderer
         (lightOrigin : Vector3)
         (lightCutoff : single)
-        (shadowFace : int)
+        (shadowCascadeLevel : int)
         (shadowView : Matrix4x4)
         (shadowProjection : Matrix4x4)
         (shadowViewProjection : Matrix4x4)
@@ -3221,7 +3221,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // setup shadow cascade face for rendering
-        OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascade.TextureId, 0, shadowFace)
+        OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascade.TextureId, 0, shadowCascadeLevel)
         OpenGL.Gl.ClearColor (lightCutoff, 0.0f, 0.0f, 0.0f)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
         OpenGL.Hl.Assert ()
@@ -3231,7 +3231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // unbind shadow cascade face frame buffer
-        OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowFace)
+        OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowCascadeLevel)
         OpenGL.Hl.Assert ()
 
         // unbind shadow frame buffer
@@ -3902,7 +3902,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let spotAndDirectionalLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
-                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _) when id2 = id && indexInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
                 spotAndDirectionalLightsArray
 
@@ -3912,7 +3912,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowFaceInfoOpt, shadowLightType, shadowRotation, shadowFrustum) when lightId = shadowLightId && shadowFaceInfoOpt.IsNone && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, shadowRotation, shadowFrustum) when lightId = shadowLightId && shadowIndexInfoOpt.IsNone && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
 
                         // attempt to set up shadow texture drawing
                         let (shadowOrigin, shadowView, shadowProjection) =
@@ -3984,7 +3984,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let pointLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
-                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
                 pointLightsArray
 
@@ -3994,12 +3994,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowFaceInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowFaceInfoOpt.IsSome && shadowMapBufferIndex < Constants.Render.ShadowMapsMax ->
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowMapBufferIndex < Constants.Render.ShadowMapsMax ->
                         match shadowLightType with
                         | PointLight ->
 
-                            // destructure shadow face info
-                            let (shadowFace, shadowView, shadowProjection) = shadowFaceInfoOpt.Value
+                            // destructure shadow index info
+                            let (shadowFace, shadowView, shadowProjection) = shadowIndexInfoOpt.Value
                             let shadowViewProjection = shadowView * shadowProjection
 
                             // draw shadow texture when not cached
@@ -4022,7 +4022,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax)
 
                             // update renderer values or next shadow
-                            // NOTE: this behavior completely DEPENDS on shadow face messages for a shadow map being
+                            // NOTE: this behavior completely DEPENDS on shadow index messages for a shadow map being
                             // received and processed in numerical order.
                             if shadowFace = 0 then
                                 renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMax
@@ -4040,7 +4040,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let cascadedLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
-                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, faceInfoOpt, _, _, _) when id2 = id && faceInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
                 cascadedLightsArray
 
@@ -4050,12 +4050,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowFaceInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowFaceInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
                         match shadowLightType with
                         | CascadedLight ->
 
-                            // destructure shadow face info
-                            let (shadowFace, shadowView, shadowProjection) = shadowFaceInfoOpt.Value
+                            // destructure shadow index info
+                            let (shadowCascadeLevel, shadowView, shadowProjection) = shadowIndexInfoOpt.Value
                             let shadowViewProjection = shadowView * shadowProjection
 
                             // draw shadow texture when not cached
@@ -4069,41 +4069,41 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         not upToDate
                                     else true
                                 | (_, _) -> true
-                            if true (*shouldDraw*) then
+                            if shouldDraw then
 
-                                // draw shadow face
+                                // draw shadow cascade
                                 let shadowResolution = renderer.GeometryViewport.ShadowCascadeResolution
                                 let (shadowCascadeArray, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowCascadeArrayBuffersArray.[shadowCascadeBufferIndex]
-                                GlRenderer3d.renderShadowCascadeFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowViewProjection shadowFrustum shadowResolution shadowCascadeArray shadowRenderbuffer shadowFramebuffer
+                                GlRenderer3d.renderShadowCascade renderTasks renderer lightOrigin lightCutoff shadowCascadeLevel shadowView shadowProjection shadowViewProjection shadowFrustum shadowResolution shadowCascadeArray shadowRenderbuffer shadowFramebuffer
                                 OpenGL.Hl.Assert ()
 
-                                // filter shadows on the x (presuming that viewport already configured correctly)
+                                // filter cascade on the x (presuming that viewport already configured correctly)
                                 let (shadowCascadeFilter, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowCascadeFilterBuffersArray.[shadowCascadeBufferIndex]
                                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
                                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                                OpenGL.PhysicallyBased.DrawFilterGaussianFilterSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowFace, shadowCascadeArray, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianFilterSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowCascadeLevel, shadowCascadeArray, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
                                 OpenGL.Hl.Assert ()
 
-                                // filter shadows on the y (presuming that viewport already configured correctly)
+                                // filter cascade on the y (presuming that viewport already configured correctly)
                                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
                                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                                OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascadeArray.TextureId, 0, shadowFace)
+                                OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascadeArray.TextureId, 0, shadowCascadeLevel)
                                 OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowCascadeFilter, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
-                                OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowFace)
+                                OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowCascadeLevel)
                                 OpenGL.Hl.Assert ()
 
                             // remember the utilized index for the next frame
                             renderTasks.ShadowBufferIndexOpt <- Some (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax)
 
                             // update renderer values or next shadow
-                            // NOTE: this behavior completely DEPENDS on shadow face messages for a shadow cascade
+                            // NOTE: this behavior completely DEPENDS on shadow index messages for a shadow cascade
                             // being received and processed in numerical order.
                             renderer.ShadowMatrices.
-                                [shadowCascadeBufferIndex * Constants.Render.ShadowCascadeLevels + shadowFace + Constants.Render.ShadowTexturesMax] <-
+                                [shadowCascadeBufferIndex * Constants.Render.ShadowCascadeLevels + shadowCascadeLevel + Constants.Render.ShadowTexturesMax] <-
                                 shadowView * shadowProjection
-                            if shadowFace = 0 then
+                            if shadowCascadeLevel = 0 then
                                 renderer.LightShadowIndices.[lightId] <- shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax
-                            elif shadowFace = dec Constants.Render.ShadowCascadeLevels then
+                            elif shadowCascadeLevel = dec Constants.Render.ShadowCascadeLevels then
                                 shadowCascadeBufferIndex <- inc shadowCascadeBufferIndex
 
                         | PointLight | SpotLight (_, _) | DirectionalLight -> failwithumf ()

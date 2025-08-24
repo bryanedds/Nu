@@ -61,7 +61,7 @@
         [LightShadowBias 0.05]
         [LightShadowSampleScalar 0.02]
         [LightShadowExponent 80]
-        [LightShadowDensity 7]
+        [LightShadowDensity 16]
         [FogEnabled False]
         [FogStart 0]
         [FogFinish 0]

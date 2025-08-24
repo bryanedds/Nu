@@ -1509,8 +1509,8 @@ module WorldModule2 =
                     for element in hashSet do
                         if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
-                | ShadowPass (_, faceInfoOpt, shadowLightType, _, shadowFrustum) ->
-                    let shadowInterior = LightType.shouldShadowInterior faceInfoOpt shadowLightType
+                | ShadowPass (_, indexInfoOpt, shadowLightType, _, shadowFrustum) ->
+                    let shadowInterior = LightType.shouldShadowInterior indexInfoOpt shadowLightType
                     World.getElements3dInViewFrustum shadowInterior true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
                 | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
