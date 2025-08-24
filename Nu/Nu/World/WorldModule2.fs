@@ -1732,7 +1732,7 @@ module WorldModule2 =
                                 //minY <- minY + segmentCenterOffset.Y
                                 //maxY <- maxY + segmentCenterOffset.Y
                                 
-                                // 
+                                // compute segment frustum and render
                                 let segmentProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
                                 let segmentViewProjectionOrtho = segmentViewOrtho * segmentProjectionOrtho
                                 let segmentFrustum = Frustum segmentViewProjectionOrtho
