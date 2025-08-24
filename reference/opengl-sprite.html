@@ -131,7 +131,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3381', 3381)" onmouseover="showTip(event, '3381', 3381)">
+              <code onmouseout="hideTip(event, '3396', 3396)" onmouseover="showTip(event, '3396', 3396)">
                 <p>
                   <a id="CreateSpriteQuad">
                     <a href="#CreateSpriteQuad">
@@ -140,7 +140,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3381">
+              <div class="fsdocs-tip" id="3396">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Sprite.CreateSpriteQuad&#32;<span>onlyUpperRightQuadrant</span></span></code>
@@ -210,7 +210,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3382', 3382)" onmouseover="showTip(event, '3382', 3382)">
+              <code onmouseout="hideTip(event, '3397', 3397)" onmouseover="showTip(event, '3397', 3397)">
                 <p>
                   <a id="CreateSpriteShader">
                     <a href="#CreateSpriteShader">
@@ -219,7 +219,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3382">
+              <div class="fsdocs-tip" id="3397">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Sprite.CreateSpriteShader&#32;<span>shaderFilePath</span></span></code>
@@ -289,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3383', 3383)" onmouseover="showTip(event, '3383', 3383)">
+              <code onmouseout="hideTip(event, '3398', 3398)" onmouseover="showTip(event, '3398', 3398)">
                 <p>
                   <a id="CreateSpriteVao">
                     <a href="#CreateSpriteVao">
@@ -298,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3383">
+              <div class="fsdocs-tip" id="3398">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Sprite.CreateSpriteVao&#32;<span>()</span></span></code>
@@ -350,19 +350,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3384', 3384)" onmouseover="showTip(event, '3384', 3384)">
+              <code onmouseout="hideTip(event, '3399', 3399)" onmouseover="showTip(event, '3399', 3399)">
                 <p>
                   <a id="DrawSprite">
                     <a href="#DrawSprite">
-                      <code><span>Sprite.DrawSprite&#32;<span><span>(<span>vertices,&#32;indices,&#32;viewProjection,&#32;modelViewProjection,&#32;insetOpt,&#32;clipOpt,&#32;color,&#32;flip,&#32;textureWidth,&#32;textureHeight,&#32;texture,&#32;viewport,&#32;modelViewProjectionUniform,&#32;texCoords4Uniform,&#32;colorUniform,&#32;textureUniform,&#32;shader,&#32;vao</span>)</span></span></span></code>
+                      <code><span>Sprite.DrawSprite&#32;<span><span>(<span>vertices,&#32;indices,&#32;absolute,&#32;viewProjectionAbsolute,&#32;viewProjectionClip,&#32;modelViewProjection,&#32;insetOpt,&#32;clipOpt,&#32;color,&#32;flip,&#32;textureWidth,&#32;textureHeight,&#32;texture,&#32;viewport,&#32;modelViewProjectionUniform,&#32;texCoords4Uniform,&#32;colorUniform,&#32;textureUniform,&#32;shader,&#32;vao</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3384">
+              <div class="fsdocs-tip" id="3399">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Sprite.DrawSprite&#32;<span><span>(<span>vertices,&#32;indices,&#32;viewProjection,&#32;modelViewProjection,&#32;insetOpt,&#32;clipOpt,&#32;color,&#32;flip,&#32;textureWidth,&#32;textureHeight,&#32;texture,&#32;viewport,&#32;modelViewProjectionUniform,&#32;texCoords4Uniform,&#32;colorUniform,&#32;textureUniform,&#32;shader,&#32;vao</span>)</span></span></span></code>
+                  <code><span>Sprite.DrawSprite&#32;<span><span>(<span>vertices,&#32;indices,&#32;absolute,&#32;viewProjectionAbsolute,&#32;viewProjectionClip,&#32;modelViewProjection,&#32;insetOpt,&#32;clipOpt,&#32;color,&#32;flip,&#32;textureWidth,&#32;textureHeight,&#32;texture,&#32;viewport,&#32;modelViewProjectionUniform,&#32;texCoords4Uniform,&#32;colorUniform,&#32;textureUniform,&#32;shader,&#32;vao</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -385,7 +385,23 @@
                     <br/>
                     <span>
                       <b>
-                        viewProjection
+                        absolute
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        viewProjectionAbsolute
+                      </b>
+                      :
+                      <code><span>inref&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        viewProjectionClip
                       </b>
                       :
                       <code><span>inref&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&gt;</span></code>
@@ -554,7 +570,23 @@
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    viewProjection
+                    absolute
+                  </span>
+                  :
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    viewProjectionAbsolute
+                  </span>
+                  :
+                  <code><span>inref&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    viewProjectionClip
                   </span>
                   :
                   <code><span>inref&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a>&gt;</span></code>
@@ -687,7 +719,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3385', 3385)" onmouseover="showTip(event, '3385', 3385)">
+              <code onmouseout="hideTip(event, '3400', 3400)" onmouseover="showTip(event, '3400', 3400)">
                 <p>
                   <a id="VertexSize">
                     <a href="#VertexSize">
@@ -696,7 +728,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3385">
+              <div class="fsdocs-tip" id="3400">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Sprite.VertexSize&#32;<span></span></span></code>

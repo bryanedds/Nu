@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="PanelDispatcher (Nu)" />
+    <meta property="og:title" content="FilterGaussianArrayShader (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="PanelDispatcher (Nu)">
+    <meta name="twitter:title" content="FilterGaussianArrayShader (Nu)">
     
-    <title>PanelDispatcher (Nu) | Nu</title>
+    <title>FilterGaussianArrayShader (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,33 +92,45 @@
     <div id="content">
         <div>
   <h2>
-    PanelDispatcher Type
+    Filter.FilterGaussianArrayShader Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
-        Nu
+      <a href="/Nu/reference/opengl.html">
+        OpenGL
       </a>
     </dt>
     <dt>
       Assembly: Nu.dll
     </dt>
     <dt>
+      Parent Module: 
+      <a href="/Nu/reference/opengl-filter.html">
+        Filter
+      </a>
+    </dt>
+    <dt>
       Base Type: 
-      <code><a href="/Nu/reference/nu-guidispatcher.html">GuiDispatcher</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="/Nu/reference/nu-dispatcher.html">Dispatcher</a></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/opengl-filter-filtergaussianarrayshader.html">FilterGaussianArrayShader</a>&gt;</span></code>
       , 
-      <code><a href="/Nu/reference/nu-latebindings.html">LateBindings</a></code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/opengl-filter-filtergaussianarrayshader.html">FilterGaussianArrayShader</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Gives an entity the base behavior of a gui panel.
+         Describes a gaussian filter shader that operates on texture arrays that's loaded into GPU.
       </p>
     </div>
   </div>
@@ -126,17 +138,15 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
-  <div></div>
   <div>
     <h3>
-      Constructors
+      Record fields
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Constructor
+            Record Field
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -147,24 +157,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5931', 5931)" onmouseover="showTip(event, '5931', 5931)">
+              <code onmouseout="hideTip(event, '7683', 7683)" onmouseover="showTip(event, '7683', 7683)">
                 <p>
-                  <a id="``.ctor``">
-                    <a href="#``.ctor``">
-                      <code><span>PanelDispatcher<span>()</span></span></code>
+                  <a id="FilterGaussianArrayShader">
+                    <a href="#FilterGaussianArrayShader">
+                      <code>FilterGaussianArrayShader</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5931">
+              <div class="fsdocs-tip" id="7683">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PanelDispatcher<span>()</span></span></code>
+                  <code>FilterGaussianArrayShader</code>
                   <br/>
                   <br/>
                   <span>
-                    Returns: 
-                    <code><a href="/Nu/reference/nu-paneldispatcher.html">PanelDispatcher</a></code>
+                    Field type: 
+                    <code>uint</code>
                   </span>
                   <br/>
                 </div>
@@ -175,9 +185,126 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Returns: 
+                  Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-paneldispatcher.html">PanelDispatcher</a></code>
+                <code>uint</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7684', 7684)" onmouseover="showTip(event, '7684', 7684)">
+                <p>
+                  <a id="InputIndexUniform">
+                    <a href="#InputIndexUniform">
+                      <code>InputIndexUniform</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7684">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>InputIndexUniform</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7685', 7685)" onmouseover="showTip(event, '7685', 7685)">
+                <p>
+                  <a id="InputTextureArrayUniform">
+                    <a href="#InputTextureArrayUniform">
+                      <code>InputTextureArrayUniform</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7685">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>InputTextureArrayUniform</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7686', 7686)" onmouseover="showTip(event, '7686', 7686)">
+                <p>
+                  <a id="ScaleUniform">
+                    <a href="#ScaleUniform">
+                      <code>ScaleUniform</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7686">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ScaleUniform</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>int</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -187,103 +314,9 @@
     </table>
   </div>
   <div></div>
-  <div>
-    <h3>
-      Static members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Static member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5932', 5932)" onmouseover="showTip(event, '5932', 5932)">
-                <p>
-                  <a id="Facets">
-                    <a href="#Facets">
-                      <code><span>PanelDispatcher.Facets</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5932">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>PanelDispatcher.Facets</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;list</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5933', 5933)" onmouseover="showTip(event, '5933', 5933)">
-                <p>
-                  <a id="Properties">
-                    <a href="#Properties">
-                      <code><span>PanelDispatcher.Properties</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5933">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>PanelDispatcher.Properties</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydefinition">PropertyDefinition</a>&#32;list</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydefinition">PropertyDefinition</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <div></div>
+  <div></div>
+  <div></div>
 </div>
         
     </div>
