@@ -357,6 +357,34 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
     return 1.0;
 }
 
+float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
+{
+    for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
+    {
+        // attempt to compute travel average in view space
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
+        vec4 positionShadowClip = shadowMatrix * position;
+        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5; // adj-ndc space
+        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
+            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
+            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        {
+            // compute light distance travel through surface (not accounting for incidental surface concavity)
+            float shadowZScreen = shadowTexCoords.z; // linear, screen space
+            vec2 shadowTextureSize = textureSize(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], 0).xy;
+            vec2 shadowTexelSize = 1.0 / shadowTextureSize;
+            float shadowDepthScreen = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).x; // linear, screen space
+            float delta = shadowZScreen - shadowDepthScreen;
+            float shadowFar = lightCutoffs[lightIndex];
+            return max(0.0, delta * shadowFar);
+        }
+    }
+
+    // tracing out of range, return default
+    return 1.0;
+}
+
 vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
 {
     // retrieve light and shadow values
@@ -379,7 +407,8 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
             travel = geometryTravelDirectional(position, lightIndex, shadowIndex);
             break;
         default: // cascaded light
-            break; // TODO: P0: implement.
+            travel = geometryTravelCascaded(position, lightIndex, shadowIndex);
+            break;
         }
     }
 
