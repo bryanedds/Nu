@@ -98,6 +98,16 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let projection = viewport.Projection2d
         view * projection
 
+    /// Compute the scissor clip view matrix.
+    static member getViewClip (eyeCenter : Vector2) eyeSize viewport =
+        Viewport.getView2d false (eyeCenter / single viewport.DisplayScalar) eyeSize viewport
+
+    /// Compute the scissor clip view projection matrix.
+    static member getViewProjectionClip eyeCenter eyeSize viewport =
+        let view = Viewport.getViewClip eyeCenter eyeSize viewport
+        let projection = viewport.Projection2d
+        view * projection
+
     /// Compute the absolute 2d position from the given relative 3d position.
     static member position3dToPosition2d eyeCenter (eyeRotation : Quaternion) eyeFieldOfView (position : Vector3) viewport =
         let view = Viewport.getView3d eyeCenter eyeRotation

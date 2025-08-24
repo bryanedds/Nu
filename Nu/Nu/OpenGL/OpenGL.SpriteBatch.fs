@@ -46,6 +46,7 @@ module SpriteBatch =
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
+              mutable ViewProjectionClip : Matrix4x4
               PerimetersUniform : int
               TexCoordsesUniform : int
               PivotsUniform : int
@@ -98,7 +99,7 @@ module SpriteBatch =
             Gl.Enable EnableCap.CullFace
             match env.State.ClipOpt with
             | ValueSome clip ->
-                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
+                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionClip
                 let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
                 let minNdc = minClip / minClip.W * single viewport.DisplayScalar
                 let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
@@ -161,9 +162,14 @@ module SpriteBatch =
         BeginSpriteBatch state env
 
     /// Beging a new sprite batch frame3.
-    let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
+    let BeginSpriteBatchFrame
+        (viewProjectionAbsolute : Matrix4x4 inref,
+         viewProjectionRelative : Matrix4x4 inref,
+         viewProjectionClip : Matrix4x4 inref,
+         env) =
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
+        env.ViewProjectionClip <- viewProjectionClip
         BeginSpriteBatch SpriteBatchState.defaultState env
 
     /// End the current sprite batch frame, if any.
@@ -233,7 +239,7 @@ module SpriteBatch =
         Hl.Assert ()
 
         // create env
-        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity
+        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionClip = m4Identity
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           TexUniform = texUniform; Shader = shader
