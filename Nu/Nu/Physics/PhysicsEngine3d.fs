@@ -160,7 +160,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         // track body ground collisions
         let theta = contactNormal.Dot Vector3.UnitY |> acos |> abs
-        if theta < Constants.Physics.GroundAngleMax then
+        if theta <= Constants.Physics.GroundAngleMax then
             match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
             | (true, collisions) -> collisions.[body2Id] <- contactNormal
             | (false, _) -> physicsEngine.BodyCollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]

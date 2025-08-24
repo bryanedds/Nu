@@ -548,7 +548,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun normal ->
             let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
-            theta < Constants.Physics.GroundAngleMax)
+            theta <= Constants.Physics.GroundAngleMax)
  
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
