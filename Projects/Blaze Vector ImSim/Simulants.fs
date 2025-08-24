@@ -20,3 +20,4 @@ module Simulants =
     // gameplay screen
     let Gameplay = Game / "Gameplay"
     let GameplaySection i = Gameplay / ("Section" + string i)
+    let GameplayScene = Gameplay / "Scene"
