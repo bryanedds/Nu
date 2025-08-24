@@ -21,6 +21,7 @@ module PhysicallyBased =
           ShadowTextureBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowCascadeBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
+          ShadowCascadeBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
           GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
           AmbientBuffers : OpenGL.Texture.Texture * uint * uint
@@ -617,6 +618,14 @@ module PhysicallyBased =
                 | Right shadowCascadeBuffers -> shadowCascadeBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
 
+        // create second array of shadow csacade buffers
+        let shadowCascadeBuffers2Array =
+            [|for _ in 0 .. dec Constants.Render.ShadowCascadesMax do
+                let shadowResolution = geometryViewport.ShadowCascadeResolution
+                match OpenGL.Framebuffer.TryCreateShadowCascadeBuffers (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels) with
+                | Right shadowCascadeBuffers -> shadowCascadeBuffers
+                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+
         // create geometry buffers
         let geometryBuffers =
             match OpenGL.Framebuffer.TryCreateGeometryBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
@@ -734,6 +743,7 @@ module PhysicallyBased =
           ShadowTextureBuffers2Array = shadowTextureBuffers2Array
           ShadowMapBuffersArray = shadowMapBuffersArray
           ShadowCascadeBuffersArray = shadowCascadeBuffersArray
+          ShadowCascadeBuffers2Array = shadowCascadeBuffers2Array
           GeometryBuffers = geometryBuffers
           LightMappingBuffers = lightMappingBuffers
           IrradianceBuffers = irradianceBuffers
@@ -2583,6 +2593,53 @@ module PhysicallyBased =
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
         Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the filter gaussian array pass using a physically-based surface.
+    let DrawFilterGaussianArraySurface
+        (scale : Vector2,
+         inputIndex : int,
+         inputTextureArray : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterGaussianArrayShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+        
+        // setup shader
+        Gl.UseProgram shader.FilterGaussianArrayShader
+        Gl.Uniform2 (shader.ScaleUniform, scale.X, scale.Y)
+        Gl.Uniform1 (shader.InputIndexUniform, inputIndex)
+        Gl.Uniform1 (shader.InputTextureArrayUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2dArray, inputTextureArray.TextureId)
+        Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, inputTextureArray.TextureId, 0, inputIndex)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, 0u, 0, inputIndex)
 
         // teardown shader
         Gl.UseProgram 0u

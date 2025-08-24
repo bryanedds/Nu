@@ -1097,6 +1097,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
           FilterBox1dShader : OpenGL.Filter.FilterBoxShader
           FilterGaussian2dShader : OpenGL.Filter.FilterGaussianShader
+          FilterGaussianArray2dShader : OpenGL.Filter.FilterGaussianArrayShader
           FilterBilateralDownSample4dShader : OpenGL.Filter.FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : OpenGL.Filter.FilterBilateralUpSampleShader
           FilterFxaaShader : OpenGL.Filter.FilterFxaaShader
@@ -4069,9 +4070,25 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     else true
                                 | (_, _) -> true
                             if true (*shouldDraw*) then
+
+                                // draw shadow face
                                 let shadowResolution = renderer.GeometryViewport.ShadowCascadeResolution
                                 let (shadowCascade, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowCascadeBuffersArray.[shadowCascadeBufferIndex]
                                 GlRenderer3d.renderShadowCascadeFace renderTasks renderer lightOrigin lightCutoff shadowFace shadowView shadowProjection shadowViewProjection shadowFrustum shadowResolution shadowCascade shadowRenderbuffer shadowFramebuffer
+                                OpenGL.Hl.Assert ()
+
+                                // filter shadows on the x (presuming that viewport already configured correctly)
+                                let (shadowCascade2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowCascadeBuffers2Array.[shadowCascadeBufferIndex]
+                                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
+                                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowFace, shadowCascade, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.Hl.Assert ()
+
+                                // filter shadows on the y (presuming that viewport already configured correctly)
+                                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+                                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowFace, shadowCascade2, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.Hl.Assert ()
 
                             // remember the utilized index for the next frame
                             renderTasks.ShadowBufferIndexOpt <- Some (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax)
@@ -4172,6 +4189,10 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create filter gaussian 2d shader
         let filterGaussian2dShader = OpenGL.Filter.CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create filter gaussian array 2d shader
+        let filterGaussianArray2dShader = OpenGL.Filter.CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create filter bilateral down-sample shader
@@ -4422,6 +4443,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterShader = environmentFilterShader
               FilterBox1dShader = filterBox1dShader
               FilterGaussian2dShader = filterGaussian2dShader
+              FilterGaussianArray2dShader = filterGaussianArray2dShader
               FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
               FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
               FilterFxaaShader = filterFxaaShader

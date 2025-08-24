@@ -404,6 +404,7 @@ module Paths =
     let [<Literal>] EnvironmentFilterShaderFilePath = "Assets/Default/EnvironmentFilter.glsl"
     let [<Literal>] FilterBox1dShaderFilePath = "Assets/Default/FilterBox1d.glsl"
     let [<Literal>] FilterGaussian2dShaderFilePath = "Assets/Default/FilterGaussian2d.glsl"
+    let [<Literal>] FilterGaussianArray2dShaderFilePath = "Assets/Default/FilterGaussianArray2d.glsl"
     let [<Literal>] FilterBilateralDownSample4dShaderFilePath = "Assets/Default/FilterBilateralDownSample4d.glsl"
     let [<Literal>] FilterBilateralUpSample4dShaderFilePath = "Assets/Default/FilterBilateralUpSample4d.glsl"
     let [<Literal>] FilterGaussian4dShaderFilePath = "Assets/Default/FilterGaussian4d.glsl"
