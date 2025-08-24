@@ -1709,7 +1709,7 @@ module WorldModule2 =
                                     maxZ <- max maxZ cornerView.Z
 
                                 // overflow segment to avoid awkward clipping
-                                let zMult = Constants.Render.ShadowCascadeSegmentOverflow
+                                let zMult = Constants.Render.ShadowCascadeOverflow
                                 if minZ < 0.0f then minZ <- minZ * zMult else minZ <- minZ / zMult
                                 if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
 
