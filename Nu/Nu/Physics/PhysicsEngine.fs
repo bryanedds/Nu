@@ -267,16 +267,19 @@ type BodyType =
     /// Movable body that does not respond to forces or collisions, but can be moved kinematically by the user.
     | Kinematic
 
-    /// Movable character body that can be moved kinematically by the user.
+    /// Movable character body that does not respond to forces or collisions, but can be moved kinematically by the
+    /// user. Character bodies can follow special physics rules that give them additional capabilities, such as walking
+    /// up stairs and slopes.
     | KinematicCharacter
 
     /// Movable body that responds to forces and collisions.
     | Dynamic
 
-    /// Movable character body that responds to forces and collisions.
+    /// Movable character body that responds to forces and collisions. Character bodies can follow special physics
+    /// rules that give them additional capabilities, such as walking up stairs and slopes.
     | DynamicCharacter
 
-    /// Movable body that responds to forces and collisions and is driven by vehicle constraints.
+    /// Movable vehicle body that responds to forces and collisions and can be driven by vehicle-specific constraints.
     | Vehicle
 
     // Check that this body type is some sort of character.
