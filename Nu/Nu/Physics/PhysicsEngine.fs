@@ -260,11 +260,23 @@ type [<Struct>] BodyIntersection =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type BodyType =
+
+    /// Immovable body that does not respond to forces or collisions.
     | Static
+
+    /// Movable body that does not respond to forces or collisions, but can be moved kinematically by the user.
     | Kinematic
+
+    /// Movable character body that can be moved kinematically by the user.
     | KinematicCharacter
+
+    /// Movable body that responds to forces and collisions.
     | Dynamic
+
+    /// Movable character body that responds to forces and collisions.
     | DynamicCharacter
+
+    /// Movable body that responds to forces and collisions and is driven by vehicle constraints.
     | Vehicle
 
     // Check that this body type is some sort of character.
