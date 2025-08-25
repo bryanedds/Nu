@@ -4,6 +4,7 @@ open System.IO
 open System.Numerics
 open Prime
 open Nu
+open type WorldConfig
 
 type MetricsEntityDispatcher () =
     inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, false, false, Assets.Default.StaticModel)
@@ -134,7 +135,5 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
         Directory.SetCurrentDirectory AppContext.BaseDirectory
         Nu.init ()
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Metrics" }
-        let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
-        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+        let worldConfig = { defaultConfig with WorldConfig.SdlConfig.WindowConfig.WindowTitle = "Metrics" }
         World.run worldConfig (MetricsPlugin ())

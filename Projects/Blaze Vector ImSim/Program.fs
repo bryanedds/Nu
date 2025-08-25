@@ -2,6 +2,7 @@
 open System
 open System.IO
 open Nu
+open type WorldConfig
 module Program =
 
     // this the entry point for the BlazeVector application
@@ -13,14 +14,8 @@ module Program =
         // this initializes Nu before other Nu code is run
         Nu.init ()
 
-        // this specifies the window configuration used to display the game
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Blaze Vector ImSim" }
-        
-        // this specifies the configuration of the game engine's use of SDL
-        let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
-
-        // this specifies the world config using the above SDL config
-        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+        // this specifies the configuration used to display the game
+        let worldConfig = { defaultConfig with WorldConfig.SdlConfig.WindowConfig.WindowTitle = "Blaze Vector ImSim" }
 
         // this runs the engine with the given config and plugin, starting the game
         World.run worldConfig (BlazeVectorPlugin ())
