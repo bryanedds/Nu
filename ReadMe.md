@@ -1,7 +1,11 @@
+<div align="center">
+<img src="/Nu/Nu.Gaia/Assets/Default/NuSlide.png" alt="Nu logo" height="100" />
+
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)  [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg
 )](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
-**Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
+**Live Nu Game Engine Support on Discord [here![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)** 
+</div>
 
 So... just what is the **Nu Game Engine**?
 
