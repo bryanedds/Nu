@@ -326,7 +326,7 @@ module Content =
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName definitions entities =
         composite4<'entityDispatcher> entityName None definitions entities
 
-    /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
+    /// Describe an entity loaded from the given file path with the given dispatcher type and definitions as well as its contained entities.
     let compositeFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath definitions entities =
         composite4<'entityDispatcher> entityName (Some filePath) definitions entities
 
@@ -334,7 +334,7 @@ module Content =
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName definitions =
         composite<'entityDispatcher> entityName definitions []
 
-    /// Describe an entity with the given dispatcher type and definitions.
+    /// Describe an entity loaded from the given file path with the given dispatcher type and definitions.
     let entityFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath definitions =
         compositeFromFile<'entityDispatcher> entityName filePath definitions []
 
