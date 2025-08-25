@@ -338,151 +338,298 @@ module Content =
     let entityFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath definitions =
         compositeFromFile<'entityDispatcher> entityName filePath definitions []
 
+    /// <summary>
     /// Describe a 2d effect with the given definitions.
+    /// See <see cref="Effect2dDispatcher"/>.
+    /// </summary>
     let effect2d entityName definitions = entity<Effect2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static sprite with the given definitions.
+    /// See <see cref="StaticSpriteDispatcher"/>.
+    /// </summary>
     let staticSprite entityName definitions = entity<StaticSpriteDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an animated sprite with the given definitions.
+    /// See <see cref="AnimatedSpriteDispatcher"/>.
+    /// </summary>
     let animatedSprite entityName definitions = entity<AnimatedSpriteDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a basic static sprite emitter with the given definitions.
+    /// See <see cref="BasicStaticSpriteEmitterDispatcher"/>.
+    /// </summary>
     let basicStaticSpriteEmitter entityName definitions = entity<BasicStaticSpriteEmitterDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an association of gui entities with the given definitions and content.
+    /// See <see cref="GuiDispatcher"/>.
+    /// </summary>
     let association entityName definitions content = composite<GuiDispatcher> entityName definitions content
 
+    /// <summary>
     /// Describe a text entity with the given definitions.
+    /// See <see cref="TextDispatcher"/>.
+    /// </summary>
     let text entityName definitions = entity<TextDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a label with the given definitions.
+    /// See <see cref="LabelDispatcher"/>.
+    /// </summary>
     let label entityName definitions = entity<LabelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a button with the given definitions.
+    /// See <see cref="ButtonDispatcher"/>.
+    /// </summary>
     let button entityName definitions = entity<ButtonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a toggle button with the given definitions.
+    /// See <see cref="ToggleButtonDispatcher"/>.
+    /// </summary>
     let toggleButton entityName definitions = entity<ToggleButtonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a radio button with the given definitions.
+    /// See <see cref="RadioButtonDispatcher"/>.
+    /// </summary>
     let radioButton entityName definitions = entity<RadioButtonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a fill bar with the given definitions.
+    /// See <see cref="FillBarDispatcher"/>.
+    /// </summary>
     let fillBar entityName definitions = entity<FillBarDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a feeler with the given definitions.
+    /// See <see cref="FeelerDispatcher"/>.
+    /// </summary>
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a text box entity with the given definitions.
+    /// See <see cref="TextBoxDispatcher"/>.
+    /// </summary>
     let textBox entityName definitions = entity<TextBoxDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an fps entity with the given definitions.
+    /// See <see cref="FpsDispatcher"/>.
+    /// </summary>
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a panel with the given definitions and content.
+    /// See <see cref="PanelDispatcher"/>.
+    /// </summary>
     let panel entityName definitions content = composite<PanelDispatcher> entityName definitions content
 
+    /// <summary>
     /// Describe a 2d block with the given definitions.
+    /// See <see cref="Block2dDispatcher"/>.
+    /// </summary>
     let block2d entityName definitions = entity<Block2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d box with the given definitions.
+    /// See <see cref="Box2dDispatcher"/>.
+    /// </summary>
     let box2d entityName definitions = entity<Box2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d sphere with the given definitions.
+    /// See <see cref="Sphere2dDispatcher"/>.
+    /// </summary>
     let sphere2d entityName definitions = entity<Sphere2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d ball with the given definitions.
+    /// See <see cref="Ball2dDispatcher"/>.
+    /// </summary>
     let ball2d entityName definitions = entity<Ball2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d character with the given definitions.
+    /// See <see cref="Character2dDispatcher"/>.
+    /// </summary>
     let character2d entityName definitions = entity<Character2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d body joint with the given definitions.
+    /// See <see cref="BodyJoint2dDispatcher"/>.
+    /// </summary>
     let bodyJoint2d entityName definitions = entity<BodyJoint2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a tile map with the given definitions.
+    /// See <see cref="TileMapDispatcher"/>.
+    /// </summary>
     let tileMap entityName definitions = entity<TileMapDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a tmx map with the given definitions.
+    /// See <see cref="TmxMapDispatcher"/>.
+    /// </summary>
     let tmxMap entityName definitions = entity<TmxMapDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a Spine skeleton with the given definitions.
+    /// See <see cref="SpineSkeletonDispatcher"/>.
+    /// </summary>
     let spineSkeleton entityName definitions = entity<SpineSkeletonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d light probe with the given definitions.
+    /// See <see cref="LightProbe3dDispatcher"/>.
+    /// </summary>
     let lightProbe3d entityName definitions = entity<LightProbe3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d light with the given definitions.
+    /// See <see cref="Light3dDispatcher"/>.
+    /// </summary>
     let light3d entityName definitions = entity<Light3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a sky box with the given definitions.
+    /// See <see cref="SkyBoxDispatcher"/>.
+    /// </summary>
     let skyBox entityName definitions = entity<SkyBoxDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a basic static billboard emitter with the given definitions.
+    /// See <see cref="BasicStaticBillboardEmitterDispatcher"/>.
+    /// </summary>
     let basicStaticBillboardEmitter entityName definitions = entity<BasicStaticBillboardEmitterDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d effect with the given definitions.
+    /// See <see cref="Effect3dDispatcher"/>.
+    /// </summary>
     let effect3d entityName definitions = entity<Effect3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d block with the given definitions.
+    /// See <see cref="Block3dDispatcher"/>.
+    /// </summary>
     let block3d entityName definitions = entity<Block3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d box with the given definitions.
+    /// See <see cref="Box3dDispatcher"/>.
+    /// </summary>
     let box3d entityName definitions = entity<Box3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d sphere with the given definitions.
+    /// See <see cref="Sphere3dDispatcher"/>.
+    /// </summary>
     let sphere3d entityName definitions = entity<Sphere3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d ball with the given definitions.
+    /// See <see cref="Ball3dDispatcher"/>.
+    /// </summary>
     let ball3d entityName definitions = entity<Ball3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static billboard with the given definitions.
+    /// See <see cref="StaticBillboardDispatcher"/>.
+    /// </summary>
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an animated billboard with the given definitions.
+    /// See <see cref="AnimatedBillboardDispatcher"/>.
+    /// </summary>
     let animatedBillboard entityName definitions = entity<AnimatedBillboardDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static model with the given definitions.
+    /// See <see cref="StaticModelDispatcher"/>.
+    /// </summary>
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an animated model with the given definitions.
+    /// See <see cref="AnimatedModelDispatcher"/>.
+    /// </summary>
     let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a sensor model with the given definitions.
+    /// See <see cref="SensorModelDispatcher"/>.
+    /// </summary>
     let sensorModel entityName definitions = entity<SensorModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a rigid model with the given definitions.
+    /// See <see cref="RigidModelDispatcher"/>.
+    /// </summary>
     let rigidModel entityName definitions = entity<RigidModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static model surface with the given definitions.
+    /// See <see cref="StaticModelSurfaceDispatcher"/>.
+    /// </summary>
     let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a sensor model surface with the given definitions.
+    /// See <see cref="SensorModelSurfaceDispatcher"/>.
+    /// </summary>
     let sensorModelSurface entityName definitions = entity<SensorModelSurfaceDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a rigid model surface with the given definitions.
+    /// See <see cref="RigidModelSurfaceDispatcher"/>.
+    /// </summary>
     let rigidModelSurface entityName definitions = entity<RigidModelSurfaceDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d character with the given definitions.
+    /// See <see cref="Character3dDispatcher"/>.
+    /// </summary>
     let character3d entityName definitions = entity<Character3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d body joint with the given definitions.
+    /// See <see cref="BodyJoint3dDispatcher"/>.
+    /// </summary>
     let bodyJoint3d entityName definitions = entity<BodyJoint3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a terrain with the given definitions.
+    /// See <see cref="TerrainDispatcher"/>.
+    /// </summary>
     let terrain entityName definitions = entity<TerrainDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d navigation configuration.
+    /// See <see cref="Nav3dConfigDispatcher"/>.
+    /// </summary>
     let nav3dConfig entityName definitions = entity<Nav3dConfigDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d lighting configuration.
+    /// See <see cref="Lighting3dConfigDispatcher"/>.
+    /// </summary>
     let lighting3dConfig entityName definitions = entity<Lighting3dConfigDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static model expanded into an entity hierarchy with the given definitions.
+    /// See <see cref="StaticModelHierarchyDispatcher"/>.
+    /// </summary>
     let staticModelHierarchy entityName definitions = entity<StaticModelHierarchyDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a rigid model expanded into an entity hierarchy with the given definitions.
+    /// See <see cref="RigidModelHierarchyDispatcher"/>.
+    /// </summary>
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
