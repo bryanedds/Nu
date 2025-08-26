@@ -159,10 +159,18 @@ type CapsuleShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body capsule.
+/// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
       Radius : single
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a massless physics body in terms of a free form sequence of line segments.
+/// Collision occurs at its sides. When closed, the last link connects to the first.
+type ChainShape =
+    { Links : Vector3 array
+      Closed : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -214,6 +222,7 @@ type BodyShape =
     | SphereShape of SphereShape
     | CapsuleShape of CapsuleShape
     | BoxRoundedShape of BoxRoundedShape
+    | ChainShape of ChainShape
     | PointsShape of PointsShape
     | GeometryShape of GeometryShape
     | StaticModelShape of StaticModelShape
@@ -229,6 +238,7 @@ type BodyShape =
         | SphereShape sphere -> sphere.TransformOpt
         | CapsuleShape capsule -> capsule.TransformOpt
         | BoxRoundedShape boxRounded -> boxRounded.TransformOpt
+        | ChainShape chain -> chain.TransformOpt
         | PointsShape points -> points.TransformOpt
         | GeometryShape geometry -> geometry.TransformOpt
         | StaticModelShape staticModel -> staticModel.TransformOpt
@@ -244,6 +254,7 @@ type BodyShape =
         | SphereShape sphere -> sphere.PropertiesOpt
         | CapsuleShape capsule -> capsule.PropertiesOpt
         | BoxRoundedShape boxRounded -> boxRounded.PropertiesOpt
+        | ChainShape chain -> chain.PropertiesOpt
         | PointsShape points -> points.PropertiesOpt
         | GeometryShape geometry -> geometry.PropertiesOpt
         | StaticModelShape staticModel -> staticModel.PropertiesOpt
@@ -690,7 +701,8 @@ module Physics =
         | Constants.Physics.CollisionWildcard -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a primitive body shape to a specific size; non-primitive shapes are unaffected.
+    /// Localize a primitive body shape to a specific size, typically used in tile maps.
+    /// Non-primitive shapes are unaffected as they should be scaled independently.
     let rec localizePrimitiveBodyShape (size : Vector3) bodyShape =
         let scaleTranslation (scalar : Vector3) (transformOpt : Affine option) =
             match transformOpt with
@@ -702,6 +714,7 @@ module Physics =
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
         | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
         | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | ChainShape chainShape -> ChainShape { chainShape with Links = Array.map (fun vertex -> size * vertex) chainShape.Links; TransformOpt = scaleTranslation size chainShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
         | StaticModelShape _ as staticModelShape -> staticModelShape

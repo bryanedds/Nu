@@ -221,6 +221,18 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
+    static member private attachChainShape bodySource bodyProperties (chainShape : ChainShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity chainShape.TransformOpt
+        let vertices' = Array.zeroCreate chainShape.Links.Length
+        for i in 0 .. dec chainShape.Links.Length do
+            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (chainShape.Links.[i].Transform transform)
+        let bodyShape = (if chainShape.Closed then body.CreateLoopShape else body.CreateChainShape) (Common.Vertices vertices')
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match chainShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties chainShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
     static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
         assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -306,6 +318,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
         | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
+        | ChainShape chainShape -> PhysicsEngine2d.attachChainShape bodySource bodyProperties chainShape body
         | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
         | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
