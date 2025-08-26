@@ -80,6 +80,7 @@ type BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+    /// Check that the body shape properties are applicable for 3D physics.
     static member validateUtilization3d properties =
         properties.FrictionOpt.IsNone &&
         properties.RestitutionOpt.IsNone &&
