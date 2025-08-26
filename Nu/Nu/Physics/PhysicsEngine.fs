@@ -98,18 +98,32 @@ type [<NoEquality; NoComparison>] BodyUserObject =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type Substance =
+    /// Density is calculated from dividing constant mass by volume.
     | Mass of Mass : single
+    /// Mass is calculated from multiplying constant density with volume.
     | Density of Density : single
 
 /// Describe the form of collision detection to use.
 type CollisionDetection =
+    /// Use discrete collision detection.
+    /// This is the fastest form of collision detection, but fast-moving objects may tunnel through other
+    /// objects without detecting a collision.
     | Discontinuous
+    /// Use continuous collision detection.
+    /// This form of collision detection is slower, but fast-moving objects will not tunnel through other
+    /// objects without detecting a collision.
     | Continuous
 
 /// Describes the physical profile of a complex body.
 type [<Struct>] Profile =
+    /// A convex shape.
+    /// This shape is defined by a body that forms a convex hull.
     | Convex
+    /// A concave shape.
+    /// This shape is defined by a body may form a concave hull.
     | Concave
+    /// A simplified axis-aligned bounds.
+    /// This shape is defined by a bounding box around a body.
     | Bounds
 
 /// The shape of a physics body box.
