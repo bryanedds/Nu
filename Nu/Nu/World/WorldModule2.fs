@@ -1641,7 +1641,7 @@ module WorldModule2 =
                             // render faces
                             for i in 0 .. dec 6 do
                                 let (eyeForward, eyeUp) = eyeRotations.[i]
-                                let shadowRotation = Quaternion.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
+                                let shadowRotation = Quaternion.CreateLookAt (eyeForward, eyeUp)
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
                                 let shadowFrustum = Frustum shadowViewProjection
