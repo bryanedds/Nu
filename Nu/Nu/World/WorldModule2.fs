@@ -2371,7 +2371,7 @@ module EntityPropertyDescriptor =
         // change facet names
         | Constants.Engine.FacetNamesPropertyName ->
             let facetNames = value :?> string Set
-            World.trySetEntityFacetNames facetNames entity world
+            World.trySetEntityFacetNames facetNames entity world |> Either.mapRight ignore
 
         // change the property dynamically
         | _ ->

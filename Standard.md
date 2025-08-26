@@ -30,6 +30,8 @@ Correctness, Consistency, Simplicity
 
 11) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
 
+12) Never add AI-generated code that isn't tested! AI code often includes subtle landmines, and checking it in untested leaves landmines for other developers who may not even know it's AI-generated!
+
 **B) Consistency**
 
 1) Use 4 spaces for indentation, not 2, nor 3. [*5 is right out.*](https://www.youtube.com/watch?v=xOrgLj9lOwk&t=1m48s)

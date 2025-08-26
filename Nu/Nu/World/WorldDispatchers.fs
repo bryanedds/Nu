@@ -215,7 +215,7 @@ type Box2dDispatcher () =
     static member Properties =
         [define Entity.MountOpt None
          define Entity.BodyType Dynamic
-         define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })]
+         define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })]
 
 /// Gives an entity the base behavior of a rigid 2d sphere using Static physics.
 type Sphere2dDispatcher () =
