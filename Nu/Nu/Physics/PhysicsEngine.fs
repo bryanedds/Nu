@@ -661,7 +661,7 @@ type PhysicsEngine =
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
 
     /// Attempt to render physics with the given physics-engine-specific renderer.
-    abstract TryRender : renderSettings : RendererPhysics -> unit
+    abstract TryRender : renderer : RendererPhysics -> unit
     
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
