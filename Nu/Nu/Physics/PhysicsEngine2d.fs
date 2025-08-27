@@ -226,7 +226,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let vertices' = Array.zeroCreate chainShape.Links.Length
         for i in 0 .. dec chainShape.Links.Length do
             vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (chainShape.Links.[i].Transform transform)
-        let bodyShape = (if chainShape.Closed then body.CreateLoopShape else body.CreateChainShape) (Common.Vertices vertices')
+        let bodyShape =
+            if chainShape.Closed
+            then body.CreateLoopShape (Common.Vertices vertices')
+            else body.CreateChainShape (Common.Vertices vertices')
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match chainShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }

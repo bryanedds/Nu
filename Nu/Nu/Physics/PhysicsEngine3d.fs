@@ -296,6 +296,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
      
     /// Jolt does not support chain shapes natively, so each link is approximated with a capsule with tiny radius.
     static member private attachChainShape (bodyProperties : BodyProperties) (chainShape : Nu.ChainShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        Log.warnOnce "3D chain shapes are currently unsupported. Degrading to a convex points shape."
+        PhysicsEngine3d.attachPointsShape bodyProperties { Points = chainShape.Links; Profile = Convex; TransformOpt = chainShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt } scShapeSettings masses
+(*
         for i in 0 .. dec chainShape.Links.Length do
             if i = dec chainShape.Links.Length && not chainShape.Closed then () else // skip last link if not closed
             let l1 = chainShape.Links.[i]
@@ -327,6 +330,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyShapeId = match chainShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
             scShapeSettings.AddShape (&midPoint, &rotation, shapeSettings, uint bodyShapeId)
         masses // A chain has no mass so the mass list is unchanged.
+*)
 
     static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
