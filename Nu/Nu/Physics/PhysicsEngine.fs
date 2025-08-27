@@ -221,7 +221,7 @@ type BodyShape =
     | TerrainShape of TerrainShape
     | BodyShapes of BodyShape list
 
-    /// Get the shape's transform if it exists.
+    /// Get the shape's transform where it exists.
     member this.TransformOpt =
         match this with
         | EmptyShape -> None
@@ -236,7 +236,7 @@ type BodyShape =
         | TerrainShape terrain -> terrain.TransformOpt
         | BodyShapes _ -> None
 
-    /// Get the shape's properties if they exist.
+    /// Get the shape's properties where they exist.
     member this.PropertiesOpt =
         match this with
         | EmptyShape -> None
@@ -250,6 +250,22 @@ type BodyShape =
         | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.PropertiesOpt
         | TerrainShape terrain -> terrain.PropertiesOpt
         | BodyShapes _ -> None
+
+    /// Whether a shape is considered a 'primitive', such as one that is entirely localized via
+    /// Physics.localizePrimitiveBodyShape.
+    member this.IsPrimitive =
+        match this with
+        | EmptyShape
+        | BoxShape _
+        | SphereShape _
+        | CapsuleShape _
+        | BoxRoundedShape _
+        | PointsShape _ -> true
+        | GeometryShape _
+        | StaticModelShape _
+        | StaticModelSurfaceShape _
+        | TerrainShape _ -> false
+        | BodyShapes bodyShapes -> List.forall (fun (bodyShape : BodyShape) -> bodyShape.IsPrimitive) bodyShapes
 
     /// Check that a shape or any of its child shapes are sensors.
     member this.HasSensors =
