@@ -12,8 +12,15 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 #nowarn "44" // ignore aether deprecation warnings
 
+/// The 2d interface of PhysicsEngineRenderContext in terms of Aether Physics.
+type PhysicsEngine2dRenderContext =
+    inherit PhysicsEngineRenderContext
+    abstract EyeBounds : Box2
+    abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
+    abstract DrawCircle : position : Vector2 * radius : float32 * color : Color -> unit
+
 /// The 2d implementation of PhysicsEngine in terms of Aether Physics.
-type [<ReferenceEquality>] PhysicsEngine2d =
+and [<ReferenceEquality>] PhysicsEngine2d =
     private
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Vector3 option * Dynamics.Body>
@@ -30,8 +37,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private toPhysics value =
         value / Constants.Engine.Meter2d
 
+    static member private toPixelV2 (v2 : Common.Vector2) =
+        Vector2 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y)
+
     static member private toPixelV3 (v2 : Common.Vector2) =
-        Vector3 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y, 0.0f)
+        (PhysicsEngine2d.toPixelV2 v2).V3
 
     static member private toPhysicsV2 (v3 : Vector3) =
         Common.Vector2 (PhysicsEngine2d.toPhysics v3.X, PhysicsEngine2d.toPhysics v3.Y)
@@ -741,50 +751,61 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 Some integrationMessages
             else None
 
-        member physicsEngine.TryRender renderer =
-            match renderer with
-            | :? RendererPhysics2d as renderer ->
+        member physicsEngine.TryRender renderContext =
+            match renderContext with
+            | :? PhysicsEngine2dRenderContext as renderContext ->
                 for bodyEntry in physicsEngine.Bodies do
+
+                    // render bodies whose center is visible on screen
+                    // TODO: shouldn't we be rendering bodies where any part of them are on screen?
                     let (_, body) = bodyEntry.Value
-                    let bodyPosition = PhysicsEngine2d.toPixelV3 body.Position
-                    if (let mutable eyeBounds = renderer.EyeBounds
-                        eyeBounds.Contains bodyPosition.V2 <> ContainmentType.Disjoint) then
+                    let bodyPosition = PhysicsEngine2d.toPixelV2 body.Position
+                    let eyeBounds = renderContext.EyeBounds
+                    if eyeBounds.Contains bodyPosition <> ContainmentType.Disjoint then
+
+                        // render fixtures in body
                         for fixture in body.FixtureList do
+
+                            // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
+                            // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
                             let color =
-                                // Be consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
-                                // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
                                 match body.BodyType with
-                                | BodyType.Dynamic -> // Dynamic = random color per instance
+                                | BodyType.Dynamic -> // dynamic = random color per instance
                                     bodyEntry.Key.GetHashCode () |> uint |> colorPacked |> _.WithA(1f)
-                                | BodyType.Kinematic -> Color.Green // Keyframed = green
-                                | _ -> Color.Gray // Static = grey
+                                | BodyType.Kinematic -> // keyframed
+                                    Color.Green
+                                | _ -> // static or anything else
+                                    Color.Gray
+
+                            // render shape
                             match fixture.Shape with
                             | :? Collision.Shapes.PolygonShape as polygonShape ->
                                 let vertices = polygonShape.Vertices
                                 for i in 0 .. dec vertices.Count do
-                                    renderer.DrawLine
-                                        (bodyPosition + PhysicsEngine2d.toPixelV3 vertices[i],
-                                         bodyPosition + PhysicsEngine2d.toPixelV3 vertices[if i < dec vertices.Count then inc i else 0],
+                                    renderContext.DrawLine
+                                        (bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i],
+                                         bodyPosition + PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0],
                                          color)
                             | :? Collision.Shapes.CircleShape as circleShape ->
-                                renderer.DrawCircle
-                                    (bodyPosition + PhysicsEngine2d.toPixelV3 circleShape.Position,
+                                renderContext.DrawCircle
+                                    (bodyPosition + PhysicsEngine2d.toPixelV2 circleShape.Position,
                                      PhysicsEngine2d.toPixel circleShape.Radius,
                                      color)
                             | :? Collision.Shapes.EdgeShape as edgeShape ->
-                                renderer.DrawLine
-                                    (bodyPosition + PhysicsEngine2d.toPixelV3 edgeShape.Vertex1,
-                                     bodyPosition + PhysicsEngine2d.toPixelV3 edgeShape.Vertex2,
+                                renderContext.DrawLine
+                                    (bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1,
+                                     bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex2,
                                      color)
                             | :? Collision.Shapes.ChainShape as chainShape ->
                                 let vertices = chainShape.Vertices
-                                // If looped, the link from last point back to first point is already included.
-                                for i in 0 .. vertices.Count - 2 do
-                                    renderer.DrawLine
-                                        (bodyPosition + PhysicsEngine2d.toPixelV3 vertices[i],
-                                         bodyPosition + PhysicsEngine2d.toPixelV3 vertices[inc i],
-                                         color)
+                                if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
+                                    for i in 0 .. vertices.Count - 2 do
+                                        renderContext.DrawLine
+                                            (bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i],
+                                             bodyPosition + PhysicsEngine2d.toPixelV2 vertices[inc i],
+                                             color)
                             | _ -> ()
+
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
@@ -796,10 +817,3 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.CleanUp () =
             ()
-
-/// A renderer for 2D physics.
-and RendererPhysics2d =
-    inherit RendererPhysics
-    abstract EyeBounds : Box2
-    abstract DrawLine : start : Vector3 * stop : Vector3 * color : Color -> unit
-    abstract DrawCircle : position : Vector3 * radius : float32 * color : Color -> unit

@@ -607,8 +607,8 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
-/// Marker interface for a physics-engine-specific renderer.
-type RendererPhysics = interface end
+/// Marker interface for a physics-engine-specific rendering context.
+type PhysicsEngineRenderContext = interface end
 
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
@@ -660,8 +660,8 @@ type PhysicsEngine =
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
 
-    /// Attempt to render physics with the given physics-engine-specific renderer.
-    abstract TryRender : renderer : RendererPhysics -> unit
+    /// Attempt to render physics with the given physics-engine-specific render context.
+    abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit

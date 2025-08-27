@@ -95,8 +95,16 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
-/// The 2d implementation of PhysicsEngine in terms of Jolt Physics.
-type [<ReferenceEquality>] PhysicsEngine3d =
+/// The 3d implementation of PhysicsEngineRenderContext in terms of Jolt Physics.
+type PhysicsEngine3dRenderContext =
+    { EyeCenter : Vector3
+      EyeFrustum : Frustum
+      DebugRenderer : DebugRenderer
+      DrawSettings : DrawSettings }
+    interface PhysicsEngineRenderContext
+
+/// The 3d implementation of PhysicsEngine in terms of Jolt Physics.
+and [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
@@ -1417,9 +1425,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
-        member physicsEngine.TryRender renderer =
-            match renderer with
-            | :? RendererPhysics3d as renderer ->
+        member physicsEngine.TryRender renderContext =
+            match renderContext with
+            | :? PhysicsEngine3dRenderContext as renderer ->
                 let distanceMaxSquared =
                     Constants.Render.Body3dRenderDistanceMax *
                     Constants.Render.Body3dRenderDistanceMax
@@ -1495,11 +1503,3 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.JobSystem.Dispose ()
             physicsEngine.PhysicsContext.Dispose ()
             Foundation.Shutdown ()
-
-/// A renderer for 3D physics.
-and RendererPhysics3d =
-    inherit RendererPhysics
-    abstract EyeCenter : Vector3
-    abstract EyeFrustum : Frustum
-    abstract DebugRenderer : DebugRenderer
-    abstract DrawSettings : DrawSettings

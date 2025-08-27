@@ -1050,19 +1050,18 @@ module WorldImGui2 =
             let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
             let circles = Dictionary<struct (Color * float32), Vector2 List> ()
             let physicsEngine2d = World.getPhysicsEngine2d world
-            let renderer =
-                { new RendererPhysics2d with
-                    override this.DrawLine (start : Vector3, stop : Vector3, color) =
+            let renderContext =
+                { new PhysicsEngine2dRenderContext with
+                    override this.DrawLine (start : Vector2, stop : Vector2, color) =
                         match segments.TryGetValue color with
-                        | (true, segmentList) -> segmentList.Add (start.V2, stop.V2)
-                        | (false, _) -> segments.Add (color, List [struct (start.V2, stop.V2)])
-                    override this.DrawCircle (center : Vector3, radius, color) =
+                        | (true, segmentList) -> segmentList.Add (start, stop)
+                        | (false, _) -> segments.Add (color, List [struct (start, stop)])
+                    override this.DrawCircle (center : Vector2, radius, color) =
                         match circles.TryGetValue struct (color, radius) with
-                        | (true, circleList) -> circleList.Add center.V2
-                        | (false, _) -> circles.Add (struct (color, radius), List [center.V2])
+                        | (true, circleList) -> circleList.Add center
+                        | (false, _) -> circles.Add (struct (color, radius), List [center])
                     override _.EyeBounds = world.Eye2dBounds }
-
-            physicsEngine2d.TryRender renderer
+            physicsEngine2d.TryRender renderContext
             for struct (color, segmentList) in segments.Pairs' do
                 World.imGuiSegments2d false segmentList 1.0f color world
                 segmentList.Clear ()
@@ -1076,11 +1075,11 @@ module WorldImGui2 =
             | Some debugRenderer ->
                 let renderer = debugRenderer :?> JoltDebugRendererImGui
                 let physicsEngine3d = World.getPhysicsEngine3d world
-                physicsEngine3d.TryRender
-                    { new RendererPhysics3d with
-                        override _.DebugRenderer = renderer
-                        override _.DrawSettings = settings
-                        override _.EyeCenter = world.Eye3dCenter
-                        override _.EyeFrustum = world.Eye3dFrustumView }
+                let physicsEngine3dRenderContext =
+                    { DebugRenderer = renderer
+                      DrawSettings = settings
+                      EyeCenter = world.Eye3dCenter
+                      EyeFrustum = world.Eye3dFrustumView }
+                physicsEngine3d.TryRender physicsEngine3dRenderContext
                 renderer.Flush world
             | None -> ()
