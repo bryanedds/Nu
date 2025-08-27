@@ -18,8 +18,8 @@ module WorldPhysics =
         static member internal getPhysicsEngine3d (world : World) =
             world.Subsystems.PhysicsEngine3d
 
-        static member internal getJoltDebugRendererImGuiOpt (world : World) =
-            world.Subsystems.JoltDebugRendererImGuiOpt
+        static member internal getRendererPhysics3dOpt (world : World) =
+            world.Subsystems.RendererPhysics3dOpt
 
         /// Localize a primitive body shape to a specific size; non-primitive body shapes are unaffected.
         static member localizePrimitiveBodyShape (size : Vector3) (bodyShape : BodyShape) =

@@ -1071,15 +1071,15 @@ module WorldImGui2 =
 
         /// Render the 3D physics via ImGui using the given settings.
         static member imGuiRenderPhysics3d (settings : DrawSettings) world =
-            match World.getJoltDebugRendererImGuiOpt world with
+            match World.getRendererPhysics3dOpt world with
             | Some debugRenderer ->
-                let renderer = debugRenderer :?> JoltDebugRendererImGui
                 let physicsEngine3d = World.getPhysicsEngine3d world
-                let physicsEngine3dRenderContext =
-                    { DebugRenderer = renderer
+                let joltRenderer = debugRenderer :?> JoltDebugRendererImGui
+                let renderContext =
+                    { DebugRenderer = joltRenderer
                       DrawSettings = settings
                       EyeCenter = world.Eye3dCenter
                       EyeFrustum = world.Eye3dFrustumView }
-                physicsEngine3d.TryRender physicsEngine3dRenderContext
-                renderer.Flush world
+                physicsEngine3d.TryRender renderContext
+                joltRenderer.Flush world
             | None -> ()
