@@ -607,6 +607,9 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
+/// Marker interface for a physics-engine-specific rendering context.
+type PhysicsEngineRenderContext = interface end
+
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
@@ -656,9 +659,9 @@ type PhysicsEngine =
     
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
-    
-    /// Attempt torender physics with the given settings and renderer objects.
-    abstract TryRender : eyeCenter : Vector3 * eyeFrustum : Frustum * renderSettings : obj * rendererObj : obj -> unit
+
+    /// Attempt to render physics with the given physics-engine-specific render context.
+    abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
@@ -686,7 +689,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
-        member physicsEngine.TryRender (_, _, _, _) = ()
+        member physicsEngine.TryRender _ = ()
         member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 

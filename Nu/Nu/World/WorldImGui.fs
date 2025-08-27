@@ -1006,8 +1006,8 @@ module WorldImGui =
                         (promoted, edited || edited2, value)
                 else (promoted, edited, value)
 
-/// Renders 3D physics via ImGui.
-type RendererPhysics3d () =
+/// Override of Jolt DebugRenderer to render to ImGui.
+type JoltDebugRendererImGui () =
     inherit DebugRenderer ()
 
     let segments = Dictionary<Color, Segment3 List> ()
@@ -1043,15 +1043,43 @@ type RendererPhysics3d () =
 /// More ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui2 =
-    
     type World with
 
-        // Render the 3D physics via ImGui using the given settings.
+        /// Render the 2D physics via ImGui.
+        static member imGuiRenderPhysics2d world =
+            let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
+            let circles = Dictionary<struct (Color * float32), Vector2 List> ()
+            let physicsEngine2d = World.getPhysicsEngine2d world
+            let renderContext =
+                { new PhysicsEngine2dRenderContext with
+                    override this.DrawLine (start : Vector2, stop : Vector2, color) =
+                        match segments.TryGetValue color with
+                        | (true, segmentList) -> segmentList.Add (start, stop)
+                        | (false, _) -> segments.Add (color, List [struct (start, stop)])
+                    override this.DrawCircle (center : Vector2, radius, color) =
+                        match circles.TryGetValue struct (color, radius) with
+                        | (true, circleList) -> circleList.Add center
+                        | (false, _) -> circles.Add (struct (color, radius), List [center])
+                    override _.EyeBounds = world.Eye2dBounds }
+            physicsEngine2d.TryRender renderContext
+            for struct (color, segmentList) in segments.Pairs' do
+                World.imGuiSegments2d false segmentList 1.0f color world
+                segmentList.Clear ()
+            for struct (struct (color, radius), circleList) in circles.Pairs' do
+                World.imGuiCircles2d false circleList radius false color world
+                circleList.Clear ()
+
+        /// Render the 3D physics via ImGui using the given settings.
         static member imGuiRenderPhysics3d (settings : DrawSettings) world =
-            match World.getRendererPhysics3dOpt world with
-            | Some renderer ->
-                let renderer = renderer :?> RendererPhysics3d
+            match World.getJoltDebugRendererImGuiOpt world with
+            | Some debugRenderer ->
+                let renderer = debugRenderer :?> JoltDebugRendererImGui
                 let physicsEngine3d = World.getPhysicsEngine3d world
-                physicsEngine3d.TryRender (world.Eye3dCenter, world.Eye3dFrustumView, settings, renderer)
+                let physicsEngine3dRenderContext =
+                    { DebugRenderer = renderer
+                      DrawSettings = settings
+                      EyeCenter = world.Eye3dCenter
+                      EyeFrustum = world.Eye3dFrustumView }
+                physicsEngine3d.TryRender physicsEngine3dRenderContext
                 renderer.Flush world
             | None -> ()

@@ -95,8 +95,16 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
-/// The 2d implementation of PhysicsEngine in terms of Jolt Physics.
-type [<ReferenceEquality>] PhysicsEngine3d =
+/// The 3d implementation of PhysicsEngineRenderContext in terms of Jolt Physics.
+type PhysicsEngine3dRenderContext =
+    { EyeCenter : Vector3
+      EyeFrustum : Frustum
+      DebugRenderer : DebugRenderer
+      DrawSettings : DrawSettings }
+    interface PhysicsEngineRenderContext
+
+/// The 3d implementation of PhysicsEngine in terms of Jolt Physics.
+and [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
@@ -1417,21 +1425,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
-        member physicsEngine.TryRender (eyeCenter, eyeFrustum, renderSettings, rendererObj) =
-            match (renderSettings, rendererObj) with
-            | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
+        member physicsEngine.TryRender renderContext =
+            match renderContext with
+            | :? PhysicsEngine3dRenderContext as renderer ->
                 let distanceMaxSquared =
                     Constants.Render.Body3dRenderDistanceMax *
                     Constants.Render.Body3dRenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
                         let bodyCenter = body.WorldSpaceBounds.Center
-                        let bodyDistanceSquared = (bodyCenter - eyeCenter).MagnitudeSquared
+                        let bodyDistanceSquared = (bodyCenter - renderer.EyeCenter).MagnitudeSquared
                         body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
                         bodyDistanceSquared < distanceMaxSquared &&
-                        eyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
-                renderer.SetCameraPosition &eyeCenter
-                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBodyFilter)
+                        renderer.EyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
+                let eyeCenter = renderer.EyeCenter
+                renderer.DebugRenderer.SetCameraPosition &eyeCenter
+                let drawSettings = renderer.DrawSettings
+                physicsEngine.PhysicsContext.DrawBodies (&drawSettings, renderer.DebugRenderer, drawBodyFilter)
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
