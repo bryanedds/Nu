@@ -1417,21 +1417,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
-        member physicsEngine.TryRender (eyeCenter, eyeFrustum, renderSettings, rendererObj) =
-            match (renderSettings, rendererObj) with
-            | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
+        member physicsEngine.TryRender renderer =
+            match renderer with
+            | :? RendererPhysics3d as renderer ->
                 let distanceMaxSquared =
                     Constants.Render.Body3dRenderDistanceMax *
                     Constants.Render.Body3dRenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
                         let bodyCenter = body.WorldSpaceBounds.Center
-                        let bodyDistanceSquared = (bodyCenter - eyeCenter).MagnitudeSquared
+                        let bodyDistanceSquared = (bodyCenter - renderer.EyeCenter).MagnitudeSquared
                         body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
                         bodyDistanceSquared < distanceMaxSquared &&
-                        eyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
-                renderer.SetCameraPosition &eyeCenter
-                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBodyFilter)
+                        renderer.EyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
+                let eyeCenter = renderer.EyeCenter
+                renderer.DebugRenderer.SetCameraPosition &eyeCenter
+                let drawSettings = renderer.DrawSettings
+                physicsEngine.PhysicsContext.DrawBodies (&drawSettings, renderer.DebugRenderer, drawBodyFilter)
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
@@ -1493,3 +1495,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.JobSystem.Dispose ()
             physicsEngine.PhysicsContext.Dispose ()
             Foundation.Shutdown ()
+
+/// A renderer for 3D physics.
+and RendererPhysics3d =
+    inherit RendererPhysics
+    abstract EyeCenter : Vector3
+    abstract EyeFrustum : Frustum
+    abstract DebugRenderer : DebugRenderer
+    abstract DrawSettings : DrawSettings
