@@ -741,8 +741,51 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 Some integrationMessages
             else None
 
-        member physicsEngine.TryRender (_, _, _, _) =
-            () // TODO: implement.
+        member physicsEngine.TryRender renderer =
+            match renderer with
+            | :? RendererPhysics2d as renderer ->
+                for bodyEntry in physicsEngine.Bodies do
+                    let (_, body) = bodyEntry.Value
+                    let bodyPosition = PhysicsEngine2d.toPixelV3 body.Position
+                    if (let mutable eyeBounds = renderer.EyeBounds
+                        eyeBounds.Contains bodyPosition.V2 <> ContainmentType.Disjoint) then
+                        for fixture in body.FixtureList do
+                            let color =
+                                // Be consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
+                                // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
+                                match body.BodyType with
+                                | BodyType.Dynamic -> // Dynamic = random color per instance
+                                    bodyEntry.Key.GetHashCode () |> uint |> colorPacked |> _.WithA(1f)
+                                | BodyType.Kinematic -> Color.Green // Keyframed = green
+                                | _ -> Color.Gray // Static = grey
+                            match fixture.Shape with
+                            | :? Collision.Shapes.PolygonShape as polygonShape ->
+                                let vertices = polygonShape.Vertices
+                                for i in 0 .. dec vertices.Count do
+                                    renderer.DrawLine
+                                        (bodyPosition + PhysicsEngine2d.toPixelV3 vertices[i],
+                                         bodyPosition + PhysicsEngine2d.toPixelV3 vertices[if i < dec vertices.Count then inc i else 0],
+                                         color)
+                            | :? Collision.Shapes.CircleShape as circleShape ->
+                                renderer.DrawCircle
+                                    (bodyPosition + PhysicsEngine2d.toPixelV3 circleShape.Position,
+                                     PhysicsEngine2d.toPixel circleShape.Radius,
+                                     color)
+                            | :? Collision.Shapes.EdgeShape as edgeShape ->
+                                renderer.DrawLine
+                                    (bodyPosition + PhysicsEngine2d.toPixelV3 edgeShape.Vertex1,
+                                     bodyPosition + PhysicsEngine2d.toPixelV3 edgeShape.Vertex2,
+                                     color)
+                            | :? Collision.Shapes.ChainShape as chainShape ->
+                                let vertices = chainShape.Vertices
+                                // If looped, the link from last point back to first point is already included.
+                                for i in 0 .. vertices.Count - 2 do
+                                    renderer.DrawLine
+                                        (bodyPosition + PhysicsEngine2d.toPixelV3 vertices[i],
+                                         bodyPosition + PhysicsEngine2d.toPixelV3 vertices[inc i],
+                                         color)
+                            | _ -> ()
+            | _ -> ()
 
         member physicsEngine.ClearInternal () =
             physicsEngine.Joints.Clear ()
@@ -753,3 +796,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.CleanUp () =
             ()
+
+/// A renderer for 2D physics.
+and RendererPhysics2d =
+    inherit RendererPhysics
+    abstract EyeBounds : Box2
+    abstract DrawLine : start : Vector3 * stop : Vector3 * color : Color -> unit
+    abstract DrawCircle : position : Vector3 * radius : float32 * color : Color -> unit
