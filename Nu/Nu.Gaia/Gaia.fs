@@ -2101,9 +2101,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if not CaptureMode then
 
                 // physics debug rendering
-
-                World.imGuiSegment2d false (v2 -60f -160f, v2 -30f -160f) 10f Color.Red world
-
                 if PhysicsDebugRendering then
                     let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
                     World.imGuiRenderPhysics3d settings3d world
