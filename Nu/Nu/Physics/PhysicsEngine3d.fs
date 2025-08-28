@@ -296,41 +296,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
      
     /// Jolt does not support chain shapes natively, so each link is approximated with a capsule with tiny radius.
     static member private attachChainShape (bodyProperties : BodyProperties) (chainShape : Nu.ChainShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        // TODO: Implement this. Untested AI attempt at implementation: https://github.com/bryanedds/Nu/pull/1113/commits/082ff7db1b05d691ebc6776ad32dd8965e7bbe4d#diff-7be7db6f2992557124644202960c26adb7192d0fb54ccacb3dcfc7b8d1a49deb
         Log.warnOnce "3D chain shapes are currently unsupported. Degrading to a convex points shape."
         PhysicsEngine3d.attachPointsShape bodyProperties { Points = chainShape.Links; Profile = Convex; TransformOpt = chainShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt } scShapeSettings masses
-(*
-        for i in 0 .. dec chainShape.Links.Length do
-            if i = dec chainShape.Links.Length && not chainShape.Closed then () else // skip last link if not closed
-            let l1 = chainShape.Links.[i]
-            let l2 = if i = dec chainShape.Links.Length then chainShape.Links.[0] else chainShape.Links.[i + 1]
-            let height = Vector3.Distance (l1, l2) |> PhysicsEngine3d.sanitizeHeight
-            let radius = 0.1f // TODO: make configurable?
-            let shapeSettings = new CapsuleShapeSettings (height * 0.5f, radius)
-            let midPoint = (l1 + l2) * 0.5f
-            let quatLookAt (direction : Vector3) (up : Vector3) =
-                let z = -direction
-                let x = Vector3.Normalize (up.Cross z)
-                let y = z.Cross x
-                Quaternion.CreateFromRotationMatrix
-                    (Matrix4x4
-                        (x.X, y.X, z.X, 0.0f,
-                         x.Y, y.Y, z.Y, 0.0f,
-                         x.Z, y.Z, z.Z, 0.0f,
-                         0.0f, 0.0f, 0.0f, 1.0f))
-            let rotation = quatLookAt (Vector3.Normalize (l2 - l1)) Vector3.UnitY
-            let shapeSettings =
-                match chainShape.TransformOpt with
-                | Some transform ->
-                    let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
-                    new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
-                | None when bodyProperties.Scale <> v3One ->
-                    let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
-                    new ScaledShapeSettings (shapeSettings, &shapeScale)
-                | None -> shapeSettings
-            let bodyShapeId = match chainShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-            scShapeSettings.AddShape (&midPoint, &rotation, shapeSettings, uint bodyShapeId)
-        masses // A chain has no mass so the mass list is unchanged.
-*)
 
     static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
