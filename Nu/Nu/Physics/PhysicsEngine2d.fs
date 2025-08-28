@@ -756,55 +756,54 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | :? PhysicsEngine2dRenderContext as renderContext ->
                 for bodyEntry in physicsEngine.Bodies do
 
-                    // render bodies whose center is visible on screen
-                    // TODO: shouldn't we be rendering bodies where any part of them are on screen?
                     let (_, body) = bodyEntry.Value
                     let bodyPosition = PhysicsEngine2d.toPixelV2 body.Position
                     let eyeBounds = renderContext.EyeBounds
-                    if eyeBounds.Contains bodyPosition <> ContainmentType.Disjoint then
+                    let eyeSeesLine start stop =
+                        eyeBounds.Contains (Box2.Enclose (start, stop)) <> ContainmentType.Disjoint
+                    
+                    // render fixtures in body
+                    for fixture in body.FixtureList do
 
-                        // render fixtures in body
-                        for fixture in body.FixtureList do
+                        // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
+                        // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
+                        let color =
+                            match body.BodyType with
+                            | BodyType.Dynamic -> // dynamic = random color per instance
+                                bodyEntry.Key.GetHashCode () |> uint |> colorPacked |> _.WithA(1f)
+                            | BodyType.Kinematic -> // keyframed
+                                Color.Green
+                            | _ -> // static or anything else
+                                Color.Gray
 
-                            // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
-                            // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
-                            let color =
-                                match body.BodyType with
-                                | BodyType.Dynamic -> // dynamic = random color per instance
-                                    bodyEntry.Key.GetHashCode () |> uint |> colorPacked |> _.WithA(1f)
-                                | BodyType.Kinematic -> // keyframed
-                                    Color.Green
-                                | _ -> // static or anything else
-                                    Color.Gray
-
-                            // render shape
-                            match fixture.Shape with
-                            | :? Collision.Shapes.PolygonShape as polygonShape ->
-                                let vertices = polygonShape.Vertices
-                                for i in 0 .. dec vertices.Count do
-                                    renderContext.DrawLine
-                                        (bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i],
-                                         bodyPosition + PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0],
-                                         color)
-                            | :? Collision.Shapes.CircleShape as circleShape ->
-                                renderContext.DrawCircle
-                                    (bodyPosition + PhysicsEngine2d.toPixelV2 circleShape.Position,
-                                     PhysicsEngine2d.toPixel circleShape.Radius,
-                                     color)
-                            | :? Collision.Shapes.EdgeShape as edgeShape ->
-                                renderContext.DrawLine
-                                    (bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1,
-                                     bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex2,
-                                     color)
-                            | :? Collision.Shapes.ChainShape as chainShape ->
-                                let vertices = chainShape.Vertices
-                                if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
-                                    for i in 0 .. vertices.Count - 2 do
-                                        renderContext.DrawLine
-                                            (bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i],
-                                             bodyPosition + PhysicsEngine2d.toPixelV2 vertices[inc i],
-                                             color)
-                            | _ -> ()
+                        // render shape
+                        match fixture.Shape with
+                        | :? Collision.Shapes.PolygonShape as polygonShape ->
+                            let vertices = polygonShape.Vertices
+                            for i in 0 .. dec vertices.Count do
+                                let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
+                                let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]
+                                if eyeSeesLine start stop then
+                                    renderContext.DrawLine (start, stop, color)
+                        | :? Collision.Shapes.CircleShape as circleShape ->
+                            let position = bodyPosition + PhysicsEngine2d.toPixelV2 circleShape.Position
+                            let radius = PhysicsEngine2d.toPixel circleShape.Radius
+                            if eyeBounds.Contains (box2 (position - v2 radius radius) (v2 radius radius * 2f)) <> ContainmentType.Disjoint then
+                                renderContext.DrawCircle (position, radius, color)
+                        | :? Collision.Shapes.EdgeShape as edgeShape ->
+                            let start = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
+                            let stop = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
+                            if eyeSeesLine start stop then
+                                renderContext.DrawLine (start, stop, color)
+                        | :? Collision.Shapes.ChainShape as chainShape ->
+                            let vertices = chainShape.Vertices
+                            if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
+                                for i in 0 .. vertices.Count - 2 do
+                                    let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
+                                    let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[inc i]
+                                    if eyeSeesLine start stop then
+                                        renderContext.DrawLine (start, stop, color)
+                        | _ -> ()
 
             | _ -> ()
 
