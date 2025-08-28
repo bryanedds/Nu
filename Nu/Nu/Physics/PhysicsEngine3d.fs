@@ -298,7 +298,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachChainShape (bodyProperties : BodyProperties) (chainShape : Nu.ChainShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         // TODO: Implement this. Untested AI attempt at implementation: https://github.com/bryanedds/Nu/pull/1113/commits/082ff7db1b05d691ebc6776ad32dd8965e7bbe4d#diff-7be7db6f2992557124644202960c26adb7192d0fb54ccacb3dcfc7b8d1a49deb
         Log.warnOnce "3D chain shapes are currently unsupported. Degrading to a convex points shape."
-        PhysicsEngine3d.attachPointsShape bodyProperties { Points = chainShape.Links; Profile = Convex; TransformOpt = chainShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt } scShapeSettings masses
+        PhysicsEngine3d.attachPointsShape bodyProperties { Points = chainShape.Links; Profile = Convex; TransformOpt = chainShape.TransformOpt; PropertiesOpt = chainShape.PropertiesOpt } scShapeSettings masses
 
     static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
