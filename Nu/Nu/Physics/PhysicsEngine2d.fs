@@ -755,14 +755,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match renderContext with
             | :? PhysicsEngine2dRenderContext as renderContext ->
                 for bodyEntry in physicsEngine.Bodies do
-
+                    
+                    // render fixtures in body
                     let (_, body) = bodyEntry.Value
                     let bodyPosition = PhysicsEngine2d.toPixelV2 body.Position
                     let eyeBounds = renderContext.EyeBounds
-                    let eyeSeesLine start stop =
-                        eyeBounds.Contains (Box2.Enclose (start, stop)) <> ContainmentType.Disjoint
-                    
-                    // render fixtures in body
                     for fixture in body.FixtureList do
 
                         // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
@@ -783,7 +780,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             for i in 0 .. dec vertices.Count do
                                 let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
                                 let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]
-                                if eyeSeesLine start stop then
+                                let bounds = Box2.Enclose (start, stop)
+                                if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                     renderContext.DrawLine (start, stop, color)
                         | :? Collision.Shapes.CircleShape as circleShape ->
                             let position = bodyPosition + PhysicsEngine2d.toPixelV2 circleShape.Position
@@ -793,7 +791,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         | :? Collision.Shapes.EdgeShape as edgeShape ->
                             let start = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
                             let stop = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
-                            if eyeSeesLine start stop then
+                            let bounds = Box2.Enclose (start, stop)
+                            if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                 renderContext.DrawLine (start, stop, color)
                         | :? Collision.Shapes.ChainShape as chainShape ->
                             let vertices = chainShape.Vertices
@@ -801,7 +800,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                                 for i in 0 .. vertices.Count - 2 do
                                     let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
                                     let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[inc i]
-                                    if eyeSeesLine start stop then
+                                    let bounds = Box2.Enclose (start, stop)
+                                    if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                         renderContext.DrawLine (start, stop, color)
                         | _ -> ()
 
