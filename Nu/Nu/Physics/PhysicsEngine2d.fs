@@ -774,7 +774,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                                 Color.Gray
 
                         // render shape
-                        // TODO: see if we can optimize this by quickly getting the shape bounds instead of per-edge checking.
+                        // TODO: see if we can optimize these by quickly getting the shape bounds and checking for its
+                        // view intersection instead of per-edge checking.
                         match fixture.Shape with
                         | :? Collision.Shapes.PolygonShape as polygonShape ->
                             let vertices = polygonShape.Vertices
