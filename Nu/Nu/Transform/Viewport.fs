@@ -16,7 +16,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
       SsaoResolutionDivisor : int }
 
     /// The aspect ratio of this viewport.
-    member this.AspectRatio = single this.Bounds.Size.X / single this.Bounds.Size.Y
+    member this.AspectRatio =
+        single this.Bounds.Size.X / single this.Bounds.Size.Y
 
     /// The shadow texture buffer resolution appropriate for this viewport.
     member this.ShadowTextureResolution =
@@ -25,6 +26,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// The shadow map buffer resolution appropriate for this viewport.
     member this.ShadowMapResolution =
+        this.ShadowTextureResolution / 2
+
+    /// The shadow cascade buffer resolution appropriate for this viewport.
+    member this.ShadowCascadeResolution =
         this.ShadowTextureResolution / 2
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
@@ -90,6 +95,30 @@ type [<StructuralEquality; NoComparison>] Viewport =
     /// Compute the 2d view projection matrix.
     static member getViewProjection2d absolute eyeCenter eyeSize viewport =
         let view = Viewport.getView2d absolute eyeCenter eyeSize viewport
+        let projection = viewport.Projection2d
+        view * projection
+
+    /// Compute the scissor clip absolute view matrix.
+    static member getViewClipAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let translation = eyeSize * 0.5f * virtualScalar
+        Matrix4x4.CreateTranslation translation.V3
+
+    /// Compute the scissor clip relative view matrix.
+    static member getViewClipRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let translation = -eyeCenter + eyeSize * 0.5f * virtualScalar
+        Matrix4x4.CreateTranslation translation.V3
+
+    /// Compute the scissor clip view matrix.
+    static member getViewClip absolute (eyeCenter : Vector2) eyeSize viewport =
+        if absolute
+        then Viewport.getViewClipAbsolute eyeCenter eyeSize viewport
+        else Viewport.getViewClipRelative eyeCenter eyeSize viewport
+
+    /// Compute the scissor clip view projection matrix.
+    static member getViewProjectionClip absolute eyeCenter eyeSize viewport =
+        let view = Viewport.getViewClip absolute eyeCenter eyeSize viewport
         let projection = viewport.Projection2d
         view * projection
 

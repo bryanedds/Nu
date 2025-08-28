@@ -131,12 +131,12 @@ module Hl =
         SDL.SDL_GL_SetSwapInterval swapInterval |> ignore<int>
         if SDL.SDL_GL_MakeCurrent (window, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
         Gl.BindAPI ()
+        let vendorName = Gl.GetString StringName.Vendor
         let versionStr = Gl.GetString StringName.Version
-        Log.info ("Initialized OpenGL " + versionStr + ".")
+        Log.info ("Initialized OpenGL " + versionStr + " via " + vendorName + ".")
         if  not (versionStr.StartsWith "4.6") &&
             not (versionStr.StartsWith "5.0") (* heaven forbid... *) then
             Log.fail "Failed to create OpenGL version 4.6 or higher. Install your system's latest graphics drivers and try again."
-        let vendorName = Gl.GetString StringName.Vendor
         let glFinishRequired =
             Constants.Render.VendorNamesExceptedFromSwapGlFinishRequirement
             |> List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))

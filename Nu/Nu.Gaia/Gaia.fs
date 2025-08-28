@@ -1,4 +1,4 @@
-﻿// Gaia - The Nu Game Engine editor.
+// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds.
 
 namespace Nu.Gaia
@@ -102,7 +102,8 @@ module Gaia =
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private SnapDrag = 0.1f
     let mutable private AlternativeEyeTravelInput = false
-    let mutable private PhysicsDebugRendering = false
+    let mutable private PhysicsDebugRendering2d = false
+    let mutable private PhysicsDebugRendering3d = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
     let mutable private PropagationSourcesSearchStr = ""
@@ -1053,7 +1054,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     World.cutEntityToClipboard entity world
                     true
             else
-                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim of MMCC API)."
+                MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the ImSim or MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1136,7 +1137,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     GroupFileDialogState.FileName <- ""
                     true
                 else
-                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim of MMCC API)."
+                    MessageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the ImSim or MMCC API)."
                     false
             with exn ->
                 MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
@@ -1989,7 +1990,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor.PropertyName simulant world then // NOTE: this check is necessary because interaction with a property rollout can cause properties to be removed.
-                        if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
+                        match propertyDescriptor.PropertyName with
+                        | Constants.Engine.NamePropertyName -> // NOTE: name edit properties can't be replaced.
                             match simulant with
                             | :? Screen as screen ->
                                 let mutable name = screen.Name
@@ -2018,7 +2020,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 ImGui.Text ("(" + string (entity.GetId world) + ")")
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusPropertyOpt None world
-                        elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                        | Constants.Engine.ModelPropertyName ->
                             let getPropertyValue propertyDescriptor simulant world =
                                 let propertyValue = getPropertyValue propertyDescriptor simulant world
                                 if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
@@ -2047,7 +2049,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
                                     imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
                                 else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
-                        else
+                        | _ ->
                             let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                             let mutable replaced = false
                             let replaceProperty =
@@ -2100,7 +2102,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if not CaptureMode then
 
                 // physics debug rendering
-                if PhysicsDebugRendering then
+                if PhysicsDebugRendering2d then
+                    World.imGuiRenderPhysics2d world
+                if PhysicsDebugRendering3d then
                     let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
                     World.imGuiRenderPhysics3d settings3d world
 
@@ -2663,7 +2667,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                     else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
-                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim of MMCC API)."
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
                         | None -> ()
                     ImGui.EndDragDropTarget ()
 
@@ -3291,7 +3295,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Text "Input"
             ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
             ImGui.Text "Debug"
-            ImGui.Checkbox ("Physics Debug Rendering (3D only)", &PhysicsDebugRendering) |> ignore<bool>
+            ImGui.Checkbox ("Physics Debug Rendering (2d)", &PhysicsDebugRendering2d) |> ignore<bool>
+            ImGui.Checkbox ("Physics Debug Rendering (3d)", &PhysicsDebugRendering3d) |> ignore<bool>
             ImGui.Checkbox ("ImGui Debug Window", &ImGuiDebugWindow) |> ignore<bool>
         ImGui.End ()
 
@@ -4035,11 +4040,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
             // render light probes of the selected group in light box and view frustum
             let lightBox = World.getLight3dViewBox world
-            let viewFrustum = World.getEye3dFrustumView world
+            let eyeFrustum = World.getEye3dFrustum world
             let entities = World.getLightProbes3dInViewBox lightBox (HashSet ()) world
             let lightProbeModels =
                 entities
-                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world))
+                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && eyeFrustum.Intersects (entity.GetBounds world))
                 |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightProbeModels then
@@ -4057,7 +4062,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let entities = World.getLights3dInViewBox lightBox (HashSet ()) world
             let lightModels =
                 entities
-                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world))
+                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && eyeFrustum.Intersects (entity.GetBounds world))
                 |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightModels then

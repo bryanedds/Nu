@@ -1,6 +1,7 @@
-Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
+Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)  [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg
+)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
-**Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
+**Live Nu Game Engine Support on [Discord](https://discord.gg/BN79RxYAjD) [![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)**
 
 So... just what is the **Nu Game Engine**?
 
@@ -26,6 +27,8 @@ Look here to get started with your own project in Nu -
 [Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material) - start here first!
 
 [API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
+
+AI Documentation, which is about 1/3 lies and 1/2 incomplete - [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu)
 
 Some Media on the Nu Game Engine
 ================================

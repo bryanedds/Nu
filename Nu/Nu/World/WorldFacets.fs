@@ -2494,7 +2494,7 @@ module Light3dFacetExtensions =
                 shadowView.Translation <- this.GetPosition world
                 shadowView <- shadowView.Inverted
                 shadowView
-            | DirectionalLight ->
+            | DirectionalLight | CascadedLight ->
                 let shadowRotation = this.GetRotation world
                 let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                 shadowView.Translation <- this.GetPosition world
@@ -2510,7 +2510,7 @@ module Light3dFacetExtensions =
                 let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
-            | DirectionalLight ->
+            | DirectionalLight | CascadedLight ->
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
 

@@ -403,200 +403,347 @@ module WorldImSim =
         /// ImSim declare an empty association of gui entities with the given arguments.
         static member doAssociation name args world = World.doEntity<GuiDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a basic static sprite emitter with the given arguments.
+        /// See <see cref="BasicStaticSpriteEmitterDispatcher" />.
+        /// </summary>
         static member doBasicStaticSpriteEmitter name args world = World.doEntity<BasicStaticSpriteEmitterDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a 2d effect with the given arguments.
+        /// See <see cref="Effect2dDispatcher" />.
+        /// </summary>
         static member doEffect2d name args world = World.doEntity<Effect2dDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a static sprite with the given arguments.
+        /// See <see cref="StaticSpriteDispatcher" />.
+        /// </summary>
         static member doStaticSprite name args world = World.doEntity<StaticSpriteDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare an animated sprite with the given arguments.
+        /// See <see cref="AnimatedSpriteDispatcher" />.
+        /// </summary>
         static member doAnimatedSprite name args world = World.doEntity<AnimatedSpriteDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a text entity with the given arguments.
+        /// See <see cref="TextDispatcher" />.
+        /// </summary>
         static member doText name args world = World.doEntity<TextDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a label with the given arguments.
+        /// See <see cref="LabelDispatcher" />.
+        /// </summary>
         static member doLabel name args world = World.doEntity<LabelDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a button with the given arguments.
+        /// See <see cref="ButtonDispatcher" />.
+        /// </summary>
         static member doButton name args world =
             let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.ClickEvent entity world
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
+        /// <summary>
         /// ImSim declare a toggle button with the given arguments.
+        /// See <see cref="ToggleButtonDispatcher" />.
+        /// </summary>
         static member doToggleButton name args world =
             let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.ToggleEvent entity world
             let toggleChanged = World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
             (world.DeclaredEntity.GetToggled world, toggleChanged)
 
+        /// <summary>
         /// ImSim declare a radio button with the given arguments.
+        /// See <see cref="RadioButtonDispatcher" />.
+        /// </summary>
         static member doRadioButton name args world =
             let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.DialEvent entity world
             let dialChanged = World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
             (world.DeclaredEntity.GetDialed world, dialChanged)
 
+        /// <summary>
         /// ImSim declare a fill bar with the given arguments.
+        /// See <see cref="FillBarDispatcher" />.
+        /// </summary>
         static member doFillBar name args world = World.doEntity<FillBarDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a feeler with the given arguments.
+        /// See <see cref="FeelerDispatcher" />.
+        /// </summary>
         static member doFeeler name args world =
             let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.TouchEvent entity world
             let touchChanged = World.doEntityPlus<FeelerDispatcher, _> false init name args world
             (world.DeclaredEntity.GetTouched world, touchChanged)
 
+        /// <summary>
         /// ImSim declare a text box entity with the given arguments.
+        /// See <see cref="TextBoxDispatcher" />.
+        /// </summary>
         static member doTextBox name args world =
             let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.TextEditEvent entity world
             let textChanged = World.doEntityPlus<TextBoxDispatcher, _> false init name args world
             (world.DeclaredEntity.GetText world, textChanged)
 
+        /// <summary>
         /// ImSim declare an fps entity with the given arguments.
+        /// See <see cref="FpsDispatcher" />.
+        /// </summary>
         static member doFps name args world = World.doEntity<FpsDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare the beginning of a panel with the given arguments.
+        /// See <see cref="PanelDispatcher" />.
+        /// </summary>
         static member beginPanel name args world = World.beginEntity<PanelDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare the end of a panel.
+        /// See <see cref="PanelDispatcher" />.
+        /// </summary>
         static member endPanel world = World.endEntity world
 
+        /// <summary>
         /// ImSim declare a panel with the given arguments.
+        /// See <see cref="PanelDispatcher" />.
+        /// </summary>
         static member doPanel name args world = World.doEntity<PanelDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a 2d block with the given arguments.
+        /// See <see cref="Block2dDispatcher" />.
+        /// </summary>
         static member doBlock2d name args world =
             let results = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 2d box with the given arguments.
+        /// See <see cref="Box2dDispatcher" />.
+        /// </summary>
         static member doBox2d name args world =
             let results = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 2d sphere with the given arguments.
+        /// See <see cref="Sphere2dDispatcher" />.
+        /// </summary>
         static member doSphere2d name args world =
             let results = World.doEntityPlus<Sphere2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 2d ball with the given arguments.
+        /// See <see cref="Ball2dDispatcher" />.
+        /// </summary>
         static member doBall2d name args world =
             let results = World.doEntityPlus<Ball2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 2d character with the given arguments.
+        /// See <see cref="Character2dDispatcher" />.
+        /// </summary>
         static member doCharacter2d name args world =
             let results = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a tile map with the given arguments.
+        /// See <see cref="TileMapDispatcher" />.
+        /// </summary>
         static member doTileMap name args world =
             let results = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a user-defined tile map with the given arguments.
+        /// See <see cref="TmxMapDispatcher" />.
+        /// </summary>
         static member doTmxMap name args world =
             let results = World.doEntityPlus<TmxMapDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a tile map with the given arguments.
+        /// See <see cref="SpineSkeletonDispatcher" />.
+        /// </summary>
         static member doSpineSkeleton name args world =
             World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
 
+        /// <summary>
         /// ImSim declare a 3d light probe with the given arguments.
+        /// See <see cref="LightProbe3dDispatcher" />.
+        /// </summary>
         static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a 3d light with the given arguments.
+        /// See <see cref="Light3dDispatcher" />.
+        /// </summary>
         static member doLight3d name args world = World.doEntity<Light3dDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a sky box with the given arguments.
+        /// See <see cref="SkyBoxDispatcher" />.
+        /// </summary>
         static member doSkyBox name args world = World.doEntity<SkyBoxDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a basic static billboard emitter with the given arguments.
+        /// See <see cref="BasicStaticBillboardEmitterDispatcher" />.
+        /// </summary>
         static member doBasicStaticBillboardEmitter name args world = World.doEntity<BasicStaticBillboardEmitterDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a 3d effect with the given arguments.
+        /// See <see cref="Effect3dDispatcher" />.
+        /// </summary>
         static member doEffect3d name args world = World.doEntity<Effect3dDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a 3d block with the given arguments.
+        /// See <see cref="Block3dDispatcher" />.
+        /// </summary>
         static member doBlock3d name args world =
             let results = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 3d box with the given arguments.
+        /// See <see cref="Box3dDispatcher" />.
+        /// </summary>
         static member doBox3d name args world =
             let results = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 3d sphere with the given arguments.
+        /// See <see cref="Sphere3dDispatcher" />.
+        /// </summary>
         static member doSphere3d name args world =
             let results = World.doEntityPlus<Sphere3dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 3d ball with the given arguments.
+        /// See <see cref="Ball3dDispatcher" />.
+        /// </summary>
         static member doBall3d name args world =
             let results = World.doEntityPlus<Ball3dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a static billboard with the given arguments.
+        /// See <see cref="StaticBillboardDispatcher" />.
+        /// </summary>
         static member doStaticBillboard name args world = World.doEntity<StaticBillboardDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare an animated billboard with the given arguments.
+        /// See <see cref="AnimatedBillboardDispatcher" />.
+        /// </summary>
         static member doAnimatedBillboard name args world = World.doEntity<AnimatedBillboardDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a static model with the given arguments.
+        /// See <see cref="StaticModelDispatcher" />.
+        /// </summary>
         static member doStaticModel name args world = World.doEntity<StaticModelDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a animated model with the given arguments.
+        /// See <see cref="AnimatedModelDispatcher" />.
+        /// </summary>
         static member doAnimatedModel name args world = World.doEntity<AnimatedModelDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a sensor model with the given arguments.
+        /// See <see cref="SensorModelDispatcher" />.
+        /// </summary>
         static member doSensorModel name args world =
             let results = World.doEntityPlus<SensorModelDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a rigid model with the given arguments.
+        /// See <see cref="RigidModelDispatcher" />.
+        /// </summary>
         static member doRigidModel name args world =
             let results = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a static model surface with the given arguments.
+        /// See <see cref="StaticModelSurfaceDispatcher" />.
+        /// </summary>
         static member doStaticModelSurface name args world = World.doEntity<StaticModelSurfaceDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a sensor model surface with the given arguments.
+        /// See <see cref="SensorModelSurfaceDispatcher" />.
+        /// </summary>
         static member doSensorModelSurface name args world =
             let results = World.doEntityPlus<SensorModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a rigid model surface with the given arguments.
+        /// See <see cref="RigidModelSurfaceDispatcher" />.
+        /// </summary>
         static member doRigidModelSurface name args world =
             let results = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 3d character with the given arguments.
+        /// See <see cref="Character3dDispatcher" />.
+        /// </summary>
         static member doCharacter3d name args world =
             let results = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 3d body joint with the given arguments.
+        /// See <see cref="BodyJoint3dDispatcher" />.
+        /// </summary>
         static member doBodyJoint3d name args world =
             let results = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyJointId world, results)
 
+        /// <summary>
         /// ImSim declare a terrain with the given arguments.
+        /// See <see cref="TerrainDispatcher" />.
+        /// </summary>
         static member doTerrain name args world =
             let results = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
+        /// <summary>
         /// ImSim declare a 3d nav config with the given arguments.
+        /// See <see cref="Nav3dConfigDispatcher" />.
+        /// </summary>
         static member doNav3dConfig name args world = World.doEntity<Nav3dConfigDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a 3d light config with the given arguments.
+        /// See <see cref="Lighting3dConfigDispatcher" />.
+        /// </summary>
         static member doLighting3dConfig name args world = World.doEntity<Lighting3dConfigDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a static model hierarchy with the given arguments.
+        /// See <see cref="StaticModelHierarchyDispatcher" />.
+        /// </summary>
         static member doStaticModelHierarchy name args world = World.doEntity<StaticModelHierarchyDispatcher> name args world
 
+        /// <summary>
         /// ImSim declare a rigid model hierarchy with the given arguments.
+        /// See <see cref="RigidModelHierarchyDispatcher" />.
+        /// </summary>
         static member doRigidModelHierarchy name args world = World.doEntity<RigidModelHierarchyDispatcher> name args world

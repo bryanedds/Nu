@@ -80,6 +80,7 @@ type BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+    /// Check that the body shape properties are applicable for 3D physics.
     static member validateUtilization3d properties =
         properties.FrictionOpt.IsNone &&
         properties.RestitutionOpt.IsNone &&
@@ -98,18 +99,43 @@ type [<NoEquality; NoComparison>] BodyUserObject =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type Substance =
+
+    /// Density is calculated from dividing constant mass by volume.
     | Mass of Mass : single
+
+    /// Mass is calculated from multiplying constant density with volume (may be approximate).
     | Density of Density : single
 
 /// Describe the form of collision detection to use.
 type CollisionDetection =
+
+    /// Use discrete collision detection.
+    /// This is the fastest form of collision detection, but fast-moving objects may tunnel through other
+    /// objects without detecting a collision.
     | Discontinuous
+
+    /// Use continuous collision detection.
+    /// This form of collision detection is slower, but fast-moving objects will not tunnel through other
+    /// objects without detecting a collision.
     | Continuous
 
 /// Describes the physical profile of a complex body.
-type [<Struct>] Profile =
+type Profile =
+
+    /// A convex shape.
+    /// This shape is defined by a body that forms a convex hull.
+    /// Moderately efficient but accurate enough for many cases.
     | Convex
+
+    /// A concave shape.
+    /// This shape is defined by a body may form a concave hull.
+    /// Least efficient but often more accurate.
+    /// TODO: should this case be specified to require points to be formatted as groups of 3 to form triangles even for user-defined 2D and 3D engines?
     | Concave
+
+    /// A simplified axis-aligned bounds.
+    /// This shape is defined by a bounding box around a body.
+    /// Most efficient but least accurate.
     | Bounds
 
 /// The shape of a physics body box.
@@ -195,7 +221,7 @@ type BodyShape =
     | TerrainShape of TerrainShape
     | BodyShapes of BodyShape list
 
-    /// Get the shape's transform if it exists.
+    /// Get the shape's transform where it exists.
     member this.TransformOpt =
         match this with
         | EmptyShape -> None
@@ -210,7 +236,7 @@ type BodyShape =
         | TerrainShape terrain -> terrain.TransformOpt
         | BodyShapes _ -> None
 
-    /// Get the shape's properties if they exist.
+    /// Get the shape's properties where they exist.
     member this.PropertiesOpt =
         match this with
         | EmptyShape -> None
@@ -224,6 +250,22 @@ type BodyShape =
         | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.PropertiesOpt
         | TerrainShape terrain -> terrain.PropertiesOpt
         | BodyShapes _ -> None
+
+    /// Whether a shape is considered a 'primitive', such as one that is entirely localized via
+    /// Physics.localizePrimitiveBodyShape.
+    member this.IsPrimitive =
+        match this with
+        | EmptyShape
+        | BoxShape _
+        | SphereShape _
+        | CapsuleShape _
+        | BoxRoundedShape _
+        | PointsShape _ -> true
+        | GeometryShape _
+        | StaticModelShape _
+        | StaticModelSurfaceShape _
+        | TerrainShape _ -> false
+        | BodyShapes bodyShapes -> List.forall (fun (bodyShape : BodyShape) -> bodyShape.IsPrimitive) bodyShapes
 
     /// Check that a shape or any of its child shapes are sensors.
     member this.HasSensors =
@@ -260,11 +302,26 @@ type [<Struct>] BodyIntersection =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type BodyType =
+
+    /// Immovable body that does not respond to forces or collisions.
     | Static
+
+    /// Movable body that does not respond to forces or collisions, but can be moved kinematically by the user.
     | Kinematic
+
+    /// Movable character body that does not respond to forces or collisions, but can be moved kinematically by the
+    /// user. Character bodies can follow special physics rules that give them additional capabilities, such as walking
+    /// up stairs and slopes.
     | KinematicCharacter
+
+    /// Movable body that responds to forces and collisions.
     | Dynamic
+
+    /// Movable character body that responds to forces and collisions. Character bodies can follow special physics
+    /// rules that give them additional capabilities, such as walking up stairs and slopes.
     | DynamicCharacter
+
+    /// Movable vehicle body that responds to forces and collisions and can be driven by vehicle-specific constraints.
     | Vehicle
 
     // Check that this body type is some sort of character.
@@ -550,6 +607,9 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
+/// Marker interface for a physics-engine-specific rendering context.
+type PhysicsEngineRenderContext = interface end
+
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
@@ -599,9 +659,9 @@ type PhysicsEngine =
     
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
-    
-    /// Attempt torender physics with the given settings and renderer objects.
-    abstract TryRender : eyeCenter : Vector3 * eyeFrustum : Frustum * renderSettings : obj * rendererObj : obj -> unit
+
+    /// Attempt to render physics with the given physics-engine-specific render context.
+    abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
@@ -629,7 +689,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
-        member physicsEngine.TryRender (_, _, _, _) = ()
+        member physicsEngine.TryRender _ = ()
         member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 

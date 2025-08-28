@@ -87,7 +87,9 @@ module Sprite =
     let DrawSprite
         (vertices,
          indices,
-         viewProjection : Matrix4x4 inref,
+         absolute,
+         viewProjectionAbsolute : Matrix4x4 inref,
+         viewProjectionClip : Matrix4x4 inref,
          modelViewProjection : single array,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
@@ -150,6 +152,7 @@ module Sprite =
         match clipOpt with
         | ValueSome clip ->
             // HACK: disabling sprite clipping on Omni Blade since it previously triggered a bug in Proton.
+            //let viewProjection = if absolute then viewProjectionAbsolute else viewProjectionClip
             //let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
             //let minNdc = minClip / minClip.W * single viewport.DisplayScalar
             //let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2

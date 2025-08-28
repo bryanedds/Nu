@@ -81,7 +81,7 @@ void main()
 #version 460 core
 
 const float GAMMA = 2.2;
-const float ALBEDO_ALPHA_MIN = 0.3;
+const float ALBEDO_ALPHA_MIN = 0.35; // NOTE: slightly higher than static surface to improve dual-rendered blending.
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
