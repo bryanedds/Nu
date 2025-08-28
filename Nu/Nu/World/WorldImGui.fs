@@ -29,12 +29,13 @@ module WorldImGui =
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
+            let radiusScaled = radius * single Globals.Render.DisplayScalar
             for position in positions do
                 let color = computeColor position
                 let positionWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
                 if filled
-                then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
-                else drawList.AddCircle (positionWindow, radius, color.Abgr)
+                then drawList.AddCircleFilled (positionWindow, radiusScaled, color.Abgr)
+                else drawList.AddCircle (positionWindow, radiusScaled, color.Abgr)
 
         /// Render circles via ImGui in the current eye 2d space.
         static member imGuiCircles2d absolute position radius filled color world =
