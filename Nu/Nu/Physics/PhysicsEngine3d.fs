@@ -511,7 +511,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodyProperties sphereShape scShapeSettings masses
         | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
-        | ChainShape chainShape -> PhysicsEngine3d.attachChainShape bodyProperties chainShape scShapeSettings masses
+        | ChainShape chainShape -> PhysicsEngine3d.attachChainShape bodyProperties chainShape scShapeSettings masses physicsEngine
         | PointsShape pointsShape -> PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
         | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
         | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
