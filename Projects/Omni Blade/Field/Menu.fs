@@ -68,7 +68,7 @@ type MenuUse =
                 | BrassKey -> "A polished brass key adorned with a lamb's head."
                 | IronKey -> "A slightly rusted iron key adorned with goat horns."
                 | CopperKey -> "A brass key adorned with a green eye."
-                | AluminumKey -> "A cheap-looking key."
+                | AluminumKey -> "A cheap looking key."
                 | PewterKey -> "A weathered key. It looks bent but usable."
                 | SteelKey -> "A key made of steel adorned with a crown."
             Some (MenuUse.make selection keyItem.Name "(Key Item)" description)
