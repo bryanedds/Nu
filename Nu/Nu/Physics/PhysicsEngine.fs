@@ -165,10 +165,21 @@ type BoxRoundedShape =
       Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
+      
+/// The shape of a massless physics body in terms of one line segment.
+/// Collision occurs at its side.
+type EdgeShape =
+    { Start : Vector3
+      Stop : Vector3
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a massless physics body in terms of a free form sequence of line segments.
 /// Collision occurs at its sides. When closed, the last link connects to the first.
-type ChainShape =
+/// It is expected that self-intersection does not occur.
+/// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
+/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+type ContourShape =
     { Links : Vector3 array
       Closed : bool
       TransformOpt : Affine option
@@ -222,7 +233,8 @@ type BodyShape =
     | SphereShape of SphereShape
     | CapsuleShape of CapsuleShape
     | BoxRoundedShape of BoxRoundedShape
-    | ChainShape of ChainShape
+    | EdgeShape of EdgeShape
+    | ContourShape of ContourShape
     | PointsShape of PointsShape
     | GeometryShape of GeometryShape
     | StaticModelShape of StaticModelShape
@@ -230,7 +242,7 @@ type BodyShape =
     | TerrainShape of TerrainShape
     | BodyShapes of BodyShape list
 
-    /// Get the shape's transform if it exists.
+    /// Get the shape's transform where it exists.
     member this.TransformOpt =
         match this with
         | EmptyShape -> None
@@ -238,7 +250,8 @@ type BodyShape =
         | SphereShape sphere -> sphere.TransformOpt
         | CapsuleShape capsule -> capsule.TransformOpt
         | BoxRoundedShape boxRounded -> boxRounded.TransformOpt
-        | ChainShape chain -> chain.TransformOpt
+        | EdgeShape edge -> edge.TransformOpt
+        | ContourShape contour -> contour.TransformOpt
         | PointsShape points -> points.TransformOpt
         | GeometryShape geometry -> geometry.TransformOpt
         | StaticModelShape staticModel -> staticModel.TransformOpt
@@ -246,7 +259,7 @@ type BodyShape =
         | TerrainShape terrain -> terrain.TransformOpt
         | BodyShapes _ -> None
 
-    /// Get the shape's properties if they exist.
+    /// Get the shape's properties where they exist.
     member this.PropertiesOpt =
         match this with
         | EmptyShape -> None
@@ -254,13 +267,32 @@ type BodyShape =
         | SphereShape sphere -> sphere.PropertiesOpt
         | CapsuleShape capsule -> capsule.PropertiesOpt
         | BoxRoundedShape boxRounded -> boxRounded.PropertiesOpt
-        | ChainShape chain -> chain.PropertiesOpt
+        | EdgeShape edge -> edge.PropertiesOpt
+        | ContourShape contour -> contour.PropertiesOpt
         | PointsShape points -> points.PropertiesOpt
         | GeometryShape geometry -> geometry.PropertiesOpt
         | StaticModelShape staticModel -> staticModel.PropertiesOpt
         | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.PropertiesOpt
         | TerrainShape terrain -> terrain.PropertiesOpt
         | BodyShapes _ -> None
+
+    /// Whether a shape is considered a 'primitive', such as one that is entirely localized via
+    /// Physics.localizePrimitiveBodyShape.
+    member this.IsPrimitive =
+        match this with
+        | EmptyShape
+        | BoxShape _
+        | SphereShape _
+        | CapsuleShape _
+        | BoxRoundedShape _
+        | EdgeShape _
+        | ContourShape _
+        | PointsShape _ -> true
+        | GeometryShape _
+        | StaticModelShape _
+        | StaticModelSurfaceShape _
+        | TerrainShape _ -> false
+        | BodyShapes bodyShapes -> List.forall (fun (bodyShape : BodyShape) -> bodyShape.IsPrimitive) bodyShapes
 
     /// Check that a shape or any of its child shapes are sensors.
     member this.HasSensors =
@@ -602,6 +634,9 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
+/// Marker interface for a physics-engine-specific rendering context.
+type PhysicsEngineRenderContext = interface end
+
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
@@ -651,9 +686,9 @@ type PhysicsEngine =
     
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
-    
-    /// Attempt torender physics with the given settings and renderer objects.
-    abstract TryRender : eyeCenter : Vector3 * eyeFrustum : Frustum * renderSettings : obj * rendererObj : obj -> unit
+
+    /// Attempt to render physics with the given physics-engine-specific render context.
+    abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
@@ -681,7 +716,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
-        member physicsEngine.TryRender (_, _, _, _) = ()
+        member physicsEngine.TryRender _ = ()
         member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 
@@ -714,7 +749,8 @@ module Physics =
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
         | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
         | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
-        | ChainShape chainShape -> ChainShape { chainShape with Links = Array.map (fun vertex -> size * vertex) chainShape.Links; TransformOpt = scaleTranslation size chainShape.TransformOpt }
+        | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
+        | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
         | StaticModelShape _ as staticModelShape -> staticModelShape
