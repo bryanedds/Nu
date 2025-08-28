@@ -794,7 +794,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                                 renderContext.DrawCircle (position, radius, color)
                         | :? Collision.Shapes.EdgeShape as edgeShape ->
                             let start = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex1).Transform transform
-                            let stop = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex1).Transform transform
+                            let stop = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex2).Transform transform
                             let bounds = Box2.Enclose (start, stop)
                             if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                 renderContext.DrawLine (start, stop, color)
