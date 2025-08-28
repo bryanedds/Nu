@@ -470,7 +470,7 @@ module WorldModule4 =
             let imGui = ImGui (false, outerViewport.Bounds.Size)
             let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
             let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
-            let rendererPhysics3dOpt = new RendererPhysics3d ()
+            let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
                 then RendererInline () :> RendererProcess
@@ -493,7 +493,7 @@ module WorldModule4 =
 
             // make the world
             let world =
-                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree config (Some sdlDeps) imGui physicsEngine2d physicsEngine3d (Some rendererPhysics3dOpt) rendererProcess audioPlayer activeGameDispatcher
+                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree config (Some sdlDeps) imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer activeGameDispatcher
 
             // add the keyed values
             for (key, value) in plugin.MakeKeyedValues world do

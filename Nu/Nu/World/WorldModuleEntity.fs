@@ -2663,9 +2663,15 @@ module WorldModuleEntity =
                     World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                     World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
                     World.publishEntityChanges entity world
-                    Right ()
+                    Right true
                 | Left error -> Left error
-            else Right ()
+            else Right false
+
+        /// Set the entity's facet names.
+        static member setEntityFacetNames facetNames entity world =
+            match World.trySetEntityFacetNames facetNames entity world with
+            | Right changed -> changed
+            | Left _ -> false
 
         static member internal updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (entity : Entity) world : unit =
 
@@ -2829,6 +2835,7 @@ module WorldModuleEntity =
                  ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
                  ("AlwaysRender", fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world)
                  ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
+                 ("FacetNames", fun property entity world -> World.setEntityFacetNames (property.PropertyValue :?> string Set) entity world)
                  ("PropagatedDescriptorOpt", fun property entity world -> World.setEntityPropagatedDescriptorOpt (property.PropertyValue :?> EntityDescriptor option) entity world)
                  ("Order", fun property entity world -> World.setEntityOrder (property.PropertyValue :?> int64) entity world)]
         EntitySetters <- entitySetters.ToFrozenDictionary ()
