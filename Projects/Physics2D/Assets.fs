@@ -8,7 +8,9 @@ open Nu
 [<RequireQualifiedAccess>]
 module Assets =
 
-    // NOTE: the asset graph is modified to import all images as 2D assets, not 3D.
+    // these are assets from the Gameplay package.
     [<RequireQualifiedAccess>]
-    module Default =
-        let SkyBoxFront = asset<Image> Assets.Default.PackageName "SkyBoxFront"
+    module Gameplay =
+        let [<Literal>] PackageName = "Gameplay"
+
+        let SkyBoxFront = asset<Image> PackageName "SkyBoxFront"

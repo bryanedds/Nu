@@ -40,7 +40,7 @@ type D01_SingleFixtureDispatcher () =
                       Closed = true
                       TransformOpt = None
                       PropertiesOpt = None }
-                 Entity.StaticImage .= Assets.Default.SkyBoxFront] world
+                 Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world
         let (agentBody, _) =
             World.doBox2d "Agent" // A box uses dynamic physics by default.
                 [Entity.GravityOverride .= Some v3Zero
