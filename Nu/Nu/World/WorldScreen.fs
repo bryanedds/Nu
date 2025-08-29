@@ -316,7 +316,7 @@ module WorldScreenModule =
             // apply the name if one is provided
             let screenState =
                 match nameOpt with
-                | Some name -> { screenState with Name = name } // TODO: P0: consider making Name mutable.
+                | Some name -> { screenState with Name = name }
                 | None -> screenState
 
             // add the screen's state to the world

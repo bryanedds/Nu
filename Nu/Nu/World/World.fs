@@ -220,7 +220,7 @@ module WorldModule4 =
                  AnimatedModelFacet ()
                  TerrainFacet ()
                  EditVolumeFacet ()
-                 TraversalInterpoledFacet ()
+                 TraversalInterpolatedFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()
                  Freezer3dFacet ()]

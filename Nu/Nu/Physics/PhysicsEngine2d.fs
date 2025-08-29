@@ -231,6 +231,33 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
+    static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
+        let bodyShape =
+            body.CreateEdge
+                (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
+                 PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match edgeShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties edgeShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
+    static member private attachContourShape bodySource bodyProperties (contourShape : ContourShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
+        let vertices' = Array.zeroCreate contourShape.Links.Length
+        for i in 0 .. dec contourShape.Links.Length do
+            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (contourShape.Links.[i].Transform transform)
+        let bodyShape =
+            if contourShape.Closed
+            then body.CreateLoopShape (Common.Vertices vertices')
+            else body.CreateChainShape (Common.Vertices vertices')
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match contourShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties contourShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
     static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
         assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -316,6 +343,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
         | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
+        | EdgeShape edgeShape -> PhysicsEngine2d.attachEdgeShape bodySource bodyProperties edgeShape body
+        | ContourShape contourShape -> PhysicsEngine2d.attachContourShape bodySource bodyProperties contourShape body
         | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
         | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
@@ -400,7 +429,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let bodyId = bodyJointProperties.BodyJointTarget
                 match physicsEngine.Bodies.TryGetValue bodyId with
                 | (true, (_, body)) ->
-                    let joint = oneBodyJoint.CreateOneBodyJoint body
+                    let joint = oneBodyJoint.CreateOneBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body
                     Some (joint, body, None)
                 | (false, _) -> None
             | TwoBodyJoint2d twoBodyJoint ->
@@ -410,7 +439,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | Some body2Id ->
                     match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                     | ((true, (_, body)), (true, (_, body2))) ->
-                        let joint = twoBodyJoint.CreateTwoBodyJoint body body2
+                        let joint = twoBodyJoint.CreateTwoBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2
                         Some (joint, body, Some body2)
                     | _ -> None
                 | None -> None
@@ -427,7 +456,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             body.Awake <- true
             match body2Opt with Some body2 -> body2.Awake <- true | None -> ()
             if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-            then () // nothing to do
+            then physicsEngine.PhysicsContext.Add joint
             else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
         | None -> ()
 
@@ -651,6 +680,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.Gravity =
+            PhysicsEngine2d.toPixelV3 physicsEngine.PhysicsContext.Gravity
+
         member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
 
@@ -758,7 +790,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     
                     // render fixtures in body
                     let (_, body) = bodyEntry.Value
-                    let bodyPosition = PhysicsEngine2d.toPixelV2 body.Position
+                    let transform =
+                        Matrix3x2.CreateRotation body.Rotation
+                        * Matrix3x2.CreateTranslation (PhysicsEngine2d.toPixelV2 body.Position)
                     let eyeBounds = renderContext.EyeBounds
                     for fixture in body.FixtureList do
 
@@ -780,19 +814,19 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         | :? Collision.Shapes.PolygonShape as polygonShape ->
                             let vertices = polygonShape.Vertices
                             for i in 0 .. dec vertices.Count do
-                                let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
-                                let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]
+                                let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
+                                let stop = (PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]).Transform transform
                                 let bounds = Box2.Enclose (start, stop)
                                 if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                     renderContext.DrawLine (start, stop, color)
                         | :? Collision.Shapes.CircleShape as circleShape ->
-                            let position = bodyPosition + PhysicsEngine2d.toPixelV2 circleShape.Position
+                            let position = (PhysicsEngine2d.toPixelV2 circleShape.Position).Transform transform
                             let radius = PhysicsEngine2d.toPixel circleShape.Radius
                             if eyeBounds.Contains (box2 (position - v2 radius radius) (v2 radius radius * 2f)) <> ContainmentType.Disjoint then
                                 renderContext.DrawCircle (position, radius, color)
                         | :? Collision.Shapes.EdgeShape as edgeShape ->
-                            let start = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
-                            let stop = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
+                            let start = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex1).Transform transform
+                            let stop = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex2).Transform transform
                             let bounds = Box2.Enclose (start, stop)
                             if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                 renderContext.DrawLine (start, stop, color)
@@ -800,8 +834,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             let vertices = chainShape.Vertices
                             if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
                                 for i in 0 .. vertices.Count - 2 do
-                                    let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
-                                    let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[inc i]
+                                    let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
+                                    let stop = (PhysicsEngine2d.toPixelV2 vertices[inc i]).Transform transform
                                     let bounds = Box2.Enclose (start, stop)
                                     if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                         renderContext.DrawLine (start, stop, color)
