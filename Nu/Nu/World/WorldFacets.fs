@@ -3387,9 +3387,9 @@ module TerrainFacetExtensions =
         member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
         member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
         member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
-        member this.GetPatchDims world : Vector2i = this.Get (nameof this.PatchDims) world
-        member this.SetPatchDims (value : Vector2i) world = this.Set (nameof this.PatchDims) value world
-        member this.PatchDims = lens (nameof this.PatchDims) this this.GetPatchDims this.SetPatchDims
+        member this.GetPatches world : Vector2i = this.Get (nameof this.Patches) world
+        member this.SetPatches (value : Vector2i) world = this.Set (nameof this.Patches) value world
+        member this.Patches = lens (nameof this.Patches) this this.GetPatches this.SetPatches
 
         /// Attempt to get the resolution of the terrain.
         member this.TryGetTerrainResolution world =
@@ -3444,7 +3444,7 @@ type TerrainFacet () =
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
-         define Entity.PatchDims (v2i 65 65)
+         define Entity.Patches (v2i 2 2) // NOTE: terrain patches don't appear to be a great optimization nowadays.
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
@@ -3457,7 +3457,7 @@ type TerrainFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.PatchDims)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Patches)) entity (nameof TerrainFacet) world
         entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
@@ -3516,7 +3516,7 @@ type TerrainFacet () =
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world
                   HeightMap = entity.GetHeightMap world
-                  PatchDims = entity.GetPatchDims world }
+                  Patches = entity.GetPatches world }
             World.enqueueRenderMessage3d
                 (RenderTerrain
                     { Visible = transform.Visible
