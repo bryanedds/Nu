@@ -787,12 +787,13 @@ module Hl =
             use extensionsPin = new ArrayPin<_> (extensions)
             
             // TODO: P1: DJL: complete VkApplicationInfo before merging to master
-            // and check for available vulkan version as described in 
+            // and check for available vulkan version (for the instance, NOT the physical device) as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
+            // does the wrapper even cover NULL vkGetInstanceProcAddr for vkEnumerateInstanceVersion?
             let mutable aInfo = VkApplicationInfo ()
 
             // this is the *maximum* Vulkan version
-            aInfo.apiVersion <- VkVersion.Version_1_1 // as conservative as possible for dev; 1.1 to enable features in Nsight Graphics
+            aInfo.apiVersion <- VkVersion.Version_1_3
 
             // create instance
             let mutable info = VkInstanceCreateInfo ()
@@ -836,11 +837,11 @@ module Hl =
                     | Some pdd -> pdd
                     | None -> ()]
 
-            // compatibility criteria: device must support essential rendering components
+            // compatibility criteria: device must support essential rendering components and at least Vulkan 1.3
             let isCompatible physicalDevice =
                 let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
-                swapchainSupported && physicalDevice.Formats.Length > 0
+                swapchainSupported && physicalDevice.Formats.Length > 0 && physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
