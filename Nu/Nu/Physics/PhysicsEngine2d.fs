@@ -231,6 +231,33 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
+    static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
+        let bodyShape =
+            body.CreateEdge
+                (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
+                 PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match edgeShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties edgeShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
+    static member private attachContourShape bodySource bodyProperties (contourShape : ContourShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
+        let vertices' = Array.zeroCreate contourShape.Links.Length
+        for i in 0 .. dec contourShape.Links.Length do
+            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (contourShape.Links.[i].Transform transform)
+        let bodyShape =
+            if contourShape.Closed
+            then body.CreateLoopShape (Common.Vertices vertices')
+            else body.CreateChainShape (Common.Vertices vertices')
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match contourShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties contourShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
     static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
         assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -316,6 +343,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
         | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
+        | EdgeShape edgeShape -> PhysicsEngine2d.attachEdgeShape bodySource bodyProperties edgeShape body
+        | ContourShape contourShape -> PhysicsEngine2d.attachContourShape bodySource bodyProperties contourShape body
         | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
         | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
