@@ -680,6 +680,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.Gravity =
+            PhysicsEngine2d.toPixelV3 physicsEngine.PhysicsContext.Gravity
+
         member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
 

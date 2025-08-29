@@ -1241,6 +1241,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.Gravity =
+            physicsEngine.PhysicsContext.Gravity
+
         member physicsEngine.GetBodyExists bodyId = 
             physicsEngine.Characters.ContainsKey bodyId ||
             physicsEngine.Bodies.ContainsKey bodyId

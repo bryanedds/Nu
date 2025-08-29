@@ -641,6 +641,9 @@ type PhysicsEngineRenderContext = interface end
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
 type PhysicsEngine =
+
+    /// Get the global gravity used in the physics engine.
+    abstract Gravity : Vector3
     
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
@@ -701,6 +704,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
     private { StubPhysicsEngine : unit }
     static member make () = { StubPhysicsEngine = () }
     interface PhysicsEngine with
+        member physicsEngine.Gravity = v3Zero
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in StubPhysicsEngine"
