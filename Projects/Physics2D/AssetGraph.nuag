@@ -1,0 +1,5 @@
+[[Default
+  [[Assets Assets/Default [bmp png psd ttf skel json jpg jpeg tga tif tiff] [PsdToPng] [Render2d]]
+   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
+   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
+   [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl bin] [] []]]]]

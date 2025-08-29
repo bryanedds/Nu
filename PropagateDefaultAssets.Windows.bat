@@ -33,6 +33,9 @@ copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout Mmcc\Assets\Default" /Y
 del "Projects\Jump Box\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Jump Box\Assets\Default" /Y
 
+del "Projects\Physics2D\Assets\Default\*" /Q
+copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Physics2D\Assets\Default" /Y
+
 del "Projects\Metrics\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Metrics\Assets\Default" /Y
 
