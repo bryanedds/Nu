@@ -281,7 +281,6 @@ module Render =
     let [<Uniform>] ScatterTypeDefault = NoScatter
     let [<Literal>] SpecularScalarDefault = 1.0f
     let [<Literal>] FontSizeDefault = 14
-    let [<Uniform>] TerrainPatchDimsDefault = v2iDup 65
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f

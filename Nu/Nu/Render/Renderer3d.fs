@@ -1729,10 +1729,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     normal
                 else v3Up|]
 
-    static member private tryCreatePhysicallyBasedTerrainGeometryData
-        (geometryDescriptor : TerrainGeometryDescriptor)
-        (heightMapMetadata : HeightMapMetadata)
-        renderer =
+    static member private tryCreatePhysicallyBasedTerrainGeometryData (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) renderer =
 
         // compute normals
         let resolution = heightMapMetadata.Resolution
