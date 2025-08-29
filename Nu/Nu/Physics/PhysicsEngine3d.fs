@@ -302,17 +302,15 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
         PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
 
-    /// Jolt does not support edge shapes natively, so each link is approximated with a capsule with tiny radius.
     static member private attachEdgeShape (bodyProperties : BodyProperties) (edgeShape : Nu.EdgeShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        // TODO: Implement this
+        // TODO: implement this.
         Log.warnOnce "3D edge shapes are currently unsupported. Degrading to a convex points shape."
         PhysicsEngine3d.attachPointsShape bodyProperties { Points = [|edgeShape.Start; edgeShape.Stop|]; Profile = Convex; TransformOpt = edgeShape.TransformOpt; PropertiesOpt = edgeShape.PropertiesOpt } scShapeSettings masses
 
-    /// Jolt does not support chain shapes natively, so each link is approximated with a capsule with tiny radius.
-    static member private attachChainShape (bodyProperties : BodyProperties) (chainShape : Nu.ContourShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        // TODO: Implement this. Untested AI attempt at implementation: https://github.com/bryanedds/Nu/pull/1113/commits/082ff7db1b05d691ebc6776ad32dd8965e7bbe4d#diff-7be7db6f2992557124644202960c26adb7192d0fb54ccacb3dcfc7b8d1a49deb
-        Log.warnOnce "3D chain shapes are currently unsupported. Degrading to a convex points shape."
-        PhysicsEngine3d.attachPointsShape bodyProperties { Points = chainShape.Links; Profile = Convex; TransformOpt = chainShape.TransformOpt; PropertiesOpt = chainShape.PropertiesOpt } scShapeSettings masses
+    static member private attachContourShape (bodyProperties : BodyProperties) (contourShape : Nu.ContourShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        // TODO: implement this. Untested AI attempt at implementation: https://github.com/bryanedds/Nu/pull/1113/commits/082ff7db1b05d691ebc6776ad32dd8965e7bbe4d#diff-7be7db6f2992557124644202960c26adb7192d0fb54ccacb3dcfc7b8d1a49deb
+        Log.warnOnce "3D contour shapes are currently unsupported. Degrading to a convex points shape."
+        PhysicsEngine3d.attachPointsShape bodyProperties { Points = contourShape.Links; Profile = Convex; TransformOpt = contourShape.TransformOpt; PropertiesOpt = contourShape.PropertiesOpt } scShapeSettings masses
 
     static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
@@ -526,7 +524,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
         | EdgeShape edgeShape -> PhysicsEngine3d.attachEdgeShape bodyProperties edgeShape scShapeSettings masses physicsEngine
-        | ContourShape chainShape -> PhysicsEngine3d.attachChainShape bodyProperties chainShape scShapeSettings masses physicsEngine
+        | ContourShape chainShape -> PhysicsEngine3d.attachContourShape bodyProperties chainShape scShapeSettings masses physicsEngine
         | PointsShape pointsShape -> PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
         | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
         | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
