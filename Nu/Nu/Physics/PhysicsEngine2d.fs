@@ -429,7 +429,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let bodyId = bodyJointProperties.BodyJointTarget
                 match physicsEngine.Bodies.TryGetValue bodyId with
                 | (true, (_, body)) ->
-                    let joint = oneBodyJoint.CreateOneBodyJoint body
+                    let joint = oneBodyJoint.CreateOneBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body
                     Some (joint, body, None)
                 | (false, _) -> None
             | TwoBodyJoint2d twoBodyJoint ->
@@ -439,7 +439,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | Some body2Id ->
                     match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                     | ((true, (_, body)), (true, (_, body2))) ->
-                        let joint = twoBodyJoint.CreateTwoBodyJoint body body2
+                        let joint = twoBodyJoint.CreateTwoBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2
                         Some (joint, body, Some body2)
                     | _ -> None
                 | None -> None

@@ -3689,7 +3689,7 @@ module TraversalInterpolatedFacetExtensions =
             
 /// Tracks interpolated values typically used for traversal.
 /// TODO: P1: make this GameTime-based rather than frame-based!
-type TraversalInterpoledFacet () =
+type TraversalInterpolatedFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
