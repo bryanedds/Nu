@@ -456,7 +456,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             body.Awake <- true
             match body2Opt with Some body2 -> body2.Awake <- true | None -> ()
             if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-            then () // nothing to do
+            then physicsEngine.PhysicsContext.Add joint
             else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
         | None -> ()
 
