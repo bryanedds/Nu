@@ -41,42 +41,61 @@ type D01_SingleFixtureDispatcher () =
                       TransformOpt = None
                       PropertiesOpt = None }
                  Entity.StaticImage .= Assets.Default.SkyBoxFront] world
-        let (agent, _) =
-            World.doBox2d "Rectangle" // A box uses dynamic physics by default.
-                [Entity.GravityOverride .= Some v3Zero] world
+        let (agentBody, _) =
+            World.doBox2d "Agent" // A box uses dynamic physics by default.
+                [Entity.GravityOverride .= Some v3Zero
+                 Entity.Elevation .= 10f] world
+        let agent = world.DeclaredEntity
         
         // Mouse control
         let mousePosition = World.getMousePostion2dWorld false world
         if World.isMouseButtonPressed MouseLeft world then
-            World.getEntities2dAtPoint mousePosition (new _()) world
-            |> Seq.filter (fun entity -> entity.Name = "Rectangle")
-            |> Seq.iter (fun entity -> screen.SetDraggedEntity (Some entity) world)
+            for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
+                if entity = agent then
+                    screen.SetDraggedEntity (Some entity) world
         elif World.isMouseButtonUp MouseLeft world then
             screen.SetDraggedEntity None world
 
-        screen.GetDraggedEntity world
-        |> Option.iter (fun entity ->
-            World.doBodyJoint2d "MouseJoint"
-                [Entity.BodyJoint .= OneBodyJoint2d
-                    { CreateOneBodyJoint = fun b -> FixedMouseJoint(b, PhysicsEngine2d.toPhysicsV2 mousePosition.V3) }
-                 Entity.BodyJointTarget .= Relation.makeFromAddress entity.EntityAddress] world
-            |> ignore)
+        match screen.GetDraggedEntity world with
+        | Some entity ->
+            let _ =
+                World.doSphere2d "MouseSensor"
+                    [Entity.BodyType .= Kinematic
+                     Entity.BodyShape .= SphereShape
+                        { Radius = 0.1f
+                          PropertiesOpt = Some
+                            { BodyShapeProperties.empty with SensorOpt = Some true } // No collision
+                          TransformOpt = None }
+                     Entity.Visible .= false
+                     Entity.Position @= v3 mousePosition.X mousePosition.Y 0f] world
+            let mouseSensor = world.DeclaredEntity
+            let _ =
+                let mouseJoint = world.ContextGroup / "MouseJoint"
+                World.doBodyJoint2d mouseJoint.Name
+                    [Entity.BodyJointTarget .= Relation.relate mouseJoint.EntityAddress entity.EntityAddress
+                     Entity.BodyJointTarget2Opt .= Some (Relation.relate mouseJoint.EntityAddress mouseSensor.EntityAddress)
+                     Entity.BodyJoint .= TwoBodyJoint2d
+                        { CreateTwoBodyJoint = fun a b ->
+                            let mousePosition = PhysicsEngine2d.toPhysicsV2 mousePosition.V3
+                            WeldJoint(a, b, mousePosition, mousePosition, true, FrequencyHz = 1f, DampingRatio = 0.5f) }] world
+            ()
+        | None -> ()
         
         // Agent control
         let agentForce = 100f
         let agentTorque = 1f
         if World.isKeyboardKeyDown KeyboardKey.A world then
-            World.applyBodyForce (v3 -1f 0f 0f * agentForce) None agent world
+            World.applyBodyForce (v3 -1f 0f 0f * agentForce) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.D world then
-            World.applyBodyForce (v3 1f 0f 0f * agentForce) None agent world
+            World.applyBodyForce (v3 1f 0f 0f * agentForce) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.W world then
-            World.applyBodyForce (v3 0f 1f 0f * agentForce) None agent world
+            World.applyBodyForce (v3 0f 1f 0f * agentForce) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.S world then
-            World.applyBodyForce (v3 0f -1f 0f * agentForce) None agent world
+            World.applyBodyForce (v3 0f -1f 0f * agentForce) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.Q world then
-            World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agent world
+            World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
         if World.isKeyboardKeyDown KeyboardKey.E world then
-            World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agent world
+            World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agentBody world
 
         // Exit button (click behavior specified at Physics2D.fs)
         let _ = World.doButton Simulants.BackEntity [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Exit"] world
