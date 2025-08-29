@@ -758,7 +758,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     
                     // render fixtures in body
                     let (_, body) = bodyEntry.Value
-                    let bodyPosition = PhysicsEngine2d.toPixelV2 body.Position
+                    let transform =
+                        Matrix3x2.CreateRotation body.Rotation
+                        * Matrix3x2.CreateTranslation (PhysicsEngine2d.toPixelV2 body.Position)
                     let eyeBounds = renderContext.EyeBounds
                     for fixture in body.FixtureList do
 
@@ -780,19 +782,19 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         | :? Collision.Shapes.PolygonShape as polygonShape ->
                             let vertices = polygonShape.Vertices
                             for i in 0 .. dec vertices.Count do
-                                let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
-                                let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]
+                                let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
+                                let stop = (PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]).Transform transform
                                 let bounds = Box2.Enclose (start, stop)
                                 if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                     renderContext.DrawLine (start, stop, color)
                         | :? Collision.Shapes.CircleShape as circleShape ->
-                            let position = bodyPosition + PhysicsEngine2d.toPixelV2 circleShape.Position
+                            let position = (PhysicsEngine2d.toPixelV2 circleShape.Position).Transform transform
                             let radius = PhysicsEngine2d.toPixel circleShape.Radius
                             if eyeBounds.Contains (box2 (position - v2 radius radius) (v2 radius radius * 2f)) <> ContainmentType.Disjoint then
                                 renderContext.DrawCircle (position, radius, color)
                         | :? Collision.Shapes.EdgeShape as edgeShape ->
-                            let start = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
-                            let stop = bodyPosition + PhysicsEngine2d.toPixelV2 edgeShape.Vertex1
+                            let start = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex1).Transform transform
+                            let stop = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex2).Transform transform
                             let bounds = Box2.Enclose (start, stop)
                             if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                 renderContext.DrawLine (start, stop, color)
@@ -800,8 +802,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             let vertices = chainShape.Vertices
                             if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
                                 for i in 0 .. vertices.Count - 2 do
-                                    let start = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[i]
-                                    let stop = bodyPosition + PhysicsEngine2d.toPixelV2 vertices[inc i]
+                                    let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
+                                    let stop = (PhysicsEngine2d.toPixelV2 vertices[inc i]).Transform transform
                                     let bounds = Box2.Enclose (start, stop)
                                     if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                         renderContext.DrawLine (start, stop, color)
