@@ -82,8 +82,9 @@ type D01_SingleFixtureDispatcher () =
             for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
-                    screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
-                    entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+                    if screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
+                        screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
+                        entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
 
         match screen.GetDraggedEntity world with
         | Some (draggedEntity, draggedBodyType) ->
