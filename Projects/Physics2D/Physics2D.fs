@@ -25,6 +25,10 @@ type Physics2DDispatcher () =
     static member Properties =
         [define Game.GameState D01_SingleFixture]
 
+    // here we define game initialization
+    override _.Register (_, world) = 
+        World.setEye2dCenter (v2 60f 0f) world
+
     // here we define the game's top-level behavior
     override this.Process (game, world) =
         
@@ -50,7 +54,7 @@ type Physics2DDispatcher () =
         if World.isKeyboardKeyDown KeyboardKey.PageDown world then
             World.setEye2dSize (World.getEye2dSize world * 0.99f) world
         if World.isKeyboardKeyDown KeyboardKey.Home world then
-            World.setEye2dCenter v2Zero world
+            World.setEye2dCenter (v2 60f 0f) world
             World.setEye2dSize Constants.Render.DisplayVirtualResolution.V2 world
 
         // handle Alt+F4 when not in editor
