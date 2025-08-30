@@ -5,7 +5,7 @@ open Prime
 open Nu
 open nkast.Aether.Physics2D.Dynamics.Joints
 
-type ExtraBodyType = Box | Ball | Brick
+type ExtraBodyType = Box | Ball | Block
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
@@ -165,14 +165,14 @@ type D01_SingleFixtureDispatcher () =
                     [// Place the new block somewhere random within the border.
                      Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
                      Entity.StaticImage .= Assets.Default.Brick] world
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Brick) world
+            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Block) world
         
         // Ensure the entities persist across ImSim renders.
         for entity in screen.GetExtraEntities world do
             match entity.Value with
             | Box -> World.doBox2d entity.Key [] world
             | Ball -> World.doBall2d entity.Key [] world
-            | Brick -> World.doBlock2d entity.Key [] world
+            | Block -> World.doBlock2d entity.Key [] world
             |> ignore
 
         // Clear Entities button
