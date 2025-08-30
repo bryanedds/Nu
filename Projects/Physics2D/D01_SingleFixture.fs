@@ -56,7 +56,7 @@ type D01_SingleFixtureDispatcher () =
                 [Entity.Restitution .= 0.333f // bounciness
                  ] world
         
-        // Mouse control for agent
+        // Mouse dragging
         let mousePosition = World.getMousePostion2dWorld false world
         if World.isMouseButtonPressed MouseLeft world then
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
