@@ -274,10 +274,32 @@ module Pipeline =
             Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline._DescriptorSetLayout, nullPtr)
 
         /// Create a Pipeline.
-        static member create shaderPath descriptorIndexing cullFace (blends : Blend array) vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass (vkc : Hl.VulkanContext) =
+        static member create
+            shaderPath
+            descriptorIndexing
+            cullFace
+            (blends : Blend array)
+            vertexBindings
+            vertexAttributes
+            (resourceBindings : VkDescriptorSetLayoutBinding array)
+            pushConstantRanges
+            renderPass
+            (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
+            
+            // max out descriptor counts if indexing
+            // TODO: DJL: P0: use proper maxes once stype issue with VkPhysicalDeviceProperties2 etc. is resolved
+            if descriptorIndexing then for i in 0 .. dec resourceBindings.Length do resourceBindings.[i].descriptorCount <- 65536u
+            
+            // create push constant range for index if indexing, merging with any supplied push constant range and failing if they overlap
+            let pushConstantRanges =
+                if not descriptorIndexing then pushConstantRanges
+                else
+                    if Array.exists (fun (range : VkPushConstantRange) -> range.offset < uint sizeof<uint>) pushConstantRanges then Log.fail "Descriptor indexing uses push constant range at offset 0. Additional ranges must be offset by at least one uint, i.e. 4."
+                    let indexRange = Hl.makePushConstantRange (Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT) 0 sizeof<uint>
+                    Array.cons indexRange pushConstantRanges
             
             // create everything
             let descriptorPool = Pipeline.createDescriptorPool resourceBindings vkc.Device
