@@ -5,7 +5,7 @@ open Prime
 open Nu
 open nkast.Aether.Physics2D.Dynamics.Joints
 
-type ExtraEntityType = Box | Ball | Block | Fan
+type ExtraEntityType = Box | Ball | Block | KinematicBlock | BodyJoint
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
@@ -17,6 +17,10 @@ module D01_SingleFixtureExtensions =
         member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraBodies) world
         member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraBodies) value world
         member this.ExtraBodies = lens (nameof Screen.ExtraBodies) this this.GetExtraEntities this.SetExtraEntities
+        member this.GetPhysicsAnchorEntity world : Map<Entity, Entity> = this.Get (nameof Screen.PhysicsAnchorEntity) world
+        member this.SetPhysicsAnchorEntity (value : Map<Entity, Entity>) world = this.Set (nameof Screen.PhysicsAnchorEntity) value world
+        member this.PhysicsAnchorEntity = lens (nameof Screen.PhysicsAnchorEntity) this this.GetPhysicsAnchorEntity this.SetPhysicsAnchorEntity
+
         
 // this is the dispatcher that customizes the top-level behavior of our game.
 type D01_SingleFixtureDispatcher () =
@@ -25,7 +29,8 @@ type D01_SingleFixtureDispatcher () =
     // here we define default property values
     static member Properties =
         [define Screen.DraggedEntity None
-         define Screen.ExtraBodies Map.empty]
+         define Screen.ExtraBodies Map.empty
+         define Screen.PhysicsAnchorEntity Map.empty]
 
     // here we define the screen's behavior
     override this.Process (_, screen, world) =
@@ -77,9 +82,11 @@ type D01_SingleFixtureDispatcher () =
         // Mouse dragging
         let mousePosition = World.getMousePostion2dWorld false world
         if World.isMouseButtonPressed MouseLeft world then
+            let physicsAnchors = screen.GetPhysicsAnchorEntity world
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
             // Optimizations can reuse the same set for different queries.
             for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
+                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
                     if screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
@@ -106,6 +113,7 @@ type D01_SingleFixtureDispatcher () =
             World.doBodyJoint2d mouseJoint.Name
                 [Entity.BodyJointTarget .= Relation.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
                  Entity.BodyJointTarget2Opt .= Some (Relation.relate mouseJoint.EntityAddress mouseSensor.EntityAddress)
+                 Entity.BreakingPoint .= infinityf // never drop the entity while dragging
                  Entity.BodyJoint .= TwoBodyJoint2d
                     { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                         // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.Physics2D Vector2)
@@ -188,27 +196,52 @@ type D01_SingleFixtureDispatcher () =
             [Entity.Position .= v3 255f 40f 0f
              Entity.Text .= "Add Fan"
              Entity.Elevation .= 1f] world then
-            let newEntity = Gen.name
+            let x = Gen.randomf1 500f - 250f
+            let y = Gen.randomf1 350f - 175f
+            let anchorName = Gen.name
             let _ =
-                World.doBlock2d newEntity
-                    [Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
+                World.doBlock2d anchorName
+                    [Entity.Position .= v3 x y 0f
                      Entity.Size .= v3 64f 8f 0f
                      Entity.BodyType .= Kinematic // Kinematic physics means moving but not reacting to forces or collisions.
                      Entity.AngularVelocity @= v3 10f 0f 0f
                      Entity.StaticImage .= Assets.Default.Black] world
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Fan) world
-        
+            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add anchorName KinematicBlock) world
+            let anchor = world.DeclaredEntity
+            let bladeName = Gen.name
+            let _ =
+                World.doBox2d bladeName
+                    [Entity.Position .= v3 x y 0f
+                     Entity.Rotation .= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.PI / 2f) // Rotate 90 degrees
+                     Entity.Size .= v3 64f 8f 0f
+                     Entity.StaticImage .= Assets.Default.Black] world
+            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add bladeName Box) world
+            screen.SetPhysicsAnchorEntity (screen.GetPhysicsAnchorEntity world |> Map.add world.DeclaredEntity anchor) world
+            let jointName = Gen.name
+            let _ =
+                World.doBodyJoint2d jointName
+                    [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchorName}"
+                     Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{bladeName}")
+                     Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
+                     Entity.BreakingPoint .= infinityf
+                     Entity.BodyJoint .= TwoBodyJoint2d
+                        { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                            let p = toPhysicsV2 (v3 x y 0f)
+                            WeldJoint (a, b, p, p, true) }] world |> ignore
+            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add jointName BodyJoint) world
+
         // Ensure the entities persist across ImSim renders.
         for entity in screen.GetExtraEntities world do
             match entity.Value with
             | Box -> World.doBox2d entity.Key [] world |> ignore
             | Ball -> World.doBall2d entity.Key [] world |> ignore
             | Block -> World.doBlock2d entity.Key [] world |> ignore
-            | Fan ->
+            | KinematicBlock ->
                 // Mouse dragging stops its movement, force angular velocity after dragging
                 World.doBlock2d entity.Key [Entity.AngularVelocity @= v3 10f 0f 0f
                                             // Don't keep linear velocity from being dragged to collide
                                             Entity.LinearVelocity @= v3Zero] world |> ignore
+            | BodyJoint -> World.doBodyJoint2d entity.Key [] world |> ignore
 
         // Clear Entities button
         if World.doButton "Clear Entities"
@@ -216,6 +249,7 @@ type D01_SingleFixtureDispatcher () =
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
             screen.SetExtraEntities Map.empty world
+            screen.SetPhysicsAnchorEntity Map.empty world
 
         // Gravity
         let gravityDisabled = World.getGravity true world = v3Zero
