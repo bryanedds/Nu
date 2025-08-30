@@ -5,7 +5,7 @@ open Prime
 open Nu
 open nkast.Aether.Physics2D.Dynamics.Joints
 
-type ExtraEntityType = Box | Ball | Block
+type ExtraEntityType = Box | Ball | Block | Fan
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
@@ -154,9 +154,25 @@ type D01_SingleFixtureDispatcher () =
                      Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
             screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Ball) world
 
+        // Add small boxes button
+        if World.doButton "Add Tiny Balls"
+            [Entity.Position .= v3 255f 100f 0f
+             Entity.Text .= "Add Tiny Balls"
+             Entity.Elevation .= 1f] world then
+            for _ in 1 .. 16 do
+                let newEntity = Gen.name
+                let _ =
+                    World.doBall2d newEntity
+                        [Entity.Restitution .= 0.666f
+                         Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
+                         Entity.Substance .= Mass (1f / 16f) // Make tiny balls have tiny mass when colliding
+                         Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Ball) world
+
         // Add block button
         if World.doButton "Add Block"
-            [Entity.Position .= v3 255f 100f 0f
+            [Entity.Position .= v3 255f 70f 0f
              Entity.Text .= "Add Block"
              Entity.Elevation .= 1f] world then
             let newEntity = Gen.name
@@ -166,18 +182,37 @@ type D01_SingleFixtureDispatcher () =
                      Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
                      Entity.StaticImage .= Assets.Default.Brick] world
             screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Block) world
+
+        // Add fan button
+        if World.doButton "Add Fan"
+            [Entity.Position .= v3 255f 40f 0f
+             Entity.Text .= "Add Fan"
+             Entity.Elevation .= 1f] world then
+            let newEntity = Gen.name
+            let _ =
+                World.doBlock2d newEntity
+                    [Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
+                     Entity.Size .= v3 64f 8f 0f
+                     Entity.BodyType .= Kinematic // Kinematic physics means moving but not reacting to forces or collisions.
+                     Entity.AngularVelocity @= v3 10f 0f 0f
+                     Entity.StaticImage .= Assets.Default.Black] world
+            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add newEntity Fan) world
         
         // Ensure the entities persist across ImSim renders.
         for entity in screen.GetExtraEntities world do
             match entity.Value with
-            | Box -> World.doBox2d entity.Key [] world
-            | Ball -> World.doBall2d entity.Key [] world
-            | Block -> World.doBlock2d entity.Key [] world
-            |> ignore
+            | Box -> World.doBox2d entity.Key [] world |> ignore
+            | Ball -> World.doBall2d entity.Key [] world |> ignore
+            | Block -> World.doBlock2d entity.Key [] world |> ignore
+            | Fan ->
+                // Mouse dragging stops its movement, force angular velocity after dragging
+                World.doBlock2d entity.Key [Entity.AngularVelocity @= v3 10f 0f 0f
+                                            // Don't keep linear velocity from being dragged to collide
+                                            Entity.LinearVelocity @= v3Zero] world |> ignore
 
         // Clear Entities button
         if World.doButton "Clear Entities"
-            [Entity.Position .= v3 255f 70f 0f
+            [Entity.Position .= v3 255f 10f 0f
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
             screen.SetExtraEntities Map.empty world
@@ -185,7 +220,7 @@ type D01_SingleFixtureDispatcher () =
         // Gravity
         let gravityDisabled = World.getGravity true world = v3Zero
         if World.doButton "Gravity"
-            [Entity.Position .= v3 255f 40f 0f
+            [Entity.Position .= v3 255f -20f 0f
              Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
              Entity.Elevation .= 1f] world then
             World.setGravity true (if gravityDisabled then v3 0f (-9.80665f * Constants.Engine.Meter2d) 0f else v3Zero) world
