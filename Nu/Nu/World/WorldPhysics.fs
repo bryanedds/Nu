@@ -338,6 +338,18 @@ module WorldPhysics =
             World.handlePhysicsMessage3d jumpBodyMessage world
             World.handlePhysicsMessage2d jumpBodyMessage world
 
+        /// Retrieve the global gravity of a physics engine.
+        static member getGravity is2d world =
+            if not is2d
+            then (World.getPhysicsEngine3d world).Gravity
+            else (World.getPhysicsEngine2d world).Gravity
+
+        /// Send a physics message to adjust the global gravity of a physics engine.
+        static member setGravity is2d gravity world =
+            if not is2d
+            then World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+            else World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =
             match World.getSelectedScreenOpt world with

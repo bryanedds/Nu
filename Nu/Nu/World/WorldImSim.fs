@@ -554,6 +554,14 @@ module WorldImSim =
             (world.DeclaredEntity.GetBodyId world, results)
 
         /// <summary>
+        /// ImSim declare a 2d body joint with the given arguments.
+        /// See <see cref="BodyJoint2dDispatcher" />.
+        /// </summary>
+        static member doBodyJoint2d name args world =
+            let results = World.doEntityPlus<BodyJoint2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.DeclaredEntity.GetBodyJointId world, results)
+
+        /// <summary>
         /// ImSim declare a tile map with the given arguments.
         /// See <see cref="TileMapDispatcher" />.
         /// </summary>

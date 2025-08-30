@@ -159,10 +159,29 @@ type CapsuleShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body capsule.
+/// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
       Radius : single
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+      
+/// The shape of a massless physics body in terms of one line segment.
+/// Collision occurs at its side.
+type EdgeShape =
+    { Start : Vector3
+      Stop : Vector3
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a massless physics body in terms of a free form sequence of line segments.
+/// Collision occurs at its sides. When closed, the last link connects to the first.
+/// It is expected that self-intersection does not occur.
+/// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
+/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+type ContourShape =
+    { Links : Vector3 array
+      Closed : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -214,6 +233,8 @@ type BodyShape =
     | SphereShape of SphereShape
     | CapsuleShape of CapsuleShape
     | BoxRoundedShape of BoxRoundedShape
+    | EdgeShape of EdgeShape
+    | ContourShape of ContourShape
     | PointsShape of PointsShape
     | GeometryShape of GeometryShape
     | StaticModelShape of StaticModelShape
@@ -229,6 +250,8 @@ type BodyShape =
         | SphereShape sphere -> sphere.TransformOpt
         | CapsuleShape capsule -> capsule.TransformOpt
         | BoxRoundedShape boxRounded -> boxRounded.TransformOpt
+        | EdgeShape edge -> edge.TransformOpt
+        | ContourShape contour -> contour.TransformOpt
         | PointsShape points -> points.TransformOpt
         | GeometryShape geometry -> geometry.TransformOpt
         | StaticModelShape staticModel -> staticModel.TransformOpt
@@ -244,6 +267,8 @@ type BodyShape =
         | SphereShape sphere -> sphere.PropertiesOpt
         | CapsuleShape capsule -> capsule.PropertiesOpt
         | BoxRoundedShape boxRounded -> boxRounded.PropertiesOpt
+        | EdgeShape edge -> edge.PropertiesOpt
+        | ContourShape contour -> contour.PropertiesOpt
         | PointsShape points -> points.PropertiesOpt
         | GeometryShape geometry -> geometry.PropertiesOpt
         | StaticModelShape staticModel -> staticModel.PropertiesOpt
@@ -260,6 +285,8 @@ type BodyShape =
         | SphereShape _
         | CapsuleShape _
         | BoxRoundedShape _
+        | EdgeShape _
+        | ContourShape _
         | PointsShape _ -> true
         | GeometryShape _
         | StaticModelShape _
@@ -410,11 +437,11 @@ type BodyJointId =
 
 /// Allows users to create their own one-body 2D joints.
 type OneBodyJoint2d =
-    { CreateOneBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+    { CreateOneBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own two-body 2D joints.
 type TwoBodyJoint2d =
-    { CreateTwoBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+    { CreateTwoBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own one-body 3D joints.
 type OneBodyJoint3d =
@@ -614,6 +641,9 @@ type PhysicsEngineRenderContext = interface end
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
 type PhysicsEngine =
+
+    /// Get the global gravity used in the physics engine.
+    abstract Gravity : Vector3
     
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
@@ -674,6 +704,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
     private { StubPhysicsEngine : unit }
     static member make () = { StubPhysicsEngine = () }
     interface PhysicsEngine with
+        member physicsEngine.Gravity = v3Zero
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in StubPhysicsEngine"
@@ -709,7 +740,8 @@ module Physics =
         | Constants.Physics.CollisionWildcard -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a primitive body shape to a specific size; non-primitive shapes are unaffected.
+    /// Localize a primitive body shape to a specific size, typically used in tile maps.
+    /// Non-primitive shapes are unaffected as they should be scaled independently.
     let rec localizePrimitiveBodyShape (size : Vector3) bodyShape =
         let scaleTranslation (scalar : Vector3) (transformOpt : Affine option) =
             match transformOpt with
@@ -721,6 +753,8 @@ module Physics =
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
         | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
         | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
+        | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
         | StaticModelShape _ as staticModelShape -> staticModelShape

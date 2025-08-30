@@ -109,7 +109,13 @@ module TmxMap =
             CapsuleShape { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
             if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
-            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius; TransformOpt = transformOpt }
+            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius * tileSize.Y; TransformOpt = transformOpt }
+        | EdgeShape edge ->
+            if Option.isSome edge.TransformOpt then Log.error "Transform of importing tile map shape should be None."
+            EdgeShape { edge with Start = edge.Start * tileSize.V3; Stop = edge.Stop * tileSize.V3; TransformOpt = transformOpt }
+        | ContourShape chain ->
+            if Option.isSome chain.TransformOpt then Log.error "Transform of importing tile map shape should be None."
+            ContourShape { chain with Links = Array.map (fun link -> link * tileSize.V3) chain.Links; TransformOpt = transformOpt }
         | PointsShape points ->
             if Option.isSome points.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             PointsShape { points with Points = Array.map (fun point -> point * tileSize.V3) points.Points; TransformOpt = transformOpt }
@@ -314,7 +320,7 @@ module TmxMap =
               GravityOverride = Some v3Zero
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
-              CollisionDetection = Discontinuous
+              CollisionDetection = Continuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false

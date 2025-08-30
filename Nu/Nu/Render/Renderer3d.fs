@@ -301,6 +301,13 @@ type BillboardParticlesDescriptor =
       Particles : Particle SArray
       RenderType : RenderType }
 
+/// Describes a terrain patch as a potential subdivision of a larger terrain geometry.
+type TerrainPatchDescriptor =
+    { PatchId : Vector2i
+      PatchResolution : Vector2i
+      PatchBounds : Box3
+      PatchOffset : Vector2i }
+
 /// Describes a static 3d terrain geometry.
 type TerrainGeometryDescriptor =
     { Bounds : Box3
@@ -309,7 +316,7 @@ type TerrainGeometryDescriptor =
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
-      Segments : Vector2i }
+      Patches : Vector2i }
 
 /// Describes a static 3d terrain.
 type TerrainDescriptor =
@@ -322,7 +329,7 @@ type TerrainDescriptor =
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
-      Segments : Vector2i }
+      Patches : Vector2i }
 
     member this.TerrainGeometryDescriptor =
         { Bounds = this.Bounds
@@ -331,7 +338,7 @@ type TerrainDescriptor =
           NormalImageOpt = this.NormalImageOpt
           Tiles = this.Tiles
           HeightMap = this.HeightMap
-          Segments = this.Segments }
+          Patches = this.Patches }
 
 /// An internally cached static model used to reduce GC promotion or pressure.
 type CachedStaticModelMessage =
@@ -934,7 +941,7 @@ type [<ReferenceEquality>] private RenderTasks =
       DeferredStaticClipped : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredStaticClippedPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
+      DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
       ForwardSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
       DeferredStaticRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
@@ -1037,7 +1044,8 @@ type [<ReferenceEquality>] private RenderTasks =
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
                 (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
-                ||> Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
+                ||> Seq.forall2 (fun struct (terrainDescriptor, patchDescriptor, _) struct (terrainDescriptorCached, patchDescriptorCached, _) ->
+                    patchDescriptor = patchDescriptorCached &&
                     box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
                     terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
                     terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
@@ -1112,7 +1120,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           BillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
-          PhysicallyBasedTerrainGeometries : Dictionary<TerrainGeometryDescriptor, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
+          PhysicallyBasedTerrainGeometries : Dictionary<TerrainGeometryDescriptor, Dictionary<TerrainPatchDescriptor, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>>
           PhysicallyBasedTerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
           CubeMap : OpenGL.Texture.Texture
           WhiteTexture : OpenGL.Texture.Texture
@@ -1659,6 +1667,90 @@ type [<ReferenceEquality>] GlRenderer3d =
                 Log.info "Could not utilize sky box due to non-existent cube map asset."
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
+        
+    static member private tryComputeTerrainPatches (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) =
+
+        // clamp patch count and validate terrain resolution
+        let patches = geometryDescriptor.Patches
+        let patches = v2i (max 1 patches.X) (max 1 patches.Y)
+        let patches = v2i (min 64 patches.X) (min 64 patches.Y)
+        let terrainBounds = geometryDescriptor.Bounds
+        let terrainResolution = heightMapMetadata.Resolution
+        if  dec terrainResolution.X >= 1 &&
+            dec terrainResolution.Y >= 1 then
+
+            // compute patch resolution
+            let patchResolution =
+                if  patches.X >= dec terrainResolution.X ||
+                    patches.Y >= dec terrainResolution.Y then
+                    v2iDup 2
+                else
+                    let patchResolutionX = single (dec terrainResolution.X) / single patches.X |> ceil |> int |> inc
+                    let patchResolutionY = single (dec terrainResolution.Y) / single patches.Y |> ceil |> int |> inc
+                    v2i patchResolutionX patchResolutionY
+
+            // handle single patch case
+            if  patchResolution.X > terrainResolution.X ||
+                patchResolution.Y > terrainResolution.Y ||
+                patchResolution = terrainResolution then
+                [|{ PatchId = v2iZero
+                    PatchBounds = geometryDescriptor.Bounds
+                    PatchOffset = v2iZero
+                    PatchResolution = terrainResolution }|] |> Some
+            
+            // otherwise, handle multi-patch case
+            else
+
+                // compute patch cell size
+                let cellSize =
+                    v3
+                        (terrainBounds.Size.X / single terrainResolution.X)
+                        terrainBounds.Size.Y
+                        (terrainBounds.Size.Z / single terrainResolution.Y)
+
+                // compute full patch size (without underflow taken into account)
+                let patchSizeFull =
+                    v3
+                        (single terrainResolution.X * cellSize.X)
+                        terrainBounds.Size.Y
+                        (single terrainResolution.Y * cellSize.Z)
+
+                // compute patches
+                [|for patchY in 0 .. dec patches.Y do
+                    for patchX in 0 .. dec patches.X do
+
+                        // compute patch min
+                        let patchOffset =
+                            v2i
+                                (patchX * dec patchResolution.X)
+                                (patchY * dec patchResolution.Y)
+                        let patchMin =
+                            v3
+                                (terrainBounds.Min.X + single patchOffset.X * cellSize.X)
+                                terrainBounds.Min.Y
+                                (terrainBounds.Min.Z + single patchOffset.Y * cellSize.Z)
+
+                        // compute patch size
+                        let patchOverflow =
+                            v2i
+                                (patchOffset.X + patchResolution.X - terrainResolution.X |> max 0)
+                                (patchOffset.Y + patchResolution.Y - terrainResolution.Y |> max 0)
+                        let patchResolution =
+                            patchResolution - patchOverflow
+                        let patchSize =
+                            v3
+                                (single patchResolution.X * cellSize.X)
+                                patchSizeFull.Y
+                                (single patchResolution.Y * cellSize.Z)
+
+                        // fin
+                        { PatchId = v2i patchX patchY
+                          PatchResolution = patchResolution
+                          PatchBounds = box3 patchMin patchSize
+                          PatchOffset = patchOffset }|] |> Some
+
+        // invalid terrain resolution
+        else Log.error "Terrain resolution must be at least 2x2."; None
 
     static member private createPhysicallyBasedTerrainNormals (resolution : Vector2i) (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
         [|for y in 0 .. dec resolution.Y do
@@ -1682,145 +1774,104 @@ type [<ReferenceEquality>] GlRenderer3d =
                     normal
                 else v3Up|]
 
-    static member private tryCreatePhysicallyBasedTerrainGeometry (geometryDescriptor : TerrainGeometryDescriptor) renderer =
+    static member private tryCreatePhysicallyBasedTerrainGeometryData (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) renderer =
 
-        // attempt to compute positions and tex coords
-        let heightMapMetadataOpt =
-            HeightMap.tryGetMetadata
-                (fun assetTag -> GlRenderer3d.tryGetFilePath assetTag renderer)
-                geometryDescriptor.Bounds
-                geometryDescriptor.Tiles
-                geometryDescriptor.HeightMap
-
-        // on success, continue terrain geometry generation attempt
-        match heightMapMetadataOpt with
-        | ValueSome heightMapMetadata ->
-
-            // compute normals
-            let resolution = heightMapMetadata.Resolution
-            let positionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
-            let normalsOpt =
-                match geometryDescriptor.NormalImageOpt with
-                | Some normalImage ->
-                    match GlRenderer3d.tryGetTextureData false normalImage renderer with
-                    | Some (metadata, blockCompressed, bytes) ->
-                        if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
-                            if not blockCompressed then
-                                let scalar = 1.0f / single Byte.MaxValue
-                                bytes
-                                |> Array.map (fun b -> single b * scalar)
-                                |> Array.chunkBySize 4
-                                |> Array.map (fun b ->
-                                    let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
-                                    let normal = v3 tangent.X tangent.Z -tangent.Y
-                                    normal)
-                                |> Some
-                            else Log.info "Block-compressed images not supported for terrain normal images."; None
-                        else Log.info "Normal image resolution does not match terrain resolution."; None
-                    | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+        // compute normals
+        let resolution = heightMapMetadata.Resolution
+        let positionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
+        let normalsOpt =
+            match geometryDescriptor.NormalImageOpt with
+            | Some normalImage ->
+                match GlRenderer3d.tryGetTextureData false normalImage renderer with
+                | Some (metadata, blockCompressed, bytes) ->
+                    if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                        if not blockCompressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            bytes
+                            |> Array.map (fun b -> single b * scalar)
+                            |> Array.chunkBySize 4
+                            |> Array.map (fun b ->
+                                let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
+                                let normal = v3 tangent.X tangent.Z -tangent.Y
+                                normal)
+                            |> Some
+                        else Log.info "Block-compressed images not supported for terrain normal images."; None
+                    else Log.info "Normal image resolution does not match terrain resolution."; None
                 | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+            | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
 
-            // compute tint
-            let tintOpt =
-                match geometryDescriptor.TintImageOpt with
-                | Some tintImage ->
-                    match GlRenderer3d.tryGetTextureData false tintImage renderer with
+        // compute tint
+        let tintOpt =
+            match geometryDescriptor.TintImageOpt with
+            | Some tintImage ->
+                match GlRenderer3d.tryGetTextureData false tintImage renderer with
+                | Some (metadata, blockCompressed, bytes) ->
+                    if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                        if not blockCompressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            bytes
+                            |> Array.map (fun b -> single b * scalar)
+                            |> Array.chunkBySize 4
+                            |> Array.map (fun b -> v3 b.[2] b.[1] b.[0])
+                            |> Some
+                        else Log.info "Block-compressed images not supported for terrain tint images."; None
+                    else Log.info "Tint image resolution does not match terrain resolution."; None
+                | None -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
+            | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
+
+        // compute blendses, logging if more than the safe number of terrain layers is utilized
+        // NOTE: there are 8 blends, each of which we account for regardless of TerrainLayersMax.
+        let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length 8
+        match geometryDescriptor.Material with
+        | BlendMaterial blendMaterial ->
+            if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
+                Log.infoOnce
+                    ("Terrain has more than " +
+                        string Constants.Render.TerrainLayersMax +
+                        " layers which references more than the number of supported fragment shader textures.")
+            match blendMaterial.BlendMap with
+            | RgbaMap rgbaMap ->
+                match GlRenderer3d.tryGetTextureData false rgbaMap renderer with
+                | Some (metadata, blockCompressed, bytes) ->
+                    if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                        if not blockCompressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            for i in 0 .. dec positionsAndTexCoordses.Length do
+                                // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                // TODO: confirm it is the same for SDL (linux).
+                                blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
+                                blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
+                                blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
+                                blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
+                        else Log.info "Block-compressed images not supported for terrain blend iamges."
+                    else Log.info "Blend image resolution does not match terrain resolution."
+                | None -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
+            | RedsMap reds ->
+                let scalar = 1.0f / single Byte.MaxValue
+                for i in 0 .. dec (min reds.Length 8) do
+                    let red = reds.[i]
+                    match GlRenderer3d.tryGetTextureData false red renderer with
                     | Some (metadata, blockCompressed, bytes) ->
                         if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
                             if not blockCompressed then
-                                let scalar = 1.0f / single Byte.MaxValue
-                                bytes
-                                |> Array.map (fun b -> single b * scalar)
-                                |> Array.chunkBySize 4
-                                |> Array.map (fun b -> v3 b.[2] b.[1] b.[0])
-                                |> Some
-                            else Log.info "Block-compressed images not supported for terrain tint images."; None
-                        else Log.info "Tint image resolution does not match terrain resolution."; None
-                    | None -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
-                | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
-
-            // compute blendses, logging if more than the safe number of terrain layers is utilized
-            // NOTE: there are 8 blends, each of which we account for regardless of TerrainLayersMax.
-            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length 8
-            match geometryDescriptor.Material with
-            | BlendMaterial blendMaterial ->
-                if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
-                    Log.infoOnce
-                        ("Terrain has more than " +
-                         string Constants.Render.TerrainLayersMax +
-                         " layers which references more than the number of supported fragment shader textures.")
-                match blendMaterial.BlendMap with
-                | RgbaMap rgbaMap ->
-                    match GlRenderer3d.tryGetTextureData false rgbaMap renderer with
-                    | Some (metadata, blockCompressed, bytes) ->
-                        if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
-                            if not blockCompressed then
-                                let scalar = 1.0f / single Byte.MaxValue
-                                for i in 0 .. dec positionsAndTexCoordses.Length do
-                                    // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                                    // TODO: confirm it is the same for SDL (linux).
-                                    blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
-                                    blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
-                                    blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
-                                    blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
-                            else Log.info "Block-compressed images not supported for terrain blend iamges."
+                                for j in 0 .. dec positionsAndTexCoordses.Length do
+                                    blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
+                            else Log.info "Block-compressed images not supported for terrain blend images."
                         else Log.info "Blend image resolution does not match terrain resolution."
-                    | None -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
-                | RedsMap reds ->
-                    let scalar = 1.0f / single Byte.MaxValue
-                    for i in 0 .. dec (min reds.Length 8) do
-                        let red = reds.[i]
-                        match GlRenderer3d.tryGetTextureData false red renderer with
-                        | Some (metadata, blockCompressed, bytes) ->
-                            if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
-                                if not blockCompressed then
-                                    for j in 0 .. dec positionsAndTexCoordses.Length do
-                                        blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
-                                else Log.info "Block-compressed images not supported for terrain blend images."
-                            else Log.info "Blend image resolution does not match terrain resolution."
-                        | None -> Log.info ("Could not locate texture data for blend image '" + scstring red + "'.")
-            | FlatMaterial _ ->
-                for i in 0 .. dec positionsAndTexCoordses.Length do
-                    blendses.[i,0] <- 1.0f
+                    | None -> Log.info ("Could not locate texture data for blend image '" + scstring red + "'.")
+        | FlatMaterial _ ->
+            for i in 0 .. dec positionsAndTexCoordses.Length do
+                blendses.[i,0] <- 1.0f
 
-            // ensure we've got usable input data
-            match (normalsOpt, tintOpt) with
-            | (Some normals, Some tint) ->
-
-                // compute vertices
-                let vertices =
-                    [|for i in 0 .. dec positionsAndTexCoordses.Length do
-                        let struct (p, tc) = positionsAndTexCoordses.[i]
-                        let n = normals.[i]
-                        let s = blendses
-                        let t = tint.[i]
-                        yield!
-                            [|p.X; p.Y; p.Z
-                              tc.X; tc.Y
-                              n.X; n.Y; n.Z
-                              t.X; t.Y; t.Z
-                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
-
-                // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
-                let indices = 
-                    [|for y in 0 .. dec resolution.Y - 1 do
-                        for x in 0 .. dec resolution.X - 1 do
-                            yield resolution.X * y + x
-                            yield resolution.X * inc y + x
-                            yield resolution.X * y + inc x
-                            yield resolution.X * inc y + x
-                            yield resolution.X * inc y + inc x
-                            yield resolution.X * y + inc x|]
-
-                // create the actual geometry
-                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
-                Some geometry
-
-            // error
-            | (_, _) -> None
+        // ensure we've got usable input data
+        match (normalsOpt, tintOpt) with
+        | (Some normals, Some tint) ->
+                
+            // provide data necessary for creating geometry
+            Some (positionsAndTexCoordses, normals, blendses, tint)
 
         // error
-        | ValueNone -> None
+        | (_, _) -> None
 
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
         let albedoTexture =
@@ -2479,27 +2530,120 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private categorizeTerrain
         (visible : bool,
+         geometryFrustum : Frustum,
          terrainDescriptor : TerrainDescriptor,
          renderTasks : RenderTasks,
          renderer) =
 
-        // attempt to create terrain geometry
+        // attempt to create terrain geometry when not already cached
         let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
-        match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-        | (true, _) -> ()
-        | (false, _) ->
-            match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
-            | Some geometry -> renderer.PhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
-            | None -> ()
+        if not (renderer.PhysicallyBasedTerrainGeometries.ContainsKey geometryDescriptor) then
 
-        // attempt to add terrain to appropriate render list when visible
-        // TODO: also add found geometry to render list so it doesn't have to be looked up redundantly?
+            // attempt to get height map metadata to compute patches
+            let heightMapMetadataOpt =
+                HeightMap.tryGetMetadata
+                    (fun assetTag -> GlRenderer3d.tryGetFilePath assetTag renderer)
+                    terrainDescriptor.Bounds
+                    terrainDescriptor.Tiles
+                    terrainDescriptor.HeightMap
+
+            // attempt to extract height map metadata for geometry creation
+            match heightMapMetadataOpt with
+            | ValueSome heightMapMetadata ->
+
+                // attempt to create geometry data for the entire terrain
+                match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometryData geometryDescriptor heightMapMetadata renderer with
+                | Some (positionsAndTexCoordses, normals, blendses, tint) ->
+
+                    // attempt to compute patches for the terrain
+                    match GlRenderer3d.tryComputeTerrainPatches geometryDescriptor heightMapMetadata with
+                    | Some patches ->
+
+                        // create geometry for each patch
+                        for patchDescriptor in patches do
+
+                            // extract positions and texture coordinates for this patch
+                            let patchResolution = patchDescriptor.PatchResolution
+                            let patchOffset = patchDescriptor.PatchOffset
+                            let patchPositionsAndTexCoordses =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        positionsAndTexCoordses.[i]|]
+
+                            // extract normals
+                            let patchNormals =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        normals.[i]|]
+
+                            // extract blendses
+                            let patchBlendses =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        [|for j in 0 .. dec 8 do blendses.[i, j]|]|]
+
+                            // extract tint
+                            let patchTint =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        tint.[i]|]
+
+                            // compute vertices
+                            let vertices =
+                                [|for i in 0 .. dec patchPositionsAndTexCoordses.Length do
+                                    let struct (p, tc) = patchPositionsAndTexCoordses.[i]
+                                    let n = patchNormals.[i]
+                                    let s = patchBlendses
+                                    let t = patchTint.[i]
+                                    yield!
+                                        [|p.X; p.Y; p.Z
+                                          tc.X; tc.Y
+                                          n.X; n.Y; n.Z
+                                          t.X; t.Y; t.Z
+                                          s.[i].[0]; s.[i].[1]; s.[i].[2]; s.[i].[3]; s.[i].[4]; s.[i].[5]; s.[i].[6]; s.[i].[7]|]|]
+
+                            // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
+                            let indices =
+                                [|for y in 0 .. dec patchResolution.Y - 1 do
+                                    for x in 0 .. dec patchResolution.X - 1 do
+                                        yield patchResolution.X * y + x
+                                        yield patchResolution.X * inc y + x
+                                        yield patchResolution.X * y + inc x
+                                        yield patchResolution.X * inc y + x
+                                        yield patchResolution.X * inc y + inc x
+                                        yield patchResolution.X * y + inc x|]
+
+                            // create the actual geometry
+                            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
+                            match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
+                            | (true, existingGeometry) -> existingGeometry.Add (patchDescriptor, geometry)
+                            | (false, _) -> renderer.PhysicallyBasedTerrainGeometries.Add (geometryDescriptor, dictPlus HashIdentity.Structural [(patchDescriptor, geometry)])
+
+                    // could not create geometry
+                    | None -> ()
+
+                // could not compute patches
+                | None -> ()
+
+            // could not extract height map metadata
+            | ValueNone -> ()
+
+        // attempt to add patch to appropriate render list when visible
         if visible then
             match renderer.PhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-            | (true, terrainGeometry) -> renderTasks.DeferredTerrains.Add struct (terrainDescriptor, terrainGeometry)
+            | (true, patchGeometries) ->
+                for entry in patchGeometries do
+                    let patchDescriptor = entry.Key
+                    let patchGeometry = entry.Value
+                    if geometryFrustum.Intersects patchDescriptor.PatchBounds then
+                        renderTasks.DeferredTerrains.Add struct (terrainDescriptor, patchDescriptor, patchGeometry)
             | (false, _) -> ()
 
-        // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
+        // mark patch geometry as utilized regardless of visibility (to keep it from being destroyed)
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
 
     static member private categorize
@@ -2509,6 +2653,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         lightBox
         eyeCenter
         eyeRotation
+        geometryFrustum
         renderMessages
         renderer =
         let userDefinedStaticModelsToDestroy = SList.make ()
@@ -2623,7 +2768,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
                 let renderTasks = GlRenderer3d.getRenderTasks rt.RenderPass renderer
-                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
+                GlRenderer3d.categorizeTerrain (rt.Visible, geometryFrustum, rt.TerrainDescriptor, renderTasks, renderer)
             | ConfigureLighting3d l3c ->
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
@@ -3089,7 +3234,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows
-        for (descriptor, geometry) in renderTasks.DeferredTerrains do
+        for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains do
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
@@ -3461,7 +3606,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // render terrains deferred
-        for (descriptor, geometry) in renderTasks.DeferredTerrains do
+        for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains do
             GlRenderer3d.renderPhysicallyBasedTerrain
                 viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
@@ -3794,8 +3939,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RasterViewport <- rasterViewport
 
         // categorize messages
+        let geometryFrustum =
+            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
         let userDefinedStaticModelsToDestroy =
-            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
+            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation geometryFrustum renderMessages renderer
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
@@ -4136,8 +4283,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         // destroy cached terrain geometries that weren't rendered this frame
         for geometry in renderer.PhysicallyBasedTerrainGeometries do
             if not (renderer.PhysicallyBasedTerrainGeometriesUtilized.Contains geometry.Key) then
-                OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry geometry.Value
-                renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
+                for patchGeometry in geometry.Value do
+                    OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry patchGeometry.Value
+                    renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
