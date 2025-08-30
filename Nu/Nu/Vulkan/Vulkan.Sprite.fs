@@ -18,7 +18,7 @@ module Sprite =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
-                true [|Pipeline.Transparent|]
+                false true [|Pipeline.Transparent|]
                 [|Hl.makeVertexBindingVertex 0 (sizeof<single> * 2)|]
                 [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT 0|]
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1

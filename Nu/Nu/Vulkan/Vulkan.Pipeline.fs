@@ -52,6 +52,27 @@ module Pipeline =
         /// The descriptor set for the current frame.
         member this.DescriptorSet = this._DescriptorSets.[Hl.CurrentFrame]
         
+        /// Create the descriptor pool.
+        static member private createDescriptorPool (resourceBindings : VkDescriptorSetLayoutBinding array) device =
+            
+            // derive pool sizes from layout bindings
+            let poolSizes = Array.zeroCreate<VkDescriptorPoolSize> resourceBindings.Length
+            use poolSizesPin = new ArrayPin<_> (poolSizes)
+            for i in [0 .. dec resourceBindings.Length] do
+                let mutable poolSize = VkDescriptorPoolSize ()
+                poolSize.``type`` <- resourceBindings.[i].descriptorType
+                poolSize.descriptorCount <- resourceBindings.[i].descriptorCount * (uint Constants.Vulkan.MaxFramesInFlight)
+                poolSizes.[i] <- poolSize
+            
+            // create descriptor pool
+            let mutable info = VkDescriptorPoolCreateInfo ()
+            info.maxSets <- uint Constants.Vulkan.MaxFramesInFlight
+            info.poolSizeCount <- uint poolSizes.Length
+            info.pPoolSizes <- poolSizesPin.Pointer
+            let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
+            Vulkan.vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> Hl.check
+            descriptorPool
+
         /// Create the descriptor set layout.
         static member private createDescriptorSetLayout resourceBindings device =
             use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
@@ -75,27 +96,6 @@ module Pipeline =
             Vulkan.vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> Hl.check
             pipelineLayout
         
-        /// Create the descriptor pool.
-        static member private createDescriptorPool (resourceBindings : VkDescriptorSetLayoutBinding array) device =
-            
-            // derive pool sizes from layout bindings
-            let poolSizes = Array.zeroCreate<VkDescriptorPoolSize> resourceBindings.Length
-            use poolSizesPin = new ArrayPin<_> (poolSizes)
-            for i in [0 .. dec resourceBindings.Length] do
-                let mutable poolSize = VkDescriptorPoolSize ()
-                poolSize.``type`` <- resourceBindings.[i].descriptorType
-                poolSize.descriptorCount <- resourceBindings.[i].descriptorCount * (uint Constants.Vulkan.MaxFramesInFlight)
-                poolSizes.[i] <- poolSize
-            
-            // create descriptor pool
-            let mutable info = VkDescriptorPoolCreateInfo ()
-            info.maxSets <- uint Constants.Vulkan.MaxFramesInFlight
-            info.poolSizeCount <- uint poolSizes.Length
-            info.pPoolSizes <- poolSizesPin.Pointer
-            let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-            Vulkan.vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> Hl.check
-            descriptorPool
-
         /// Create the descriptor set for each frame in flight.
         static member private createDescriptorSets descriptorSetLayout descriptorPool device =
             let descriptorSetLayouts = Array.zeroCreate<VkDescriptorSetLayout> Constants.Vulkan.MaxFramesInFlight
@@ -274,15 +274,15 @@ module Pipeline =
             Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline._DescriptorSetLayout, nullPtr)
 
         /// Create a Pipeline.
-        static member create shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass (vkc : Hl.VulkanContext) =
+        static member create shaderPath descriptorIndexing cullFace (blends : Blend array) vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
             
             // create everything
+            let descriptorPool = Pipeline.createDescriptorPool resourceBindings vkc.Device
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
-            let descriptorPool = Pipeline.createDescriptorPool resourceBindings vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
             let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout renderPass vkc.Device
 

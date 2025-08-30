@@ -64,7 +64,7 @@ module SpriteBatch =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
-                true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
+                false true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 2 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
