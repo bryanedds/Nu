@@ -169,8 +169,9 @@ type D01_SingleFixtureDispatcher () =
         // Ensure the entities persist across ImSim renders.
         for entity in screen.GetExtraEntities world do
             match entity.Value with
-            | Box | Brick -> World.doBox2d entity.Key [] world
+            | Box -> World.doBox2d entity.Key [] world
             | Ball -> World.doBall2d entity.Key [] world
+            | Brick -> World.doBlock2d entity.Key [] world
             |> ignore
 
         // Clear Entities button
