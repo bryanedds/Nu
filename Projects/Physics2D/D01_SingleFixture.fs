@@ -56,6 +56,24 @@ type D01_SingleFixtureDispatcher () =
                 [Entity.Restitution .= 0.333f // bounciness
                  ] world
         
+        // Keyboard controls for agent
+        let agentForce = 100f
+        let agentTorque = 1f
+        if World.isKeyboardKeyDown KeyboardKey.A world then
+            World.applyBodyForce (v3 -1f 0f 0f * agentForce) None agentBody world
+        if World.isKeyboardKeyDown KeyboardKey.D world then
+            World.applyBodyForce (v3 1f 0f 0f * agentForce) None agentBody world
+        if World.isKeyboardKeyDown KeyboardKey.W world then
+            // Fly up despite gravity
+            World.applyBodyForce (v3 0f 1f 0f * agentForce - World.getGravity true world) None agentBody world
+        if World.isKeyboardKeyDown KeyboardKey.S world then
+            // Glide down despite gravity
+            World.applyBodyForce (v3 0f -1f 0f * agentForce - World.getGravity true world) None agentBody world
+        if World.isKeyboardKeyDown KeyboardKey.Q world then
+            World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agentBody world
+        if World.isKeyboardKeyDown KeyboardKey.E world then
+            World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
+        
         // Mouse dragging
         let mousePosition = World.getMousePostion2dWorld false world
         if World.isMouseButtonPressed MouseLeft world then
@@ -106,24 +124,6 @@ type D01_SingleFixtureDispatcher () =
                 draggedEntity.SetBodyType draggedBodyType world
 
         | None -> ()
-        
-        // Agent control
-        let agentForce = 100f
-        let agentTorque = 1f
-        if World.isKeyboardKeyDown KeyboardKey.A world then
-            World.applyBodyForce (v3 -1f 0f 0f * agentForce) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.D world then
-            World.applyBodyForce (v3 1f 0f 0f * agentForce) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.W world then
-            // Fly up despite gravity
-            World.applyBodyForce (v3 0f 1f 0f * agentForce - World.getGravity true world) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.S world then
-            // Glide down despite gravity
-            World.applyBodyForce (v3 0f -1f 0f * agentForce - World.getGravity true world) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.Q world then
-            World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.E world then
-            World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
 
         // Add box button
         if World.doButton "Add Box"
