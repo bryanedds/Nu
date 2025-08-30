@@ -24,7 +24,7 @@ const int SHADOW_MAPS_MAX = 8;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
-const float SHADOW_CASCADE_SEAM_INSET = 0.001;
+const float SHADOW_CASCADE_SEAM_INSET = 0.005;
 const float SHADOW_FOV_MAX = 2.1;
 
 const vec4 SSVF_DITHERING[4] =
