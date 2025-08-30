@@ -5,7 +5,7 @@ open Prime
 open Nu
 open nkast.Aether.Physics2D.Dynamics.Joints
 
-type ExtraBodyType = Box | Ball | Block
+type ExtraEntityType = Box | Ball | Block
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
@@ -14,8 +14,8 @@ module D01_SingleFixtureExtensions =
         member this.GetDraggedEntity world : (Entity * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
         member this.SetDraggedEntity (value : (Entity * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
         member this.DraggedEntity = lens (nameof Screen.DraggedEntity) this this.GetDraggedEntity this.SetDraggedEntity
-        member this.GetExtraEntities world : Map<string, ExtraBodyType> = this.Get (nameof Screen.ExtraBodies) world
-        member this.SetExtraEntities (value : Map<string, ExtraBodyType>) world = this.Set (nameof Screen.ExtraBodies) value world
+        member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraBodies) world
+        member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraBodies) value world
         member this.ExtraBodies = lens (nameof Screen.ExtraBodies) this this.GetExtraEntities this.SetExtraEntities
         
 // this is the dispatcher that customizes the top-level behavior of our game.
