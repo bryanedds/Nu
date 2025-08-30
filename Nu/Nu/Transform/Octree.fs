@@ -538,12 +538,10 @@ module Octree =
 
         // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
         // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
-        // NOTE: I can no longer reproduce the bug that caused this, so I've wrapped it in a #if.
-        // TODO: P1: remove this hack if the log never gets triggered after a while.
-#if DEBUG
+        // NOTE: I can no longer reproduce the bug that caused this, but for the sake of Omni Blade's stability, it
+        // remains in this build.
         if Octnode.removeElement bounds &element tree.Node <> 0 then
             Log.errorOnce "Element was in tree node when it shouldn't have been."
-#endif
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (presenceNew : Presence) (presenceInPlayNew : Presence) boundsNew element tree =
