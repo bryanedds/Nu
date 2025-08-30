@@ -875,6 +875,11 @@ module Hl =
         /// Create the logical device.
         static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
+            // descriptor indexing features
+            let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
+            descriptorIndexing.descriptorBindingPartiallyBound <- VkBool32.True
+            descriptorIndexing.runtimeDescriptorArray <- VkBool32.True
+            
             // get unique queue family array
             let uniqueQueueFamiliesSet = new HashSet<uint> ()
             uniqueQueueFamiliesSet.Add physicalDevice.GraphicsQueueFamily |> ignore
@@ -906,6 +911,7 @@ module Hl =
             
             // create device
             let mutable info = VkDeviceCreateInfo ()
+            info.pNext <- asVoidPtr &descriptorIndexing
             info.queueCreateInfoCount <- uint queueCreateInfos.Length
             info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
             info.enabledExtensionCount <- 1u
