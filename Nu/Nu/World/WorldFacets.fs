@@ -33,6 +33,9 @@ module StaticSpriteFacetExtensions =
         member this.GetInsetOpt world : Box2 option = this.Get (nameof this.InsetOpt) world
         member this.SetInsetOpt (value : Box2 option) world = this.Set (nameof this.InsetOpt) value world
         member this.InsetOpt = lens (nameof this.InsetOpt) this this.GetInsetOpt this.SetInsetOpt
+        member this.GetClipOpt world : Box2 option = this.Get (nameof this.ClipOpt) world
+        member this.SetClipOpt (value : Box2 option) world = this.Set (nameof this.ClipOpt) value world
+        member this.ClipOpt = lens (nameof this.ClipOpt) this this.GetClipOpt this.SetClipOpt
         member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
         member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
         member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
@@ -55,6 +58,7 @@ type StaticSpriteFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
+         define Entity.ClipOpt None
          define Entity.StaticImage Assets.Default.StaticSprite
          define Entity.Color Color.One
          define Entity.Blend Transparent
@@ -65,7 +69,7 @@ type StaticSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
         let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = ValueNone : Box2 voption
+        let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
@@ -130,6 +134,7 @@ type AnimatedSpriteFacet () =
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.AnimationStride 1
          define Entity.AnimationSheet Assets.Default.AnimatedSprite
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
@@ -143,7 +148,7 @@ type AnimatedSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
         let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = ValueNone : Box2 voption
+        let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
@@ -168,6 +173,9 @@ module BasicStaticSpriteEmitterFacetExtensions =
         member this.GetEmitterBlend world : Blend = this.Get (nameof this.EmitterBlend) world
         member this.SetEmitterBlend (value : Blend) world = this.Set (nameof this.EmitterBlend) value world
         member this.EmitterBlend = lens (nameof this.EmitterBlend) this this.GetEmitterBlend this.SetEmitterBlend
+        member this.GetEmitterClipOpt world : Box2 option = this.Get (nameof this.EmitterClipOpt) world
+        member this.SetEmitterClipOpt (value : Box2 option) world = this.Set (nameof this.EmitterClipOpt) value world
+        member this.EmitterClipOpt = lens (nameof this.EmitterClipOpt) this this.GetEmitterClipOpt this.SetEmitterClipOpt
         member this.GetEmitterLifeTimeOpt world : GameTime = this.Get (nameof this.EmitterLifeTimeOpt) world
         member this.SetEmitterLifeTimeOpt (value : GameTime) world = this.Set (nameof this.EmitterLifeTimeOpt) value world
         member this.EmitterLifeTimeOpt = lens (nameof this.EmitterLifeTimeOpt) this this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt
@@ -222,6 +230,7 @@ type BasicStaticSpriteEmitterFacet () =
                       Restitution = Constants.Particles.RestitutionDefault }
                 Elevation = transform.Elevation
                 Absolute = transform.Absolute
+                ClipOpt = entity.GetEmitterClipOpt world
                 Blend = entity.GetEmitterBlend world
                 Image = entity.GetEmitterImage world
                 ParticleSeed = entity.GetBasicParticleSeed world
@@ -256,6 +265,11 @@ type BasicStaticSpriteEmitterFacet () =
     static let handleEmitterBlendChange evt world =
         let emitterBlend = evt.Data.Value :?> Blend
         mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+        Cascade
+
+    static let handleEmitterClipOptChange evt world =
+        let emitterClipOpt = evt.Data.Value :?> Box2 option
+        mapEmitter (fun emitter -> if emitter.ClipOpt <> emitterClipOpt then { emitter with ClipOpt = emitterClipOpt } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterImageChange evt world =
@@ -334,6 +348,7 @@ type BasicStaticSpriteEmitterFacet () =
     static member Properties =
         [define Entity.SelfDestruct false
          define Entity.EmitterBlend Transparent
+         define Entity.EmitterClipOpt None
          define Entity.EmitterImage Assets.Default.Image
          define Entity.EmitterLifeTimeOpt GameTime.zero
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
@@ -352,6 +367,7 @@ type BasicStaticSpriteEmitterFacet () =
         World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterBlendChange entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterClipOptChange entity.EmitterClipOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterImageChange entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
@@ -1137,6 +1153,9 @@ module EffectFacetExtensions =
         member this.GetEffectCastShadow world : bool = this.Get (nameof this.EffectCastShadow) world
         member this.SetEffectCastShadow (value : bool) world = this.Set (nameof this.EffectCastShadow) value world
         member this.EffectCastShadow = lens (nameof this.EffectCastShadow) this this.GetEffectCastShadow this.SetEffectCastShadow
+        member this.GetEffectClipOpt world : Box2 option = this.Get (nameof this.EffectClipOpt) world
+        member this.SetEffectClipOpt (value : Box2 option) world = this.Set (nameof this.EffectClipOpt) value world
+        member this.EffectClipOpt = lens (nameof this.EffectClipOpt) this this.GetEffectClipOpt this.SetEffectClipOpt
         member this.GetEffectShadowOffset world : single = this.Get (nameof this.EffectShadowOffset) world
         member this.SetEffectShadowOffset (value : single) world = this.Set (nameof this.EffectShadowOffset) value world
         member this.EffectShadowOffset = lens (nameof this.EffectShadowOffset) this this.GetEffectShadowOffset this.SetEffectShadowOffset
@@ -1176,6 +1195,7 @@ type EffectFacet () =
                 (match entity.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zero)
                 (entity.GetEffectOffset world)
                 (entity.GetTransform world)
+                (entity.GetEffectClipOpt world)
                 (entity.GetEffectShadowOffset world)
                 (entity.GetEffectRenderType world)
                 (entity.GetParticleSystem world)
@@ -1236,6 +1256,7 @@ type EffectFacet () =
          define Entity.EffectDescriptor Effects.EffectDescriptor.empty
          define Entity.EffectOffset v3Zero
          define Entity.EffectCastShadow true
+         define Entity.EffectClipOpt None
          define Entity.EffectShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
          define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
@@ -1687,6 +1708,7 @@ type TileMapFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
@@ -1758,6 +1780,7 @@ type TileMapFacet () =
                     viewBounds
                     perimeterUnscaled.Min.V2
                     transform.Elevation
+                    (entity.GetClipOpt world |> Option.toValueOption)
                     (entity.GetColor world)
                     (entity.GetEmission world)
                     (entity.GetTileLayerClearance world)
@@ -1792,6 +1815,7 @@ type TmxMapFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
@@ -1860,6 +1884,7 @@ type TmxMapFacet () =
                 viewBounds
                 perimeterUnscaled.Min.V2
                 transform.Elevation
+                (entity.GetClipOpt world |> Option.toValueOption)
                 (entity.GetColor world)
                 (entity.GetEmission world)
                 (entity.GetTileLayerClearance world)

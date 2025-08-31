@@ -479,6 +479,12 @@ module Octree =
               Depth : int
               Bounds : Box3 }
 
+    let private logOutOfBounds (element : 'e Octelement) (tree : 'e Octree) =
+        Log.warnOnce
+            ("Element " + scstring element.Entry +
+             " went out of spatial bounds " + scstring tree.Bounds +
+             " and thereby added to ubiquitous fallback an an Omnipresent element.")
+
     let private tryFindLeafFast (bounds : Box3) tree : 'e Octnode option =
         let offset = -tree.Bounds.Min // use offset to bring div ops into positive space
         let divs = (bounds.Min + offset) / tree.LeafSize
@@ -508,8 +514,9 @@ module Octree =
             tree.OmnipresentInPlayOnly.Add element |> ignore
 
         // add to node tree or ubiquitous fallback
-        if  not (Octnode.isIntersectingBox bounds tree.Node) ||
-            bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax then
+        let outOfBounds = not (Octnode.isIntersectingBox bounds tree.Node)
+        let tooLargeForNode = bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax
+        if outOfBounds || tooLargeForNode then
             tree.UbiquitousFallback.Remove element |> ignore
             tree.UbiquitousFallback.Add element |> ignore
         else Octnode.addElement bounds &element tree.Node |> ignore
@@ -563,8 +570,12 @@ module Octree =
         if omnipresentInPlayOnlyNew then tree.OmnipresentInPlayOnly.Add element |> ignore
 
         // update in node tree or ubiquitous fallback
-        let wasInNode = Octnode.isIntersectingBox boundsOld tree.Node && boundsOld.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
-        let isInNode = Octnode.isIntersectingBox boundsNew tree.Node && boundsNew.Size.Magnitude < Constants.Engine.OctreeElementMagnitudeMax
+        let wasOutOfBounds = not (Octnode.isIntersectingBox boundsOld tree.Node)
+        let wasTooLargeForNode = boundsOld.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax
+        let wasInNode = not wasOutOfBounds && not wasTooLargeForNode
+        let isOutOfBounds = not (Octnode.isIntersectingBox boundsNew tree.Node)
+        let isTooLargeForNode = boundsNew.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax
+        let isInNode = not isOutOfBounds && not isTooLargeForNode
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with
@@ -580,6 +591,7 @@ module Octree =
                 tree.UbiquitousFallback.Remove element |> ignore
                 tree.UbiquitousFallback.Add element |> ignore
                 Octnode.removeElement boundsOld &element tree.Node |> ignore
+                if isOutOfBounds then logOutOfBounds element tree
         else
             if isInNode then
                 tree.UbiquitousFallback.Remove element |> ignore
@@ -587,6 +599,7 @@ module Octree =
             else
                 tree.UbiquitousFallback.Remove element |> ignore
                 tree.UbiquitousFallback.Add element |> ignore
+                if isOutOfBounds then logOutOfBounds element tree
 
     /// Clear the contents of the tree.
     let clear tree =

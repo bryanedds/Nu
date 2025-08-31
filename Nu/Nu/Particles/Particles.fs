@@ -736,6 +736,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       Absolute : bool
       Elevation : single
       Blend : Blend
+      ClipOpt : Box2 option
       Image : Image AssetTag
       Life : Life
       ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
@@ -802,12 +803,13 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body absolute elevation blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body absolute elevation blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
         { Body = body
           Absolute = absolute
           Elevation = elevation
           Blend = blend
+          ClipOpt = clipOpt
           Image = image
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
@@ -871,7 +873,7 @@ module BasicStaticSpriteEmitter =
         { Absolute = emitter.Absolute
           Elevation = emitter.Elevation
           Horizon = emitter.Body.Position.Y
-          ClipOpt = ValueNone // TODO: implement clip support for particles.
+          ClipOpt = Option.toValueOption emitter.ClipOpt
           Blend = emitter.Blend
           Image = emitter.Image
           Particles = particles' }
@@ -883,10 +885,10 @@ module BasicStaticSpriteEmitter =
 
     /// Make a basic static sprite particle emitter.
     let make
-        time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body elevation absolute blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticSpriteEmitter.make
-            time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time body elevation absolute blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
     /// Make an empty basic sprite particle emitter.
@@ -899,7 +901,7 @@ module BasicStaticSpriteEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f Transparent None image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic sprite particle emitter.
@@ -949,7 +951,7 @@ module BasicStaticSpriteEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f Transparent None image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// A tag interface for emitter descriptors.
