@@ -815,7 +815,9 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
-        // accumulate light
+        // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
+        // on certain platforms)
+        if (i == 0) lightAccum = vec4(0.0);
         lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
@@ -826,7 +828,9 @@ void main()
             lightAccum.rgb += kD * scatter * radiance;
         }
 
-        // accumulate fog
+        // accumulate fog, clearing on first light (HACK: seems to fix glClear not working on the respective buffer on
+        // certain platforms)
+        if (i == 0) fogAccum = vec4(0.0);
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
             switch (lightType)
