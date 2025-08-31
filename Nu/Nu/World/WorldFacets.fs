@@ -2448,16 +2448,14 @@ module Light3dFacetExtensions =
             | PointLight ->
                 Matrix4x4.CreateTranslation (-this.GetPosition world)
             | SpotLight (_, _) ->
+                let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
-                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                shadowView.Translation <- this.GetPosition world
-                shadowView <- shadowView.Inverted
+                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Down, shadowRotation.Down.OrthonormalUp)
                 shadowView
             | DirectionalLight | CascadedLight ->
+                let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
-                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                shadowView.Translation <- this.GetPosition world
-                shadowView <- shadowView.Inverted
+                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Down, shadowRotation.Down.OrthonormalUp)
                 shadowView
 
         member this.ComputeShadowProjection world =
@@ -3387,9 +3385,9 @@ module TerrainFacetExtensions =
         member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
         member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
         member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
-        member this.GetSegments world : Vector2i = this.Get (nameof this.Segments) world
-        member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
-        member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
+        member this.GetPatches world : Vector2i = this.Get (nameof this.Patches) world
+        member this.SetPatches (value : Vector2i) world = this.Set (nameof this.Patches) value world
+        member this.Patches = lens (nameof this.Patches) this this.GetPatches this.SetPatches
 
         /// Attempt to get the resolution of the terrain.
         member this.TryGetTerrainResolution world =
@@ -3444,7 +3442,7 @@ type TerrainFacet () =
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
-         define Entity.Segments v2iOne
+         define Entity.Patches (v2i 2 2) // NOTE: terrain patches don't appear to be a great optimization nowadays.
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
@@ -3457,6 +3455,7 @@ type TerrainFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Patches)) entity (nameof TerrainFacet) world
         entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
@@ -3515,7 +3514,7 @@ type TerrainFacet () =
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world
                   HeightMap = entity.GetHeightMap world
-                  Segments = entity.GetSegments world }
+                  Patches = entity.GetPatches world }
             World.enqueueRenderMessage3d
                 (RenderTerrain
                     { Visible = transform.Visible
