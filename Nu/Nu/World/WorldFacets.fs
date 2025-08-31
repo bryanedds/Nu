@@ -33,6 +33,9 @@ module StaticSpriteFacetExtensions =
         member this.GetInsetOpt world : Box2 option = this.Get (nameof this.InsetOpt) world
         member this.SetInsetOpt (value : Box2 option) world = this.Set (nameof this.InsetOpt) value world
         member this.InsetOpt = lens (nameof this.InsetOpt) this this.GetInsetOpt this.SetInsetOpt
+        member this.GetClipOpt world : Box2 option = this.Get (nameof this.ClipOpt) world
+        member this.SetClipOpt (value : Box2 option) world = this.Set (nameof this.ClipOpt) value world
+        member this.ClipOpt = lens (nameof this.ClipOpt) this this.GetClipOpt this.SetClipOpt
         member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
         member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
         member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
@@ -55,6 +58,7 @@ type StaticSpriteFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
+         define Entity.ClipOpt None
          define Entity.StaticImage Assets.Default.StaticSprite
          define Entity.Color Color.One
          define Entity.Blend Transparent
@@ -65,7 +69,7 @@ type StaticSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
         let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = ValueNone : Box2 voption
+        let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
@@ -130,6 +134,7 @@ type AnimatedSpriteFacet () =
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.AnimationStride 1
          define Entity.AnimationSheet Assets.Default.AnimatedSprite
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
@@ -143,7 +148,7 @@ type AnimatedSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
         let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = ValueNone : Box2 voption
+        let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
@@ -1687,6 +1692,7 @@ type TileMapFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
@@ -1758,6 +1764,7 @@ type TileMapFacet () =
                     viewBounds
                     perimeterUnscaled.Min.V2
                     transform.Elevation
+                    (entity.GetClipOpt world |> Option.toValueOption)
                     (entity.GetColor world)
                     (entity.GetEmission world)
                     (entity.GetTileLayerClearance world)
@@ -1792,6 +1799,7 @@ type TmxMapFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
@@ -1860,6 +1868,7 @@ type TmxMapFacet () =
                 viewBounds
                 perimeterUnscaled.Min.V2
                 transform.Elevation
+                (entity.GetClipOpt world |> Option.toValueOption)
                 (entity.GetColor world)
                 (entity.GetEmission world)
                 (entity.GetTileLayerClearance world)
