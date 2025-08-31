@@ -42,6 +42,7 @@ module Effect =
             { StartTime_ : GameTime
               Offset_ : Vector3
               Transform_ : Transform
+              ClipOpt_ : Box2 option
               ShadowOffset_ : single
               RenderType_ : RenderType
               ParticleSystem_ : ParticleSystem
@@ -53,6 +54,7 @@ module Effect =
 
         member this.StartTime = this.StartTime_
         member this.Transform = this.Transform_
+        member this.ClipOpt = this.ClipOpt_
         member this.ShadowOffset = this.ShadowOffset_
         member this.RenderType = this.RenderType_
         member this.ParticleSystem = this.ParticleSystem_
@@ -115,7 +117,7 @@ module Effect =
                   LightCutoff = Constants.Render.LightCutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true }
-            let effectSystem = EffectSystem.make localTime transform.Absolute transform.CastShadow transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
+            let effectSystem = EffectSystem.make localTime transform.Absolute transform.CastShadow transform.Presence effect.ClipOpt_ effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
             let (dataToken, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
@@ -184,10 +186,11 @@ module Effect =
         else (false, effect, DataToken.empty)
 
     /// Make an effect.
-    let makePlus startTime offset transform shadowOffset renderType particleSystem historyMax history definitions descriptor =
+    let makePlus startTime offset transform clipOpt shadowOffset renderType particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
           Offset_ = offset
           Transform_ = transform
+          ClipOpt_ = clipOpt
           ShadowOffset_ = shadowOffset
           RenderType_ = renderType
           ParticleSystem_ = particleSystem
@@ -198,12 +201,12 @@ module Effect =
           Descriptor_ = descriptor }
 
     /// Make an effect.
-    let make startTime offset transform shadowOffset renderType descriptor =
-        makePlus startTime offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (System.Collections.Generic.Deque ()) Map.empty descriptor
+    let make startTime offset transform clipOpt shadowOffset renderType descriptor =
+        makePlus startTime offset transform clipOpt shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (System.Collections.Generic.Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =
-        make GameTime.zero v3Zero (Transform.makeEmpty ()) 0.0f DeferredRenderType EffectDescriptor.empty
+        make GameTime.zero v3Zero (Transform.makeEmpty ()) None 0.0f DeferredRenderType EffectDescriptor.empty
         
 /// A time-based effect.
 type Effect = Effect.Effect

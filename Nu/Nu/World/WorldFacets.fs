@@ -1142,6 +1142,9 @@ module EffectFacetExtensions =
         member this.GetEffectCastShadow world : bool = this.Get (nameof this.EffectCastShadow) world
         member this.SetEffectCastShadow (value : bool) world = this.Set (nameof this.EffectCastShadow) value world
         member this.EffectCastShadow = lens (nameof this.EffectCastShadow) this this.GetEffectCastShadow this.SetEffectCastShadow
+        member this.GetEffectClipOpt world : Box2 option = this.Get (nameof this.EffectClipOpt) world
+        member this.SetEffectClipOpt (value : Box2 option) world = this.Set (nameof this.EffectClipOpt) value world
+        member this.EffectClipOpt = lens (nameof this.EffectClipOpt) this this.GetEffectClipOpt this.SetEffectClipOpt
         member this.GetEffectShadowOffset world : single = this.Get (nameof this.EffectShadowOffset) world
         member this.SetEffectShadowOffset (value : single) world = this.Set (nameof this.EffectShadowOffset) value world
         member this.EffectShadowOffset = lens (nameof this.EffectShadowOffset) this this.GetEffectShadowOffset this.SetEffectShadowOffset
@@ -1181,6 +1184,7 @@ type EffectFacet () =
                 (match entity.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zero)
                 (entity.GetEffectOffset world)
                 (entity.GetTransform world)
+                (entity.GetEffectClipOpt world)
                 (entity.GetEffectShadowOffset world)
                 (entity.GetEffectRenderType world)
                 (entity.GetParticleSystem world)
@@ -1241,6 +1245,7 @@ type EffectFacet () =
          define Entity.EffectDescriptor Effects.EffectDescriptor.empty
          define Entity.EffectOffset v3Zero
          define Entity.EffectCastShadow true
+         define Entity.EffectClipOpt None
          define Entity.EffectShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
          define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
