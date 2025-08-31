@@ -173,6 +173,9 @@ module BasicStaticSpriteEmitterFacetExtensions =
         member this.GetEmitterBlend world : Blend = this.Get (nameof this.EmitterBlend) world
         member this.SetEmitterBlend (value : Blend) world = this.Set (nameof this.EmitterBlend) value world
         member this.EmitterBlend = lens (nameof this.EmitterBlend) this this.GetEmitterBlend this.SetEmitterBlend
+        member this.GetEmitterClipOpt world : Box2 option = this.Get (nameof this.EmitterClipOpt) world
+        member this.SetEmitterClipOpt (value : Box2 option) world = this.Set (nameof this.EmitterClipOpt) value world
+        member this.EmitterClipOpt = lens (nameof this.EmitterClipOpt) this this.GetEmitterClipOpt this.SetEmitterClipOpt
         member this.GetEmitterLifeTimeOpt world : GameTime = this.Get (nameof this.EmitterLifeTimeOpt) world
         member this.SetEmitterLifeTimeOpt (value : GameTime) world = this.Set (nameof this.EmitterLifeTimeOpt) value world
         member this.EmitterLifeTimeOpt = lens (nameof this.EmitterLifeTimeOpt) this this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt
@@ -227,6 +230,7 @@ type BasicStaticSpriteEmitterFacet () =
                       Restitution = Constants.Particles.RestitutionDefault }
                 Elevation = transform.Elevation
                 Absolute = transform.Absolute
+                ClipOpt = entity.GetEmitterClipOpt world
                 Blend = entity.GetEmitterBlend world
                 Image = entity.GetEmitterImage world
                 ParticleSeed = entity.GetBasicParticleSeed world
@@ -261,6 +265,11 @@ type BasicStaticSpriteEmitterFacet () =
     static let handleEmitterBlendChange evt world =
         let emitterBlend = evt.Data.Value :?> Blend
         mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+        Cascade
+
+    static let handleEmitterClipOptChange evt world =
+        let emitterClipOpt = evt.Data.Value :?> Box2 option
+        mapEmitter (fun emitter -> if emitter.ClipOpt <> emitterClipOpt then { emitter with ClipOpt = emitterClipOpt } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterImageChange evt world =
@@ -339,6 +348,7 @@ type BasicStaticSpriteEmitterFacet () =
     static member Properties =
         [define Entity.SelfDestruct false
          define Entity.EmitterBlend Transparent
+         define Entity.EmitterClipOpt None
          define Entity.EmitterImage Assets.Default.Image
          define Entity.EmitterLifeTimeOpt GameTime.zero
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
@@ -357,6 +367,7 @@ type BasicStaticSpriteEmitterFacet () =
         World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterBlendChange entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterClipOptChange entity.EmitterClipOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterImageChange entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
