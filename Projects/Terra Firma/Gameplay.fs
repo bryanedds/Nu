@@ -60,7 +60,7 @@ type GameplayDispatcher () =
             for character in characters do
                 for attacked in World.doSubscription "Attack" character.AttackEvent world do
                     if attacked.GetExists world then
-                        attacked.HitPoints.Map (dec >> max 0) world
+                        attacked.HitPoints.Map dec world
                         if attacked.GetHitPoints world > 0 then
                             if not (attacked.GetActionState world).IsInjuryState then
                                 attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
