@@ -644,6 +644,9 @@ type PhysicsEngine =
 
     /// Get the global gravity used in the physics engine.
     abstract Gravity : Vector3
+
+    /// Get the default global gravity used for the physics engine.
+    abstract GravityDefault : Vector3
     
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
@@ -704,6 +707,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
     private { StubPhysicsEngine : unit }
     static member make () = { StubPhysicsEngine = () }
     interface PhysicsEngine with
+        member physicsEngine.GravityDefault = v3Zero
         member physicsEngine.Gravity = v3Zero
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"

@@ -359,7 +359,9 @@ module Permafreezer3dDispatcherExtensions =
                       Sensor = false
                       Awake = false
                       BodyIndex = index }
-                World.createBody (this.GetIs2d world) bodyId bodyProperties world
+                if this.GetIs2d world
+                then World.createBody2d bodyId bodyProperties world
+                else World.createBody3d bodyId bodyProperties world
                 index <- inc index
 
         member internal this.RegisterFrozenShapes getFrozenShapes world =
@@ -379,7 +381,7 @@ module Permafreezer3dDispatcherExtensions =
             let frozenShapes = getFrozenShapes this world
             for _ in frozenShapes do
                 let bodyId = { BodySource = this; BodyIndex = index }
-                World.destroyBody false bodyId world
+                World.destroyBody3d bodyId world
                 index <- inc index
 
         member internal this.UnregisterFrozenShapes getFrozenShapes world =

@@ -1573,12 +1573,16 @@ type RigidBodyFacet () =
                   Sensor = entity.GetSensor world
                   Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
-            World.createBody is2d bodyId bodyProperties world
+            if entity.GetIs2d world
+            then World.createBody2d bodyId bodyProperties world
+            else World.createBody3d bodyId bodyProperties world
 
     override this.UnregisterPhysics (entity, world) =
         let frozen = entity.GetBodyFrozen world
         if not frozen then
-            World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+            if entity.GetIs2d world
+            then World.destroyBody2d (entity.GetBodyId world) world
+            else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Edit (op, entity, world) =
         match (op, entity.GetBodyType world) with
@@ -1666,13 +1670,17 @@ type BodyJointFacet () =
                   Broken = entity.GetBroken world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
-            World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
+            if entity.GetIs2d world
+            then World.createBodyJoint2d entity bodyJointProperties world
+            else World.createBodyJoint3d entity bodyJointProperties world
         | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
         | Some (targetId, target2IdOpt) ->
-            World.destroyBodyJoint (entity.GetIs2d world) targetId target2IdOpt (entity.GetBodyJointId world) world
+            if entity.GetIs2d world
+            then World.destroyBodyJoint2d targetId target2IdOpt (entity.GetBodyJointId world) world
+            else World.destroyBodyJoint3d targetId target2IdOpt (entity.GetBodyJointId world) world
         | None -> ()
 
     override this.GetAttributesInferred (_, _) =
@@ -1760,11 +1768,15 @@ type TileMapFacet () =
                     (entity.GetCollisionMask world)
                     (entity.GetBodyId world).BodyIndex
                     tileMapDescriptor
-            World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+            if entity.GetIs2d world
+            then World.createBody2d (entity.GetBodyId world) bodyProperties world
+            else World.createBody3d (entity.GetBodyId world) bodyProperties world
         | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+        if entity.GetIs2d world
+        then World.destroyBody2d (entity.GetBodyId world) world
+        else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (_, entity, world) =
         let tileMapAsset = entity.GetTileMap world
@@ -1866,10 +1878,14 @@ type TmxMapFacet () =
                 (entity.GetCollisionMask world)
                 (entity.GetBodyId world).BodyIndex
                 tmxMapDescriptor
-        World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+        if entity.GetIs2d world
+        then World.createBody2d (entity.GetBodyId world) bodyProperties world
+        else World.createBody3d (entity.GetBodyId world) bodyProperties world
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+        if entity.GetIs2d world
+        then World.destroyBody2d (entity.GetBodyId world) world
+        else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -3519,11 +3535,11 @@ type TerrainFacet () =
                   Sensor = false
                   Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
-            World.createBody false bodyId bodyProperties world
+            World.createBody3d bodyId bodyProperties world
         | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody false (entity.GetBodyId world) world
+        World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world

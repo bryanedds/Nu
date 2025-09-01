@@ -1241,6 +1241,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.GravityDefault =
+            Constants.Physics.GravityDefault
+
         member physicsEngine.Gravity =
             physicsEngine.PhysicsContext.Gravity
 
