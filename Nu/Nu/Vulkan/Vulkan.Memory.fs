@@ -336,10 +336,17 @@ module VulkanMemory =
     type BufferAccumulator =
         private
             { Buffers : Buffer List
+              BufferSize : int
               BufferType : BufferType }
 
         /// Get Buffer at index.
         member this.Item index = this.Buffers.[index]
+        
+        static member private manageBufferCount index bufferAccumulator vkc =
+            while index > dec bufferAccumulator.Buffers.Count do
+                let buffers = Array.zeroCreate<Buffer> 16
+                for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferAccumulator.BufferSize bufferAccumulator.BufferType vkc
+                bufferAccumulator.Buffers.AddRange buffers
         
         /// Create BufferAccumulator.
         static member create bufferSize (bufferType : BufferType) vkc =
@@ -351,11 +358,31 @@ module VulkanMemory =
             // make BufferAccumulator
             let bufferAccumulator =
                 { Buffers = List (buffers)
+                  BufferSize = bufferSize
                   BufferType = bufferType }
             
             // fin
             bufferAccumulator
 
+        /// Upload data to Buffer at index.
+        static member upload index offset size data (bufferAccumulator : BufferAccumulator) vkc =
+            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
+            Buffer.upload offset size data bufferAccumulator.[index] vkc
+
+        /// Upload data to Buffer at index with a stride of 16.
+        static member uploadStrided16 index offset typeSize count data (bufferAccumulator : BufferAccumulator) vkc =
+            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
+            Buffer.uploadStrided16 offset typeSize count data bufferAccumulator.[index] vkc
+            
+        /// Upload an array to Buffer at index.
+        static member uploadArray index offset (array : 'a array) (bufferAccumulator : BufferAccumulator) vkc =
+            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
+            Buffer.uploadArray offset array bufferAccumulator.[index] vkc
+        
+        /// Create a BufferAccumulator for a stride of 16.
+        static member createStrided16 length bufferType vkc =
+            BufferAccumulator.create (length * 16) bufferType vkc
+        
         /// Destroy BufferAccumulator.
         static member destroy bufferAccumulator vkc =
-            for i in 0 .. dec bufferAccumulator.Buffers.Count do Buffer.destroy bufferAccumulator.Buffers.[i] vkc
+            for i in 0 .. dec bufferAccumulator.Buffers.Count do Buffer.destroy bufferAccumulator.[i] vkc
