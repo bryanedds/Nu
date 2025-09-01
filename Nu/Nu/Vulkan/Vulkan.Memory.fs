@@ -198,28 +198,6 @@ module VulkanMemory =
                 Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
                 Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
 
-    /// Abstraction for vma allocated image.
-    type Image =
-        private
-            { _VkImage : VkImage
-              _Allocation : VmaAllocation }
-
-        /// The VkImage.
-        member this.VkImage = this._VkImage
-        
-        /// Destroy vkImage and allocation.
-        static member destroy (image : Image) (vkc : Hl.VulkanContext) =
-            Vma.vmaDestroyImage (vkc.VmaAllocator, image.VkImage, image._Allocation)
-
-        /// Create an Image.
-        static member create imageInfo (vkc : Hl.VulkanContext) =
-            let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
-            let mutable vkImage = Unchecked.defaultof<VkImage>
-            let mutable allocation = Unchecked.defaultof<VmaAllocation>
-            Vma.vmaCreateImage (vkc.VmaAllocator, &imageInfo, &info, &vkImage, &allocation, nullPtr) |> Hl.check
-            let image = { _VkImage = vkImage; _Allocation = allocation }
-            image
-
     /// The Vulkan buffer interface for Nu, which internally automates parallelization for frames in flight as necessary.
     type Buffer =
         private 
