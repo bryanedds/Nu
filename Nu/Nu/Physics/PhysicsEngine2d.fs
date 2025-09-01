@@ -680,6 +680,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.GravityDefault =
+            let gravityDefault = Common.Vector2 (Constants.Physics.GravityDefault.X, Constants.Physics.GravityDefault.Y)
+            PhysicsEngine2d.toPixelV3 gravityDefault
+
         member physicsEngine.Gravity =
             PhysicsEngine2d.toPixelV3 physicsEngine.PhysicsContext.Gravity
 

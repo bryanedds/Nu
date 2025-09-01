@@ -352,6 +352,10 @@ module WorldPhysics =
         static member rayCastBodies2d ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
 
+        /// Retrieve the default global gravity of the 2d physics engine in world space.
+        static member getGravityDefault2d world =
+            (World.getPhysicsEngine2d world).GravityDefault
+
         /// Retrieve the global gravity of the 2d physics engine.
         static member getGravity2d world =
             (World.getPhysicsEngine2d world).Gravity
@@ -363,6 +367,10 @@ module WorldPhysics =
         /// Ray cast against 3d physics bodies.
         static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
+
+        /// Retrieve the default global gravity of the 3d physics engine in world space.
+        static member getGravityDefault3d world =
+            (World.getPhysicsEngine3d world).GravityDefault
 
         /// Retrieve the global gravity of the 2d physics engine.
         static member getGravity3d world =
