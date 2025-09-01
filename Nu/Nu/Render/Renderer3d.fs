@@ -3887,6 +3887,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
+        // apply fxaa filter when enabled or otherwise blit to the raster buffer
         if renderer.RendererConfig.FxaaEnabled then
 
             // setup filter 0 buffer and viewport
