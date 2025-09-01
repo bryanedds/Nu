@@ -39,7 +39,7 @@ module SpriteBatch =
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
         private
-            { mutable drawIndex : int
+            { mutable DrawIndex : int
               mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
@@ -171,7 +171,7 @@ module SpriteBatch =
             Hl.endRenderBlock cb vkc.GraphicsQueue [||] [||] vkc.InFlightFence
             
             // next batch
-            env.drawIndex <- inc env.drawIndex
+            env.DrawIndex <- inc env.DrawIndex
             env.SpriteIndex <- 0
 
         // not ready
@@ -183,7 +183,7 @@ module SpriteBatch =
 
     /// Begin a new sprite batch frame.
     let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
-        env.drawIndex <- 0
+        env.DrawIndex <- 0
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
         BeginSpriteBatch SpriteBatchState.defaultState env
@@ -247,7 +247,7 @@ module SpriteBatch =
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
-        { drawIndex = 0; SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkc
+        { DrawIndex = 0; SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkc
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           Pipeline = pipeline
