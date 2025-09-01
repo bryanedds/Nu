@@ -75,12 +75,13 @@ type GameplayDispatcher () =
             // process character deaths
             for character in characters do
                 for dead in World.doSubscription "Death" character.DeathEvent world do
-                    match dead.GetCharacterType world with
-                    | Enemy ->
-                        World.destroyEntity dead world
-                        screen.Score.Map ((+) 100) world
-                    | Player ->
-                        screen.SetGameplayState Quit world
+                    if dead.GetExists world then
+                        match dead.GetCharacterType world with
+                        | Enemy ->
+                            World.destroyEntity dead world
+                            screen.Score.Map ((+) 100) world
+                        | Player ->
+                            screen.SetGameplayState Quit world
 
             // update sun to shine around player
             let sun = Simulants.GameplaySun
