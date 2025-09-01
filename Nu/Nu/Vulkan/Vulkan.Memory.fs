@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Vortice.Vulkan
+open System.Collections.Generic
 open FSharp.NativeInterop
 open Prime
 open Nu
@@ -9,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module VulkanMemory =
 
-    type private BufferType =
+    type BufferType =
         | Staging of bool // in frame
         | Vertex of bool // upload enabled
         | Index of bool // upload enabled
@@ -251,7 +252,7 @@ module VulkanMemory =
             | Uniform -> BufferInternal.create true info vkc
         
         /// Create a Buffer.
-        static member private createInternal size (bufferType : BufferType) vkc =
+        static member create size (bufferType : BufferType) vkc =
             
             // create buffers and sizes
             let length = if bufferType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
@@ -291,23 +292,23 @@ module VulkanMemory =
 
         /// Create a staging Buffer.
         static member createStaging size vkc =
-            Buffer.createInternal size (Staging false) vkc
+            Buffer.create size (Staging false) vkc
         
         /// Create a staging Buffer for use in frame.
         static member createStagingInFrame size vkc =
-            Buffer.createInternal size (Staging true) vkc
+            Buffer.create size (Staging true) vkc
         
         /// Create an uploadable vertex Buffer.
         static member createVertex size vkc =
-            Buffer.createInternal size (Vertex true) vkc
+            Buffer.create size (Vertex true) vkc
 
         /// Create an uploadable index Buffer.
         static member createIndex size vkc =
-            Buffer.createInternal size (Index true) vkc
+            Buffer.create size (Index true) vkc
 
         /// Create a uniform Buffer.
         static member createUniform size vkc =
-            Buffer.createInternal size Uniform vkc
+            Buffer.create size Uniform vkc
 
         /// Create a uniform Buffer for a stride of 16.
         static member createUniformStrided16 length vkc =
@@ -322,7 +323,7 @@ module VulkanMemory =
         /// Create a vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
-            let vertexBuffer = Buffer.createInternal size (Vertex false) vkc
+            let vertexBuffer = Buffer.create size (Vertex false) vkc
             copyData size stagingBuffer.VkBuffer vertexBuffer.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             vertexBuffer
@@ -330,7 +331,7 @@ module VulkanMemory =
         /// Create an index buffer with data uploaded via staging buffer.
         static member createIndexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
-            let indexBuffer = Buffer.createInternal size (Index false) vkc
+            let indexBuffer = Buffer.create size (Index false) vkc
             copyData size stagingBuffer.VkBuffer indexBuffer.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             indexBuffer
@@ -350,3 +351,23 @@ module VulkanMemory =
         /// Destroy Buffer.
         static member destroy buffer vkc =
             for i in 0 .. dec buffer.BufferInternals.Length do BufferInternal.destroy buffer.BufferInternals.[i] vkc
+
+    /// An abstraction for managing Buffers accumulated over multiple renders within a frame.
+    type BufferAccumulator =
+        private
+            { Buffers : Buffer List
+              BufferType : BufferType }
+
+        static member private createInternal size (bufferType : BufferType) vkc =
+            
+            // create initial buffers
+            let buffers = Array.zeroCreate<Buffer> 16
+            for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create size bufferType vkc
+
+            // make BufferAccumulator
+            let bufferAccumulator =
+                { Buffers = List (buffers)
+                  BufferType = bufferType }
+            
+            // fin
+            bufferAccumulator
