@@ -685,7 +685,8 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       SsaoEnabled : bool
       SsaoSampleCount : int
       SsvfEnabled : bool
-      SsrEnabled : bool }
+      SsrEnabled : bool
+      FxaaEnabled : bool }
 
     static member defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
@@ -694,7 +695,8 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           SsaoEnabled = Constants.Render.SsaoEnabledGlobalDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
-          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault }
+          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault
+          FxaaEnabled = Constants.Render.FxaaEnabledDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -3885,37 +3887,51 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
-        // setup filter 0 buffer and viewport
-        let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
+        if renderer.RendererConfig.FxaaEnabled then
 
-        // render filter quad via fxaa
-        OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+            // setup filter 0 buffer and viewport
+            let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
 
-        // setup filter 1 buffer and viewport
-        let (filter1Texture, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
+            // render filter quad via fxaa
+            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
 
-        // render filter quad via gaussian x
-        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+            // setup filter 1 buffer and viewport
+            let (filter1Texture, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
 
-        // setup raster buffer and viewport
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Gl.Viewport (rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y)
-        OpenGL.Hl.Assert ()
+            // render filter quad via gaussian x
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
 
-        // render filter quad via gaussian y
-        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+            // setup raster buffer and viewport
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+            OpenGL.Gl.Viewport (rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y)
+            OpenGL.Hl.Assert ()
+
+            // render filter quad via gaussian y
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+        else
+
+            // blit composition buffer to raster buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+               (0, 0, geometryResolution.X, geometryResolution.Y,
+                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
+                OpenGL.ClearBufferMask.ColorBufferBit,
+                OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
 
     /// Render 3d surfaces.
     static member render
