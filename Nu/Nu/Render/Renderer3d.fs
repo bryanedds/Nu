@@ -680,19 +680,23 @@ type [<SymbolicExpansion>] Lighting3dConfig =
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
     { LightMappingEnabled : bool
+      LightShadowingEnabled : bool
       SssEnabled : bool
       SsaoEnabled : bool
       SsaoSampleCount : int
       SsvfEnabled : bool
-      SsrEnabled : bool }
+      SsrEnabled : bool
+      FxaaEnabled : bool }
 
     static member defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+          LightShadowingEnabled = Constants.Render.LightShadowingEnabledDefault
           SssEnabled = Constants.Render.SssEnabledGlobalDefault
           SsaoEnabled = Constants.Render.SsaoEnabledGlobalDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
-          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault }
+          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault
+          FxaaEnabled = Constants.Render.FxaaEnabledDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -1007,8 +1011,8 @@ type [<ReferenceEquality>] private RenderTasks =
 
         renderTasks.ShadowBufferIndexOpt <- None
 
-    static member shadowUpToDate lightingConfigChanged renderTasks renderTasksCached =
-        if not lightingConfigChanged then
+    static member shadowUpToDate lightingConfigChanged renderingConfigChanged renderTasks renderTasksCached =
+        if not lightingConfigChanged && not renderingConfigChanged then
             let deferredStaticCached =
                 renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
                 (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic)
@@ -1140,6 +1144,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable LightingConfig : Lighting3dConfig
           mutable LightingConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
+          mutable RendererConfigChanged : bool
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)>
@@ -2773,6 +2778,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
             | ConfigureRenderer3d r3c ->
+                if renderer.RendererConfig <> r3c then renderer.RendererConfigChanged <- true
                 renderer.RendererConfig <- r3c
             | LoadRenderPackage3d packageName ->
                 GlRenderer3d.handleLoadRenderPackage packageName renderer
@@ -3881,37 +3887,52 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
-        // setup filter 0 buffer and viewport
-        let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
+        // apply fxaa filter when enabled or otherwise blit to the raster buffer
+        if renderer.RendererConfig.FxaaEnabled then
 
-        // render filter quad via fxaa
-        OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+            // setup filter 0 buffer and viewport
+            let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
 
-        // setup filter 1 buffer and viewport
-        let (filter1Texture, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
+            // render filter quad via fxaa
+            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
 
-        // render filter quad via gaussian x
-        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+            // setup filter 1 buffer and viewport
+            let (filter1Texture, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
 
-        // setup raster buffer and viewport
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Gl.Viewport (rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y)
-        OpenGL.Hl.Assert ()
+            // render filter quad via gaussian x
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
 
-        // render filter quad via gaussian y
-        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+            // setup raster buffer and viewport
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+            OpenGL.Gl.Viewport (rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y)
+            OpenGL.Hl.Assert ()
+
+            // render filter quad via gaussian y
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+        else
+
+            // blit composition buffer to raster buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+               (0, 0, geometryResolution.X, geometryResolution.Y,
+                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
+                OpenGL.ClearBufferMask.ColorBufferBit,
+                OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
 
     /// Render 3d surfaces.
     static member render
@@ -4056,10 +4077,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         // shadow texture pre-passes
         let mutable shadowTextureBufferIndex = 0
         for struct (lightId, lightOrigin, lightCutoff, lightConeOuter, lightDesireShadows, lightBounds) in spotAndDirectionalLightsArray do
-            if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, shadowRotation, shadowFrustum) when lightId = shadowLightId && shadowIndexInfoOpt.IsNone && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, shadowRotation, shadowFrustum) when
+                        lightId = shadowLightId && shadowIndexInfoOpt.IsNone && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
 
                         // attempt to set up shadow texture drawing
                         let (shadowOrigin, shadowView, shadowProjection) =
@@ -4076,13 +4098,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (lightOrigin, shadowView, shadowProjection)
                             | PointLight | CascadedLight -> failwithumf ()
-
+                            
                         // draw shadow texture when not cached
                         let shouldDraw =
+                            renderer.RendererConfig.LightShadowingEnabled &&
                             match renderer.RenderPasses2.TryGetValue renderPass with
                             | (true, renderTasksCached) ->
                                 if Option.contains shadowTextureBufferIndex renderTasksCached.ShadowBufferIndexOpt then
-                                    let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached
+                                    let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
                                     not upToDate
                                 else true
                             | (_, _) -> true
@@ -4134,10 +4157,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
         for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows, lightBounds) in pointLightsArray do
-            if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowMapBufferIndex < Constants.Render.ShadowMapsMax ->
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when
+                        lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowMapBufferIndex < Constants.Render.ShadowMapsMax ->
                         match shadowLightType with
                         | PointLight ->
 
@@ -4145,14 +4169,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let (shadowFace, shadowView, shadowProjection) = shadowIndexInfoOpt.Value
                             let shadowViewProjection = shadowView * shadowProjection
 
-                            // draw shadow texture when not cached
+                            // draw shadow map when not cached
                             // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map
                             // once per face render here, but probably nothing worth caring about.
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) ->
                                     if Option.contains (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
-                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
                                         not upToDate
                                     else true
                                 | (_, _) -> true
@@ -4190,25 +4214,26 @@ type [<ReferenceEquality>] GlRenderer3d =
         // shadow cascade pre-passes
         let mutable shadowCascadeBufferIndex = 0
         for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows, lightBounds) in cascadedLightsArray do
-            if lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when
+                        lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
                         match shadowLightType with
                         | CascadedLight ->
 
                             // destructure shadow index info
                             let (shadowCascadeLevel, shadowView, shadowProjection) = shadowIndexInfoOpt.Value
                             let shadowViewProjection = shadowView * shadowProjection
-
-                            // draw shadow texture when not cached
+                            
+                            // draw shadow cascade when not cached
                             // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow texture
                             // array once per face render here, but probably nothing worth caring about.
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) ->
                                     if Option.contains (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
-                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderTasks renderTasksCached
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
                                         not upToDate
                                     else true
                                 | (_, _) -> true
@@ -4628,6 +4653,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               LightingConfig = Lighting3dConfig.defaultConfig
               LightingConfigChanged = false
               RendererConfig = Renderer3dConfig.defaultConfig
+              RendererConfigChanged = false
               InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]
               ForwardSurfacesComparer = forwardSurfacesComparer

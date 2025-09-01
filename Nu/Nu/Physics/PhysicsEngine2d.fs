@@ -795,8 +795,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     // render fixtures in body
                     let (_, body) = bodyEntry.Value
                     let transform =
-                        Matrix3x2.CreateRotation body.Rotation
-                        * Matrix3x2.CreateTranslation (PhysicsEngine2d.toPixelV2 body.Position)
+                        Matrix3x2.CreateRotation body.Rotation *
+                        Matrix3x2.CreateTranslation (PhysicsEngine2d.toPixelV2 body.Position)
                     let eyeBounds = renderContext.EyeBounds
                     for fixture in body.FixtureList do
 

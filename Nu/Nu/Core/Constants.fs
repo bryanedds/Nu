@@ -222,6 +222,7 @@ module Render =
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] LightAmbientBoostCutoffDefault = 0.3f
     let [<Literal>] LightAmbientBoostScalarDefault = 0.5f
+    let [<Literal>] LightShadowingEnabledDefault = true
     let [<Literal>] LightShadowSamplesDefault = 3
     let [<Literal>] LightShadowBiasDefault = 0.02f
     let [<Literal>] LightShadowSampleScalarDefault = 0.02f

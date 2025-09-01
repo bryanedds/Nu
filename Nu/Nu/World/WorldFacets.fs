@@ -1276,7 +1276,7 @@ type EffectFacet () =
     override this.Render (renderPass, entity, world) =
 
         // ensure rendering is applicable for this pass
-        let castShadow = entity.GetEffectCastShadow world
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && entity.GetEffectCastShadow world
         if not renderPass.IsShadowPass || castShadow then
 
             // render effect data token
@@ -2652,7 +2652,7 @@ type StaticBillboardFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -2720,7 +2720,7 @@ type AnimatedBillboardFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -2965,7 +2965,7 @@ type BasicStaticBillboardEmitterFacet () =
             processOutput output entity world
 
     override this.Render (renderPass, entity, world) =
-        let castShadow = entity.GetEmitterCastShadow world
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && entity.GetEmitterCastShadow world
         if not renderPass.IsShadowPass || castShadow then
             let time = world.GameTime
             let presence = entity.GetPresence world
@@ -3046,7 +3046,7 @@ type StaticModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -3118,7 +3118,7 @@ type StaticModelSurfaceFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -3338,7 +3338,7 @@ type AnimatedModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -3543,7 +3543,7 @@ type TerrainFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let terrainDescriptor =
                 { Bounds = transform.Bounds3d

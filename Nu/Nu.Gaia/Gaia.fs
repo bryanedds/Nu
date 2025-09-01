@@ -3199,25 +3199,31 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let renderer3dConfig = World.getRenderer3dConfig world
             let mutable renderer3dEdited = false
             let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
+            let mutable lightShadowingEnabled = renderer3dConfig.LightShadowingEnabled
             let mutable sssEnabled = renderer3dConfig.SssEnabled
             let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
             let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
             let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
             let mutable ssrEnabled = renderer3dConfig.SsrEnabled
+            let mutable fxaaEnabled = renderer3dConfig.FxaaEnabled
             renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Light Shadowing Enabled", &lightShadowingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Fxaa Enabled", &fxaaEnabled) || renderer3dEdited
             if renderer3dEdited then
                 let renderer3dConfig =
                     { LightMappingEnabled = lightMappingEnabled
+                      LightShadowingEnabled = lightShadowingEnabled
                       SssEnabled = sssEnabled
                       SsaoEnabled = ssaoEnabled
                       SsaoSampleCount = ssaoSampleCount
                       SsvfEnabled = ssvfEnabled
-                      SsrEnabled = ssrEnabled }
+                      SsrEnabled = ssrEnabled
+                      FxaaEnabled = fxaaEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
         ImGui.End ()
 
