@@ -338,11 +338,15 @@ module VulkanMemory =
             { Buffers : Buffer List
               BufferType : BufferType }
 
-        static member private createInternal size (bufferType : BufferType) vkc =
+        /// Get Buffer at index.
+        member this.Item index = this.Buffers.[index]
+        
+        /// Create BufferAccumulator.
+        static member create bufferSize (bufferType : BufferType) vkc =
             
             // create initial buffers
             let buffers = Array.zeroCreate<Buffer> 16
-            for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create size bufferType vkc
+            for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferSize bufferType vkc
 
             // make BufferAccumulator
             let bufferAccumulator =
@@ -351,3 +355,7 @@ module VulkanMemory =
             
             // fin
             bufferAccumulator
+
+        /// Destroy BufferAccumulator.
+        static member destroy bufferAccumulator vkc =
+            for i in 0 .. dec bufferAccumulator.Buffers.Count do Buffer.destroy bufferAccumulator.Buffers.[i] vkc
