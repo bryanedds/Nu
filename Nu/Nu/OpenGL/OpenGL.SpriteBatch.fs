@@ -247,7 +247,8 @@ module SpriteBatch =
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
-          TexUniform = texUniform; Shader = shader
+          TexUniform = texUniform
+          Shader = shader
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
@@ -258,4 +259,5 @@ module SpriteBatch =
 
     /// Destroy the given sprite batch environment.
     let DestroySpriteBatchEnv env =
-        env.SpriteIndex <- 0
+        Gl.DeleteProgram env.Shader
+        Gl.DeleteVertexArrays [|env.Vao|]
