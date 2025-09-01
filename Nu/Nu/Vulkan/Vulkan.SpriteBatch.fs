@@ -75,12 +75,12 @@ module SpriteBatch =
                 [||] vkc.RenderPass vkc
 
         // create sprite batch uniform buffers
-        let perimetersUniform = VulkanMemory.Buffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
-        let pivotsUniform = VulkanMemory.Buffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
-        let rotationsUniform = VulkanMemory.Buffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
-        let texCoordsesUniform = VulkanMemory.Buffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
-        let colorsUniform = VulkanMemory.Buffer.createUniformStrided16 Constants.Render.SpriteBatchSize vkc
-        let viewProjectionUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 16) vkc
+        let perimetersUniform = VulkanMemory.Buffer.createStrided16 Constants.Render.SpriteBatchSize VulkanMemory.Uniform vkc
+        let pivotsUniform = VulkanMemory.Buffer.createStrided16 Constants.Render.SpriteBatchSize VulkanMemory.Uniform vkc
+        let rotationsUniform = VulkanMemory.Buffer.createStrided16 Constants.Render.SpriteBatchSize VulkanMemory.Uniform vkc
+        let texCoordsesUniform = VulkanMemory.Buffer.createStrided16 Constants.Render.SpriteBatchSize VulkanMemory.Uniform vkc
+        let colorsUniform = VulkanMemory.Buffer.createStrided16 Constants.Render.SpriteBatchSize VulkanMemory.Uniform vkc
+        let viewProjectionUniform = VulkanMemory.Buffer.create (sizeof<single> * 16) VulkanMemory.Uniform vkc
 
         // write sprite batch descriptor set
         Pipeline.Pipeline.writeDescriptorUniform 0 0 perimetersUniform pipeline vkc

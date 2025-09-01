@@ -584,7 +584,7 @@ module Texture =
             // create the resources
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let vulkanTextures = [|VulkanTexture.createEmpty vkc; VulkanTexture.createEmpty vkc|]
-            let stagingBuffers = [|VulkanMemory.Buffer.createStagingInFrame sbSize vkc; VulkanMemory.Buffer.createStagingInFrame sbSize vkc|]
+            let stagingBuffers = [|VulkanMemory.Buffer.create sbSize (VulkanMemory.Staging true) vkc; VulkanMemory.Buffer.create sbSize (VulkanMemory.Staging true) vkc|]
 
             // make DynamicTexture
             let dynamicTexture =

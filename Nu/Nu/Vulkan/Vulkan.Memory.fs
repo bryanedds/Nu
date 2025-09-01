@@ -80,7 +80,7 @@ module VulkanMemory =
         else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
     
     /// Copy data from the source buffer to the destination buffer.
-    let private copyData size source destination (vkc : Hl.VulkanContext) =
+    let copyData size source destination (vkc : Hl.VulkanContext) =
         let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
@@ -290,33 +290,13 @@ module VulkanMemory =
             use arrayPin = new ArrayPin<_> (array)
             Buffer.upload offset size arrayPin.NativeInt buffer vkc
 
-        /// Create a staging Buffer.
-        static member createStaging size vkc =
-            Buffer.create size (Staging false) vkc
-        
-        /// Create a staging Buffer for use in frame.
-        static member createStagingInFrame size vkc =
-            Buffer.create size (Staging true) vkc
-        
-        /// Create an uploadable vertex Buffer.
-        static member createVertex size vkc =
-            Buffer.create size (Vertex true) vkc
-
-        /// Create an uploadable index Buffer.
-        static member createIndex size vkc =
-            Buffer.create size (Index true) vkc
-
-        /// Create a uniform Buffer.
-        static member createUniform size vkc =
-            Buffer.create size Uniform vkc
-
-        /// Create a uniform Buffer for a stride of 16.
-        static member createUniformStrided16 length vkc =
-            Buffer.createUniform (length * 16) vkc
+        /// Create a Buffer for a stride of 16.
+        static member createStrided16 length bufferType vkc =
+            Buffer.create (length * 16) bufferType vkc
 
         /// Create a staging buffer and stage the data.
         static member stageData size data vkc =
-            let buffer = Buffer.createStaging size vkc
+            let buffer = Buffer.create size (Staging false) vkc
             Buffer.upload 0 size data buffer vkc
             buffer
 

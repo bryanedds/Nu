@@ -386,8 +386,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- VulkanMemory.Buffer.createVertex vertexBufferSize vkc
-            indexBuffer <- VulkanMemory.Buffer.createIndex indexBufferSize vkc
+            vertexBuffer <- VulkanMemory.Buffer.create vertexBufferSize (VulkanMemory.Vertex true) vkc
+            indexBuffer <- VulkanMemory.Buffer.create indexBufferSize (VulkanMemory.Index true) vkc
 
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) _ =
 

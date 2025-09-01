@@ -28,9 +28,9 @@ module Sprite =
                 [||] vkc.RenderPass vkc
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 16) vkc
-        let texCoords4Uniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 4) vkc
-        let colorUniform = VulkanMemory.Buffer.createUniform (sizeof<single> * 4) vkc
+        let modelViewProjectionUniform = VulkanMemory.Buffer.create (sizeof<single> * 16) VulkanMemory.Uniform vkc
+        let texCoords4Uniform = VulkanMemory.Buffer.create (sizeof<single> * 4) VulkanMemory.Uniform vkc
+        let colorUniform = VulkanMemory.Buffer.create (sizeof<single> * 4) VulkanMemory.Uniform vkc
 
         // write sprite descriptor set
         Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vkc
