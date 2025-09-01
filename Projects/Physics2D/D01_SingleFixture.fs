@@ -21,7 +21,6 @@ module D01_SingleFixtureExtensions =
         member this.SetPhysicsAnchorEntity (value : Map<Entity, Entity>) world = this.Set (nameof Screen.PhysicsAnchorEntity) value world
         member this.PhysicsAnchorEntity = lens (nameof Screen.PhysicsAnchorEntity) this this.GetPhysicsAnchorEntity this.SetPhysicsAnchorEntity
         
-        
 // this is the dispatcher that customizes the top-level behavior of our game.
 type D01_SingleFixtureDispatcher () =
     inherit ScreenDispatcherImSim ()
@@ -77,10 +76,10 @@ type D01_SingleFixtureDispatcher () =
             World.applyBodyForce (v3 1f 0f 0f * agentForce) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.W world then
             // Fly up despite gravity
-            World.applyBodyForce (v3 0f 1f 0f * agentForce - World.getGravity true world) None agentBody world
+            World.applyBodyForce (v3 0f 1f 0f * agentForce - World.getGravity2d world) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.S world then
             // Glide down despite gravity
-            World.applyBodyForce (v3 0f -1f 0f * agentForce - World.getGravity true world) None agentBody world
+            World.applyBodyForce (v3 0f -1f 0f * agentForce - World.getGravity2d world) None agentBody world
         if World.isKeyboardKeyDown KeyboardKey.Q world then
             World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agentBody world
         if World.isKeyboardKeyDown KeyboardKey.E world then
@@ -93,16 +92,31 @@ type D01_SingleFixtureDispatcher () =
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
             // Optimizations can reuse the same set for different queries.
             for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
-                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
-                // Check rigid body facet existence to confirm the body type property's validity before reading it
-                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
-                    if screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
-                        screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
-                        entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+                // NOTE: Some dynamic bodies may escape the border due to collisions against kinematic bodies (e.g. fans here).
+                // In Nu, when an entity falls outside of the spatial bounds, e.g. by gravity,
+                // it becomes omnipresent, meaning that it is returned for all spatial queries
+                // e.g. World.getEntities2dAtPoint (affecting mouse dragging here).
+                // This happens because Nu's spatial tree (Quadtree for 2D, Octtree for 3D) has a limited size.
+                // The simplest resolution by Nu (avoiding engine complexity) that doesn't cause exceptions
+                // for MMCC and ImSim APIs (happens when the entity is silently dropped) is to make
+                // them omnipresent with a warning in the logs when this occurs.
+                // For normal games, a game bounds within the spatial bounds should be defined to handle out of bounds entities.
+                // For illustrative purposes here, we allow the warning to occur and use the spatial bounds as game bounds.
+                if (World.getSpatialBounds2d world).Contains (entity.GetBounds(world).Box2) <> ContainmentType.Contains then
+                    screen.ExtraEntities.Map (Map.remove entity) world
+                else
+                    let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                    // Check rigid body facet existence to confirm the body type property's validity before reading it
+                    if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
+                        if screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
+                            screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
+                            entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
 
         match screen.GetDraggedEntity world with
+        | Some (draggedEntity, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
+            screen.SetDraggedEntity None world
+            draggedEntity.SetBodyType draggedBodyType world
         | Some (draggedEntity, draggedBodyType) ->
-
             // declare sensor for mouse body
             World.doSphere2d "MouseSensor" // A sphere uses static physics by default.
                 [Entity.BodyShape .= SphereShape
@@ -150,10 +164,6 @@ type D01_SingleFixtureDispatcher () =
                  // The line is not part of the physics simulation, so it has an empty body shape.
                  Entity.BodyShape .= EmptyShape] world |> ignore
 
-            if World.isMouseButtonUp MouseLeft world then
-                screen.SetDraggedEntity None world
-                draggedEntity.SetBodyType draggedBodyType world
-
         | None -> ()
 
         // BUTTONS TO ADD DYNAMIC BODIES - moving and reacting to forces and collisions //
@@ -185,7 +195,7 @@ type D01_SingleFixtureDispatcher () =
                      Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
             screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add world.DeclaredEntity Ball) world
 
-        // Add small boxes button
+        // Add small balls button
         if World.doButton "Add Tiny Balls"
             [Entity.Position .= v3 255f 100f 0f
              Entity.Text .= "Add Tiny Balls"
@@ -255,8 +265,8 @@ type D01_SingleFixtureDispatcher () =
                      Entity.CollisionMask .= "01"
                      Entity.StaticImage .= Assets.Default.Black] world
             let blade = world.DeclaredEntity
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add blade Box) world
-            screen.SetPhysicsAnchorEntity (screen.GetPhysicsAnchorEntity world |> Map.add blade anchor) world
+            screen.ExtraEntities.Map (Map.add blade Box) world
+            screen.PhysicsAnchorEntity.Map (Map.add blade anchor) world
             
             // Declare weld joint to link the two blades together at the center point (x, y)
             let _ =
@@ -275,10 +285,6 @@ type D01_SingleFixtureDispatcher () =
 
         // Ensure the entities persist across ImSim renders.
         for keyValue in screen.GetExtraEntities world do
-            // Remove entities that have been thrown outside the spatial bounds from collisions against the border.
-            // Otherwise, mouse dragging would detect out of bounds entities that become ubiquitous.
-            if (World.getSpatialBounds2d world).Contains (keyValue.Key.GetBounds(world).Box2) <> ContainmentType.Contains then
-                screen.SetExtraEntities (screen.GetExtraEntities world |> Map.remove keyValue.Key) world
             match keyValue.Value with
             | Box -> World.doBox2d keyValue.Key.Name [] world |> ignore
             | Ball -> World.doBall2d keyValue.Key.Name [] world |> ignore
@@ -301,12 +307,12 @@ type D01_SingleFixtureDispatcher () =
             screen.SetPhysicsAnchorEntity Map.empty world
 
         // Gravity
-        let gravityDisabled = World.getGravity true world = v3Zero
+        let gravityDisabled = World.getGravity2d world = v3Zero
         if World.doButton "Gravity"
             [Entity.Position .= v3 255f -50f 0f
              Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
              Entity.Elevation .= 1f] world then
-            World.setGravity true (if gravityDisabled then v3 0f (-9.80665f * Constants.Engine.Meter2d) 0f else v3Zero) world
+            World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
 
         // Exit button (click behavior specified at Physics2D.fs)
         let _ =
