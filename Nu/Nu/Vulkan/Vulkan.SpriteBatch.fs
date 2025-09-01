@@ -39,7 +39,8 @@ module SpriteBatch =
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
         private
-            { mutable SpriteIndex : int
+            { mutable drawIndex : int
+              mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
               VulkanGlobal : Hl.VulkanContext
@@ -170,6 +171,7 @@ module SpriteBatch =
             Hl.endRenderBlock cb vkc.GraphicsQueue [||] [||] vkc.InFlightFence
             
             // next batch
+            env.drawIndex <- inc env.drawIndex
             env.SpriteIndex <- 0
 
         // not ready
@@ -181,6 +183,7 @@ module SpriteBatch =
 
     /// Begin a new sprite batch frame.
     let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
+        env.drawIndex <- 0
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
         BeginSpriteBatch SpriteBatchState.defaultState env
@@ -244,7 +247,7 @@ module SpriteBatch =
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
-        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkc
+        { drawIndex = 0; SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkc
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           Pipeline = pipeline
@@ -257,8 +260,6 @@ module SpriteBatch =
 
     /// Destroy the given sprite batch environment.
     let DestroySpriteBatchEnv env =
-        
-        // destroy Vulkan resources
         let vkc = env.VulkanGlobal
         Pipeline.Pipeline.destroy env.Pipeline vkc
         VulkanMemory.Buffer.destroy env.PerimetersUniform vkc
@@ -267,6 +268,3 @@ module SpriteBatch =
         VulkanMemory.Buffer.destroy env.TexCoordsesUniform vkc
         VulkanMemory.Buffer.destroy env.ColorsUniform vkc
         VulkanMemory.Buffer.destroy env.ViewProjectionUniform vkc
-        
-        // reset sprite index
-        env.SpriteIndex <- 0
