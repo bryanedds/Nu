@@ -59,17 +59,18 @@ type GameplayDispatcher () =
             // process character attacks
             for character in characters do
                 for attacked in World.doSubscription "Attack" character.AttackEvent world do
-                    attacked.HitPoints.Map (dec >> max 0) world
-                    if attacked.GetHitPoints world > 0 then
-                        if not (attacked.GetActionState world).IsInjuryState then
-                            attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                            attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
-                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                    else
-                        if not (attacked.GetActionState world).IsWoundState then
-                            attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                            attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
-                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                    if attacked.GetExists world then
+                        attacked.HitPoints.Map (dec >> max 0) world
+                        if attacked.GetHitPoints world > 0 then
+                            if not (attacked.GetActionState world).IsInjuryState then
+                                attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                                attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                        else
+                            if not (attacked.GetActionState world).IsWoundState then
+                                attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                                attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
+                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
 
             // process character deaths
             for character in characters do
