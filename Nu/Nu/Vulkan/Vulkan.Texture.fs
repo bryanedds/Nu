@@ -499,11 +499,11 @@ module Texture =
         /// Upload pixel data to VulkanTexture. Can only be done once.
         static member upload metadata mipLevel pixels (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.Format.BytesPerPixel
-            let stagingBuffer = VulkanMemory.Buffer.stageData uploadSize pixels vkc
+            let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
             let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
             VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.Image
             Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
-            VulkanMemory.Buffer.destroy stagingBuffer vkc
+            Buffer.Buffer.destroy stagingBuffer vkc
 
         /// Upload array of pixel data to VulkanTexture. Can only be done once.
         static member uploadArray metadata mipLevel array vulkanTexture vkc =
@@ -539,7 +539,7 @@ module Texture =
     type DynamicTexture =
         private
             { VulkanTextures : VulkanTexture array
-              StagingBuffers : VulkanMemory.Buffer array
+              StagingBuffers : Buffer.Buffer array
               Format : ImageFormat
               mutable StagingBufferSize : int
               mutable TextureIndex : int }
@@ -557,10 +557,10 @@ module Texture =
             // enlarge staging buffer size if needed
             let imageSize = metadata.TextureWidth * metadata.TextureHeight * dynamicTexture.Format.BytesPerPixel
             while imageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
-            VulkanMemory.Buffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.StagingBuffer vkc
+            Buffer.Buffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.StagingBuffer vkc
 
             // stage pixels
-            VulkanMemory.Buffer.upload 0 imageSize pixels dynamicTexture.StagingBuffer vkc
+            Buffer.Buffer.upload 0 imageSize pixels dynamicTexture.StagingBuffer vkc
 
             // destroy expired VulkanTexture
             VulkanTexture.destroy dynamicTexture.VulkanTexture vkc
@@ -589,7 +589,7 @@ module Texture =
             // create the resources
             let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let vulkanTextures = [|VulkanTexture.createEmpty vkc; VulkanTexture.createEmpty vkc|]
-            let stagingBuffers = [|VulkanMemory.Buffer.create sbSize (VulkanMemory.Staging true) vkc; VulkanMemory.Buffer.create sbSize (VulkanMemory.Staging true) vkc|]
+            let stagingBuffers = [|Buffer.Buffer.create sbSize (Buffer.Staging true) vkc; Buffer.Buffer.create sbSize (Buffer.Staging true) vkc|]
 
             // make DynamicTexture
             let dynamicTexture =
@@ -606,8 +606,8 @@ module Texture =
         static member destroy dynamicTexture vkc =
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[0] vkc
             VulkanTexture.destroy dynamicTexture.VulkanTextures.[1] vkc
-            VulkanMemory.Buffer.destroy dynamicTexture.StagingBuffers.[0] vkc
-            VulkanMemory.Buffer.destroy dynamicTexture.StagingBuffers.[1] vkc
+            Buffer.Buffer.destroy dynamicTexture.StagingBuffers.[0] vkc
+            Buffer.Buffer.destroy dynamicTexture.StagingBuffers.[1] vkc
     
     /// Describes data loaded from a texture.
     type TextureData =

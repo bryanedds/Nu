@@ -217,7 +217,7 @@ module Pipeline =
         
         /// Write a uniform to the descriptor sets at initialization.
         /// TODO: DJL: this method expects an uploadable and therefore paralellized uniform that also will never be resized, these must eventually be accounted for.
-        static member writeDescriptorUniform (binding : int) (descriptorIndex : int) (uniform : VulkanMemory.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorUniform (binding : int) (descriptorIndex : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
 
             for i in 0 .. dec pipeline._DescriptorSets.Length do
             

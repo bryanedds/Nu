@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module VulkanMemory =
+module Buffer =
 
     type BufferType =
         | Staging of bool // in frame

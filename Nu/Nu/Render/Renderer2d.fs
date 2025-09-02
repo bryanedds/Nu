@@ -173,10 +173,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanContext : Hl.VulkanContext
           mutable Viewport : Viewport
-          TextQuad : VulkanMemory.Buffer * VulkanMemory.Buffer
+          TextQuad : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.DynamicTexture
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
-          SpritePipeline : VulkanMemory.Buffer * VulkanMemory.Buffer * VulkanMemory.Buffer * Pipeline.Pipeline
+          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -940,11 +940,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (vertices, indices) = renderer.TextQuad
             Texture.DynamicTexture.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
-            VulkanMemory.Buffer.destroy modelViewProjectionUniform vkc
-            VulkanMemory.Buffer.destroy texCoords4Uniform vkc
-            VulkanMemory.Buffer.destroy colorUniform vkc
-            VulkanMemory.Buffer.destroy vertices vkc
-            VulkanMemory.Buffer.destroy indices vkc
+            Buffer.Buffer.destroy modelViewProjectionUniform vkc
+            Buffer.Buffer.destroy texCoords4Uniform vkc
+            Buffer.Buffer.destroy colorUniform vkc
+            Buffer.Buffer.destroy vertices vkc
+            Buffer.Buffer.destroy indices vkc
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

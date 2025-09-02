@@ -341,8 +341,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
     let mutable viewport = viewport
     let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
     let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
-    let mutable vertexBuffer = Unchecked.defaultof<VulkanMemory.Buffer>
-    let mutable indexBuffer = Unchecked.defaultof<VulkanMemory.Buffer>
+    let mutable vertexBuffer = Unchecked.defaultof<Buffer.Buffer>
+    let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable vertexBufferSize = 8192
     let mutable indexBufferSize = 1024
     
@@ -386,8 +386,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- VulkanMemory.Buffer.create vertexBufferSize (VulkanMemory.Vertex true) vkc
-            indexBuffer <- VulkanMemory.Buffer.create indexBufferSize (VulkanMemory.Index true) vkc
+            vertexBuffer <- Buffer.Buffer.create vertexBufferSize (Buffer.Vertex true) vkc
+            indexBuffer <- Buffer.Buffer.create indexBufferSize (Buffer.Index true) vkc
 
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) _ =
 
@@ -423,8 +423,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                     // enlarge buffer sizes if needed
                     while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    VulkanMemory.Buffer.updateSize vertexBufferSize vertexBuffer vkc
-                    VulkanMemory.Buffer.updateSize indexBufferSize indexBuffer vkc
+                    Buffer.Buffer.updateSize vertexBufferSize vertexBuffer vkc
+                    Buffer.Buffer.updateSize indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -433,8 +433,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                         let drawList = let range = drawData.CmdLists in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        VulkanMemory.Buffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkc
-                        VulkanMemory.Buffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkc
+                        Buffer.Buffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkc
+                        Buffer.Buffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkc
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 
@@ -524,8 +524,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 Hl.endRenderBlock cb vkc.GraphicsQueue [||] [||] vkc.InFlightFence
         
         member renderer.CleanUp () =
-            VulkanMemory.Buffer.destroy indexBuffer vkc
-            VulkanMemory.Buffer.destroy vertexBuffer vkc
+            Buffer.Buffer.destroy indexBuffer vkc
+            Buffer.Buffer.destroy vertexBuffer vkc
             Texture.VulkanTexture.destroy fontTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
 

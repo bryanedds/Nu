@@ -52,7 +52,7 @@
 		<Compile Include="Transform\Transform.fs" />
 		<Compile Include="Assimp\Assimp.fs" />
 		<Compile Include="Vulkan\Vulkan.Hl.fs" />
-		<Compile Include="Vulkan\Vulkan.Memory.fs" />
+		<Compile Include="Vulkan\Vulkan.Buffer.fs" />
 		<Compile Include="Vulkan\Vulkan.Texture.fs" />
 		<Compile Include="Vulkan\Vulkan.Pipeline.fs" />
 		<Compile Include="Vulkan\Vulkan.Sprite.fs" />
