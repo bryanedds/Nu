@@ -4311,8 +4311,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
 
-        // clear lighting config dirty flag
+        // clear config dirty flags
         renderer.LightingConfigChanged <- false
+        renderer.RendererConfigChanged <- false
 
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
@@ -4678,6 +4679,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
 
         member renderer.CleanUp () =
+
             OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapVao|]
             OpenGL.Hl.Assert ()
 
