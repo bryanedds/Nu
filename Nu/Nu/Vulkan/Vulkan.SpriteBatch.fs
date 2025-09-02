@@ -65,7 +65,7 @@ module SpriteBatch =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
-                false true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
+                true true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 2 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
@@ -152,6 +152,9 @@ module SpriteBatch =
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
+            let mutable drawIndex = 0
+            Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &drawIndex)
+            
             // bind descriptor set
             let mutable descriptorSet = env.Pipeline.DescriptorSet
             Vulkan.vkCmdBindDescriptorSets

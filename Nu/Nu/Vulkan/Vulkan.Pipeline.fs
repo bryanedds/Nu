@@ -308,7 +308,7 @@ module Pipeline =
                 if not descriptorIndexing then pushConstantRanges
                 else
                     if Array.exists (fun (range : VkPushConstantRange) -> range.offset < uint sizeof<uint>) pushConstantRanges then Log.fail "Descriptor indexing uses push constant range at offset 0. Additional ranges must be offset by at least one uint, i.e. 4."
-                    let indexRange = Hl.makePushConstantRange (Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT) 0 sizeof<uint>
+                    let indexRange = Hl.makePushConstantRange (Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT) 0 sizeof<int>
                     Array.cons indexRange pushConstantRanges
             
             // create everything
