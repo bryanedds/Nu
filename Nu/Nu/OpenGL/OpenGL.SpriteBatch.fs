@@ -48,14 +48,14 @@ module SpriteBatch =
               mutable ViewProjection2dRelative : Matrix4x4
               mutable ViewProjectionClipAbsolute : Matrix4x4
               mutable ViewProjectionClipRelative : Matrix4x4
-              PerimetersUniform : int
-              TexCoordsesUniform : int
-              PivotsUniform : int
-              RotationsUniform : int
-              ColorsUniform : int
-              ViewProjectionUniform : int
-              TexUniform : int
-              Shader : uint
+              mutable PerimetersUniform : int
+              mutable TexCoordsesUniform : int
+              mutable PivotsUniform : int
+              mutable RotationsUniform : int
+              mutable ColorsUniform : int
+              mutable ViewProjectionUniform : int
+              mutable TexUniform : int
+              mutable Shader : uint
               Perimeters : single array
               Pivots : single array
               Rotations : single array
@@ -64,8 +64,7 @@ module SpriteBatch =
               Vao : uint
               mutable State : SpriteBatchState }
               
-    /// Create a sprite batch shader.
-    let CreateSpriteBatchShader (shaderFilePath : string) =
+    let private CreateSpriteBatchShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -83,6 +82,19 @@ module SpriteBatch =
 
         // make sprite batch shader tuple
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader)
+
+    /// Reload the shaders used by the environment.
+    let ReloadShaders env =
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) =
+            CreateSpriteBatchShader Constants.Paths.SpriteBatchShaderFilePath
+        env.PerimetersUniform <- perimetersUniform
+        env.PivotsUniform <- pivotsUniform
+        env.RotationsUniform <- rotationsUniform
+        env.TexCoordsesUniform <- texCoordsesUniform
+        env.ColorsUniform <- colorsUniform
+        env.ViewProjectionUniform <- viewProjectionUniform
+        env.TexUniform <- texUniform
+        env.Shader <- shader
 
     let private BeginSpriteBatch state env =
         env.State <- state
@@ -229,10 +241,11 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv shaderFilePath =
+    let CreateSpriteBatchEnv () =
 
         // create shader
-        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader shaderFilePath
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) =
+            CreateSpriteBatchShader Constants.Paths.SpriteBatchShaderFilePath
         Hl.Assert ()
 
         // create vao
@@ -243,10 +256,16 @@ module SpriteBatch =
 
         // create env
         { SpriteIndex = 0
-          ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
-          ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
-          TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
+          ViewProjection2dAbsolute = m4Identity
+          ViewProjection2dRelative = m4Identity
+          ViewProjectionClipAbsolute = m4Identity
+          ViewProjectionClipRelative = m4Identity
+          PerimetersUniform = perimetersUniform
+          PivotsUniform = pivotsUniform
+          RotationsUniform = rotationsUniform
+          TexCoordsesUniform = texCoordsesUniform
+          ColorsUniform = colorsUniform
+          ViewProjectionUniform = viewProjectionUniform
           TexUniform = texUniform
           Shader = shader
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
