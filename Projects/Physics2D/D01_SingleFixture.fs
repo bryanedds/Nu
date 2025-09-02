@@ -85,33 +85,40 @@ type D01_SingleFixtureDispatcher () =
         if World.isKeyboardKeyDown KeyboardKey.E world then
             World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
         
-        // Mouse dragging
+        // Mouse dragging - picking up the entity
         let mousePosition = World.getMousePostion2dWorld false world
         if World.isMouseButtonPressed MouseLeft world then
             let physicsAnchors = screen.GetPhysicsAnchorEntity world
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
             // Optimizations can reuse the same set for different queries.
             for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
-                // NOTE: Some dynamic bodies may escape the border due to collisions against kinematic bodies (e.g. fans here).
-                // In Nu, when an entity falls outside of the spatial bounds, e.g. by gravity,
-                // it becomes omnipresent, meaning that it is returned for all spatial queries
-                // e.g. World.getEntities2dAtPoint (affecting mouse dragging here).
-                // This happens because Nu's spatial tree (Quadtree for 2D, Octtree for 3D) has a limited size.
-                // The simplest resolution by Nu (avoiding engine complexity) that doesn't cause exceptions
-                // for MMCC and ImSim APIs (happens when the entity is silently dropped) is to make
-                // them omnipresent with a warning in the logs when this occurs.
-                // For normal games, a game bounds within the spatial bounds should be defined to handle out of bounds entities.
-                // For illustrative purposes here, we allow the warning to occur and use the spatial bounds as game bounds.
-                if (World.getSpatialBounds2d world).Contains (entity.GetBounds(world).Box2) <> ContainmentType.Contains then
-                    screen.ExtraEntities.Map (Map.remove entity) world
-                else
-                    let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
-                    // Check rigid body facet existence to confirm the body type property's validity before reading it
-                    if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
-                        if screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
-                            screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
-                            entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                // Check rigid body facet existence to confirm the body type property's validity before reading it
+                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
+                    // NOTE: Some dynamic bodies may escape the border due to collisions against kinematic bodies (e.g. fans here).
+                    // In Nu, when an entity falls outside of the spatial bounds, e.g. by gravity,
+                    // it becomes omnipresent, meaning that it is returned for all spatial queries
+                    // e.g. World.getEntities2dAtPoint (affecting mouse dragging here).
+                    // This happens because Nu's spatial tree (Quadtree for 2D, Octtree for 3D) has a limited size.
+                    // The simplest resolution by Nu (avoiding engine complexity) that doesn't cause exceptions
+                    // for MMCC and ImSim APIs (happens when the entity is silently dropped) is to make
+                    // them omnipresent with a warning in the logs when this occurs.
+                    // For normal games, a game bounds within the spatial bounds should be defined to handle out of bounds entities.
+                    // For illustrative purposes here, we allow the warning to occur and use the spatial bounds as game bounds.
+                    if (World.getSpatialBounds2d world).Contains (entity.GetBounds(world).Box2) <> ContainmentType.Contains then
+                        // The body ID is unique across rigid bodies, it is just a registration in the physics engine.
+                        if entity.GetBodyId world = agentBody then
+                            // Reset agent position if it falls outside the world
+                            entity.SetPosition v3Zero world
+                            entity.SetLinearVelocity v3Zero world
+                            entity.SetAngularVelocity v3Zero world
+                        else // Remove other entities that fall outside the world
+                            screen.ExtraEntities.Map (Map.remove entity) world
+                    elif screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
+                        screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
+                        entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
 
+        // Mouse dragging - moving the entity
         match screen.GetDraggedEntity world with
         | Some (draggedEntity, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
             screen.SetDraggedEntity None world
@@ -166,6 +173,14 @@ type D01_SingleFixtureDispatcher () =
 
         | None -> ()
 
+        // Mouse scroll - rotating the entity
+        for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
+            let physicsAnchors = screen.GetPhysicsAnchorEntity world
+            for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
+                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
+                    World.applyBodyTorque (v3 40f 0f 0f * event.Travel) (entity.GetBodyId world) world
+
         // BUTTONS TO ADD DYNAMIC BODIES - moving and reacting to forces and collisions //
 
         // Add box button
@@ -181,7 +196,7 @@ type D01_SingleFixtureDispatcher () =
                      Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                      // Avoid stacking new boxes perfectly on top of each other for push forces to occur.
                      Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add world.DeclaredEntity Box) world
+            screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
 
         // Add ball button
         if World.doButton "Add Ball"
@@ -193,7 +208,7 @@ type D01_SingleFixtureDispatcher () =
                     [Entity.Restitution .= 0.5f // A different bounciness specified
                      Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                      Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add world.DeclaredEntity Ball) world
+            screen.ExtraEntities.Map (Map.add world.DeclaredEntity Ball) world
 
         // Add small balls button
         if World.doButton "Add Tiny Balls"
@@ -208,9 +223,56 @@ type D01_SingleFixtureDispatcher () =
                          Entity.Substance .= Mass (1f / 16f) // Make tiny balls have tiny mass when colliding
                          Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                          Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
-                screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add world.DeclaredEntity Ball) world
+                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Ball) world
 
-        // WIP: Soft body button
+        if World.doButton "Add Soft Body"
+            [Entity.Position .= v3 255f 70f 0f
+             Entity.Text .= "Add Soft Body"
+             Entity.Elevation .= 1f] world then
+            let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+            let names = Array.init 32 (fun _ -> Gen.name)
+            let boxCount = float32 names.Length
+            let boxSize = 8f
+            // This scale is large enough such that the soft body doesn't form knots,
+            // but small enough to not spawn individual boxes outside the border.
+            // The body joints will pull individual boxes together no matter how far apart the boxes spawn.
+            let spawnScale = boxSize * boxCount / 8f
+            let (spawnX, spawnY) = (0f, 0f)
+
+            // define soft body countour boxes
+            for i in 0 .. Array.length names - 1 do
+                // Arrange 32 points in a circle for soft body
+                let boxAngle = MathF.Tau * float32 i / boxCount
+                let x = cos boxAngle * spawnScale + spawnX
+                let y = sin boxAngle * spawnScale + spawnY
+                let name = names[i]
+                let _ =
+                    World.doBox2d name
+                        [Entity.Position .= v3 x y 0f
+                         Entity.Restitution .= 0.333f
+                         Entity.Size .= v3 boxSize boxSize 0f
+                         Entity.Substance .= Mass (1f / 512f)
+                         Entity.CollisionDetection .= Continuous
+                         Entity.Color .= color] world
+                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
+
+            // declare soft body contour linkage
+            for (n1, n2) in Array.pairwise names |> Array.add (Array.last names, Array.head names) do
+                let _ =
+                    World.doBodyJoint2d Gen.name
+                        // Aside from using two entities directly, a relation of two entities in the same group can also be
+                        // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
+                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
+                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                         Entity.CollideConnected .= true // Each box linked should collide with each other
+                         Entity.BreakingPoint .= infinityf
+                         Entity.BodyJoint .= TwoBodyJoint2d
+                            { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                // Local coordinates are used here which centers at the body coordinates,
+                                // but we still have to convert from world scale to physics engine scale ourselves.
+                                let boxSize = toPhysics boxSize
+                                RevoluteJoint (a, b, new _(toPhysics -0.1f, 0.5f * boxSize), new _(toPhysics -0.1f, -0.5f * boxSize), false) }] world |> ignore
+                screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
 
         // BUTTONS TO ADD STATIC BODIES - not moving and not reacting to forces and collisions //
 
@@ -224,7 +286,7 @@ type D01_SingleFixtureDispatcher () =
                     [// Place the new block somewhere random within the border.
                      Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
                      Entity.StaticImage .= Assets.Default.Brick] world
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add world.DeclaredEntity Block) world
+            screen.ExtraEntities.Map (Map.add world.DeclaredEntity Block) world
 
         // BUTTONS TO ADD KINEMATIC BODIES - moving and not reacting to forces and collisions //
 
@@ -253,7 +315,7 @@ type D01_SingleFixtureDispatcher () =
                      Entity.CollisionMask .= "01"
                      Entity.StaticImage .= Assets.Default.Black] world
             let anchor = world.DeclaredEntity
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add anchor KinematicBlock) world
+            screen.ExtraEntities.Map (Map.add anchor KinematicBlock) world
             
             // Declare other blade
             let _ =
@@ -271,8 +333,6 @@ type D01_SingleFixtureDispatcher () =
             // Declare weld joint to link the two blades together at the center point (x, y)
             let _ =
                 World.doBodyJoint2d Gen.name
-                    // Aside from using two entities directly, a relation of two entities in the same group can also be
-                    // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
                     [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchor.Name}"
                      Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{blade.Name}")
                      Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
@@ -281,7 +341,38 @@ type D01_SingleFixtureDispatcher () =
                         { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                             let p = toPhysicsV2 (v3 x y 0f)
                             WeldJoint (a, b, p, p, true) }] world |> ignore
-            screen.SetExtraEntities (screen.GetExtraEntities world |> Map.add world.DeclaredEntity BodyJoint) world
+            screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
+            
+        // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
+        if World.doButton "Add Mystery"
+            [Entity.Position .= v3 255f -70f 0f
+             Entity.Text .= "Add ???"
+             Entity.Elevation .= 1f] world then
+            let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+            let names = Array.init 32 (fun _ -> Gen.name)
+            for i in 1 .. Array.length names do
+                let x = float32 (if i <= 8 then i elif i <= 16 then 8 elif i <= 24 then 25 - i else 0)
+                let y = float32 (if i <= 8 then 0 elif i <= 16 then i - 8 elif i <= 24 then 8 else i - 24)
+                let name = names[i - 1]
+                let _ =
+                    World.doBox2d name
+                        [Entity.Position .= v3 x y 0f
+                         Entity.Restitution .= 0.333f
+                         Entity.Size .= v3 1f 1f 0f
+                         Entity.Substance .= Mass (1f / 16f)
+                         Entity.Color .= color] world
+                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
+            for (n1, n2) in Array.pairwise names |> Array.add (Array.last names, Array.head names) do
+                let _ =
+                    World.doBodyJoint2d Gen.name
+                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
+                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                         Entity.CollideConnected .= true // Each box linked should collide with each other
+                         Entity.BreakingPoint .= infinityf
+                         Entity.BodyJoint .= TwoBodyJoint2d
+                            { CreateTwoBodyJoint = fun _ _ a b ->
+                                RevoluteJoint (a, b, new _(0f, 0.5f), new _(0f, -0.5f), false) }] world |> ignore
+                screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
 
         // Ensure the entities persist across ImSim renders.
         for keyValue in screen.GetExtraEntities world do
@@ -300,7 +391,7 @@ type D01_SingleFixtureDispatcher () =
 
         // Clear Entities button
         if World.doButton "Clear Entities"
-            [Entity.Position .= v3 255f -20f 0f
+            [Entity.Position .= v3 255f -100f 0f
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
             screen.SetExtraEntities Map.empty world
@@ -309,7 +400,7 @@ type D01_SingleFixtureDispatcher () =
         // Gravity
         let gravityDisabled = World.getGravity2d world = v3Zero
         if World.doButton "Gravity"
-            [Entity.Position .= v3 255f -50f 0f
+            [Entity.Position .= v3 255f -130f 0f
              Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
              Entity.Elevation .= 1f] world then
             World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
