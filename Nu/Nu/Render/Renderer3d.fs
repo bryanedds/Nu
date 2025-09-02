@@ -2545,7 +2545,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private categorizeTerrain
         (visible : bool,
-         geometryFrustum : Frustum,
          terrainDescriptor : TerrainDescriptor,
          renderTasks : RenderTasks,
          renderer) =
@@ -2654,8 +2653,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for entry in patchGeometries do
                     let patchDescriptor = entry.Key
                     let patchGeometry = entry.Value
-                    if geometryFrustum.Intersects patchDescriptor.PatchBounds then
-                        renderTasks.DeferredTerrains.Add struct (terrainDescriptor, patchDescriptor, patchGeometry)
+                    renderTasks.DeferredTerrains.Add struct (terrainDescriptor, patchDescriptor, patchGeometry)
             | (false, _) -> ()
 
         // mark patch geometry as utilized regardless of visibility (to keep it from being destroyed)
@@ -2668,7 +2666,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         lightBox
         eyeCenter
         eyeRotation
-        geometryFrustum
         renderMessages
         renderer =
         let userDefinedStaticModelsToDestroy = SList.make ()
@@ -2783,7 +2780,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
                 let renderTasks = GlRenderer3d.getRenderTasks rt.RenderPass renderer
-                GlRenderer3d.categorizeTerrain (rt.Visible, geometryFrustum, rt.TerrainDescriptor, renderTasks, renderer)
+                GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
             | ConfigureLighting3d l3c ->
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
@@ -3250,16 +3247,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows
-        for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains do
-            let shadowShader =
-                match lightType with
-                | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
-                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
-                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
-            GlRenderer3d.renderPhysicallyBasedTerrain
-                lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
-                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                descriptor geometry shadowShader renderer.PhysicallyBasedTerrainVao renderer
+        for struct (descriptor, patchDescriptor, geometry) in renderTasks.DeferredTerrains do
+            if lightFrustum.Intersects patchDescriptor.PatchBounds then
+                let shadowShader =
+                    match lightType with
+                    | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
+                    | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
+                    | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
+                GlRenderer3d.renderPhysicallyBasedTerrain
+                    lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
+                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                    descriptor geometry shadowShader renderer.PhysicallyBasedTerrainVao renderer
 
         // forward render surface shadows to filter buffer
         for struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, _) in renderTasks.ForwardSorted do
@@ -3969,10 +3967,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RasterViewport <- rasterViewport
 
         // categorize messages
-        let geometryFrustum =
-            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
         let userDefinedStaticModelsToDestroy =
-            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation geometryFrustum renderMessages renderer
+            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
