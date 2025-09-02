@@ -1114,16 +1114,10 @@ type [<ReferenceEquality>] GlRenderer3d =
           LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
           TextureServer : OpenGL.Texture.TextureServer
           CubeMapVao : uint
-          SkyBoxShader : OpenGL.SkyBox.SkyBoxShader
-          IrradianceShader : OpenGL.CubeMap.CubeMapShader
-          EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
-          FilterBox1dShader : OpenGL.Filter.FilterBoxShader
-          FilterGaussian2dShader : OpenGL.Filter.FilterGaussianShader
-          FilterGaussianArray2dShader : OpenGL.Filter.FilterGaussianArrayShader
-          FilterBilateralDownSample4dShader : OpenGL.Filter.FilterBilateralDownSampleShader
-          FilterBilateralUpSample4dShader : OpenGL.Filter.FilterBilateralUpSampleShader
-          FilterFxaaShader : OpenGL.Filter.FilterFxaaShader
-          FilterGaussian4dShader : OpenGL.Filter.FilterGaussianShader
+          mutable SkyBoxShader : OpenGL.SkyBox.SkyBoxShader
+          mutable IrradianceShader : OpenGL.CubeMap.CubeMapShader
+          mutable EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
+          mutable FilterShaders : OpenGL.Filter.FilterShaders
           PhysicallyBasedStaticVao : uint
           PhysicallyBasedAnimatedVao : uint
           PhysicallyBasedTerrainVao : uint
@@ -2052,6 +2046,18 @@ type [<ReferenceEquality>] GlRenderer3d =
               Names = "" }
         surfaceMaterial
 
+    static member private handleReloadShaders renderer =
+        renderer.SkyBoxShader <- OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
+        OpenGL.Hl.Assert ()
+        renderer.IrradianceShader <- OpenGL.CubeMap.CreateCubeMapShader Constants.Paths.IrradianceShaderFilePath
+        OpenGL.Hl.Assert ()
+        renderer.EnvironmentFilterShader <- OpenGL.LightMap.CreateEnvironmentFilterShader Constants.Paths.EnvironmentFilterShaderFilePath
+        OpenGL.Hl.Assert ()
+        renderer.FilterShaders <- OpenGL.Filter.CreateFilterShaders ()
+        OpenGL.Hl.Assert ()
+        renderer.PhysicallyBasedShaders <- OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
+        OpenGL.Hl.Assert ()
+
     static member private handleLoadRenderPackage hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
@@ -2068,9 +2074,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private handleReloadRenderAssets renderer =
         GlRenderer3d.invalidateCaches renderer
         GlRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
-        let physicallyBasedShaders = OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
-        OpenGL.Hl.Assert ()
-        renderer.PhysicallyBasedShaders <- physicallyBasedShaders
+        GlRenderer3d.handleReloadShaders renderer
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
@@ -3737,7 +3741,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
                 // deferred render filtered ssao quad
-                OpenGL.PhysicallyBased.DrawFilterBoxSurface (ssaoTextureUnfiltered, renderer.PhysicallyBasedQuad, renderer.FilterBox1dShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.PhysicallyBased.DrawFilterBoxSurface (ssaoTextureUnfiltered, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBox1dShader, renderer.PhysicallyBasedStaticVao)
                 OpenGL.Hl.Assert ()
                 ssaoTextureFiltered
 
@@ -3804,7 +3808,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // NOTE: the depthTexture gets rendered redundantly here, but we're ignoring that inefficiency for now.
                 // TODO: P1: let's see if we can remember why we're rendering depth here and potentially avoid it for
                 // efficiency.
-                OpenGL.PhysicallyBased.DrawFilterBilateralDownSampleSurface (fogAccumTexture, depthTexture2, renderer.PhysicallyBasedQuad, renderer.FilterBilateralDownSample4dShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.PhysicallyBased.DrawFilterBilateralDownSampleSurface (fogAccumTexture, depthTexture2, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBilateralDownSample4dShader, renderer.PhysicallyBasedStaticVao)
 
                 // setup fog accum up-sample buffers and viewport
                 let (fogAccumUpSampleTexture, fogAccumUpSampleRenderbuffer, fogAccumUpSampleFramebuffer) = renderer.PhysicallyBasedBuffers.FogAccumUpSampleBuffers
@@ -3816,7 +3820,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
                 // deferred render fog accum quad to up-sample buffers
-                OpenGL.PhysicallyBased.DrawFilterBilateralUpSampleSurface (fogAccumDownSampleTexture, depthDownSampleTexture, depthTexture2, renderer.PhysicallyBasedQuad, renderer.FilterBilateralUpSample4dShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.PhysicallyBased.DrawFilterBilateralUpSampleSurface (fogAccumDownSampleTexture, depthDownSampleTexture, depthTexture2, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBilateralUpSample4dShader, renderer.PhysicallyBasedStaticVao)
                 fogAccumUpSampleTexture
 
             // just use black texture
@@ -3905,7 +3909,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // render filter quad via fxaa
-            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // setup filter 1 buffer and viewport
@@ -3916,7 +3920,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // render filter quad via gaussian x
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // setup raster buffer and viewport
@@ -3926,7 +3930,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // render filter quad via gaussian y
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
         else
@@ -4126,13 +4130,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowTextureBuffers2Array.[shadowTextureBufferIndex]
                             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
                             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
+                            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
                             OpenGL.Hl.Assert ()
 
                             // filter shadows on the y (presuming that viewport already configured correctly)
                             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
                             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
+                            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
                             OpenGL.Hl.Assert ()
 
                         // remember the utilized index for the next frame
@@ -4254,14 +4258,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let (shadowCascadeFilter, shadowRenderbuffer2, shadowFramebuffer2) = renderer.PhysicallyBasedBuffers.ShadowCascadeFilterBuffersArray.[shadowCascadeBufferIndex]
                                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
                                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                                OpenGL.PhysicallyBased.DrawFilterGaussianFilterSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowCascadeLevel, shadowCascadeArray, renderer.PhysicallyBasedQuad, renderer.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianFilterSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowCascadeLevel, shadowCascadeArray, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
                                 OpenGL.Hl.Assert ()
 
                                 // filter cascade on the y (presuming that viewport already configured correctly)
                                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
                                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
                                 OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, shadowCascadeArray.TextureId, 0, shadowCascadeLevel)
-                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowCascadeFilter, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
+                                OpenGL.PhysicallyBased.DrawFilterGaussianArraySurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowCascadeFilter, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian2dShader, renderer.PhysicallyBasedStaticVao)
                                 OpenGL.Gl.FramebufferTextureLayer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, 0u, 0, shadowCascadeLevel)
                                 OpenGL.Hl.Assert ()
 
@@ -4360,32 +4364,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         let environmentFilterShader = OpenGL.LightMap.CreateEnvironmentFilterShader Constants.Paths.EnvironmentFilterShaderFilePath
         OpenGL.Hl.Assert ()
 
-        // create filter box 1d shader
-        let filterBox1dShader = OpenGL.Filter.CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
-        OpenGL.Hl.Assert ()
-
-        // create filter gaussian 2d shader
-        let filterGaussian2dShader = OpenGL.Filter.CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
-        OpenGL.Hl.Assert ()
-
-        // create filter gaussian array 2d shader
-        let filterGaussianArray2dShader = OpenGL.Filter.CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
-        OpenGL.Hl.Assert ()
-
-        // create filter bilateral down-sample shader
-        let filterBilateralDownSample4dShader = OpenGL.Filter.CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
-        OpenGL.Hl.Assert ()
-
-        // create filter bilateral up-sample shader
-        let filterBilateralUpSample4dShader = OpenGL.Filter.CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
-        OpenGL.Hl.Assert ()
-
-        // create filter fxaa shader
-        let filterFxaaShader = OpenGL.Filter.CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
-        OpenGL.Hl.Assert ()
-
-        // create filter gaussian 4d shader
-        let filterGaussian4dShader = OpenGL.Filter.CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
+        // create filter shaders
+        let filterShaders = OpenGL.Filter.CreateFilterShaders ()
         OpenGL.Hl.Assert ()
 
         // create physically-based static vao
@@ -4622,13 +4602,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               SkyBoxShader = skyBoxShader
               IrradianceShader = irradianceShader
               EnvironmentFilterShader = environmentFilterShader
-              FilterBox1dShader = filterBox1dShader
-              FilterGaussian2dShader = filterGaussian2dShader
-              FilterGaussianArray2dShader = filterGaussianArray2dShader
-              FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
-              FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
-              FilterFxaaShader = filterFxaaShader
-              FilterGaussian4dShader = filterGaussian4dShader
+              FilterShaders = filterShaders
               PhysicallyBasedStaticVao = physicallyBasedStaticVao
               PhysicallyBasedAnimatedVao = physicallyBasedAnimatedVao
               PhysicallyBasedTerrainVao = physicallyBasedTerrainVao
@@ -4690,13 +4664,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.IrradianceShader.CubeMapShader
-            OpenGL.Gl.DeleteProgram renderer.EnvironmentFilterShader.EnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.FilterBox1dShader.FilterBoxShader
-            OpenGL.Gl.DeleteProgram renderer.FilterGaussian2dShader.FilterGaussianShader
-            OpenGL.Gl.DeleteProgram renderer.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
-            OpenGL.Gl.DeleteProgram renderer.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
-            OpenGL.Gl.DeleteProgram renderer.FilterFxaaShader.FilterFxaaShader
-            OpenGL.Gl.DeleteProgram renderer.FilterGaussian4dShader.FilterGaussianShader
+            OpenGL.Hl.Assert ()
+
+            OpenGL.Filter.DestroyFilterShaders renderer.FilterShaders
             OpenGL.Hl.Assert ()
 
             OpenGL.Gl.DeleteVertexArrays [|renderer.PhysicallyBasedStaticVao|]
