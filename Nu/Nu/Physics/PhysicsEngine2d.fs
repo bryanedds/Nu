@@ -757,10 +757,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             results.Add report
                     | _ -> ()
                     if closestOnly then fraction else 1.0f)
-            physicsEngine.PhysicsContext.RayCast
-                (callback,
-                 PhysicsEngine2d.toPhysicsV2 ray.Origin,
-                 PhysicsEngine2d.toPhysicsV2 (ray.Origin + ray.Direction))
+            let point = PhysicsEngine2d.toPhysicsV2 ray.Origin
+            let offset = PhysicsEngine2d.toPhysicsV2 ray.Direction
+            physicsEngine.PhysicsContext.RayCast (callback, point, point + offset)
             if closestOnly then
                 match closestOpt with
                 | Some closest -> [|closest|]
