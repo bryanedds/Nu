@@ -45,7 +45,7 @@ and 'w Coroutine =
         if pred world then
             match coroutine with
             | Cancel -> CoroutineCancelled
-            | Sleep gameTime' -> if gameTime' >= gameTime then CoroutineProgressing coroutine else CoroutineCompleted
+            | Sleep gameTime' -> if gameTime' > gameTime then CoroutineProgressing coroutine else CoroutineCompleted
             | Coroutine action -> action world; CoroutineCompleted
             | Coroutines coroutines ->
                 match coroutines with

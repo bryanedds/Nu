@@ -8,7 +8,7 @@ open Prime
 open Nu
 open Nu.Tests
 module CoroutineTests =
-            
+
     let [<Test>] ``Coroutine can run.`` () =
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
@@ -19,16 +19,17 @@ module CoroutineTests =
                 coroutine world.Launcher {
                     do! fun w -> numbers.Add w.UpdateTime
                     do! fun w -> numbers.Add w.UpdateTime
-                    do! Coroutine.sleep (GameTime.ofUpdates 1)
                     do! fun w -> numbers.Add w.UpdateTime
                     do! Coroutine.pass
+                    do! fun w -> numbers.Add w.UpdateTime
+                    do! Coroutine.sleep (GameTime.ofUpdates 1)
                     do! fun w -> numbers.Add w.UpdateTime
                     do! Coroutine.cancel
                     do! fun w -> numbers.Add w.UpdateTime }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
-        CollectionAssert.AreEqual ([0; 0; 2; 3], numbers)
+        CollectionAssert.AreEqual ([0; 0; 0; 1; 2], numbers)
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
-
+        
     let [<Test>] ``Coroutine is tail recursive.`` () =
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
