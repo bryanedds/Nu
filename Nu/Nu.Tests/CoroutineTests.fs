@@ -12,7 +12,7 @@ module CoroutineTests =
     let [<Test>] ``Coroutine can run.`` () =
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
-        let numbers = ResizeArray()
+        let numbers = ResizeArray ()
         let runWhile (world : World) = world.UpdateTime < 10L
         let perProcess (world : World) =
             if world.UpdateTime = 0 then
@@ -29,7 +29,7 @@ module CoroutineTests =
         CollectionAssert.AreEqual ([0; 0; 2; 3], numbers)
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
-    let [<Test>] ``Coroutine is tail recursive.`` () =
+    let [<Test>] ``Coroutine can recurse.`` () =
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = ResizeArray ()

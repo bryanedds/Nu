@@ -11,7 +11,7 @@ open Nu
 type 'w CoroutineResult =
     | CoroutineCompleted
     | CoroutineCancelled
-    | CoroutineProgressing of 'w Coroutine
+    | CoroutineProgressing of 'w Coroutine list
 
 /// A coroutine in Nu allows easy definition of static behavior over multiple frames.
 and 'w Coroutine =
@@ -40,21 +40,19 @@ and 'w Coroutine =
         Sleep gameTime
 
     /// Step a coroutine.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    static member step (pred : 'w -> bool) (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
+    [<DebuggerHidden; DebuggerStepThrough; TailCall>]
+    static member step (pred : 'w -> bool) (coroutines : 'w Coroutine list) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
         if pred world then
-            match coroutine with
-            | Cancel -> CoroutineCancelled
-            | Sleep gameTime' -> if gameTime' >= gameTime then CoroutineProgressing coroutine else CoroutineCompleted
-            | Coroutine action -> action world; CoroutineCompleted
-            | Coroutines coroutines ->
-                match coroutines with
-                | [] -> CoroutineCompleted
-                | head :: tail ->
-                    match Coroutine.step pred head gameTime world with
-                    | CoroutineProgressing head' -> CoroutineProgressing (Coroutines (head' :: tail))
-                    | CoroutineCompleted -> Coroutine.step pred (Coroutines tail) gameTime world
-                    | CoroutineCancelled -> CoroutineCancelled
+            match coroutines with
+            | [] -> CoroutineCompleted
+            | Cancel :: _ -> CoroutineCancelled
+            | Sleep gameTime' :: rest ->
+                if gameTime' >= gameTime then
+                    CoroutineProgressing coroutines
+                else Coroutine.step pred rest gameTime world
+            | Coroutine action :: rest -> action world; Coroutine.step pred rest gameTime world
+            | Coroutines coroutines :: rest ->
+                Coroutine.step pred (coroutines @ rest) gameTime world
         else CoroutineCancelled
 
     /// Prepare a coroutine for execution at the given starting game time.
