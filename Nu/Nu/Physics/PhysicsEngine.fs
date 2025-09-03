@@ -687,6 +687,9 @@ type PhysicsEngine =
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
+    /// Cast a shape into the physics bodies.
+    abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
+    
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
     
@@ -722,6 +725,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetWheelModelMatrix (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetWheelAngularVelocity (_, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.TryRender _ = ()
