@@ -750,7 +750,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     match fixture.Tag with
                     | :? BodyShapeIndex as bodyShapeIndex ->
                         if (int fixture.CollidesWith &&& collisionMask) <> 0 then
-                            let report = BodyIntersection.make bodyShapeIndex fraction (PhysicsEngine2d.toPixelV3 point) (PhysicsEngine2d.toPixelV3 normal)
+                            let report = BodyIntersection.make bodyShapeIndex fraction (PhysicsEngine2d.toPixelV3 point) (v3 normal.X normal.Y 0.0f)
                             if fraction < fractionMin then
                                 fractionMin <- fraction
                                 closestOpt <- Some report
