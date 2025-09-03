@@ -215,15 +215,34 @@ module Pipeline =
         static member getVkPipeline blend pipeline =
             Map.find blend pipeline._VkPipelines
         
-        /// Write a uniform to the descriptor sets at initialization.
+        /// Write a uniform to the descriptor set during the frame.
         /// TODO: DJL: this method expects an uploadable and therefore paralellized uniform that also will never be resized, these must eventually be accounted for.
         static member writeDescriptorUniform (binding : int) (descriptorIndex : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+
+            // buffer info
+            let mutable info = VkDescriptorBufferInfo ()
+            info.buffer <- uniform.VkBuffer
+            info.range <- Vulkan.VK_WHOLE_SIZE
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- pipeline.DescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+            write.pBufferInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Write a uniform to the descriptor sets at initialization.
+        /// TODO: DJL: delete this once switch to accumulation is complete.
+        static member writeDescriptorUniformInit (binding : int) (descriptorIndex : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
 
             for i in 0 .. dec pipeline._DescriptorSets.Length do
             
                 // buffer info
                 let mutable info = VkDescriptorBufferInfo ()
-                info.buffer <- uniform.VkBuffers.[i]
+                info.buffer <- uniform.VkBuffers.[i] // TODO: DJL: think we can delete this property too.
                 info.range <- Vulkan.VK_WHOLE_SIZE
 
                 // write descriptor set
@@ -236,8 +255,27 @@ module Pipeline =
                 write.pBufferInfo <- asPointer &info
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Write a texture to the descriptor sets at initialization. Do this if the texture is permanent.
+        /// Write a texture to the descriptor set during the frame. Do this unless the texture is permanent.
         static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.sampler <- texture.Sampler
+            info.imageView <- texture.ImageView
+            info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- pipeline.DescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Write a texture to the descriptor sets at initialization. Do this if the texture is permanent.
+        static member writeDescriptorTextureInit (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
             for i in 0 .. dec pipeline._DescriptorSets.Length do
             
@@ -257,25 +295,6 @@ module Pipeline =
                 write.pImageInfo <- asPointer &info
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
-        /// Write a texture to the descriptor set during the frame. Do this unless the texture is permanent.
-        static member writeDescriptorTextureInFrame (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            
-            // image info
-            let mutable info = VkDescriptorImageInfo ()
-            info.sampler <- texture.Sampler
-            info.imageView <- texture.ImageView
-            info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-
-            // write descriptor set
-            let mutable write = VkWriteDescriptorSet ()
-            write.dstSet <- pipeline.DescriptorSet
-            write.dstBinding <- uint binding
-            write.dstArrayElement <- uint descriptorIndex
-            write.descriptorCount <- 1u
-            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-            write.pImageInfo <- asPointer &info
-            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-        
         /// Destroy a Pipeline.
         static member destroy pipeline (vkc : Hl.VulkanContext) =
             Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline._VkPipelines

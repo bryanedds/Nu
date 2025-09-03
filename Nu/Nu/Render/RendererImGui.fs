@@ -377,7 +377,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                     vkc
 
             // load font atlas texture to descriptor set
-            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTextureInit 0 0 fontTexture pipeline vkc
 
             // store identifier
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)

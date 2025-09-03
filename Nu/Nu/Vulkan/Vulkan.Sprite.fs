@@ -33,9 +33,9 @@ module Sprite =
         let colorUniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
 
         // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniform 3 0 colorUniform pipeline vkc
+        Pipeline.Pipeline.writeDescriptorUniformInit 0 0 modelViewProjectionUniform pipeline vkc
+        Pipeline.Pipeline.writeDescriptorUniformInit 1 0 texCoords4Uniform pipeline vkc
+        Pipeline.Pipeline.writeDescriptorUniformInit 3 0 colorUniform pipeline vkc
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -130,7 +130,7 @@ module Sprite =
         Buffer.Buffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // write texture to descriptor set
-        Pipeline.Pipeline.writeDescriptorTextureInFrame 2 0 texture pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 2 0 texture pipeline vkc
         
         // bind pipeline
         let cb = vkc.RenderCommandBuffer
