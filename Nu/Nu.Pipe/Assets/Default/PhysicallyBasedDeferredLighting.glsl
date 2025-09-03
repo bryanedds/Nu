@@ -762,6 +762,11 @@ void main()
     float roughness = material.r;
     float metallic = material.g;
 
+    // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain
+    // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
+    lightAccum = vec4(0.0);
+    fogAccum = vec4(0.0);
+
     // compute light accumulation
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(normal, v), 0.0);
@@ -835,7 +840,6 @@ void main()
 
         // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
         // on certain platforms)
-        if (i == 0) lightAccum = vec4(0.0);
         lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
@@ -848,7 +852,6 @@ void main()
 
         // accumulate fog, clearing on first light (HACK: seems to fix glClear not working on the respective buffer on
         // certain platforms)
-        if (i == 0) fogAccum = vec4(0.0);
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
             switch (lightType)
