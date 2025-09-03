@@ -91,10 +91,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         (joint : Joint)
         (jointError : single)
         (integrationMessages : IntegrationMessage List) =
+        let jointBreakPointPixel = PhysicsEngine2d.toPixel joint.Breakpoint
+        let jointErrorPixel = PhysicsEngine2d.toPixel jointError
         let bodyJointBreakMessage =
             { BodyJointId = joint.Tag :?> BodyJointId
-              BreakingPoint = joint.Breakpoint
-              BreakingOverflow = jointError - joint.Breakpoint }
+              BreakingPoint = jointBreakPointPixel
+              BreakingOverflow = jointErrorPixel - jointBreakPointPixel }
         let integrationMessage = BodyJointBreakMessage bodyJointBreakMessage
         integrationMessages.Add integrationMessage
 
@@ -449,7 +451,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         match resultOpt with
         | Some (joint, body, body2Opt) ->
             joint.Tag <- bodyJointId
-            joint.Breakpoint <- bodyJointProperties.BreakingPoint
+            joint.Breakpoint <- PhysicsEngine2d.toPhysics bodyJointProperties.BreakingPoint
             joint.CollideConnected <- bodyJointProperties.CollideConnected
             joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
             joint.add_Broke physicsEngine.BreakHandler
