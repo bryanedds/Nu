@@ -47,8 +47,8 @@ and 'w Coroutine =
             | [] -> CoroutineCompleted
             | Cancel :: _ -> CoroutineCancelled
             | Sleep gameTime' :: rest ->
-                if gameTime' >= gameTime then
-                    CoroutineProgressing coroutines
+                if gameTime' >= gameTime
+                then CoroutineProgressing coroutines
                 else Coroutine.step pred rest gameTime world
             | Coroutine action :: rest -> action world; Coroutine.step pred rest gameTime world
             | Coroutines coroutines :: rest ->
