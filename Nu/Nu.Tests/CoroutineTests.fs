@@ -46,6 +46,21 @@ module CoroutineTests =
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([0; 1; 2; 3; 4; 5; 6; 7; 8; 9], numbers)
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+    
+    let [<Test>] ``Coroutine can cancel even when sleeping.`` () =
+        Nu.init ()
+        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let numbers = ResizeArray ()
+        let runWhile (world : World) = world.UpdateTime < 15L
+        let perProcess (world : World) =
+            if world.UpdateTime = 2 then
+                coroutine (world.LauncherWhile (fun () -> world.UpdateTime != 10L)) {
+                    while true do
+                        numbers.Add world.UpdateTime
+                        do! Coroutine.sleep 3L }
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        CollectionAssert.AreEqual ([2; 5; 8], numbers)
+        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
     let [<Test>] ``Coroutine can contain loops.`` () =
         Nu.init ()
