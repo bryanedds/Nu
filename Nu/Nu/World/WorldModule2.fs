@@ -965,7 +965,7 @@ module WorldModule2 =
                                 | Cancel | Complete -> coroutines
                             else OMap.add id (scheduledTime, pred, coroutine) coroutines
                         else coroutines)
-                        (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
+                        (OMap.makeEmpty (OMap.comparer coroutines) (OMap.config coroutines))
                         coroutines
                 let coroutineKeys = coroutines |> SArray.ofSeq |> SArray.map fst
                 let coroutinesAdded = OMap.removeMany coroutineKeys (World.getCoroutines world)
@@ -982,7 +982,7 @@ module WorldModule2 =
             else
                 match taskletsNotRun.TryGetValue simulant with
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) taskletsNotRun
-                | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig taskletsNotRun) tasklet) taskletsNotRun
+                | (false, _) -> OMap.add simulant (UList.singleton (OMap.config taskletsNotRun) tasklet) taskletsNotRun
 
         static member private processTasklets (world : World) =
             let tasklets = World.getTasklets world
@@ -995,7 +995,7 @@ module WorldModule2 =
                         else taskletsNotRun)
                         taskletsNotRun
                         taskletList)
-                    (OMap.makeEmpty HashIdentity.Structural (OMap.getConfig tasklets))
+                    (OMap.makeEmpty HashIdentity.Structural (OMap.config tasklets))
                     tasklets
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world

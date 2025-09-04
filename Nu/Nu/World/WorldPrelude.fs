@@ -636,7 +636,7 @@ module internal AmbientState =
         { state with Tasklets = OMap.remove simulant state.Tasklets }
 
     let internal clearTasklets state =
-        { state with Tasklets = OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets) }
+        { state with Tasklets = OMap.makeEmpty HashIdentity.Structural (OMap.config state.Tasklets) }
 
     let internal restoreTasklets tasklets state =
         { state with Tasklets = tasklets }
@@ -646,7 +646,7 @@ module internal AmbientState =
             Tasklets =
                 match state.Tasklets.TryGetValue simulant with
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) state.Tasklets
-                | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig state.Tasklets) tasklet) state.Tasklets }
+                | (false, _) -> OMap.add simulant (UList.singleton (OMap.config state.Tasklets) tasklet) state.Tasklets }
 
     let internal tryGetWindowFlags state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
