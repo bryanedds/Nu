@@ -491,7 +491,7 @@ module internal AmbientState =
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
-              Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
+              Coroutines : OMap<uint64, GameTime * (unit -> bool) * CoroutineDelayed>
               // cache line 4
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
