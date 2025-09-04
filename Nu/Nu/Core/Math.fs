@@ -1567,6 +1567,7 @@ type ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter
+    | WaxScatter
 
     /// Convert to a float tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1574,6 +1575,7 @@ type ScatterType =
         | NoScatter -> 0.0f
         | SkinScatter -> 0.1f
         | FoliageScatter -> 0.2f
+        | WaxScatter -> 0.3f
 
 [<RequireQualifiedAccess>]
 module Math =

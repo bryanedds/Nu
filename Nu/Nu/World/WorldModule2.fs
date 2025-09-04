@@ -955,7 +955,7 @@ module WorldModule2 =
         static member private processCoroutines (world : World) =
             if world.Advancing then
                 let coroutines = World.getCoroutines world
-                let coroutines' =
+                let coroutinesRemaining =
                     OMap.fold (fun coroutines id (pred, coroutine) ->
                         match Coroutine.step pred coroutine world.GameTime world with
                         | CoroutineCancelled -> coroutines
@@ -963,7 +963,9 @@ module WorldModule2 =
                         | CoroutineProgressing coroutine' -> OMap.add id (pred, coroutine') coroutines)
                         (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
                         coroutines
-                World.setCoroutines coroutines' world
+                let coroutineKeys = coroutines |> SArray.ofSeq |> SArray.map fst
+                let coroutinesAdded = OMap.removeMany coroutineKeys (World.getCoroutines world)
+                World.setCoroutines (OMap.concat coroutinesRemaining coroutinesAdded) world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =

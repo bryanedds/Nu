@@ -140,3 +140,41 @@ module Filter =
         // make shader record
         { InputTextureUniform = inputTextureUniform
           FilterFxaaShader = shader }
+
+    type FilterShaders =
+        { FilterBox1dShader : FilterBoxShader
+          FilterGaussian2dShader : FilterGaussianShader
+          FilterGaussianArray2dShader : FilterGaussianArrayShader
+          FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
+          FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
+          FilterFxaaShader : FilterFxaaShader
+          FilterGaussian4dShader : FilterGaussianShader }
+
+    let CreateFilterShaders () =
+
+        // create individual shaders
+        let filterBox1dShader = CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
+        let filterGaussian2dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
+        let filterGaussianArray2dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
+        let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
+        let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
+        let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
+        let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
+
+        // fin
+        { FilterBox1dShader = filterBox1dShader
+          FilterGaussian2dShader = filterGaussian2dShader
+          FilterGaussianArray2dShader = filterGaussianArray2dShader
+          FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
+          FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
+          FilterFxaaShader = filterFxaaShader
+          FilterGaussian4dShader = filterGaussian4dShader }
+
+    let DestroyFilterShaders (shaders : FilterShaders) =
+        Gl.DeleteProgram shaders.FilterBox1dShader.FilterBoxShader
+        Gl.DeleteProgram shaders.FilterGaussian2dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterGaussianArray2dShader.FilterGaussianArrayShader
+        Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
+        Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
+        Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
+        Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader

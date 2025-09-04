@@ -216,6 +216,49 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
+    static member private tryCreateShape (shape : BodyShape) =
+        match shape with
+        | EmptyShape ->
+            None
+        | BoxShape boxShape ->
+            let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
+            let halfExtent = extent * 0.5f
+            let shapeSettings = new BoxShapeSettings (&halfExtent)
+            let shape = new BoxShape (shapeSettings)
+            shape :> ConvexShape |> Some
+        | SphereShape sphereShape ->
+            let radius = sphereShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let shapeSettings = new SphereShapeSettings (radius)
+            let shape = new SphereShape (shapeSettings)
+            shape :> ConvexShape |> Some
+        | CapsuleShape capsuleShape ->
+            let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
+            let halfHeight = height * 0.5f
+            let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
+            let shape = new CapsuleShape (shapeSettings)
+            shape :> ConvexShape |> Some
+        | BoxRoundedShape boxRoundedShape ->
+            Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
+            let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
+            PhysicsEngine3d.tryCreateShape (Nu.BoxShape boxShape)
+        | EdgeShape _ ->
+            None
+        | ContourShape _ ->
+            None
+        | PointsShape _ ->
+            None // TODO: implement.
+        | GeometryShape _ ->
+            None // TODO: implement.
+        | StaticModelShape _ ->
+            None // TODO: implement?
+        | StaticModelSurfaceShape _ ->
+            None // TODO: implement?
+        | TerrainShape _ ->
+            None
+        | BodyShapes _ ->
+            None // TODO: implement?
+
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
         let halfExtent = extent * 0.5f
@@ -1342,7 +1385,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData) ->
-                    let bodyEnabled = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID <> Constants.Physics.ObjectLayerDisabled
+                    let objectLayer = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID
+                    let bodyEnabled = objectLayer <> Constants.Physics.ObjectLayerDisabled
                     bodyEnabled && bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
@@ -1350,13 +1394,15 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let rayCastResults =
                 if closestOnly then
                     let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
-                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) |> ignore<bool>
+                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay
+                        (&ray, &rayCastResult, null, null, bodyFilter) |> ignore<bool>
                     List [rayCastResult]
                 else
                     let rayCastSettings = RayCastSettings ()
                     let collectorType = CollisionCollectorType.AllHitSorted // TODO: consider allowing for unsorted hits.
                     let rayCastResults = List ()
-                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, rayCastSettings, collectorType, rayCastResults, null, null, bodyFilter) |> ignore<bool>
+                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay
+                        (&ray, rayCastSettings, collectorType, rayCastResults, null, null, bodyFilter) |> ignore<bool>
                     rayCastResults
             [|for rayCastResult in rayCastResults do
                 let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
@@ -1371,6 +1417,54 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
                 let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
                 BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
+
+        member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly) =
+            match PhysicsEngine3d.tryCreateShape shape with
+            | Some shape ->
+                let transformMatrix =
+                    match transformOpt with
+                    | Some transform ->
+                        let mutable transform = transform
+                        let transformMatrix = transform.Matrix
+                        RMatrix4x4 &transformMatrix
+                    | None ->
+                        let mutable transform = m4Identity
+                        RMatrix4x4 &transform
+                let baseOffset = Double3 &ray.Origin
+                let collectionType =
+                    if closestOnly
+                    then CollisionCollectorType.ClosestHit
+                    else CollisionCollectorType.AllHitSorted
+                let bodyFilterID bodyID =
+                    match physicsEngine.BodyUserData.TryGetValue bodyID with
+                    | (true, bodyUserData) ->
+                        let objectLayer = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID
+                        let bodyEnabled = objectLayer <> Constants.Physics.ObjectLayerDisabled
+                        bodyEnabled && bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
+                    | (false, _) -> false
+                let bodyFilterInstance (body : Body) = bodyFilterID body.ID
+                use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
+                let rayCastResults = List ()
+                physicsEngine.PhysicsContext.NarrowPhaseQuery.CastShape
+                    (shape, &transformMatrix, &ray.Direction, &baseOffset, collectionType, rayCastResults, null, null, bodyFilter, null) |> ignore<bool>
+                [|for rayCastResult in rayCastResults do
+                    let bodyID = rayCastResult.BodyID2 // second body since the first is the user-provided shape
+                    let bodyId = physicsEngine.BodyUserData.[bodyID].BodyId
+                    let subShapeID = rayCastResult.SubShapeID2
+                    let position = ray.Origin + ray.Direction * rayCastResult.Fraction
+                    let mutable bodyLockRead = BodyLockRead ()
+                    let normal =
+                        try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&bodyID, &bodyLockRead)
+                            if bodyLockRead.Succeeded
+                            then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
+                            else Log.warnOnce "Failed to find expected body."; v3Up
+                        finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
+                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
+                    BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
+            | None ->
+                let shapeCaseName = getCaseName shape
+                Log.warnOnce ("ShapeCast does not support shape type '" + shapeCaseName + "'.")
+                [||]
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage

@@ -28,6 +28,6 @@ layout(location = 0) out vec4 frag;
 
 void main()
 {
-    vec4 color4 = vec4(color, 1.0f);
+    vec4 color4 = vec4(color, 1.0);
     frag = texture(cubeMap, texCoordsOut) * color4 * brightness;
 }

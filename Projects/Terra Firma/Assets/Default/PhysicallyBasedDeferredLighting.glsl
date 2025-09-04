@@ -439,6 +439,24 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
             exp(-3.0 * abs(nDotL) / (radii + 0.001));
         return subdermal * radii * scalar;
     }
+    if (scatterType > 0.29 && scatterType < 0.31) // wax formula
+    {
+        // tunable parameters
+        const float density = 8.0; // absorption coefficient
+        const vec3 waxTint = vec3(1.0, 0.94, 0.85); // warm tint
+        const float g = 0.2; // Henyey–Greenstein anisotropy (0 = isotropic, >0 = forward bias)
+
+        // attenuation by travel distance (Beer–Lambert law)
+        vec3 attenuation = exp(-travel * density * finenessSquared * scatter.rgb);
+
+        // Henyey–Greenstein phase function for angular dependence
+        float cosTheta = clamp(nDotL, -1.0, 1.0);
+        float denom = 1.0 + g * g - 2.0 * g * cosTheta;
+        float phase = (1.0 - g * g) / (4.0 * PI * pow(denom, 1.5));
+
+        // fin
+        return subdermal * attenuation * phase * waxTint;
+    }
     return vec3(0.0); // nop formula
 }
 
@@ -744,6 +762,11 @@ void main()
     float roughness = material.r;
     float metallic = material.g;
 
+    // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain
+    // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
+    lightAccum = vec4(0.0);
+    fogAccum = vec4(0.0);
+
     // compute light accumulation
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(normal, v), 0.0);
@@ -817,7 +840,6 @@ void main()
 
         // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
         // on certain platforms)
-        if (i == 0) lightAccum = vec4(0.0);
         lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
@@ -830,7 +852,6 @@ void main()
 
         // accumulate fog, clearing on first light (HACK: seems to fix glClear not working on the respective buffer on
         // certain platforms)
-        if (i == 0) fogAccum = vec4(0.0);
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
             switch (lightType)

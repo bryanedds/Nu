@@ -174,7 +174,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     private
         { mutable Viewport : Viewport
           SpriteVao : uint // TODO: P1: release these resources on clean-up.
-          SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
+          mutable SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
           TextQuad : uint * uint // TODO: P1: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -358,6 +358,12 @@ type [<ReferenceEquality>] GlRenderer2d =
             for asset in package.Assets do GlRenderer2d.freeRenderAsset (__c asset.Value) renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
+
+    static member private handleReloadShaders renderer =
+        renderer.SpriteShader <- OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
+        OpenGL.Hl.Assert ()
+        OpenGL.SpriteBatch.ReloadShaders renderer.SpriteBatchEnv
+        OpenGL.Hl.Assert ()
 
     static member private handleReloadRenderAssets renderer =
         GlRenderer2d.invalidateCaches renderer
@@ -866,8 +872,8 @@ type [<ReferenceEquality>] GlRenderer2d =
 
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
+            GlRenderer2d.handleReloadShaders renderer
             GlRenderer2d.handleReloadRenderAssets renderer
-            OpenGL.Hl.Assert ()
             renderer.ReloadAssetsRequested <- false
 
         // sweep up any skeleton renderers that went unused this frame
@@ -891,7 +897,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         OpenGL.Hl.Assert ()
 
         // create sprite batch env
-        let spriteBatchEnv = OpenGL.SpriteBatch.CreateSpriteBatchEnv Constants.Paths.SpriteBatchShaderFilePath
+        let spriteBatchEnv = OpenGL.SpriteBatch.CreateSpriteBatchEnv ()
         OpenGL.Hl.Assert ()
 
         // make renderer
