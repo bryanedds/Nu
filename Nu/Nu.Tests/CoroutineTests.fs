@@ -54,7 +54,7 @@ module CoroutineTests =
         let runWhile (world : World) = world.UpdateTime < 15L
         let perProcess (world : World) =
             if world.UpdateTime = 2 then
-                coroutine (world.LauncherWhile (fun () -> world.UpdateTime != 10L)) {
+                coroutine (world.LauncherWhile (fun () -> world.UpdateTime <> 10L)) {
                     while true do
                         numbers.Add world.UpdateTime
                         do! Coroutine.sleep 3L }
