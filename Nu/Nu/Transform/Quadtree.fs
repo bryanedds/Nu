@@ -431,19 +431,23 @@ module Quadtree =
         Quadnode.clearElements tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
-    let getElementsAtPoint point (set : _ HashSet) tree =
+    let getElementsAtPoint (point : Vector2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects point then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsAtPoint point set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInBounds bounds (set : _ HashSet) tree =
+    let getElementsInBounds (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects bounds then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInBounds bounds set tree.Node
 
     /// Get all of the elements in a tree.
@@ -455,21 +459,25 @@ module Quadtree =
         Quadnode.getElements set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInView bounds (set : _ HashSet) tree =
+    let getElementsInView (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects bounds && ubiquitous.VisibleInView then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInView bounds set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInPlay bounds (set : _ HashSet) tree =
+    let getElementsInPlay (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousInPlayOnly do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects ubiquitous.Bounds then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInPlay bounds set tree.Node
 
     /// Get the size of the tree's leaves.

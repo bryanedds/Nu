@@ -618,7 +618,9 @@ module Octree =
         for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects point then
+                set.Add ubiquitous |> ignore<bool>
         Octnode.getElementsAtPoint point set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
@@ -629,7 +631,9 @@ module Octree =
         for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects bounds then
+                set.Add ubiquitous |> ignore<bool>
         Octnode.getElementsInBox bounds set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given frustum.
@@ -640,7 +644,9 @@ module Octree =
         for omnipresent in tree.Omnipresent do
             set.Add omnipresent |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if frustum.Intersects ubiquitousBounds then
+                set.Add ubiquitous |> ignore<bool>
         Octnode.getElementsInFrustum frustum set tree.Node
 
     /// Get all of the elements in a tree.
