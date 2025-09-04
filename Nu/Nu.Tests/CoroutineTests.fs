@@ -63,6 +63,7 @@ module CoroutineTests =
                     while true do
                         numbers.Add world.UpdateTime
                         do! Coroutine.sleep (GameTime.ofUpdates 2L)
+                    failwith "unreachable"
                 }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([3; 0; 0; 0; 6; 6; 8; 10], numbers)
