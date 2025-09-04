@@ -957,13 +957,13 @@ module WorldModule2 =
                 let coroutines = World.getCoroutines world
                 let coroutinesRemaining =
                     OMap.fold (fun coroutines id (scheduledTime, pred, coroutine) ->
-                        if scheduledTime > world.GameTime then
-                            OMap.add id (scheduledTime, pred, coroutine) coroutines
-                        elif pred () then
-                            match coroutine () with
-                            | Sleep (duration, continuation) ->
-                                OMap.add id (scheduledTime + duration, pred, continuation) coroutines
-                            | Cancel | Complete -> coroutines
+                        if pred () then
+                            if scheduledTime <= world.GameTime then
+                                match coroutine () with
+                                | Sleep (duration, continuation) ->
+                                    OMap.add id (scheduledTime + duration, pred, continuation) coroutines
+                                | Cancel | Complete -> coroutines
+                            else OMap.add id (scheduledTime, pred, coroutine) coroutines
                         else coroutines)
                         (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
                         coroutines
