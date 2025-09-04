@@ -9,7 +9,7 @@ open Nu
 open Nu.Tests
 module CoroutineTests =
 
-    let [<Test>] ``Coroutine can run.`` () =
+    let [<Test>] ``Coroutine can run absolute.`` () =
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = ResizeArray ()
@@ -19,16 +19,35 @@ module CoroutineTests =
                 coroutine world.Launcher {
                     numbers.Add world.UpdateTime
                     numbers.Add world.UpdateTime
-                    do! Coroutine.sleep (GameTime.ofUpdates 1)
+                    do! Coroutine.sleep 1L
                     numbers.Add world.UpdateTime
                     do! Coroutine.pass
                     numbers.Add world.UpdateTime
-                    do! Coroutine.sleep (GameTime.ofUpdates 1)
+                    do! Coroutine.sleep 2L
                     numbers.Add world.UpdateTime
                     do! Coroutine.cancel
                     numbers.Add world.UpdateTime }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
-        CollectionAssert.AreEqual ([0; 0; 1; 2; 3], numbers)
+        CollectionAssert.AreEqual ([0; 0; 1; 2; 4], numbers)
+        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+
+    let [<Test>] ``Coroutine can run relative.`` () =
+        Nu.init ()
+        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let numbers = ResizeArray ()
+        let runWhile (world : World) = world.UpdateTime < 10L
+        let perProcess (world : World) =
+            if world.UpdateTime = 1L then
+                coroutine world.Launcher {
+                    numbers.Add world.UpdateTime
+                    do! Coroutine.sleep 1L
+                    numbers.Add world.UpdateTime
+                    do! Coroutine.sleep 2L
+                    numbers.Add world.UpdateTime
+                    do! Coroutine.cancel
+                    numbers.Add world.UpdateTime }
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        CollectionAssert.AreEqual ([1; 2; 4], numbers)
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
     let [<Test>] ``Coroutine can recurse.`` () =
@@ -62,7 +81,7 @@ module CoroutineTests =
                     numbers.Add world.UpdateTime
                     while true do
                         numbers.Add world.UpdateTime
-                        do! Coroutine.sleep (GameTime.ofUpdates 2L)
+                        do! Coroutine.sleep 2L
                     failwith "unreachable"
                 }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
