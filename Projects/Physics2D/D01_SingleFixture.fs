@@ -5,7 +5,9 @@ open Prime
 open Nu
 open nkast.Aether.Physics2D.Dynamics.Joints
 
-type ExtraEntityType = Box | Ball | Block | KinematicBlock | Sphere | BodyJoint | AngleFlexBodyJoint of angle:float32
+type ExtraEntityType =
+    | Box | Ball | TinyBall | SoftBody | Block | Bridge | Fan
+    | Clamp | Mystery
 type Page = Page1 | Page2
 
 // this extends the Screen API to expose the user-defined properties.
@@ -15,8 +17,8 @@ module D01_SingleFixtureExtensions =
         member this.GetDraggedEntity world : (Entity * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
         member this.SetDraggedEntity (value : (Entity * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
         member this.DraggedEntity = lens (nameof Screen.DraggedEntity) this this.GetDraggedEntity this.SetDraggedEntity
-        member this.GetExtraEntities world : Map<Entity, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
-        member this.SetExtraEntities (value : Map<Entity, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
+        member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
+        member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
         member this.ExtraEntities = lens (nameof Screen.ExtraEntities) this this.GetExtraEntities this.SetExtraEntities
         member this.GetMouseDragTarget world : Map<Entity, Entity> = this.Get (nameof Screen.MouseDragTarget) world
         member this.SetMouseDragTarget (value : Map<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTarget) value world
@@ -122,7 +124,7 @@ type D01_SingleFixtureDispatcher () =
                             entity.SetLinearVelocity v3Zero world
                             entity.SetAngularVelocity v3Zero world
                         else // Remove other entities that fall outside the world
-                            screen.ExtraEntities.Map (Map.remove entity) world
+                            screen.ExtraEntities.Map (Map.remove entity.Name) world
                     elif screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
                         screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
                         entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
@@ -216,26 +218,14 @@ type D01_SingleFixtureDispatcher () =
                  Entity.Text .= "Add Box"
                  // Give buttons higher elevation to draw on top of entities that might appear outside the border.
                  Entity.Elevation .= 1f] world then
-                let _ =
-                    World.doBox2d Gen.name
-                        [Entity.Restitution .= 0.333f
-                         // Random color
-                         Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                         // Avoid stacking new boxes perfectly on top of each other for push forces to occur.
-                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
-                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
+                screen.ExtraEntities.Map (Map.add Gen.name Box) world
             
             // DYNAMIC BODIES - Ball
             if World.doButton "Add Ball"
                 [Entity.Position .= v3 255f 130f 0f
                  Entity.Text .= "Add Ball"
                  Entity.Elevation .= 1f] world then
-                let _ =
-                    World.doBall2d Gen.name // Unlike a sphere, a ball uses dynamic physics by default.
-                        [Entity.Restitution .= 0.5f // A different bounciness specified
-                         Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
-                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Ball) world
+                screen.ExtraEntities.Map (Map.add Gen.name Ball) world
             
             // DYNAMIC BODIES - Tiny balls
             if World.doButton "Add Tiny Balls"
@@ -243,94 +233,14 @@ type D01_SingleFixtureDispatcher () =
                  Entity.Text .= "Add Tiny Balls"
                  Entity.Elevation .= 1f] world then
                 for _ in 1 .. 16 do
-                    let _ =
-                        World.doBall2d Gen.name
-                            [Entity.Restitution .= 0.666f
-                             Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
-                             Entity.Substance .= Mass (1f / 16f) // Make tiny balls have tiny mass when colliding
-                             Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                             Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity Ball) world
+                    screen.ExtraEntities.Map (Map.add Gen.name TinyBall) world
             
             // DYNAMIC BODIES - Soft Body [Revolute joint, Distance joint]
             if World.doButton "Add Soft Body"
                 [Entity.Position .= v3 255f 70f 0f
                  Entity.Text .= "Add Soft Body"
                  Entity.Elevation .= 1f] world then
-                let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                let names = Array.init 32 (fun _ -> Gen.name)
-                let boxCount = float32 names.Length
-                let boxSize = 8f
-                // This scale is large enough such that the soft body doesn't form knots,
-                // but small enough to not spawn individual boxes outside the border.
-                // The body joints will pull individual boxes together no matter how far apart the boxes spawn.
-                let spawnScale = boxSize * boxCount / 8f
-                let (spawnX, spawnY) = (0f, 0f)
-            
-                // define center for stabilizing the contour shape and for mouse dragging
-                let _ =
-                    World.doBall2d Gen.name
-                        [Entity.Position .= v3 spawnX spawnY 0f
-                         Entity.Size .= v3Dup 16f
-                         Entity.Visible .= false] world
-                let center = world.DeclaredEntity
-                screen.ExtraEntities.Map (Map.add center Ball) world
-            
-                // define soft body countour boxes
-                for i in 0 .. Array.length names - 1 do
-                    // Arrange 32 points in a circle for soft body
-                    let boxAngle = MathF.Tau * float32 i / boxCount
-                    let x = cos boxAngle * spawnScale + spawnX
-                    let y = sin boxAngle * spawnScale + spawnY
-                    let name = names[i]
-                    let (declaredBodyId, _) =
-                        World.doBox2d name
-                            [Entity.Position .= v3 x y 0f
-                             Entity.Restitution .= 0.333f
-                             Entity.Size .= v3 boxSize boxSize 0f
-                             Entity.Substance .= Mass (1f / boxCount) // Make mass evenly distributed between the contour and the center
-                             Entity.CollisionDetection .= Continuous
-                             Entity.Color .= color] world
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
-                    // If the contour box is dragged directly, the many other joints counteract the mouse joint
-                    // and the soft body stays mid-air away from the mouse
-                    screen.MouseDragTarget.Map (Map.add world.DeclaredEntity center) world
-                    screen.SoftBodyContour.Map (Map.add declaredBodyId center) world
-            
-                // declare revolute joint linkage between contour boxes
-                for (n1, n2) in Array.pairwise names |> Array.add (Array.last names, Array.head names) do
-                    let _ =
-                        World.doBodyJoint2d Gen.name
-                            // Aside from using two entities directly, a relation of two entities in the same group can also be
-                            // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
-                             Entity.CollideConnected .= true // Each box linked should collide with each other
-                             Entity.BreakingPoint .= infinityf
-                             Entity.BodyJoint .= TwoBodyJoint2d
-                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
-                                    // Local coordinates are used here which centers at the body coordinates,
-                                    // but we still have to convert from world scale to physics engine scale ourselves.
-                                    let boxSize = toPhysics boxSize
-                                    RevoluteJoint (a, b, new _(0f, 0.5f * boxSize), new _(0f, -0.5f * boxSize), false) }] world |> ignore
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
-                
-                // declare distance joint linkage between contour boxes and center ball for stabilizing the shape
-                for n in names do
-                    let _ =
-                        World.doBodyJoint2d Gen.name
-                            // Aside from using two entities directly, a relation of two entities in the same group can also be
-                            // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{center.Name}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n}")
-                             Entity.BreakingPoint .= infinityf
-                             Entity.BodyJoint .= TwoBodyJoint2d
-                            { CreateTwoBodyJoint = fun toPhysics _ a b ->
-                                // Local coordinates are used here which centers at the body coordinates,
-                                // but we still have to convert from world scale to physics engine scale ourselves.
-                                let boxSize = toPhysics boxSize
-                                DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics spawnScale + boxSize, DampingRatio = 1f, Frequency = 5f) }] world |> ignore
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
+                screen.ExtraEntities.Map (Map.add Gen.name SoftBody) world
             
             // STATIC BODIES - not moving and not reacting to forces and collisions //
             
@@ -339,56 +249,14 @@ type D01_SingleFixtureDispatcher () =
                 [Entity.Position .= v3 255f 40f 0f
                  Entity.Text .= "Add Block"
                  Entity.Elevation .= 1f] world then
-                let _ =
-                    World.doBlock2d Gen.name
-                        [// Place the new block somewhere random within the border.
-                         Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
-                         Entity.StaticImage .= Assets.Default.Brick] world
-                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Block) world
+                screen.ExtraEntities.Map (Map.add Gen.name Block) world
             
             // STATIC BODIES (with a dynamic linkage) - Bridge [Revolute joint]
             if World.doButton "Add Bridge"
                 [Entity.Position .= v3 255f 10f 0f
                  Entity.Text .= "Add Bridge"
                  Entity.Elevation .= 1f] world then
-                let x = Gen.randomf1 500f - 250f
-                let _ =
-                    World.doSphere2d Gen.name
-                        [Entity.Position .= v3 x 160f 0f] world
-                let anchor1 = world.DeclaredEntity
-                screen.ExtraEntities.Map (Map.add anchor1 Sphere) world
-                let _ =
-                    World.doSphere2d Gen.name
-                        [Entity.Position .= v3 x 0f 0f] world
-                let anchor2 = world.DeclaredEntity
-                screen.ExtraEntities.Map (Map.add anchor2 Sphere) world
-                let names = Array.init 6 (fun _ -> Gen.name)
-                for i in 0 .. 5 do
-                    let _ =
-                        World.doBox2d names[i]
-                            [Entity.Position .= v3 x (160f / 6f * float32 i) 0f
-                             Entity.Size .= v3 4f 30f 0f
-                             Entity.StaticImage .= Assets.Default.Paddle] world
-                    let entity = world.DeclaredEntity
-                    screen.ExtraEntities.Map (Map.add entity Box) world
-                    let rec doCoroutine (world : World) =
-                        coroutine world.Launcher {
-                            do! fun w ->
-                                entity.SetPosition ((anchor2.GetPosition w - anchor1.GetPosition w) / 6f * float32 i) w
-                                entity.SetSize (v3 4f (Vector3.Distance (anchor2.GetPosition w, anchor1.GetPosition w) / 6f) 0f) w
-                            do! Coroutine.pass
-                            do! fun w -> if entity.GetExists w then doCoroutine w else ()
-                        }
-                    doCoroutine world
-                for (n1, n2) in Array.pairwise [|anchor1.Name; yield! names; anchor2.Name|] do
-                    let _ =
-                        World.doBodyJoint2d Gen.name
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
-                             Entity.BodyJoint .= TwoBodyJoint2d
-                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
-                                    RevoluteJoint (a, b, new _(0f, -0.5f * toPhysics 30f), new _(0f, 0.5f * toPhysics 30f), false) }] world |> ignore
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
+                screen.ExtraEntities.Map (Map.add Gen.name Bridge) world
             
             // KINEMATIC BODIES - moving and not reacting to forces and collisions //
             
@@ -397,53 +265,7 @@ type D01_SingleFixtureDispatcher () =
                 [Entity.Position .= v3 255f -20f 0f
                  Entity.Text .= "Add Fan"
                  Entity.Elevation .= 1f] world then
-                // A fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint.
-                // One is the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
-                let x = Gen.randomf1 500f - 250f
-                let y = Gen.randomf1 350f - 175f
-                // Declare anchor
-                let _ =
-                    World.doBlock2d Gen.name
-                        [Entity.Position .= v3 x y 0f
-                         Entity.Size .= v3 64f 8f 0f
-                         // Kinematic physics does not react to forces or collisions, but can be moved by setting its velocity (here angular).
-                         Entity.BodyType .= Kinematic
-                         Entity.AngularVelocity @= v3 10f 0f 0f
-                         // Set fans to be treated the same way as borders when colliding with other fans using the same collision category as border.
-                         Entity.CollisionCategories .= "10"
-                         // Fans only collide with entities in the default collision category "1",
-                         // not the border or other fans in category "10",
-                         // otherwise the + shape of the fan deforms when dragging next to another fan or the border.
-                         Entity.CollisionMask .= "01"
-                         Entity.StaticImage .= Assets.Default.Label] world
-                let anchor = world.DeclaredEntity
-                screen.ExtraEntities.Map (Map.add anchor KinematicBlock) world
-                
-                // Declare other blade
-                let _ =
-                    World.doBox2d Gen.name
-                        [Entity.Position .= v3 x y 0f
-                         Entity.Rotation .= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.PI / 2f) // Rotate 90 degrees
-                         Entity.Size .= v3 64f 8f 0f
-                         Entity.CollisionCategories .= "10"
-                         Entity.CollisionMask .= "01"
-                         Entity.StaticImage .= Assets.Default.Label] world
-                let blade = world.DeclaredEntity
-                screen.ExtraEntities.Map (Map.add blade Box) world
-                screen.MouseDragTarget.Map (Map.add blade anchor) world
-                
-                // Declare weld joint to link the two blades together at the center point (x, y)
-                let _ =
-                    World.doBodyJoint2d Gen.name
-                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchor.Name}"
-                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{blade.Name}")
-                         Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
-                         Entity.BreakingPoint .= infinityf
-                         Entity.BodyJoint .= TwoBodyJoint2d
-                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                                let p = toPhysicsV2 (v3 x y 0f)
-                                WeldJoint (a, b, p, p, true) }] world |> ignore
-                screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
+                screen.ExtraEntities.Map (Map.add Gen.name Fan) world
                 
             if World.doButton "v"
                 [Entity.Position .= v3 255f -50f 0f
@@ -464,48 +286,241 @@ type D01_SingleFixtureDispatcher () =
                 [Entity.Position .= v3 255f 130f 0f
                  Entity.Text .= "Add Clamp"
                  Entity.Elevation .= 1f] world then
-                // Center ball
-                let center = Gen.name
-                let _ = World.doBall2d center [] world
-                screen.ExtraEntities.Map (Map.add world.DeclaredEntity Ball) world
-
-                for direction in [-1f; 1f] do
-                    let upperLeg = Gen.name
-                    for (i, newLeg, linkTo, image, angle) in
-                        [(0f, upperLeg, center, Assets.Default.Image, 0.2f)
-                         (1f, Gen.name, upperLeg, Assets.Default.Black, 0.4f)] do
-                        let _ =
-                            World.doBox2d newLeg
-                                [Entity.StaticImage .= image
-                                 Entity.Position .= v3 ((15f + 30f * i) * direction) 0f 0f
-                                 Entity.Size .= v3 30f 4f 0f] world
-                        screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
-                    
-                        let _ =
-                            World.doBodyJoint2d Gen.name
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
-                                 Entity.BodyJoint .= TwoBodyJoint2d
-                                    { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                                        let p = toPhysicsV2 (v3 (30f * i * direction) 0f 0f)
-                                        RevoluteJoint (a, b, p, p, true) }] world |> ignore
-                        screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
-                        let _ =
-                            World.doBodyJoint2d Gen.name
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
-                                 Entity.BodyJoint .= TwoBodyJoint2d
-                                    { CreateTwoBodyJoint = fun _ _ a b ->
-                                        AngleJoint (a, b, MaxImpulse = 3f) }] world |> ignore
-                        screen.ExtraEntities.Map (Map.add world.DeclaredEntity (AngleFlexBodyJoint angle)) world
+                screen.ExtraEntities.Map (Map.add Gen.name Clamp) world
 
             // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
             if World.doButton "Add Mystery"
                 [Entity.Position .= v3 255f -50f 0f
                  Entity.Text .= "Add ???"
                  Entity.Elevation .= 1f] world then
+                screen.ExtraEntities.Map (Map.add Gen.name Mystery) world
+
+        // Ensure the entities persist across ImSim renders.
+        for KeyValue (name, entityType) in screen.GetExtraEntities world do
+            match entityType with
+            | Box ->
+                let _ =
+                    World.doBox2d name
+                        [Entity.Restitution .= 0.333f
+                         // Random color
+                         Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+                         // Avoid stacking new boxes perfectly on top of each other for push forces to occur.
+                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                ()
+            | Ball ->
+                let _ =
+                    World.doBall2d name // Unlike a sphere, a ball uses dynamic physics by default.
+                        [Entity.Restitution .= 0.5f // A different bounciness specified
+                         Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                ()
+            | TinyBall ->
+                let _ =
+                    World.doBall2d name
+                        [Entity.Restitution .= 0.666f
+                         Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
+                         Entity.Substance .= Mass (1f / 16f) // Make tiny balls have tiny mass when colliding
+                         Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                ()
+            | SoftBody ->
+                
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                let names = Array.init 32 (fun _ -> Gen.name)
+                let boxNames = Array.init 32 (sprintf "%s Contour %d" name)
+                let boxCount = float32 boxNames.Length
+                let boxSize = 8f
+                // This scale is large enough such that the soft body doesn't form knots,
+                // but small enough to not spawn individual boxes outside the border.
+                // The body joints will pull individual boxes together no matter how far apart the boxes spawn.
+                let spawnScale = boxSize * boxCount / 8f
+                let (spawnX, spawnY) = (0f, 0f)
+            
+                // define center for stabilizing the contour shape and for mouse dragging
+                let _ =
+                    World.doBall2d name
+                        [Entity.Position .= v3 spawnX spawnY 0f
+                         Entity.Size .= v3Dup 16f
+                         Entity.Visible .= false] world
+                let center = world.DeclaredEntity
+            
+                // define soft body countour boxes
+                for i in 0 .. Array.length boxNames - 1 do
+                    // Arrange 32 points in a circle for soft body
+                    let boxAngle = MathF.Tau * float32 i / boxCount
+                    let x = cos boxAngle * spawnScale + spawnX
+                    let y = sin boxAngle * spawnScale + spawnY
+                    let (declaredBodyId, _) =
+                        World.doBox2d boxNames[i]
+                            [Entity.Position .= v3 x y 0f
+                             Entity.Restitution .= 0.333f
+                             Entity.Size .= v3 boxSize boxSize 0f
+                             Entity.Substance .= Mass (1f / boxCount) // Make mass evenly distributed between the contour and the center
+                             Entity.CollisionDetection .= Continuous
+                             Entity.Color .= color] world
+                    // If the contour box is dragged directly, the many other joints counteract the mouse joint
+                    // and the soft body stays mid-air away from the mouse
+                    screen.MouseDragTarget.Map (Map.add world.DeclaredEntity center) world
+                    screen.SoftBodyContour.Map (Map.add declaredBodyId center) world
+            
+                // declare revolute joint linkage between contour boxes
+                for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
+                    let _ =
+                        World.doBodyJoint2d $"{n1} Joint contour"
+                            // Aside from using two entities directly, a relation of two entities in the same group can also be
+                            // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
+                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
+                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                             Entity.CollideConnected .= true // Each box linked should collide with each other
+                             Entity.BreakingPoint .= infinityf
+                             Entity.BodyJoint .= TwoBodyJoint2d
+                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                    // Local coordinates are used here which centers at the body coordinates,
+                                    // but we still have to convert from world scale to physics engine scale ourselves.
+                                    let boxSize = toPhysics boxSize
+                                    RevoluteJoint (a, b, new _(0f, 0.5f * boxSize), new _(0f, -0.5f * boxSize), false) }] world |> ignore
+                    ()
+                // declare distance joint linkage between contour boxes and center ball for stabilizing the shape
+                for n in boxNames do
+                    let _ =
+                        World.doBodyJoint2d $"{n} Joint center"
+                            // Aside from using two entities directly, a relation of two entities in the same group can also be
+                            // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
+                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{center.Name}"
+                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n}")
+                             Entity.BreakingPoint .= infinityf
+                             Entity.BodyJoint .= TwoBodyJoint2d
+                            { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                // Local coordinates are used here which centers at the body coordinates,
+                                // but we still have to convert from world scale to physics engine scale ourselves.
+                                let boxSize = toPhysics boxSize
+                                DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics spawnScale + boxSize, DampingRatio = 1f, Frequency = 5f) }] world
+                    ()
+            | Block ->
+                let _ =
+                    World.doBlock2d name
+                        [// Place the new block somewhere random within the border.
+                         Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
+                         Entity.StaticImage .= Assets.Default.Brick] world
+                ()
+            | Bridge ->
+                let x = Gen.randomf1 500f - 250f
+                let y = Gen.randomf1 350f - 175f
+                let _ =
+                    World.doSphere2d name
+                        [Entity.Position .= v3 x y 0f] world
+                let anchor1 = world.DeclaredEntity
+                let _ =
+                    World.doSphere2d $"{name} Opposite end"
+                        [Entity.Position .= v3 x y 0f] world
+                let anchor2 = world.DeclaredEntity
+                let direction = anchor2.GetPosition world - anchor1.GetPosition world
+                for entity in [anchor1; anchor2] do
+                    // Adjust position of link relative to each anchor as the anchors are dragged around
+                    entity.SetRotation (Quaternion.CreateFromYawPitchRoll (0f, 0f, atan2 direction.Y direction.X + MathF.PI_OVER_2)) world
+                let names = Array.init 6 (sprintf "%s Paddle %d" name)
+                let boxHeight = direction.Length () / float32 (Array.length names)
+                for i in 0 .. Array.length names - 1 do
+                    let _ =
+                        World.doBox2d names[i]
+                            [Entity.Size @= v3 4f boxHeight 0f
+                             Entity.StaticImage .= Assets.Default.Paddle
+                             // The paddles are thin, use continuous collision detection to prevent tunnelling at high velocities
+                             Entity.CollisionDetection .= Continuous] world
+                    ()
+                for (n1, n2) in Array.pairwise [|anchor1.Name; yield! names; anchor2.Name|] do
+                    let _ =
+                        World.doBodyJoint2d $"{n2} Link"
+                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
+                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                             Entity.BodyJoint @= TwoBodyJoint2d
+                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                    RevoluteJoint (a, b, new _(0f, -0.5f * toPhysics boxHeight), new _(0f, 0.5f * toPhysics boxHeight), false) }] world |> ignore
+                    ()
+            | Fan ->
+                // A fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint.
+                // One is the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
+                let x = Gen.randomf1 500f - 250f
+                let y = Gen.randomf1 350f - 175f
+                // Declare anchor
+                let _ =
+                    World.doBlock2d name
+                        [Entity.Position .= v3 x y 0f
+                         Entity.Size .= v3 64f 8f 0f
+                         // Kinematic physics does not react to forces or collisions, but can be moved by setting its velocity (here angular).
+                         Entity.BodyType .= Kinematic
+                         Entity.AngularVelocity @= v3 10f 0f 0f
+                         // Set fans to be treated the same way as borders when colliding with other fans using the same collision category as border.
+                         Entity.CollisionCategories .= "10"
+                         // Fans only collide with entities in the default collision category "1",
+                         // not the border or other fans in category "10",
+                         // otherwise the + shape of the fan deforms when dragging next to another fan or the border.
+                         Entity.CollisionMask .= "01"
+                         Entity.StaticImage .= Assets.Default.Label] world
+                let anchor = world.DeclaredEntity
+                
+                // Declare other blade
+                let _ =
+                    World.doBox2d $"{name} Other blade"
+                        [Entity.Position .= v3 x y 0f
+                         Entity.Rotation .= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.PI / 2f) // Rotate 90 degrees
+                         Entity.Size .= v3 64f 8f 0f
+                         Entity.CollisionCategories .= "10"
+                         Entity.CollisionMask .= "01"
+                         Entity.StaticImage .= Assets.Default.Label
+                         // Mouse dragging stops its movement, force angular velocity after dragging
+                         Entity.AngularVelocity @= v3 10f 0f 0f
+                         // Don't keep linear velocity from being dragged to collide
+                         Entity.LinearVelocity @= v3Zero
+                         ] world
+                let blade = world.DeclaredEntity
+                screen.MouseDragTarget.Map (Map.add blade anchor) world
+                
+                // Declare weld joint to link the two blades together at the center point (x, y)
+                let _ =
+                    World.doBodyJoint2d $"{name} Weld joint"
+                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchor.Name}"
+                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{blade.Name}")
+                         Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
+                         Entity.BreakingPoint .= infinityf
+                         Entity.BodyJoint .= TwoBodyJoint2d
+                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                let p = toPhysicsV2 (v3 x y 0f)
+                                WeldJoint (a, b, p, p, true) }] world
+                ()
+            | Clamp ->
+                // Center ball
+                let _ = World.doBall2d name [] world
+
+                for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
+                    let upperLeg = $"{name} {directionName} Upper leg"
+                    for (i, newLeg, linkTo, image, angle) in
+                        [(0f, upperLeg, name, Assets.Default.Image, 0.2f)
+                         (1f, $"{name} {directionName} Lower leg", upperLeg, Assets.Default.Black, 0.4f)] do
+                        let _ =
+                            World.doBox2d newLeg
+                                [Entity.StaticImage .= image
+                                 Entity.Position .= v3 ((15f + 30f * i) * direction) 0f 0f
+                                 Entity.Size .= v3 30f 4f 0f] world
+                        let _ =
+                            World.doBodyJoint2d $"{newLeg} Revolute joint"
+                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
+                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
+                                 Entity.BodyJoint .= TwoBodyJoint2d
+                                    { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                        let p = toPhysicsV2 (v3 (30f * i * direction) 0f 0f)
+                                        RevoluteJoint (a, b, p, p, true) }] world
+                        let isExtended = if world.TickTime % 100000L < 50000L then 0f else 1f
+                        let _ =
+                            World.doBodyJoint2d $"{newLeg} Angle joint"
+                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
+                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
+                                 Entity.BodyJoint @= TwoBodyJoint2d
+                                    { CreateTwoBodyJoint = fun _ _ a b ->
+                                        AngleJoint (a, b, MaxImpulse = 3f, TargetAngle = angle + isExtended) }] world
+                        ()
+            | Mystery ->
+                let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+                let names = Array.init 32 (sprintf "%s Particle %d" name)
                 for i in 1 .. Array.length names do
                     let x = float32 (if i <= 8 then i elif i <= 16 then 8 elif i <= 24 then 25 - i else 0)
                     let y = float32 (if i <= 8 then 0 elif i <= 16 then i - 8 elif i <= 24 then 8 else i - 24)
@@ -517,41 +532,17 @@ type D01_SingleFixtureDispatcher () =
                              Entity.Size .= v3 1f 1f 0f
                              Entity.Substance .= Mass (1f / 16f)
                              Entity.Color .= color] world
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity Box) world
+                    ()
                 for (n1, n2) in Array.pairwise names |> Array.add (Array.last names, Array.head names) do
                     let _ =
-                        World.doBodyJoint2d Gen.name
+                        World.doBodyJoint2d $"{n1} Link"
                             [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
                              Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
                              Entity.BreakingPoint .= infinityf
                              Entity.BodyJoint .= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun _ _ a b ->
                                     RevoluteJoint (a, b, new _(0f, 0.5f), new _(0f, -0.5f), false) }] world |> ignore
-                    screen.ExtraEntities.Map (Map.add world.DeclaredEntity BodyJoint) world
-
-        // Ensure the entities persist across ImSim renders.
-        for keyValue in screen.GetExtraEntities world do
-            match keyValue.Value with
-            | Box -> World.doBox2d keyValue.Key.Name [] world |> ignore
-            | Ball -> World.doBall2d keyValue.Key.Name [] world |> ignore
-            | Block -> World.doBlock2d keyValue.Key.Name [] world |> ignore
-            | Sphere -> World.doSphere2d keyValue.Key.Name [] world |> ignore
-            | KinematicBlock ->
-                // Mouse dragging stops its movement, force angular velocity after dragging
-                World.doBlock2d keyValue.Key.Name [Entity.AngularVelocity @= v3 10f 0f 0f
-                                                   // Don't keep linear velocity from being dragged to collide
-                                                   Entity.LinearVelocity @= v3Zero] world |> ignore
-            | BodyJoint -> World.doBodyJoint2d keyValue.Key.Name [] world |> ignore
-            | AngleFlexBodyJoint angle ->
-                let isExtended = if world.TickTime % 100000L < 50000L then 0f else 1f
-                World.doBodyJoint2d (keyValue.Key.Name + string isExtended)
-                    [Entity.BodyJointTarget .= keyValue.Key.GetBodyJointTarget world
-                     Entity.BodyJointTarget2Opt .= keyValue.Key.GetBodyJointTarget2Opt world
-                     Entity.BodyJoint .= TwoBodyJoint2d
-                        { CreateTwoBodyJoint = fun _ _ a b ->
-                            AngleJoint (a, b, MaxImpulse = 3f,
-                                        TargetAngle = angle + isExtended) }] world |> ignore
-                screen.ExtraEntities.Map (Map.remove keyValue.Key >> Map.add world.DeclaredEntity BodyJoint) world
+                    ()
 
         // OTHER BUTTONS //
 
