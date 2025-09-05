@@ -3809,6 +3809,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // TODO: P1: let's see if we can remember why we're rendering depth here and potentially avoid it for
                 // efficiency.
                 OpenGL.PhysicallyBased.DrawFilterBilateralDownSampleSurface (fogAccumTexture, depthTexture2, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBilateralDownSample4dShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.Hl.Assert ()
 
                 // setup fog accum up-sample buffers and viewport
                 let (fogAccumUpSampleTexture, fogAccumUpSampleRenderbuffer, fogAccumUpSampleFramebuffer) = renderer.PhysicallyBasedBuffers.FogAccumUpSampleBuffers
