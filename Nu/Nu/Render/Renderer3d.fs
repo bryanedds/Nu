@@ -3822,6 +3822,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // deferred render fog accum quad to up-sample buffers
                 OpenGL.PhysicallyBased.DrawFilterBilateralUpSampleSurface (fogAccumDownSampleTexture, depthDownSampleTexture, depthTexture2, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBilateralUpSample4dShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.Hl.Assert ()
                 fogAccumUpSampleTexture
 
             // just use black texture
