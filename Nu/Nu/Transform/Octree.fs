@@ -483,7 +483,7 @@ module Octree =
         Log.warnOnce
             ("Element " + scstring element.Entry +
              " went out of spatial bounds " + scstring tree.Bounds +
-             " and thereby added to ubiquitous fallback an an Omnipresent element.")
+             " and thereby added to ubiquitous fallback.")
 
     let private tryFindLeafFast (bounds : Box3) tree : 'e Octnode option =
         let offset = -tree.Bounds.Min // use offset to bring div ops into positive space
