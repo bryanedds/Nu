@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="'w CoroutineResult (Nu)" />
+    <meta property="og:title" content="FilterShaders (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="'w CoroutineResult (Nu)">
+    <meta name="twitter:title" content="FilterShaders (Nu)">
     
-    <title>'w CoroutineResult (Nu) | Nu</title>
+    <title>FilterShaders (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,42 +92,61 @@
     <div id="content">
         <div>
   <h2>
-    'w CoroutineResult Type
+    Filter.FilterShaders Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
-        Nu
+      <a href="/Nu/reference/opengl.html">
+        OpenGL
       </a>
     </dt>
     <dt>
       Assembly: Nu.dll
     </dt>
     <dt>
+      Parent Module: 
+      <a href="/Nu/reference/opengl-filter.html">
+        Filter
+      </a>
+    </dt>
+    <dt>
       Base Type: 
       <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/opengl-filter-filtershaders.html">FilterShaders</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/opengl-filter-filtershaders.html">FilterShaders</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         The result of stepping a coroutine.
+        
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
+  <div></div>
   <div>
     <h3>
-      Union cases
+      Record fields
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Union case
+            Record Field
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -138,113 +157,273 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4633', 4633)" onmouseover="showTip(event, '4633', 4633)">
+              <code onmouseout="hideTip(event, '7740', 7740)" onmouseover="showTip(event, '7740', 7740)">
                 <p>
-                  <a id="CoroutineCancelled">
-                    <a href="#CoroutineCancelled">
-                      <code><span>CoroutineCancelled</span></code>
+                  <a id="FilterBilateralDownSample4dShader">
+                    <a href="#FilterBilateralDownSample4dShader">
+                      <code>FilterBilateralDownSample4dShader</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4633">
+              <div class="fsdocs-tip" id="7740">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CoroutineCancelled</span></code>
+                  <code>FilterBilateralDownSample4dShader</code>
                   <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
+                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Coroutine.fs#L13-13" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4634', 4634)" onmouseover="showTip(event, '4634', 4634)">
-                <p>
-                  <a id="CoroutineCompleted">
-                    <a href="#CoroutineCompleted">
-                      <code><span>CoroutineCompleted</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4634">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>CoroutineCompleted</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Coroutine.fs#L12-12" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4635', 4635)" onmouseover="showTip(event, '4635', 4635)">
-                <p>
-                  <a id="CoroutineProgressing">
-                    <a href="#CoroutineProgressing">
-                      <code><span>CoroutineProgressing&#32;<span>'w&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4635">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>CoroutineProgressing&#32;<span>'w&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span></span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        Item
-                      </b>
-                      :
-                      <code><span>'w&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span></code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
                 </span>
-                :
-                <code><span>'w&#32;<a href="/Nu/reference/nu-coroutine-1.html">Coroutine</a></span></code>
+                <code><a href="/Nu/reference/opengl-filter-filterbilateraldownsampleshader.html">FilterBilateralDownSampleShader</a></code>
               </dt>
-              <dd class="fsdocs-param-docs"></dd>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7741', 7741)" onmouseover="showTip(event, '7741', 7741)">
+                <p>
+                  <a id="FilterBilateralUpSample4dShader">
+                    <a href="#FilterBilateralUpSample4dShader">
+                      <code>FilterBilateralUpSample4dShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7741">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterBilateralUpSample4dShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/opengl-filter-filterbilateralupsampleshader.html">FilterBilateralUpSampleShader</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7742', 7742)" onmouseover="showTip(event, '7742', 7742)">
+                <p>
+                  <a id="FilterBox1dShader">
+                    <a href="#FilterBox1dShader">
+                      <code>FilterBox1dShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7742">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterBox1dShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/opengl-filter-filterboxshader.html">FilterBoxShader</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7743', 7743)" onmouseover="showTip(event, '7743', 7743)">
+                <p>
+                  <a id="FilterFxaaShader">
+                    <a href="#FilterFxaaShader">
+                      <code>FilterFxaaShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7743">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterFxaaShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/opengl-filter-filterfxaashader.html">FilterFxaaShader</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7744', 7744)" onmouseover="showTip(event, '7744', 7744)">
+                <p>
+                  <a id="FilterGaussian2dShader">
+                    <a href="#FilterGaussian2dShader">
+                      <code>FilterGaussian2dShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7744">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterGaussian2dShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7745', 7745)" onmouseover="showTip(event, '7745', 7745)">
+                <p>
+                  <a id="FilterGaussian4dShader">
+                    <a href="#FilterGaussian4dShader">
+                      <code>FilterGaussian4dShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7745">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterGaussian4dShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/opengl-filter-filtergaussianshader.html">FilterGaussianShader</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7746', 7746)" onmouseover="showTip(event, '7746', 7746)">
+                <p>
+                  <a id="FilterGaussianArray2dShader">
+                    <a href="#FilterGaussianArray2dShader">
+                      <code>FilterGaussianArray2dShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7746">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterGaussianArray2dShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/opengl-filter-filtergaussianarrayshader.html">FilterGaussianArrayShader</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/opengl-filter-filtergaussianarrayshader.html">FilterGaussianArrayShader</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
             </dl>
           </td>
         </tr>
@@ -254,142 +433,6 @@
   <div></div>
   <div></div>
   <div></div>
-  <div>
-    <h3>
-      Instance members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Instance member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4636', 4636)" onmouseover="showTip(event, '4636', 4636)">
-                <p>
-                  <a id="IsCoroutineCancelled">
-                    <a href="#IsCoroutineCancelled">
-                      <code><span>this.IsCoroutineCancelled</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4636">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsCoroutineCancelled</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4637', 4637)" onmouseover="showTip(event, '4637', 4637)">
-                <p>
-                  <a id="IsCoroutineCompleted">
-                    <a href="#IsCoroutineCompleted">
-                      <code><span>this.IsCoroutineCompleted</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4637">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsCoroutineCompleted</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4638', 4638)" onmouseover="showTip(event, '4638', 4638)">
-                <p>
-                  <a id="IsCoroutineProgressing">
-                    <a href="#IsCoroutineProgressing">
-                      <code><span>this.IsCoroutineProgressing</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4638">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsCoroutineProgressing</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
   <div></div>
 </div>
         

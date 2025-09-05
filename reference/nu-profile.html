@@ -106,7 +106,7 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
@@ -119,9 +119,6 @@
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -153,7 +150,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6065', 6065)" onmouseover="showTip(event, '6065', 6065)">
+              <code onmouseout="hideTip(event, '6109', 6109)" onmouseover="showTip(event, '6109', 6109)">
                 <p>
                   <a id="Bounds">
                     <a href="#Bounds">
@@ -162,7 +159,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6065">
+              <div class="fsdocs-tip" id="6109">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Bounds</span></code>
@@ -174,11 +171,13 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L113-113" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L139-139" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                
+                 A simplified axis-aligned bounds.
+ This shape is defined by a bounding box around a body.
+ Most efficient but least accurate.
               </p>
             </div>
           </td>
@@ -186,7 +185,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6066', 6066)" onmouseover="showTip(event, '6066', 6066)">
+              <code onmouseout="hideTip(event, '6110', 6110)" onmouseover="showTip(event, '6110', 6110)">
                 <p>
                   <a id="Concave">
                     <a href="#Concave">
@@ -195,7 +194,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6066">
+              <div class="fsdocs-tip" id="6110">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Concave</span></code>
@@ -207,11 +206,14 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L134-134" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                
+                 A concave shape.
+ This shape is defined by a body may form a concave hull.
+ Least efficient but often more accurate.
+ TODO: should this case be specified to require points to be formatted as groups of 3 to form triangles even for user-defined 2D and 3D engines?
               </p>
             </div>
           </td>
@@ -219,7 +221,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6067', 6067)" onmouseover="showTip(event, '6067', 6067)">
+              <code onmouseout="hideTip(event, '6111', 6111)" onmouseover="showTip(event, '6111', 6111)">
                 <p>
                   <a id="Convex">
                     <a href="#Convex">
@@ -228,7 +230,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6067">
+              <div class="fsdocs-tip" id="6111">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Convex</span></code>
@@ -240,11 +242,13 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsEngine.fs#L128-128" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                
+                 A convex shape.
+ This shape is defined by a body that forms a convex hull.
+ Moderately efficient but accurate enough for many cases.
               </p>
             </div>
           </td>
@@ -274,7 +278,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6068', 6068)" onmouseover="showTip(event, '6068', 6068)">
+              <code onmouseout="hideTip(event, '6112', 6112)" onmouseover="showTip(event, '6112', 6112)">
                 <p>
                   <a id="IsBounds">
                     <a href="#IsBounds">
@@ -283,7 +287,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6068">
+              <div class="fsdocs-tip" id="6112">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsBounds</span></code>
@@ -313,7 +317,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6069', 6069)" onmouseover="showTip(event, '6069', 6069)">
+              <code onmouseout="hideTip(event, '6113', 6113)" onmouseover="showTip(event, '6113', 6113)">
                 <p>
                   <a id="IsConcave">
                     <a href="#IsConcave">
@@ -322,7 +326,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6069">
+              <div class="fsdocs-tip" id="6113">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsConcave</span></code>
@@ -352,7 +356,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6070', 6070)" onmouseover="showTip(event, '6070', 6070)">
+              <code onmouseout="hideTip(event, '6114', 6114)" onmouseover="showTip(event, '6114', 6114)">
                 <p>
                   <a id="IsConvex">
                     <a href="#IsConvex">
@@ -361,7 +365,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6070">
+              <div class="fsdocs-tip" id="6114">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsConvex</span></code>

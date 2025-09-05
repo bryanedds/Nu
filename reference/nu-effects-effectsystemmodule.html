@@ -177,7 +177,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3212', 3212)" onmouseover="showTip(event, '3212', 3212)">
+              <code onmouseout="hideTip(event, '3238', 3238)" onmouseover="showTip(event, '3238', 3238)">
                 <p>
                   <a id="eval">
                     <a href="#eval">
@@ -186,7 +186,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3212">
+              <div class="fsdocs-tip" id="3238">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>EffectSystem.eval&#32;<span>descriptor&#32;slice&#32;history&#32;effectSystem</span></span></code>
@@ -247,7 +247,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Effects.EffectSystemModule.eval\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Effects/EffectSystem.fs#L735-735" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Effects/EffectSystem.fs#L736-736" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <pre> Evaluates an EffectDescriptor, applying the effect if it is still alive, with the following parameters:
@@ -309,19 +309,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3213', 3213)" onmouseover="showTip(event, '3213', 3213)">
+              <code onmouseout="hideTip(event, '3239', 3239)" onmouseover="showTip(event, '3239', 3239)">
                 <p>
                   <a id="make">
                     <a href="#make">
-                      <code><span>EffectSystem.make&#32;<span>localTime&#32;absolute&#32;castShadow&#32;presence&#32;shadowOffset&#32;renderType&#32;globalEnv</span></span></code>
+                      <code><span>EffectSystem.make&#32;<span>localTime&#32;absolute&#32;castShadow&#32;presence&#32;clipOpt&#32;shadowOffset&#32;renderType&#32;globalEnv</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3213">
+              <div class="fsdocs-tip" id="3239">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>EffectSystem.make&#32;<span>localTime&#32;absolute&#32;castShadow&#32;presence&#32;shadowOffset&#32;renderType&#32;globalEnv</span></span></code>
+                  <code><span>EffectSystem.make&#32;<span>localTime&#32;absolute&#32;castShadow&#32;presence&#32;clipOpt&#32;shadowOffset&#32;renderType&#32;globalEnv</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -356,6 +356,14 @@
                       </b>
                       :
                       <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        clipOpt
+                      </b>
+                      :
+                      <code><span><a href="/Nu/reference/system-numerics-box2-0.html">Box2</a>&#32;option</span></code>
                     </span>
                     <br/>
                     <span>
@@ -403,7 +411,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Effects.EffectSystemModule.make\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Effects/EffectSystem.fs#L758-758" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Effects/EffectSystem.fs#L760-760" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <pre> Creates a new EffectSystem with the following parameters -
@@ -411,6 +419,7 @@
    - absolute: A flag indicating if the effect is absolute.
    - presence: The presence of the effect.
    - shadowOffset: How far to offset shadows of any billboards.
+   - clipOpt: Optional view scissor clipping.
    - renderType: The render type of the effect.
    - globalEnv: The global environment for the effect.</pre>
                 </div>
@@ -446,6 +455,14 @@
                   </span>
                   :
                   <code><a href="/Nu/reference/nu-presence.html">Presence</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    clipOpt
+                  </span>
+                  :
+                  <code><span><a href="/Nu/reference/system-numerics-box2-0.html">Box2</a>&#32;option</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">

@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="RendererPhysics3d (Nu)" />
+    <meta property="og:title" content="TerrainPatchDescriptor (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="RendererPhysics3d (Nu)">
+    <meta name="twitter:title" content="TerrainPatchDescriptor (Nu)">
     
-    <title>RendererPhysics3d (Nu) | Nu</title>
+    <title>TerrainPatchDescriptor (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    RendererPhysics3d Type
+    TerrainPatchDescriptor Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -106,17 +106,19 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/joltphysicssharp.debugrenderer">DebugRenderer</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.idisposable">IDisposable</a></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-terrainpatchdescriptor.html">TerrainPatchDescriptor</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Renders 3D physics via ImGui.
+         Describes a terrain patch as a potential subdivision of a larger terrain geometry.
       </p>
     </div>
   </div>
@@ -124,17 +126,15 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
-  <div></div>
   <div>
     <h3>
-      Constructors
+      Record fields
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Constructor
+            Record Field
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -145,24 +145,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6357', 6357)" onmouseover="showTip(event, '6357', 6357)">
+              <code onmouseout="hideTip(event, '6883', 6883)" onmouseover="showTip(event, '6883', 6883)">
                 <p>
-                  <a id="``.ctor``">
-                    <a href="#``.ctor``">
-                      <code><span>RendererPhysics3d<span>()</span></span></code>
+                  <a id="PatchBounds">
+                    <a href="#PatchBounds">
+                      <code>PatchBounds</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6357">
+              <div class="fsdocs-tip" id="6883">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RendererPhysics3d<span>()</span></span></code>
+                  <code>PatchBounds</code>
                   <br/>
                   <br/>
                   <span>
-                    Returns: 
-                    <code><a href="/Nu/reference/nu-rendererphysics3d.html">RendererPhysics3d</a></code>
+                    Field type: 
+                    <code><a href="/Nu/reference/system-numerics-box3-0.html">Box3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -173,9 +173,126 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Returns: 
+                  Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-rendererphysics3d.html">RendererPhysics3d</a></code>
+                <code><a href="/Nu/reference/system-numerics-box3-0.html">Box3</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6884', 6884)" onmouseover="showTip(event, '6884', 6884)">
+                <p>
+                  <a id="PatchId">
+                    <a href="#PatchId">
+                      <code>PatchId</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6884">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>PatchId</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6885', 6885)" onmouseover="showTip(event, '6885', 6885)">
+                <p>
+                  <a id="PatchOffset">
+                    <a href="#PatchOffset">
+                      <code>PatchOffset</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6885">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>PatchOffset</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6886', 6886)" onmouseover="showTip(event, '6886', 6886)">
+                <p>
+                  <a id="PatchResolution">
+                    <a href="#PatchResolution">
+                      <code>PatchResolution</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6886">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>PatchResolution</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/system-numerics-vector2i-0.html">Vector2i</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -184,90 +301,9 @@
       </tbody>
     </table>
   </div>
-  <div>
-    <h3>
-      Instance members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Instance member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '6358', 6358)" onmouseover="showTip(event, '6358', 6358)">
-                <p>
-                  <a id="Flush">
-                    <a href="#Flush">
-                      <code><span>this.Flush</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="6358">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.Flush</span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        world
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <details>
-              <summary>
-                <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.RendererPhysics3d.Flush`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.RendererPhysics3d.Flush\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldImGui.fs#L1033-1033" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Actually render all the stored drawing commands.
-                  </p>
-                </div>
-              </summary>
-              <dl class="fsdocs-params">
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    world
-                  </span>
-                  :
-                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-              </dl>
-            </details>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div></div>
 </div>
         
