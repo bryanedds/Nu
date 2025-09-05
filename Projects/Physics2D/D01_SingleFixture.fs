@@ -7,7 +7,7 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 
 type ExtraEntityType =
     | Box | Ball | TinyBalls | Spring | Block | Bridge | Fan
-    | Clamp | SoftBody | Mystery
+    | Clamp | SoftBody | Ragdoll | Mystery
 type Page = Page1 | Page2
 
 // this extends the Screen API to expose the user-defined properties.
@@ -106,32 +106,12 @@ type D01_SingleFixtureDispatcher () =
             let physicsAnchors = screen.GetMouseDragTarget world
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
             // Optimizations can reuse the same set for different queries.
-            for entity in World. mousePosition (new _()) world do
+            for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
                 let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
-                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
-                    // NOTE: Some dynamic bodies may escape the border due to collisions against kinematic bodies (e.g. fans here).
-                    // In Nu, when an entity falls outside of the spatial bounds, e.g. by gravity,
-                    // it becomes omnipresent, meaning that it is returned for all spatial queries
-                    // e.g. World.getEntities2dAtPoint (affecting mouse dragging here).
-                    // This happens because Nu's spatial tree (Quadtree for 2D, Octtree for 3D) has a limited size.
-                    // The simplest resolution by Nu (avoiding engine complexity) that doesn't cause exceptions
-                    // for MMCC and ImSim APIs (happens when the entity is silently dropped) is to make
-                    // them omnipresent with a warning in the logs when this occurs.
-                    // For normal games, a game bounds within the spatial bounds should be defined to handle out of bounds entities.
-                    // For illustrative purposes here, we allow the warning to occur and use the spatial bounds as game bounds.
-                    if (World.getSpatialBounds2d world).Contains (entity.GetBounds(world).Box2) <> ContainmentType.Contains then
-                        // The body ID is unique across rigid bodies, it is just a registration in the physics engine.
-                        if entity.GetBodyId world = agentBody then
-                            // Reset agent position if it falls outside the world
-                            entity.SetPosition v3Zero world
-                            entity.SetLinearVelocity v3Zero world
-                            entity.SetAngularVelocity v3Zero world
-                        else // Remove other entities that fall outside the world
-                            screen.ExtraEntities.Map (Map.remove entity.Name) world
-                    elif screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
-                        screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
-                        entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
+                    screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
+                    entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
             if screen.GetDraggedEntity world = None then // No entity found via direct point test
                 // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
                 let rayUp =
@@ -237,7 +217,7 @@ type D01_SingleFixtureDispatcher () =
                  Entity.Elevation .= 1f] world then
                 screen.SetPage Page1 world
                 
-            for (i, entityType) in List.indexed [SoftBody; Clamp] do
+            for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody] do
                 if World.doButton $"Add {entityType}"
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
@@ -290,6 +270,7 @@ type D01_SingleFixtureDispatcher () =
                              Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                              Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
                     ()
+            // DYNAMIC BODIES - Spring [Distance joint, Prismatic joint]
             | Spring ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                 // TODO: Why are Face 1 and Face 2 present in the ubiquitous fallback of the quadtree?
@@ -298,19 +279,23 @@ type D01_SingleFixtureDispatcher () =
                      Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "Face 2")
                      Entity.BodyJoint .= TwoBodyJoint2d
                         { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                            // A distance joint maintains fixed distance between two bodies, optionally with spring-like behaviour.
+                            // It does not impose limits on relative positions or rotations.
                             DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics 60f, Frequency = 5f, DampingRatio = 0.3f) }] world
                 let _ =
                     World.doBox2d "Face 1"
                         [Entity.Color .= color
                          Entity.Size .= v3 150f 10f 0f
-                         Entity.StaticImage .= Assets.Default.Paddle] world
+                         Entity.StaticImage .= Assets.Default.Paddle
+                         Entity.Substance .= Mass (1f / 2f)] world
                 let box1 = world.DeclaredEntity
                 let _ =
                     World.doBox2d "Face 2"
                         [Entity.Color .= color
                          Entity.Position .= v3 0f -60f 0f
                          Entity.Size .= v3 150f 10f 0f
-                         Entity.StaticImage .= Assets.Default.Paddle] world
+                         Entity.StaticImage .= Assets.Default.Paddle
+                         Entity.Substance .= Mass (1f / 2f)] world
                 let box2 = world.DeclaredEntity
                 let direction = box2.GetPosition world - box1.GetPosition world
                 let _ =
@@ -326,7 +311,10 @@ type D01_SingleFixtureDispatcher () =
                         [Entity.BodyJointTarget .= Relation.makeFromString "^/Face 1"
                          Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "^/Face 2")
                          Entity.BodyJoint .= TwoBodyJoint2d
-                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b -> PrismaticJoint (a, b, new _(0f, 0f), toPhysicsV2 direction, useWorldCoordinates=false) }] world
+                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                // A prismatic joint maintains fixed position between two bodies to move linearly
+                                // along a straight axis while disallowing relative rotation, without fixing distance.
+                                PrismaticJoint (a, b, new _(0f, 0f), toPhysicsV2 direction, useWorldCoordinates=false) }] world
                 World.endEntity world
             // STATIC BODIES - not moving and not reacting to forces and collisions //
             // STATIC BODIES - Block
@@ -370,9 +358,162 @@ type D01_SingleFixtureDispatcher () =
                              Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
                              Entity.BodyJoint @= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                    // A revolute joint disallows relative movement of two bodies while allowing relative rotation.
                                     RevoluteJoint (a, b, new _(0f, -0.5f * toPhysics boxHeight), new _(0f, 0.5f * toPhysics boxHeight), false) }] world
                     ()
+            // KINEMATIC BODIES - moving and not reacting to forces and collisions //
+            // KINEMATIC BODIES - Fan [Weld joint]
+            | Fan ->
+                // A fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint.
+                // One is the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
+                let x = Gen.randomf1 500f - 250f
+                let y = Gen.randomf1 350f - 175f
+                // Declare anchor
+                let _ =
+                    World.doBlock2d name
+                        [Entity.Position .= v3 x y 0f
+                         Entity.Size .= v3 64f 8f 0f
+                         // Kinematic physics does not react to forces or collisions, but can be moved by setting its velocity (here angular).
+                         Entity.BodyType .= Kinematic
+                         Entity.AngularVelocity @= v3 10f 0f 0f
+                         // Set fans to be treated the same way as borders when colliding with other fans using the same collision category as border.
+                         Entity.CollisionCategories .= "10"
+                         // Fans only collide with entities in the default collision category "1",
+                         // not the border or other fans in category "10",
+                         // otherwise the + shape of the fan deforms when dragging next to another fan or the border.
+                         Entity.CollisionMask .= "01"
+                         Entity.StaticImage .= Assets.Default.Label] world
+                let anchor = world.DeclaredEntity
+                
+                // Declare other blade
+                let _ =
+                    World.doBox2d $"{name} Other blade"
+                        [Entity.Position .= v3 x y 0f
+                         Entity.Rotation .= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.PI / 2f) // Rotate 90 degrees
+                         Entity.Size .= v3 64f 8f 0f
+                         Entity.CollisionCategories .= "10"
+                         Entity.CollisionMask .= "01"
+                         Entity.StaticImage .= Assets.Default.Label
+                         // Mouse dragging stops its movement, force angular velocity after dragging
+                         Entity.AngularVelocity @= v3 10f 0f 0f
+                         // Don't keep linear velocity from collisions on mouse drag release
+                         Entity.LinearVelocity @= v3Zero
+                         ] world
+                let blade = world.DeclaredEntity
+                screen.MouseDragTarget.Map (Map.add blade anchor) world
+                
+                // Declare weld joint to link the two blades together at the center point (x, y)
+                let _ =
+                    World.doBodyJoint2d $"{name} Weld joint"
+                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchor.Name}"
+                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{blade.Name}")
+                         Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
+                         Entity.BreakingPoint .= infinityf
+                         Entity.BodyJoint .= TwoBodyJoint2d
+                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                let p = toPhysicsV2 (v3 x y 0f)
+                                // A weld joint disallows changing relative position and rotation between two bodies.
+                                // However, being a soft constraint, it may still deform with a heavy external force.
+                                // If deforming is unwanted, the body shapes should be within same entity instead.
+                                WeldJoint (a, b, p, p, true) }] world
+                ()
+            // DYNAMIC BODIES - Clamp
+            | Clamp ->
+                // Center ball
+                let ballSize = 32f
+                let _ = World.doBall2d name [Entity.Size .= v3 ballSize ballSize 0f] world
 
+                for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
+                    let upperLeg = $"{name} {directionName} Upper leg"
+                    for (newLeg, linkTo, image, angle) in
+                        [(upperLeg, name, Assets.Default.Image, 0.2f)
+                         ($"{name} {directionName} Lower leg", upperLeg, Assets.Default.Black, 0.4f)] do
+                        let legLength = 30f
+                        let _ =
+                            World.doBox2d newLeg
+                                [Entity.StaticImage .= image
+                                 Entity.Size .= v3 legLength 4f 0f] world
+                        let _ =
+                            World.doBodyJoint2d $"{newLeg} Revolute joint"
+                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
+                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
+                                 Entity.CollideConnected .= false // Rotation movement would be limited if the upper leg collides with center
+                                 Entity.BodyJoint .= TwoBodyJoint2d
+                                    { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                        let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
+                                        RevoluteJoint (a, b, p * 0.5f, p * -0.5f, false) }] world
+                        let isExtended = world.DateTime.Second % 10 >= 5
+                        let _ =
+                            World.doBodyJoint2d $"""{newLeg} Angle joint {isExtended}"""
+                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
+                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
+                                 Entity.BodyJoint .= TwoBodyJoint2d
+                                    { CreateTwoBodyJoint = fun _ _ a b ->
+                                        AngleJoint (a, b, MaxImpulse = 3f,
+                                            TargetAngle = (angle + if isExtended then 1f else 0f) * direction) }] world
+                        ()
+            | Ragdoll ->
+                let _ =
+                    World.doBall2d $"{name} Head"
+                        [Entity.Position .= v3 0f 60f 0f
+                         Entity.Size .= v3 20f 20f 0f
+                         Entity.AngularDamping .= 2f
+                         Entity.Substance .= Mass 2f] world
+                let torsoHeight = 20f
+                let torsoWidth = torsoHeight * 2f
+                for (y, componentName, connectsTo, revoluteAngle) in
+                    [40f, "Torso upper", "Head", None
+                     20f, "Torso middle", "Torso upper", Some (MathF.PI / 8f)
+                     0f,  "Torso lower", "Torso middle", Some (MathF.PI / 16f)] do
+                    let _ =
+                        World.doBall2d $"{name} {componentName}"
+                            [Entity.BodyShape .= CapsuleShape
+                                { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
+                                  // Capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees rotation.
+                                  // Moreover, since height here is relative to entity height, we also need to scale it by 2 to use entity width instead.
+                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.Create2d MathF.PI_OVER_2) (v3Dup 2f)) }
+                             Entity.Size .= v3 torsoWidth torsoHeight 0f
+                             Entity.Position .= v3 30f y 0f
+                             Entity.StaticImage .= Assets.Gameplay.Capsule] world
+                    let _ =
+                        World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
+                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} {connectsTo}"
+                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} {componentName}")
+                             Entity.BodyJoint .= TwoBodyJoint2d
+                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                    match revoluteAngle with
+                                    | Some revoluteAngle ->
+                                        RevoluteJoint(a, b, new _(0f, -0.55f * toPhysics torsoHeight), new _(0f, 0.55f * toPhysics torsoHeight), false,
+                                                      LimitEnabled = true, LowerLimit = -revoluteAngle, UpperLimit = revoluteAngle)
+                                    | _ ->
+                                        DistanceJoint (a, b, new _(0f, -0.5f * toPhysics torsoHeight), new _(0f, 0.5f * toPhysics torsoHeight), false,
+                                                       Length = toPhysics 1f, Frequency = 25f, DampingRatio = 1f)
+                                }] world
+                    ()
+                let legHeight = 15f
+                let legWidth = legHeight * 2f
+                for (side, direction) in ["Left", -1f; "Right", 1f] do
+                    for (y, armOrLeg, connectsToTorso) in [0f, "arm", "upper"; -40f, "leg", "lower"] do
+                    for (i, upperOrLower, connectsTo, connectsToWidth) in
+                        [0f, "upper", $"Torso {connectsToTorso}", torsoWidth; 1f, "lower", $"{side} {armOrLeg} upper", legWidth] do
+                    let componentName = $"{side} {armOrLeg} {upperOrLower}"
+                    let _ =
+                        World.doBall2d $"{name} {componentName}"
+                            [Entity.BodyShape .= CapsuleShape
+                                { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
+                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.Create2d MathF.PI_OVER_2) (v3Dup 2f)) }
+                             Entity.Position .= v3 (direction * (torsoWidth + i * legWidth + 1f)) y 0f
+                             Entity.Size .= v3 (legHeight * 2f) legHeight 0f
+                             Entity.StaticImage .= Assets.Gameplay.Capsule] world
+                    let _ =
+                        World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
+                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} {connectsTo}"
+                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} {componentName}")
+                             Entity.BodyJoint .= TwoBodyJoint2d
+                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
+                                    DistanceJoint (a, b, new _(0.5f * direction * toPhysics connectsToWidth, 0f), new _(-0.5f * direction * toPhysics legWidth, 0f), false, Length = toPhysics 4f, Frequency = 25f, DampingRatio = 1f)
+                                }] world
+                    ()
             // DYNAMIC BODIES - Soft Body [Revolute joint, Distance joint]
             | SoftBody ->
                 
@@ -446,95 +587,6 @@ type D01_SingleFixtureDispatcher () =
                                 let boxSize = toPhysics boxSize
                                 DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics spawnScale + boxSize, DampingRatio = 1f, Frequency = 5f) }] world
                     ()
-            // KINEMATIC BODIES - moving and not reacting to forces and collisions //
-            // KINEMATIC BODIES - Fan [Weld joint]
-            | Fan ->
-                // A fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint.
-                // One is the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
-                let x = Gen.randomf1 500f - 250f
-                let y = Gen.randomf1 350f - 175f
-                // Declare anchor
-                let _ =
-                    World.doBlock2d name
-                        [Entity.Position .= v3 x y 0f
-                         Entity.Size .= v3 64f 8f 0f
-                         // Kinematic physics does not react to forces or collisions, but can be moved by setting its velocity (here angular).
-                         Entity.BodyType .= Kinematic
-                         Entity.AngularVelocity @= v3 10f 0f 0f
-                         // Set fans to be treated the same way as borders when colliding with other fans using the same collision category as border.
-                         Entity.CollisionCategories .= "10"
-                         // Fans only collide with entities in the default collision category "1",
-                         // not the border or other fans in category "10",
-                         // otherwise the + shape of the fan deforms when dragging next to another fan or the border.
-                         Entity.CollisionMask .= "01"
-                         Entity.StaticImage .= Assets.Default.Label] world
-                let anchor = world.DeclaredEntity
-                
-                // Declare other blade
-                let _ =
-                    World.doBox2d $"{name} Other blade"
-                        [Entity.Position .= v3 x y 0f
-                         Entity.Rotation .= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.PI / 2f) // Rotate 90 degrees
-                         Entity.Size .= v3 64f 8f 0f
-                         Entity.CollisionCategories .= "10"
-                         Entity.CollisionMask .= "01"
-                         Entity.StaticImage .= Assets.Default.Label
-                         // Mouse dragging stops its movement, force angular velocity after dragging
-                         Entity.AngularVelocity @= v3 10f 0f 0f
-                         // Don't keep linear velocity from collisions on mouse drag release
-                         Entity.LinearVelocity @= v3Zero
-                         ] world
-                let blade = world.DeclaredEntity
-                screen.MouseDragTarget.Map (Map.add blade anchor) world
-                
-                // Declare weld joint to link the two blades together at the center point (x, y)
-                let _ =
-                    World.doBodyJoint2d $"{name} Weld joint"
-                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchor.Name}"
-                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{blade.Name}")
-                         Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
-                         Entity.BreakingPoint .= infinityf
-                         Entity.BodyJoint .= TwoBodyJoint2d
-                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                                let p = toPhysicsV2 (v3 x y 0f)
-                                WeldJoint (a, b, p, p, true) }] world
-                ()
-            // DYNAMIC BODIES - Clamp
-            | Clamp ->
-                // Center ball
-                let ballSize = 32f
-                let _ = World.doBall2d name [Entity.Size .= v3 ballSize ballSize 0f] world
-
-                for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
-                    let upperLeg = $"{name} {directionName} Upper leg"
-                    for (newLeg, linkTo, image, angle) in
-                        [(upperLeg, name, Assets.Default.Image, 0.2f)
-                         ($"{name} {directionName} Lower leg", upperLeg, Assets.Default.Black, 0.4f)] do
-                        let legLength = 30f
-                        let _ =
-                            World.doBox2d newLeg
-                                [Entity.StaticImage .= image
-                                 //Entity.Position .= v3 ((15f + 30f * i + ballSize) * direction) 0f 0f
-                                 Entity.Size .= v3 legLength 4f 0f] world
-                        let _ =
-                            World.doBodyJoint2d $"{newLeg} Revolute joint"
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
-                                 Entity.CollideConnected .= false // Rotation movement would be limited if the upper leg collides with center
-                                 Entity.BodyJoint .= TwoBodyJoint2d
-                                    { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                                        let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
-                                        RevoluteJoint (a, b, p * 0.5f, p * -0.5f, false) }] world
-                        let isExtended = world.DateTime.Second % 10 >= 5
-                        let _ =
-                            World.doBodyJoint2d $"""{newLeg} Angle joint {isExtended}"""
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
-                                 Entity.BodyJoint .= TwoBodyJoint2d
-                                    { CreateTwoBodyJoint = fun _ _ a b ->
-                                        AngleJoint (a, b, MaxImpulse = 3f,
-                                            TargetAngle = (angle + if isExtended then 1f else 0f) * direction) }] world
-                        ()
             // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
             | Mystery ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f

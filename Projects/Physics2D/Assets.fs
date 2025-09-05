@@ -13,4 +13,5 @@ module Assets =
     module Gameplay =
         let [<Literal>] PackageName = "Gameplay"
 
-        let SkyBoxFront = asset<Image> PackageName "SkyBoxFront"
+        let rec SkyBoxFront = asset<Image> PackageName (nameof SkyBoxFront)
+        let rec Capsule = asset<Image> PackageName (nameof Capsule)
