@@ -1668,7 +1668,7 @@ module WorldModule2 =
                             let lightId = light.GetId world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
-                            let shadowUp = shadowForward.OrthonormalUp
+                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp for some reason.
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
